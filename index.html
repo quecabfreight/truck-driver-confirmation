@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Truck/Driver Confirmation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 500px;
+            margin: auto;
+            box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        button {
+            padding: 10px 20px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #qrCode {
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Truck/Driver Confirmation</h1>
+
+        <label>Load ID:</label>
+        <input type="text" id="loadId" placeholder="Enter Load ID">
+
+        <label>Company Name:</label>
+        <input type="text" id="companyName" placeholder="Enter Company Name">
+
+        <label>Driver Phone:</label>
+        <input type="text" id="driverPhone" placeholder="Enter Driver Phone">
+
+        <label>USDOT #:</label>
+        <input type="text" id="usdotNumber" placeholder="Enter USDOT #">
+
+        <label>Start Time:</label>
+        <input type="text" id="startTime" placeholder="Enter Start Time">
+
+        <label>Expiration Time:</label>
+        <input type="text" id="expirationTime" placeholder="Enter Expiration Time">
+
+        <button onclick="generateQRCode()">Generate QR Code</button>
+
+        <div id="qrCode"></div>
+    </div>
+
+    <script>
+        function generateQRCode() {
+            const loadId = document.getElementById('loadId').value;
+            const companyName = document.getElementById('companyName').value;
+            const driverPhone = document.getElementById('driverPhone').value;
+            const usdotNumber = document.getElementById('usdotNumber').value;
+            const startTime = document.getElementById('startTime').value;
+            const expirationTime = document.getElementById('expirationTime').value;
+
+            const qrContent = `Load ID: ${loadId}\nCompany: ${companyName}\nDriver Phone: ${driverPhone}\nUSDOT#: ${usdotNumber}\nStart: ${startTime}\nExpires: ${expirationTime}`;
+            document.getElementById('qrCode').innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(qrContent)}&size=150x150" alt="QR Code">`;
+        }
+    </script>
+</body>
+</html>
+
+</html>
