@@ -1,85 +1,49 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Truck/Driver Confirmation</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 40px;
-            background-color: #f4f4f4;
+<script>
+    function generateConfirmation() {
+        const loadId = document.getElementById('loadId').value.trim();
+        const companyName = document.getElementById('companyName').value.trim();
+        const driverPhone = document.getElementById('driverPhone').value.trim();
+        const dot = document.getElementById('dot').value.trim();
+        const startTime = document.getElementById('startTime').value;
+        const expirationTime = document.getElementById('expirationTime').value;
+
+        if (!loadId || !companyName || !driverPhone || !dot || !startTime || !expirationTime) {
+            alert("Please fill out all fields before generating the confirmation.");
+            return;
         }
-        .container {
-            background: #fff;
-            padding: 20px;
-            border-radius: 10px;
-            max-width: 500px;
-            margin: auto;
-            box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
-        }
-        input {
-            width: 100%;
-            padding: 10px;
-            margin-top: 10px;
-            margin-bottom: 20px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-        }
-        button {
-            padding: 10px 20px;
-            background: #28a745;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        #qrCode {
-            margin-top: 20px;
-            text-align: center;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Truck/Driver Confirmation</h1>
 
-        <label>Load ID:</label>
-        <input type="text" id="loadId" placeholder="Enter Load ID">
+        const confirmationDetails = `
+            <strong>Load ID:</strong> ${loadId}<br>
+            <strong>Company Name:</strong> ${companyName}<br>
+            <strong>Driver Phone:</strong> ${driverPhone}<br>
+            <strong>USDOT#:</strong> ${dot}<br>
+            <strong>Start Time:</strong> ${new Date(startTime).toLocaleString()}<br>
+            <strong>Expiration Time:</strong> ${new Date(expirationTime).toLocaleString()}
+        `;
 
-        <label>Company Name:</label>
-        <input type="text" id="companyName" placeholder="Enter Company Name">
+        document.getElementById('confirmationDetails').innerHTML = confirmationDetails;
 
-        <label>Driver Phone:</label>
-        <input type="text" id="driverPhone" placeholder="Enter Driver Phone">
+        generateQRCode(loadId, companyName, driverPhone, dot, startTime, expirationTime);
+        generateSendLinks(loadId, companyName, driverPhone, dot, startTime, expirationTime);
+    }
 
-        <label>USDOT #:</label>
-        <input type="text" id="usdotNumber" placeholder="Enter USDOT #">
+    function generateQRCode(loadId, companyName, driverPhone, dot, startTime, expirationTime) {
+        const qrContent = `Load ID: ${loadId}\nCompany: ${companyName}\nPhone: ${driverPhone}\nUSDOT#: ${dot}\nStart: ${startTime}\nExpires: ${expirationTime}`;
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(qrContent)}&size=200x200`;
 
-        <label>Start Time:</label>
-        <input type="text" id="startTime" placeholder="Enter Start Time">
+        document.getElementById('qrCode').innerHTML = `<img src="${qrUrl}" alt="QR Code">`;
+    }
 
-        <label>Expiration Time:</label>
-        <input type="text" id="expirationTime" placeholder="Enter Expiration Time">
+    function generateSendLinks(loadId, companyName, driverPhone, dot, startTime, expirationTime) {
+        const message = `Truck/Driver Confirmation\nLoad ID: ${loadId}\nCompany: ${companyName}\nPhone: ${driverPhone}\nUSDOT#: ${dot}\nStart: ${startTime}\nExpires: ${expirationTime}`;
+        const subject = `Truck/Driver Confirmation for Load ${loadId}`;
 
-        <button onclick="generateQRCode()">Generate QR Code</button>
+        const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
+        const smsLink = `sms:?body=${encodeURIComponent(message)}`;
 
-        <div id="qrCode"></div>
-    </div>
-
-    <script>
-        function generateQRCode() {
-            const loadId = document.getElementById('loadId').value;
-            const companyName = document.getElementById('companyName').value;
-            const driverPhone = document.getElementById('driverPhone').value;
-            const usdotNumber = document.getElementById('usdotNumber').value;
-            const startTime = document.getElementById('startTime').value;
-            const expirationTime = document.getElementById('expirationTime').value;
-
-            const qrContent = `Load ID: ${loadId}\nCompany: ${companyName}\nDriver Phone: ${driverPhone}\nUSDOT#: ${usdotNumber}\nStart: ${startTime}\nExpires: ${expirationTime}`;
-            document.getElementById('qrCode').innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(qrContent)}&size=150x150" alt="QR Code">`;
-        }
-    </script>
-</body>
-</html>
-
-</html>
+        document.getElementById('sendLinks').innerHTML = `
+            <a href="${mailtoLink}" class="send-link">Send via Email</a>
+            <a href="${smsLink}" class="send-link">Send via Text</a>
+        `;
+    }
+</script>
