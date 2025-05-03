@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Verify Driver</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7fc;
+            padding: 40px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #003366;
+            text-align: center;
+        }
+
+        .info {
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .question {
+            background: #e6f0ff;
+            padding: 15px;
+            border-left: 5px solid #003366;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+
+        a.phone-link {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        a.phone-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Driver Verification</h1>
+        <div class="info" id="info"></div>
+        <div class="question">
+            1. Does the USDOT# match what's on the truck?
+        </div>
+        <div class="question">
+            2. Did the driver answer the phone? 
+            <span id="callLink"></span>
+        </div>
+    </div>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const loadId = params.get('loadId') || '';
+        const companyName = params.get('companyName') || '';
+        const driverPhone = params.get('driverPhone') || '';
+        const dot = params.get('dot') || '';
+
+        document.getElementById('info').innerHTML = `
+            <strong>Load ID:</strong> ${loadId}<br>
+            <strong>Company Name:</strong> ${companyName}<br>
+            <strong>Driver Phone:</strong> ${driverPhone}<br>
+            <strong>USDOT#:</strong> ${dot}
+        `;
+
+        document.getElementById('callLink').innerHTML = `
+            <a href="tel:${driverPhone}" class="phone-link">Call Driver</a>
+        `;
+    </script>
+</body>
+</html>
