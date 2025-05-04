@@ -7,30 +7,22 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
       background-color: #f4f7fc;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
+      margin: 0;
+      padding: 20px;
     }
 
     .container {
       display: flex;
-      justify-content: space-between;
       gap: 20px;
-      padding: 20px;
-      height: calc(100vh - 60px);
-      align-items: stretch;
-      overflow: hidden;
     }
 
     .left-side, .right-side {
-      width: 48%;
-      background-color: #ffffff;
+      width: 50%;
+      background-color: #fff;
       padding: 20px;
       border-radius: 8px;
-      box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 0 8px rgba(0,0,0,0.1);
     }
 
     .form-group {
@@ -41,7 +33,7 @@
       font-weight: bold;
     }
 
-    input[type="text"], input[type="date"], input[type="tel"], input[type="email"] {
+    input[type="text"], input[type="date"], input[type="tel"] {
       width: 100%;
       padding: 10px;
       margin-top: 5px;
@@ -51,20 +43,15 @@
 
     button {
       background-color: #007bff;
-      color: white;
+      color: #fff;
       padding: 10px 20px;
       border: none;
       border-radius: 4px;
       cursor: pointer;
-      font-size: 16px;
       margin-top: 10px;
     }
 
-    button:hover {
-      background-color: #0056b3;
-    }
-
-    a.send-link {
+    .send-link {
       display: inline-block;
       margin-top: 10px;
       background-color: #28a745;
@@ -74,8 +61,16 @@
       text-decoration: none;
     }
 
-    a.send-link:hover {
-      background-color: #218838;
+    .qr-display {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .qr-top, .qr-bottom {
+      display: flex;
+      justify-content: space-between;
+      font-weight: bold;
+      margin-bottom: 10px;
     }
   </style>
 </head>
@@ -88,16 +83,16 @@
         <input type="text" id="loadId" placeholder="Enter Load ID" />
       </div>
       <div class="form-group">
-        <label for="usdot">USDOT#:</label>
-        <input type="text" id="dot" placeholder="Enter DOT#" />
-      </div>
-      <div class="form-group">
         <label for="companyName">Company Name:</label>
         <input type="text" id="companyName" placeholder="Enter Company Name" />
       </div>
       <div class="form-group">
         <label for="driverPhone">Driver Phone:</label>
         <input type="tel" id="driverPhone" placeholder="Enter Driver Phone" />
+      </div>
+      <div class="form-group">
+        <label for="dot">USDOT#:</label>
+        <input type="text" id="dot" placeholder="Enter USDOT#" />
       </div>
       <div class="form-group">
         <label for="startTime">Start Time:</label>
@@ -112,9 +107,9 @@
 
     <div class="right-side">
       <h2>Confirmation Details</h2>
-      <p id="confirmationDetails"></p>
-      <div id="qrCode"></div>
-      <div id="sendLinks" style="margin-top: 20px;"></div>
+      <div id="confirmationDetails"></div>
+      <div id="qrDisplay" class="qr-display"></div>
+      <div id="sendLinks"></div>
     </div>
   </div>
 
@@ -123,43 +118,38 @@
       const loadId = document.getElementById('loadId').value;
       const companyName = document.getElementById('companyName').value;
       const driverPhone = document.getElementById('driverPhone').value;
+      const dot = document.getElementById('dot').value;
       const startTime = document.getElementById('startTime').value;
       const expirationTime = document.getElementById('expirationTime').value;
 
-      const confirmationDetails = `
-        Load ID: ${loadId}<br>
-        Company Name: ${companyName}<br>
-        Driver Phone: ${driverPhone}<br>
-        Start Time: ${startTime}<br>
-        Expiration Time: ${expirationTime}
+      const verifyUrl = `https://www.quecabinc.com/verify.html?loadId=${encodeURIComponent(loadId)}&companyName=${encodeURIComponent(companyName)}&driverPhone=${encodeURIComponent(driverPhone)}&dot=${encodeURIComponent(dot)}`;
+
+      const confirmationHTML = `
+        <p><strong>Load ID:</strong> ${loadId}</p>
+        <p><strong>Company Name:</strong> ${companyName}</p>
+        <p><strong>Driver Phone:</strong> ${driverPhone}</p>
+        <p><strong>USDOT#:</strong> ${dot}</p>
+        <p><strong>Start Time:</strong> ${startTime}</p>
+        <p><strong>Expiration Time:</strong> ${expirationTime}</p>
       `;
-      document.getElementById('confirmationDetails').innerHTML = confirmationDetails;
+      document.getElementById('confirmationDetails').innerHTML = confirmationHTML;
 
-      generateQRCode(loadId, companyName, driverPhone);
-      generateSendLinks(loadId, companyName, driverPhone);
-    }
+      const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(verifyUrl)}&size=200x200`;
 
-    function generateQRCode(loadId, companyName, driverPhone) {
-      const dot = document.getElementById('dot').value;
-      const verifyUrl = `https://quecabinc.com/verify.html?loadId=${encodeURIComponent(loadId)}&companyName=${encodeURIComponent(companyName)}&driverPhone=${encodeURIComponent(driverPhone)}&dot=${encodeURIComponent(dot)}`;
-      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(verifyUrl)}&size=200x200`;
-
-      document.getElementById('qrCode').innerHTML = `
-        <div style="text-align: center;">
-          <div style="font-weight: bold;">${loadId} – ${companyName}</div>
-          <img src="${qrUrl}" alt="QR Code" style="margin: 10px 0;">
-          <div>${driverPhone} – USDOT# ${dot}</div>
+      document.getElementById('qrDisplay').innerHTML = `
+        <div class="qr-top">
+          <span>${loadId}</span>
+          <span>${companyName}</span>
+        </div>
+        <img src="${qrImageUrl}" alt="QR Code">
+        <div class="qr-bottom">
+          <span>${driverPhone}</span>
+          <span>USDOT# ${dot}</span>
         </div>
       `;
-    }
-
-    function generateSendLinks(loadId, companyName, driverPhone) {
-      const dot = document.getElementById('dot').value;
-      const verifyUrl = `https://quecabinc.com/verify.html?loadId=${encodeURIComponent(loadId)}&companyName=${encodeURIComponent(companyName)}&driverPhone=${encodeURIComponent(driverPhone)}&dot=${encodeURIComponent(dot)}`;
 
       const subject = `Truck/Driver Confirmation for Load #${loadId}`;
-      const body = `Click the link to verify:\n${verifyUrl}`;
-
+      const body = `Click to verify:\n${verifyUrl}`;
       const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
       const smsLink = `sms:?body=${encodeURIComponent(body)}`;
 
