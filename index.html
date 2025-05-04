@@ -1,49 +1,174 @@
-<script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Truck/Driver Confirmation Generator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f7fc;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .container {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 20px;
+      height: calc(100vh - 60px);
+      align-items: stretch;
+      overflow: hidden;
+    }
+
+    .left-side, .right-side {
+      width: 48%;
+      background-color: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    label {
+      font-weight: bold;
+    }
+
+    input[type="text"], input[type="date"], input[type="tel"], input[type="email"] {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    button {
+      background-color: #007bff;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    a.send-link {
+      display: inline-block;
+      margin-top: 10px;
+      background-color: #28a745;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 4px;
+      text-decoration: none;
+    }
+
+    a.send-link:hover {
+      background-color: #218838;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="left-side">
+      <h2>Truck/Driver Confirmation</h2>
+      <div class="form-group">
+        <label for="loadId">Load ID:</label>
+        <input type="text" id="loadId" placeholder="Enter Load ID" />
+      </div>
+      <div class="form-group">
+        <label for="usdot">USDOT#:</label>
+        <input type="text" id="dot" placeholder="Enter DOT#" />
+      </div>
+      <div class="form-group">
+        <label for="companyName">Company Name:</label>
+        <input type="text" id="companyName" placeholder="Enter Company Name" />
+      </div>
+      <div class="form-group">
+        <label for="driverPhone">Driver Phone:</label>
+        <input type="tel" id="driverPhone" placeholder="Enter Driver Phone" />
+      </div>
+      <div class="form-group">
+        <label for="startTime">Start Time:</label>
+        <input type="date" id="startTime" />
+      </div>
+      <div class="form-group">
+        <label for="expirationTime">Expiration Time:</label>
+        <input type="date" id="expirationTime" />
+      </div>
+      <button onclick="generateConfirmation()">Generate Confirmation</button>
+    </div>
+
+    <div class="right-side">
+      <h2>Confirmation Details</h2>
+      <p id="confirmationDetails"></p>
+      <div id="qrCode"></div>
+      <div id="sendLinks" style="margin-top: 20px;"></div>
+    </div>
+  </div>
+
+  <script>
     function generateConfirmation() {
-        const loadId = document.getElementById('loadId').value.trim();
-        const companyName = document.getElementById('companyName').value.trim();
-        const driverPhone = document.getElementById('driverPhone').value.trim();
-        const dot = document.getElementById('dot').value.trim();
-        const startTime = document.getElementById('startTime').value;
-        const expirationTime = document.getElementById('expirationTime').value;
+      const loadId = document.getElementById('loadId').value;
+      const companyName = document.getElementById('companyName').value;
+      const driverPhone = document.getElementById('driverPhone').value;
+      const startTime = document.getElementById('startTime').value;
+      const expirationTime = document.getElementById('expirationTime').value;
 
-        if (!loadId || !companyName || !driverPhone || !dot || !startTime || !expirationTime) {
-            alert("Please fill out all fields before generating the confirmation.");
-            return;
-        }
+      const confirmationDetails = `
+        Load ID: ${loadId}<br>
+        Company Name: ${companyName}<br>
+        Driver Phone: ${driverPhone}<br>
+        Start Time: ${startTime}<br>
+        Expiration Time: ${expirationTime}
+      `;
+      document.getElementById('confirmationDetails').innerHTML = confirmationDetails;
 
-        const confirmationDetails = `
-            <strong>Load ID:</strong> ${loadId}<br>
-            <strong>Company Name:</strong> ${companyName}<br>
-            <strong>Driver Phone:</strong> ${driverPhone}<br>
-            <strong>USDOT#:</strong> ${dot}<br>
-            <strong>Start Time:</strong> ${new Date(startTime).toLocaleString()}<br>
-            <strong>Expiration Time:</strong> ${new Date(expirationTime).toLocaleString()}
-        `;
-
-        document.getElementById('confirmationDetails').innerHTML = confirmationDetails;
-
-        generateQRCode(loadId, companyName, driverPhone, dot, startTime, expirationTime);
-        generateSendLinks(loadId, companyName, driverPhone, dot, startTime, expirationTime);
+      generateQRCode(loadId, companyName, driverPhone);
+      generateSendLinks(loadId, companyName, driverPhone);
     }
 
-    function generateQRCode(loadId, companyName, driverPhone, dot, startTime, expirationTime) {
-        const qrContent = `Load ID: ${loadId}\nCompany: ${companyName}\nPhone: ${driverPhone}\nUSDOT#: ${dot}\nStart: ${startTime}\nExpires: ${expirationTime}`;
-        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(qrContent)}&size=200x200`;
+    function generateQRCode(loadId, companyName, driverPhone) {
+      const dot = document.getElementById('dot').value;
+      const verifyUrl = `https://quecabinc.com/verify.html?loadId=${encodeURIComponent(loadId)}&companyName=${encodeURIComponent(companyName)}&driverPhone=${encodeURIComponent(driverPhone)}&dot=${encodeURIComponent(dot)}`;
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(verifyUrl)}&size=200x200`;
 
-        document.getElementById('qrCode').innerHTML = `<img src="${qrUrl}" alt="QR Code">`;
+      document.getElementById('qrCode').innerHTML = `
+        <div style="text-align: center;">
+          <div style="font-weight: bold;">${loadId} – ${companyName}</div>
+          <img src="${qrUrl}" alt="QR Code" style="margin: 10px 0;">
+          <div>${driverPhone} – USDOT# ${dot}</div>
+        </div>
+      `;
     }
 
-    function generateSendLinks(loadId, companyName, driverPhone, dot, startTime, expirationTime) {
-        const message = `Truck/Driver Confirmation\nLoad ID: ${loadId}\nCompany: ${companyName}\nPhone: ${driverPhone}\nUSDOT#: ${dot}\nStart: ${startTime}\nExpires: ${expirationTime}`;
-        const subject = `Truck/Driver Confirmation for Load ${loadId}`;
+    function generateSendLinks(loadId, companyName, driverPhone) {
+      const dot = document.getElementById('dot').value;
+      const verifyUrl = `https://quecabinc.com/verify.html?loadId=${encodeURIComponent(loadId)}&companyName=${encodeURIComponent(companyName)}&driverPhone=${encodeURIComponent(driverPhone)}&dot=${encodeURIComponent(dot)}`;
 
-        const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
-        const smsLink = `sms:?body=${encodeURIComponent(message)}`;
+      const subject = `Truck/Driver Confirmation for Load #${loadId}`;
+      const body = `Click the link to verify:\n${verifyUrl}`;
 
-        document.getElementById('sendLinks').innerHTML = `
-            <a href="${mailtoLink}" class="send-link">Send via Email</a>
-            <a href="${smsLink}" class="send-link">Send via Text</a>
-        `;
+      const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      const smsLink = `sms:?body=${encodeURIComponent(body)}`;
+
+      document.getElementById('sendLinks').innerHTML = `
+        <a href="${mailtoLink}" class="send-link">Send via Email</a>
+        <a href="${smsLink}" class="send-link">Send via Text</a>
+      `;
     }
-</script>
+  </script>
+</body>
+</html>
+
