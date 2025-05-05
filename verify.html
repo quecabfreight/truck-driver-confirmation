@@ -1,84 +1,75 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Verify Driver</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f7fc;
-            padding: 40px;
-            color: #333;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Driver Verification</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 30px;
+      background-color: #f4f7fc;
+    }
 
-        .container {
-            max-width: 600px;
-            margin: auto;
-            background: white;
-            border-radius: 8px;
-            padding: 30px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
+    .container {
+      background-color: white;
+      border-radius: 8px;
+      padding: 30px;
+      max-width: 600px;
+      margin: auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
 
-        h1 {
-            color: #003366;
-            text-align: center;
-        }
+    .top-row {
+      display: flex;
+      justify-content: space-between;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
 
-        .info {
-            margin-bottom: 20px;
-            line-height: 1.6;
-        }
+    .field {
+      margin-bottom: 15px;
+    }
 
-        .question {
-            background: #e6f0ff;
-            padding: 15px;
-            border-left: 5px solid #003366;
-            margin: 20px 0;
-            font-weight: bold;
-        }
+    .question {
+      margin-top: 20px;
+      font-weight: bold;
+    }
 
-        a.phone-link {
-            color: #007bff;
-            text-decoration: none;
-        }
+    a {
+      color: #007bff;
+      text-decoration: none;
+    }
 
-        a.phone-link:hover {
-            text-decoration: underline;
-        }
-    </style>
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Driver Verification</h1>
-        <div class="info" id="info"></div>
-        <div class="question">
-            1. Does the USDOT# match what's on the truck?
+  <div class="container" id="content"></div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const loadId = params.get('loadId');
+    const companyName = params.get('companyName');
+    const driverPhone = params.get('driverPhone');
+    const dot = params.get('dot');
+
+    if (loadId && companyName && driverPhone && dot) {
+      document.getElementById('content').innerHTML = `
+        <div class="top-row">
+          <div>Load ID: ${loadId}</div>
+          <div>Company Name: ${companyName}</div>
         </div>
-        <div class="question">
-            2. Did the driver answer the phone? 
-            <span id="callLink"></span>
-        </div>
-    </div>
-
-    <script>
-        const params = new URLSearchParams(window.location.search);
-        const loadId = params.get('loadId') || '';
-        const companyName = params.get('companyName') || '';
-        const driverPhone = params.get('driverPhone') || '';
-        const dot = params.get('dot') || '';
-
-        document.getElementById('info').innerHTML = `
-            <strong>Load ID:</strong> ${loadId}<br>
-            <strong>Company Name:</strong> ${companyName}<br>
-            <strong>Driver Phone:</strong> ${driverPhone}<br>
-            <strong>USDOT#:</strong> ${dot}
-        `;
-
-        document.getElementById('callLink').innerHTML = `
-            <a href="tel:${driverPhone}" class="phone-link">Call Driver</a>
-        `;
-    </script>
+        <div class="field"><strong>Driver Phone:</strong> <a href="tel:${driverPhone}">${driverPhone}</a></div>
+        <div class="field"><strong>USDOT#:</strong> ${dot}</div>
+        <div class="question">1. DOES THE USDOT# MATCH?</div>
+        <div class="question">2. DID THE DRIVER ANSWER THEIR PHONE?</div>
+      `;
+    } else {
+      document.getElementById('content').innerHTML = `<p>Missing or invalid confirmation data in the link.</p>`;
+    }
+  </script>
 </body>
 </html>
