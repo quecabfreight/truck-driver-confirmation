@@ -114,17 +114,16 @@
   </div>
 
   <script>
-    // Make this function async so we can await the TinyURL call
     async function generateConfirmation() {
-      // 1) Grab and trim all inputs
+      // 1) Gather & trim inputs
       const loadId      = document.getElementById('loadId').value.trim();
       const companyName = document.getElementById('companyName').value.trim();
       const driverPhone = document.getElementById('driverPhone').value.trim();
       const dot         = document.getElementById('dot').value.trim();
       const startTime   = document.getElementById('startTime').value.trim();
       const expiration  = document.getElementById('expirationTime').value.trim();
-
-      // 2) Block if any required field is empty
+  
+      // 2) Validate
       if (!loadId || !companyName || !driverPhone || !dot) {
         alert(
           "Please fill in all required fields:\n" +
@@ -135,16 +134,16 @@
         );
         return;
       }
-
-      // 3) Build the full verification URL
+  
+      // 3) Build full verify URL
       const fullUrl =
         "https://www.quecabinc.com/verify.html" +
         "?loadId="      + encodeURIComponent(loadId) +
         "&companyName=" + encodeURIComponent(companyName) +
         "&driverPhone=" + encodeURIComponent(driverPhone) +
         "&dot="         + encodeURIComponent(dot);
-
-      // 4) Render the confirmation details on the right panel
+  
+      // 4) Render confirmation and QR (unchanged)
       document.getElementById('confirmationDetails').innerHTML = `
         <p><strong>Load ID:</strong> ${loadId}</p>
         <p><strong>Company Name:</strong> ${companyName}</p>
@@ -153,13 +152,10 @@
         <p><strong>Start Time:</strong> ${startTime}</p>
         <p><strong>Expiration Time:</strong> ${expiration}</p>
       `;
-
-      // 5) Generate and display the QR code (still uses fullUrl)
       const qrImageUrl =
         "https://api.qrserver.com/v1/create-qr-code/" +
         "?data=" + encodeURIComponent(fullUrl) +
         "&size=200x200";
-
       document.getElementById('qrDisplay').innerHTML = `
         <div class="qr-top">
           <span>${loadId}</span>
@@ -171,37 +167,40 @@
           <span>USDOT# ${dot}</span>
         </div>
       `;
-
-      // 6) Prepare the Email link exactly as before
-      const subject = `Truck/Driver Confirmation for Load #${loadId}`;
+  
+      // 5) Email link stays with full URL
+      const subject   = `Truck/Driver Confirmation for Load #${loadId}`;
       const emailBody = `Click to verify:\n${fullUrl}`;
       const mailtoLink =
         `mailto:?subject=${encodeURIComponent(subject)}` +
         `&body=${encodeURIComponent(emailBody)}`;
-
-      // 7) SHORTEN the URL for SMS only
+  
+      // 6) SMS link – attempt to shorten via is.gd (supports CORS)
       let smsUrl = fullUrl;
       try {
         const resp = await fetch(
-          `https://tinyurl.com/api-create?url=${encodeURIComponent(fullUrl)}`
+          `https://is.gd/create.php?format=json&url=${encodeURIComponent(fullUrl)}`
         );
         if (resp.ok) {
-          const text = await resp.text();
-          if (text.startsWith("http")) smsUrl = text;
+          const data = await resp.json();
+          if (data.shorturl) smsUrl = data.shorturl;
         }
       } catch (e) {
-        console.warn("TinyURL failed — using full URL", e);
+        console.warn("is.gd failed, using full URL", e);
       }
+  
+      // 7) Build SMS URI correctly (no extra &)
       const smsBody = `Verify: ${smsUrl}`;
-      const smsLink = `sms:?&body=${encodeURIComponent(smsBody)}`;
-
-      // 8) Output the two buttons
+      const smsLink = `sms:?body=${encodeURIComponent(smsBody)}`;
+  
+      // 8) Output buttons
       document.getElementById('sendLinks').innerHTML = `
         <a href="${mailtoLink}" class="send-link">Send via Email</a>
         <a href="${smsLink}"   class="send-link">Send via Text</a>
       `;
     }
   </script>
+  
 
 </body>
 </html>
