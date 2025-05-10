@@ -7,40 +7,36 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      padding: 30px;
       background-color: #f4f7fc;
+      margin: 0;
+      padding: 30px;
     }
-
     .container {
       background-color: white;
       border-radius: 8px;
-      padding: 30px;
-      max-width: 600px;
+      padding: 40px;
+      max-width: 700px;
       margin: auto;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      font-size: 18px;
+      line-height: 1.4;
     }
-
     .top-row {
       display: flex;
       justify-content: space-between;
       font-weight: bold;
-      margin-bottom: 20px;
+      font-size: 24px;
+      margin-bottom: 30px;
     }
-
-    .field {
-      margin-bottom: 15px;
-    }
-
     .question {
       margin-top: 20px;
       font-weight: bold;
+      font-size: 20px;
     }
-
     a {
       color: #007bff;
       text-decoration: none;
     }
-
     a:hover {
       text-decoration: underline;
     }
@@ -50,11 +46,11 @@
   <div class="container" id="content"></div>
 
   <script>
-    const params = new URLSearchParams(window.location.search);
-    const loadId = params.get('loadId');
+    const params      = new URLSearchParams(window.location.search);
+    const loadId      = params.get('loadId');
     const companyName = params.get('companyName');
     const driverPhone = params.get('driverPhone');
-    const dot = params.get('dot');
+    const dot         = params.get('dot');
 
     if (loadId && companyName && driverPhone && dot) {
       document.getElementById('content').innerHTML = `
@@ -62,13 +58,19 @@
           <div>Load ID: ${loadId}</div>
           <div>Company Name: ${companyName}</div>
         </div>
-        <div class="field"><strong>Driver Phone:</strong> <a href="tel:${driverPhone}">${driverPhone}</a></div>
-        <div class="field"><strong>USDOT#:</strong> ${dot}</div>
-        <div class="question">1. DOES THE USDOT# MATCH?</div>
-        <div class="question">2. DID THE DRIVER ANSWER THEIR PHONE?</div>
+        <div class="question">
+          1. DOES THE USDOT# MATCH?  <strong>${dot}</strong>
+        </div>
+        <div class="question">
+          2. DID THE DRIVER ANSWER THEIR PHONE?  <a href="tel:${driverPhone}">${driverPhone}</a>
+        </div>
       `;
     } else {
-      document.getElementById('content').innerHTML = `<p>Missing or invalid confirmation data in the link.</p>`;
+      document.getElementById('content').innerHTML = `
+        <p style="font-size:18px;color:#a00;">
+          Missing or invalid confirmation data in the link.
+        </p>
+      `;
     }
   </script>
 </body>
