@@ -191,7 +191,8 @@
   
       // 7) Build SMS URI correctly (no extra &)
       const smsBody = `Verify: ${smsUrl}`;
-      const smsLink = `sms:?body=${encodeURIComponent(smsBody)}`;
+      const smsLink = `sms:${driverPhone}?body=${encodeURIComponent(smsBody)}`;
+
   
       // 8) Output buttons
       document.getElementById('sendLinks').innerHTML = `
