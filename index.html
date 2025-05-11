@@ -122,7 +122,7 @@
 
   <script>
     async function generateConfirmation() {
-      // Gather & trim inputs
+      // 1) Gather & trim inputs
       const loadId       = document.getElementById('loadId').value.trim();
       const companyName  = document.getElementById('companyName').value.trim();
       const driverPhone  = document.getElementById('driverPhone').value.trim();
@@ -131,15 +131,13 @@
       const startTime    = document.getElementById('startTime').value.trim();
       const expiration   = document.getElementById('expirationTime').value.trim();
 
-      // Validation
+      // 2) Basic validation
       if (!loadId || !companyName || !driverPhone || !dot) {
-        return alert(
-          "Please fill in all required fields:\n" +
-          "- Load ID\n- Company Name\n- Driver Phone\n- USDOT#"
-        );
+        alert("Please fill in all required fields:\n- Load ID\n- Company Name\n- Driver Phone\n- USDOT#");
+        return;
       }
 
-      // Full verify URL
+      // 3) Build the verify URL
       const fullUrl =
         "https://www.quecabinc.com/verify.html" +
         "?loadId="      + encodeURIComponent(loadId) +
@@ -147,7 +145,7 @@
         "&driverPhone=" + encodeURIComponent(driverPhone) +
         "&dot="         + encodeURIComponent(dot);
 
-      // Render details
+      // 4) Render confirmation details
       document.getElementById('confirmationDetails').innerHTML = `
         <p><strong>Load ID:</strong> ${loadId}</p>
         <p><strong>Company Name:</strong> ${companyName}</p>
@@ -157,7 +155,7 @@
         <p><strong>Expiration Time:</strong> ${expiration}</p>
       `;
 
-      // QR code
+      // 5) Generate & display QR code
       const qrImageUrl =
         "https://api.qrserver.com/v1/create-qr-code/" +
         `?data=${encodeURIComponent(fullUrl)}` +
@@ -174,35 +172,35 @@
         </div>
       `;
 
-      // Email link
+      // 6) Build email link
       const subject   = `Truck/Driver Confirmation #${loadId}`;
       const emailBody = `Click to verify:\n${fullUrl}`;
       const mailtoLink =
         `mailto:?subject=${encodeURIComponent(subject)}` +
         `&body=${encodeURIComponent(emailBody)}`;
 
-      // Shorten for SMS via is.gd
-      let smsUrl = fullUrl;
-      try {
-        const resp = await fetch(
-          `https://is.gd/create.php?format=json&url=${encodeURIComponent(fullUrl)}`
-        );
-        const data = await resp.json();
-        if (data.shorturl) smsUrl = data.shorturl;
-      } catch (e) {
-        console.warn("is.gd failed — using full URL", e);
-      }
-
-      // SMS link (to: either smsRecipient or driverPhone)
+      // 7) Build basic SMS link
       const toNumber = smsRecipient || driverPhone;
-      const smsBody  = `Verify: ${smsUrl}`;
-      const smsLink  = `sms:${toNumber}?body=${encodeURIComponent(smsBody)}`;
+      const smsText  = `Verify: ${fullUrl}`;
+      const smsLink  = `sms:${toNumber}?body=${encodeURIComponent(smsText)}`;
 
-      // Output buttons
+      // 8) Render the “Send via” buttons
       document.getElementById('sendLinks').innerHTML = `
         <a href="${mailtoLink}" class="send-link">Send via Email</a>
-        <a href="${smsLink}"   class="send-link">Send via Text</a>
+        <a href="${smsLink}"   class="send-link" id="textLink">Send via Text</a>
       `;
+
+      // 9) Fallback on desktop: copy SMS text instead of opening sms:
+      document.getElementById('textLink').addEventListener('click', e => {
+        // simple mobile detection
+        const isMobile = /Android|iPhone|iPad|iPod/.test(navigator.userAgent);
+        if (!isMobile) {
+          e.preventDefault();
+          navigator.clipboard.writeText(smsText)
+            .then(() => alert("Link copied! Paste it into your messaging app."))
+            .catch(() => alert("Here’s the link:\n" + smsText));
+        }
+      });
     }
   </script>
 </body>
