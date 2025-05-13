@@ -122,30 +122,32 @@
 
   <script>
     async function generateConfirmation() {
-      // 1) Gather & trim inputs
-      const loadId       = document.getElementById('loadId').value.trim();
-      const companyName  = document.getElementById('companyName').value.trim();
-      const driverPhone  = document.getElementById('driverPhone').value.trim();
-      const smsRecipient = document.getElementById('smsRecipient').value.trim();
-      const dot          = document.getElementById('dot').value.trim();
-      const startTime    = document.getElementById('startTime').value.trim();
-      const expiration   = document.getElementById('expirationTime').value.trim();
+      // 1) Grab & trim all inputs
+      const loadId      = document.getElementById('loadId').value.trim();
+      const companyName = document.getElementById('companyName').value.trim();
+      const driverPhone = document.getElementById('driverPhone').value.trim();
+      const smsRecipient= document.getElementById('smsRecipient').value.trim();
+      const dot         = document.getElementById('dot').value.trim();
+      const startTime   = document.getElementById('startTime').value.trim();
+      const expiration  = document.getElementById('expirationTime').value.trim();
 
-      // 2) Basic validation
+      // 2) Block if any required field is empty
       if (!loadId || !companyName || !driverPhone || !dot) {
-        alert("Please fill in all required fields:\n- Load ID\n- Company Name\n- Driver Phone\n- USDOT#");
-        return;
+        return alert(
+          "Please fill in all required fields:\n" +
+          "- Load ID\n- Company Name\n- Driver Phone\n- USDOT#"
+        );
       }
 
-      // 3) Build the verify URL
-      const fullUrl =
+      // 3) Build the full verify URL
+      const fullUrl = 
         "https://www.quecabinc.com/verify.html" +
         "?loadId="      + encodeURIComponent(loadId) +
         "&companyName=" + encodeURIComponent(companyName) +
         "&driverPhone=" + encodeURIComponent(driverPhone) +
         "&dot="         + encodeURIComponent(dot);
 
-      // 4) Render confirmation details
+      // 4) Render the confirmation details
       document.getElementById('confirmationDetails').innerHTML = `
         <p><strong>Load ID:</strong> ${loadId}</p>
         <p><strong>Company Name:</strong> ${companyName}</p>
@@ -155,8 +157,8 @@
         <p><strong>Expiration Time:</strong> ${expiration}</p>
       `;
 
-      // 5) Generate & display QR code
-      const qrImageUrl =
+      // 5) Generate & display the QR code
+      const qrUrl = 
         "https://api.qrserver.com/v1/create-qr-code/" +
         `?data=${encodeURIComponent(fullUrl)}` +
         "&size=200x200";
@@ -165,44 +167,44 @@
           <span>${loadId}</span>
           <span>${companyName}</span>
         </div>
-        <img src="${qrImageUrl}" alt="QR Code">
+        <img src="${qrUrl}" alt="QR Code">
         <div class="qr-bottom">
           <span>${smsRecipient || driverPhone}</span>
           <span>USDOT# ${dot}</span>
         </div>
       `;
 
-      // 6) Build email link
-      const subject   = `Truck/Driver Confirmation #${loadId}`;
-      const emailBody = `Click to verify:\n${fullUrl}`;
-      const mailtoLink =
-        `mailto:?subject=${encodeURIComponent(subject)}` +
-        `&body=${encodeURIComponent(emailBody)}`;
+      // 6) Build the mailto: link
+      const mailSubject = `Truck/Driver Confirmation #${loadId}`;
+      const mailBody    = `Click to verify:\n${fullUrl}`;
+      const mailtoLink  = 
+        `mailto:?subject=${encodeURIComponent(mailSubject)}` +
+        `&body=${encodeURIComponent(mailBody)}`;
 
-      // 7) Build basic SMS link
+      // 7) Build the SMS link (body = **only** the URL)
       const toNumber = smsRecipient || driverPhone;
-      const smsText  = `Verify: ${fullUrl}`;
-      const smsLink  = `sms:${toNumber}?body=${encodeURIComponent(smsText)}`;
+      const smsLink  = 
+        `sms:${toNumber}?body=${encodeURIComponent(fullUrl)}`;
 
-      // 8) Render the “Send via” buttons
+      // 8) Render the Send buttons
       document.getElementById('sendLinks').innerHTML = `
         <a href="${mailtoLink}" class="send-link">Send via Email</a>
         <a href="${smsLink}"   class="send-link" id="textLink">Send via Text</a>
       `;
 
-      // 9) Fallback on desktop: copy SMS text instead of opening sms:
-      document.getElementById('textLink').addEventListener('click', e => {
-        // simple mobile detection
-        const isMobile = /Android|iPhone|iPad|iPod/.test(navigator.userAgent);
-        if (!isMobile) {
+      // 9) On non-mobile, fall back to copying the URL instead of opening sms:
+      const textEl = document.getElementById('textLink');
+      textEl.addEventListener('click', e => {
+        if (!/Android|iPhone|iPad|iPod/.test(navigator.userAgent)) {
           e.preventDefault();
-          navigator.clipboard.writeText(smsText)
-            .then(() => alert("Link copied! Paste it into your messaging app."))
-            .catch(() => alert("Here’s the link:\n" + smsText));
+          navigator.clipboard.writeText(fullUrl)
+            .then(() => alert("Link copied! Paste into your SMS app."))
+            .catch(() => alert("Couldn’t copy link—here it is:\n" + fullUrl));
         }
       });
     }
   </script>
+
 </body>
 </html>
 
