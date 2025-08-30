@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Truck/Driver Confirmation Generator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f7fc;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      display: flex;
+      gap: 20px;
+    }
+    .left-side, .right-side {
+      width: 50%;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      font-weight: bold;
+    }
+    input[type="text"], input[type="date"], input[type="tel"] {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      background-color: #007bff;
+      color: #fff;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .send-link {
+      display: inline-block;
+      margin-top: 10px;
+      background-color: #28a745;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 4px;
+      text-decoration: none;
+    }
+    .qr-display {
+      text-align: center;
+      margin-top: 20px;
+    }
+    .qr-top, .qr-bottom {
+      display: flex;
+      justify-content: space-between;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <!-- Left-Side Form -->
+    <div class="left-side">
+      <h2>Truck/Driver Confirmation</h2>
+
+      <div class="form-group">
+        <label for="loadId">Load ID:</label>
+        <input type="text" id="loadId" placeholder="Enter Load ID" />
+      </div>
+
+      <div class="form-group">
+        <label for="companyName">Company Name:</label>
+        <input type="text" id="companyName" placeholder="Enter Company Name" />
+      </div>
+
+      <div class="form-group">
+        <label for="driverPhone">Driver Phone:</label>
+        <input type="tel" id="driverPhone" placeholder="Enter Driver Phone" />
+      </div>
+
+      <div class="form-group">
+        <label for="smsRecipient">Send Link To (Phone #):</label>
+        <input type="tel" id="smsRecipient" placeholder="Enter recipient phone number" />
+      </div>
+
+      <div class="form-group">
+        <label for="dot">USDOT#:</label>
+        <input type="text" id="dot" placeholder="Enter USDOT#" />
+      </div>
+
+      <div class="form-group">
+        <label for="startTime">Start Time:</label>
+        <input type="date" id="startTime" />
+      </div>
+
+      <div class="form-group">
+        <label for="expirationTime">Expiration Time:</label>
+        <input type="date" id="expirationTime" />
+      </div>
+
+      <button onclick="generateConfirmation()">Generate Confirmation</button>
+    </div>
+
+    <!-- Right-Side Output -->
+    <div class="right-side">
+      <h2>Confirmation Details</h2>
+      <div id="confirmationDetails"></div>
+      <div id="qrDisplay" class="qr-display"></div>
+      <div id="sendLinks"></div>
+    </div>
+
+  </div>
+
+  <script>
+    async function generateConfirmation() {
+      // 1) Grab & trim all inputs
+      const loadId      = document.getElementById('loadId').value.trim();
+      const companyName = document.getElementById('companyName').value.trim();
+      const driverPhone = document.getElementById('driverPhone').value.trim();
+      const smsRecipient= document.getElementById('smsRecipient').value.trim();
+      const dot         = document.getElementById('dot').value.trim();
+      const startTime   = document.getElementById('startTime').value.trim();
+      const expiration  = document.getElementById('expirationTime').value.trim();
+
+      // 2) Block if any required field is empty
+      if (!loadId || !companyName || !driverPhone || !dot) {
+        return alert(
+          "Please fill in all required fields:\n" +
+          "- Load ID\n- Company Name\n- Driver Phone\n- USDOT#"
+        );
+      }
+
+      // 3) Build the full verify URL
+      const fullUrl = 
+        "https://www.quecabinc.com/verify.html" +
+        "?loadId="      + encodeURIComponent(loadId) +
+        "&companyName=" + encodeURIComponent(companyName) +
+        "&driverPhone=" + encodeURIComponent(driverPhone) +
+        "&dot="         + encodeURIComponent(dot);
+
+      // 4) Render the confirmation details
+      document.getElementById('confirmationDetails').innerHTML = `
+        <p><strong>Load ID:</strong> ${loadId}</p>
+        <p><strong>Company Name:</strong> ${companyName}</p>
+        <p><strong>Driver Phone:</strong> ${driverPhone}</p>
+        <p><strong>USDOT#:</strong> ${dot}</p>
+        <p><strong>Start Time:</strong> ${startTime}</p>
+        <p><strong>Expiration Time:</strong> ${expiration}</p>
+      `;
+
+      // 5) Generate & display the QR code
+      const qrUrl = 
+        "https://api.qrserver.com/v1/create-qr-code/" +
+        `?data=${encodeURIComponent(fullUrl)}` +
+        "&size=200x200";
+      document.getElementById('qrDisplay').innerHTML = `
+        <div class="qr-top">
+          <span>${loadId}</span>
+          <span>${companyName}</span>
+        </div>
+        <img src="${qrUrl}" alt="QR Code">
+        <div class="qr-bottom">
+          <span>${smsRecipient || driverPhone}</span>
+          <span>USDOT# ${dot}</span>
+        </div>
+      `;
+
+      // 6) Build the mailto: link
+      const mailSubject = `Truck/Driver Confirmation #${loadId}`;
+      const mailBody    = `Click to verify:\n${fullUrl}`;
+      const mailtoLink  = 
+        `mailto:?subject=${encodeURIComponent(mailSubject)}` +
+        `&body=${encodeURIComponent(mailBody)}`;
+
+      // 7) Build the SMS link (body = **only** the URL)
+      const toNumber = smsRecipient || driverPhone;
+      const smsLink  = 
+        `sms:${toNumber}?body=${encodeURIComponent(fullUrl)}`;
+
+      // 8) Render the Send buttons
+      document.getElementById('sendLinks').innerHTML = `
+        <a href="${mailtoLink}" class="send-link">Send via Email</a>
+        <a href="${smsLink}"   class="send-link" id="textLink">Send via Text</a>
+      `;
+
+      // 9) On non-mobile, fall back to copying the URL instead of opening sms:
+      const textEl = document.getElementById('textLink');
+      textEl.addEventListener('click', e => {
+        if (!/Android|iPhone|iPad|iPod/.test(navigator.userAgent)) {
+          e.preventDefault();
+          navigator.clipboard.writeText(fullUrl)
+            .then(() => alert("Link copied! Paste into your SMS app."))
+            .catch(() => alert("Couldn’t copy link—here it is:\n" + fullUrl));
+        }
+      });
+    }
+  </script>
+
+</body>
+</html>
+
