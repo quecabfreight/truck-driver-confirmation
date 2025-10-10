@@ -1,0 +1,87 @@
+// Project: QueCab AdbS
+// Platform: Mobile-first (Android, iOS, Web/Desktop/Tablet Compatible)
+
+// FOLDER STRUCTURE (Initial Wireframe Skeleton)
+
+/src
+  /assets
+    - logo.png
+    - alertSound.mp3
+    - redFlash.css
+
+  /components
+    - Header.js
+    - Footer.js
+    - LoginForm.js
+    - VerificationForm.js
+    - QRGenerator.js
+    - DOTLookup.js
+    - AlertDisplay.js
+
+  /pages
+    - Login.js
+    - Dashboard.js
+    - VerifyDriver.js
+    - Settings.js
+    - NotFound.js
+
+  /utils
+    - auth.js
+    - api.js
+    - validators.js
+
+  /styles
+    - global.css
+    - layout.css
+    - alerts.css
+
+  /hooks
+    - useAuth.js
+    - useForm.js
+
+  /context
+    - AuthContext.js
+    - AlertContext.js
+
+  App.js
+  index.js
+  routes.js
+  firebase-config.js
+
+
+// AUTHENTICATION NOTE:
+// Only brokers or shippers will be able to log in using broker-specific credentials:
+//    - DOT# + MC# + Verification PIN
+// This will be validated against a secure backend database or identity service.
+
+// FIRST FEATURE FLOW: DRIVER VERIFICATION (REPLACES QR)
+// - Broker/shipper logs in.
+// - Enters Load Info & Carrier Details.
+// - System sends a Smart Verification Link to the Driver’s phone.
+// - When driver opens link:
+//    - System captures location + device
+//    - Auto-pulls DOT# from background API
+//    - Displays USDOT# prominently
+//    - Shows 2 buttons: "USDOT# matches?" and "Did driver answer phone?"
+//    - Based on YES/NO selections:
+//        - If both YES = CLEAR TO LOAD
+//        - Else = CAUTION ALERT (red background + subtle original sound)
+//    - Phone number is clickable to call driver.
+
+// Deployment Targets:
+// - Vercel for web
+// - Firebase Auth for login
+// - Expo (React Native) for Android/iOS builds
+
+// Placeholder backend: Firebase or Node + Express with secure endpoints
+
+// NEXT STEPS:
+// 1. Build Login screen and user restriction system
+// 2. Build first VerifyDriver screen and logic
+// 3. Replace QR code with Smart Verification Link via text
+// 4. Add Alert Effects (sound + red flash) uniquely branded to QueCab AdbS
+
+// Lead dev: ChatGPT
+// Vision: Q (Rob Johnson)
+
+// All code going forward will be built and updated from this foundation.

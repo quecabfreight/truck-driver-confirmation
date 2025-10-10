@@ -1,33 +1,18 @@
-<<<<<<< HEAD
 {
-  "name": "truck-driver-confirmation",
+  "name": "quecab-adbs-app",
   "version": "1.0.0",
-  "description": "QueCab AdbS: Truck/Driver Confirmation System",
-  "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "nodemailer": "^6.9.4",
-    "body-parser": "^1.20.2",
-    "dotenv": "^16.3.1"
-  }
-}
-=======
-{
-  "name": "truck-driver-confirmation",
-  "version": "1.0.0",
-  "description": "QueCab AdbS: Truck/Driver Confirmation System",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js"
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.22.3"
   },
-  "dependencies": {
-    "express": "^4.18.2",
-    "nodemailer": "^6.9.4",
-    "body-parser": "^1.20.2",
-    "dotenv": "^16.3.1"
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.2.0",
+    "vite": "^5.0.0"
   }
 }
->>>>>>> d8ccd00bb5a366ee0cdbd287c0211e97e8158d48

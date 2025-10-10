@@ -1,0 +1,30 @@
+.verify-wrap {
+  padding: 16px;
+}
+
+.primary {
+  appearance: none;
+  border: none;
+  background: #2563eb;
+  color: white;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.primary:hover { background: #1d4ed8; }
+
+/* Red flash overlay */
+.flash-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: rgba(255, 0, 0, 0.55);
+  animation: flash-fade 450ms ease-out forwards;
+  z-index: 9999;
+}
+
+@keyframes flash-fade {
+  0%   { opacity: 0.9; }
+  100% { opacity: 0; }
+}

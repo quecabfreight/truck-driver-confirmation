@@ -1,0 +1,55 @@
+/* Layout / typography */
+.confirm-wrap {
+  max-width: 780px;
+  margin: 24px auto;
+  padding: 16px;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+}
+h1 { margin: 0 0 12px; font-size: 22px; }
+.meta { margin: 8px 0 16px; }
+.meta b { display: inline-block; width: 120px; }
+.q { margin: 14px 0 8px; font-weight: 600; }
+.submit-row { margin-top: 16px; }
+.token {
+  word-break: break-all;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+  color: #555;
+}
+
+/* Yes/No row + buttons (matches the class names in your screenshot) */
+.yn-row { display: flex; gap: 10px; }
+
+.yn-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid #cfcfcf;
+  background: #f8f8f8;
+  cursor: pointer;
+}
+.yn-btn:hover { filter: brightness(0.97); }
+.yn-btn:focus { outline: 2px solid #7aa7ff; outline-offset: 2px; }
+
+/* Active states */
+.yn-btn.yes.active {
+  background: #e8f5e9;
+  border-color: #2e7d32;
+  color: #2e7d32;
+  font-weight: 600;
+}
+.yn-btn.no.active {
+  background: #fdeaea;
+  border-color: #cc4b37;
+  color: #cc4b37;
+  font-weight: 600;
+}
+
+/* Submit */
+.submit-row button {
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: 0;
+  background: #111827;
+  color: #fff;
+  cursor: pointer;
+}
