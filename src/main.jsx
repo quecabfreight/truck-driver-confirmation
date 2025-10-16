@@ -5,8 +5,8 @@ import App from "./App.jsx";
 
 createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <BrowserRouter basename="/">
-      <App />
-    </BrowserRouter>
+    {/* Use self-closing with children to avoid any tag-mismatch weirdness */}
+    <BrowserRouter basename="/" children={<App />} />
   </React.StrictMode>
 );
+
