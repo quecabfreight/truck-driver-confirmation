@@ -5,7 +5,7 @@ export default function Login() {
 
   function handleSubmit(e) {
     e.preventDefault();
-    // TODO: replace with real auth; for now go to verify page
+    // temporary: just go to /verify so we can test the flow
     navigate("/verify");
   }
 
