@@ -1,24 +1,26 @@
-import React from "react";
-import "./login.css";
-
-const Login = () => {
+export default function Login() {
   return (
-    <div className="login-container">
-      <div className="login-box">
-        <img
-          src="/logo.png"
-          alt="QueCab AdbS Logo"
-          className="logo"
-        />
-        <h1 className="login-title">QueCab AdbS Login</h1>
-        <form className="login-form">
-          <input type="text" placeholder="Broker or Shipper ID" required />
-          <input type="password" placeholder="Password" required />
-          <button type="submit">Log In</button>
+    <div style={{minHeight:"100vh", display:"grid", placeItems:"center", fontFamily:"system-ui, sans-serif", background:"#f7f7f8"}}>
+      <div style={{width:"100%", maxWidth:440, padding:24, borderRadius:16, background:"#fff", boxShadow:"0 10px 30px rgba(0,0,0,.08)"}}>
+        <div style={{textAlign:"center", marginBottom:16}}>
+          <h1 style={{margin:0, fontSize:28, letterSpacing:.3}}>QueCab AdbS</h1>
+          <p style={{margin:"6px 0 0 0", opacity:.7}}>Broker/Shipper Login</p>
+        </div>
+        <form onSubmit={(e)=>{e.preventDefault(); alert("TODO: wire auth");}}>
+          <label style={{display:"block", marginBottom:12}}>
+            <span>Email</span>
+            <input type="email" required style={{width:"100%", marginTop:6, padding:10, borderRadius:10, border:"1px solid #ddd"}}/>
+          </label>
+          <label style={{display:"block", marginBottom:16}}>
+            <span>Password</span>
+            <input type="password" required style={{width:"100%", marginTop:6, padding:10, borderRadius:10, border:"1px solid #ddd"}}/>
+          </label>
+          <button type="submit" style={{width:"100%", padding:12, border:"0", borderRadius:12, fontWeight:600, cursor:"pointer"}}>
+            Sign in
+          </button>
         </form>
       </div>
     </div>
   );
-};
+}
 
-export default Login;
