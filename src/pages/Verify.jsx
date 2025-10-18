@@ -1,33 +1,66 @@
-import { useState } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 
 export default function Verify() {
-  // --- read params from the URL: ?usdot=1234567&phone=5855551212 ---
+  // Params like ?usdot=1234567&phone=5855551212
   const { search } = useLocation();
   const params = new URLSearchParams(search);
   const usdotExpected = (params.get("usdot") || "1234567").trim();
   const phoneRaw = (params.get("phone") || "").trim();
-  const phone = phoneRaw.replace(/[^\d+]/g, ""); // keep digits and leading + only
+  const phone = phoneRaw.replace(/[^\d+]/g, "");
 
-  // --- form state ---
+  // Form state
   const [usdotOnTruck, setUsdotOnTruck] = useState("");
   const [truckMatches, setTruckMatches] = useState(false);
   const [answeredPhone, setAnsweredPhone] = useState(false);
   const [result, setResult] = useState(null); // "clear" | "caution" | null
 
-  // --- staff-only unlock for phone link ---
+  // Staff-only unlock for phone link
   const [staffUnlocked, setStaffUnlocked] = useState(false);
   const [pin, setPin] = useState("");
 
+  // --- Live match logic (no submit needed) ---
+  const typed = useMemo(() => usdotOnTruck.trim(), [usdotOnTruck]);
+  const hasTyped = typed.length > 0;
+  const isMatch = hasTyped && typed === usdotExpected;
+
+  // auto-sync the checkbox with live match (can still be toggled manually)
+  useEffect(() => {
+    setTruckMatches(isMatch);
+  }, [isMatch]);
+
+  // green flash when we FIRST reach a correct match
+  const inputRef = useRef(null);
+  const prevMatch = useRef(false);
+  useEffect(() => {
+    if (!prevMatch.current && isMatch && inputRef.current) {
+      inputRef.current.classList.remove("okFlash");
+      // force reflow to restart animation
+      // eslint-disable-next-line no-unused-expressions
+      inputRef.current.offsetWidth;
+      inputRef.current.classList.add("okFlash");
+      try {
+        // soft positive chirp
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = "sine"; o.frequency.value = 880;
+        o.connect(g); g.connect(ctx.destination);
+        g.gain.setValueAtTime(0.001, ctx.currentTime);
+        g.gain.linearRampToValueAtTime(0.035, ctx.currentTime + 0.02);
+        o.start(); o.stop(ctx.currentTime + 0.12);
+      } catch {}
+    }
+    prevMatch.current = isMatch;
+  }, [isMatch]);
+
   function handleStaffUnlock(e) {
     e.preventDefault();
-    // simple placeholder PIN; we’ll replace with real auth later
     if (pin === "2468") {
       setStaffUnlocked(true);
       setPin("");
     } else {
       setStaffUnlocked(false);
-      // tiny neutral beep on wrong PIN (optional)
       try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
         const o = ctx.createOscillator();
@@ -43,19 +76,12 @@ export default function Verify() {
 
   function submitCheck(e) {
     e.preventDefault();
-    const matches = usdotOnTruck.trim() === usdotExpected;
-    setTruckMatches(matches);
-
-    if (matches && answeredPhone) {
+    if (isMatch && answeredPhone) {
       setResult("clear");
     } else {
       setResult("caution");
-      // subtle attention flash
       const el = document.getElementById("caution-banner");
-      if (el) {
-        el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash");
-      }
-      // neutral short tone
+      if (el) { el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash"); }
       try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
         const o = ctx.createOscillator();
@@ -69,10 +95,17 @@ export default function Verify() {
     }
   }
 
-  // --- styles ---
+  // styles
   const card = { maxWidth: 860, margin: "40px auto", padding: 24, borderRadius: 16, background: "#fff", boxShadow: "0 10px 30px rgba(0,0,0,.08)", fontFamily: "system-ui, sans-serif" };
   const label = { display: "block", marginBottom: 14 };
-  const input = { width: "100%", marginTop: 6, padding: 12, borderRadius: 10, border: "1px solid #ddd", fontSize: 18 };
+  const inputBase = { width: "100%", marginTop: 6, padding: 12, borderRadius: 10, border: "1px solid #ddd", fontSize: 18, outline: "none" };
+
+  // dynamic border color based on live status
+  const inputStyle = {
+    ...inputBase,
+    border: isMatch ? "2px solid #2E7D32" : hasTyped ? "2px solid #C62828" : inputBase.border,
+    boxShadow: isMatch ? "0 0 0 4px rgba(46,125,50,.12)" : hasTyped ? "0 0 0 4px rgba(198,40,40,.08)" : "none"
+  };
 
   return (
     <div style={{ minHeight: "100vh", background: "#f7f7f8", padding: 24 }}>
@@ -114,14 +147,32 @@ export default function Verify() {
         <form onSubmit={submitCheck}>
           <label style={label}>
             <span style={{ fontWeight: 700 }}>Enter USDOT# seen on truck</span>
-            <input
-              style={input}
-              value={usdotOnTruck}
-              onChange={(e) => setUsdotOnTruck(e.target.value)}
-              inputMode="numeric"
-              placeholder="Type the USDOT number on the truck"
-              required
-            />
+            <div style={{ position: "relative" }}>
+              <input
+                ref={inputRef}
+                style={inputStyle}
+                value={usdotOnTruck}
+                onChange={(e) => setUsdotOnTruck(e.target.value)}
+                inputMode="numeric"
+                placeholder="Type the USDOT number on the truck"
+                required
+              />
+              {/* status glyph */}
+              {hasTyped && (
+                <span
+                  aria-hidden
+                  style={{
+                    position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
+                    fontSize: 22, fontWeight: 900,
+                    color: isMatch ? "#2E7D32" : "#C62828",
+                    userSelect: "none"
+                  }}
+                  title={isMatch ? "Matches" : "Does not match"}
+                >
+                  {isMatch ? "✓" : "✕"}
+                </span>
+              )}
+            </div>
           </label>
 
           <div style={{ display: "grid", gap: 12 }}>
@@ -152,7 +203,7 @@ export default function Verify() {
           </div>
         )}
 
-        {/* staff-only phone link (hidden until unlocked) */}
+        {/* staff-only phone link */}
         {phone && staffUnlocked && (
           <div style={{ marginTop: 14 }}>
             <a href={`tel:${phone}`} style={{ fontWeight: 800, textDecoration: "none" }}>
@@ -165,6 +216,12 @@ export default function Verify() {
       <style>{`
         .flash { animation: qcFlash 0.8s ease-in-out 0s 2 alternate; }
         @keyframes qcFlash { 0%{filter:brightness(1)} 50%{filter:brightness(1.35)} 100%{filter:brightness(1)} }
+        .okFlash { animation: okPulse .5s ease-out 0s 1; }
+        @keyframes okPulse {
+          0% { box-shadow: 0 0 0 0 rgba(46,125,50,.0); }
+          50% { box-shadow: 0 0 0 8px rgba(46,125,50,.18); }
+          100% { box-shadow: 0 0 0 0 rgba(46,125,50,.0); }
+        }
       `}</style>
     </div>
   );
