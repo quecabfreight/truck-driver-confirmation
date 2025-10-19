@@ -7,7 +7,7 @@ export default function Verify() {
   const [params] = useSearchParams();
   const nav = useNavigate();
 
-  // Accept both ?dot= and ?usdot= (either will work)
+  // Accept both ?dot= and ?usdot=
   const dot = params.get("dot") || params.get("usdot") || "";
   const driver = params.get("driver") || "";
   const phoneRaw = params.get("phone") || "";
@@ -18,27 +18,23 @@ export default function Verify() {
 
   const [matchDot, setMatchDot] = useState(null);
   const [answered, setAnswered] = useState(null);
-
   const [verdict, setVerdict] = useState(null);
   const [flash, setFlash] = useState(false);
 
   const audioRef = useRef(null);
   useEffect(() => {
-    if (!verdict) return;
-    if (verdict === "caution") {
-      setFlash(true);
-      try { audioRef.current?.play?.(); } catch {}
-      const t = setTimeout(() => setFlash(false), 1600);
-      return () => clearTimeout(t);
-    }
+    if (verdict !== "caution") return;
+    setFlash(true);
+    try { audioRef.current?.play?.(); } catch {}
+    const t = setTimeout(() => setFlash(false), 1600);
+    return () => clearTimeout(t);
   }, [verdict]);
 
-  const role = localStorage.getItem("qc_role");
+  const role = typeof window !== "undefined" ? localStorage.getItem("qc_role") : null;
 
   function handleSubmit(e) {
     e.preventDefault();
-    if (matchDot && answered) setVerdict("clear");
-    else setVerdict("caution");
+    setVerdict(matchDot && answered ? "clear" : "caution");
   }
 
   function requireLoginIfNoRole() {
@@ -73,21 +69,14 @@ export default function Verify() {
             <span className="muted">Driver:</span>
             <strong>{driver || "—"}</strong>
           </div>
-
           <div className="driver-line">
             <span className="muted">Phone:</span>
             {role === "checker" ? (
               phone ? (
                 <a className="tel-link" href={`tel:${phone.replace(/[^0-9]/g, "")}`}>{phone}</a>
-              ) : (
-                <span>—</span>
-              )
+              ) : <span>—</span>
             ) : (
-              <button
-                className="tel-locked"
-                onClick={requireLoginIfNoRole}
-                title="Authorized personnel only"
-              >
+              <button className="tel-locked" onClick={requireLoginIfNoRole} title="Authorized personnel only">
                 {phone || "—"} <span className="lock">🔒</span>
               </button>
             )}
@@ -115,16 +104,8 @@ function CheckRow({ label, value, setValue }) {
     <div className="check-row">
       <div className="label">{label}</div>
       <div className="yn">
-        <button
-          type="button"
-          className={`yn-btn ${value === true ? "on" : ""}`}
-          onClick={() => setValue(true)}
-        >Y</button>
-        <button
-          type="button"
-          className={`yn-btn ${value === false ? "on" : ""}`}
-          onClick={() => setValue(false)}
-        >N</button>
+        <button type="button" className={`yn-btn ${value === true ? "on" : ""}`} onClick={() => setValue(true)}>Y</button>
+        <button type="button" className={`yn-btn ${value === false ? "on" : ""}`} onClick={() => setValue(false)}>N</button>
       </div>
     </div>
   );
