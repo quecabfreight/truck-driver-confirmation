@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 export default function Login() {
   const nav = useNavigate();
@@ -7,8 +7,6 @@ export default function Login() {
 
   function handleLogin(e) {
     e.preventDefault();
-    // Minimal local role gate:
-    // In production, replace with your real auth (Firebase/Email link, etc.)
     if (code.trim().length >= 6) {
       localStorage.setItem("qc_role", "checker");
       nav("/verify");
@@ -29,9 +27,14 @@ export default function Login() {
           placeholder="Enter code from your admin"
         />
         <button className="w-full rounded-xl py-2 bg-black text-white hover:opacity-90">Sign In</button>
-        <p className="text-xs text-neutral-500 mt-3">This locally enables the phone link on the verify screen for authorized personnel only.</p>
+        <p className="text-xs text-neutral-500 mt-3">
+          This locally enables the phone link on the verify screen for authorized personnel only.
+        </p>
+
+        <div className="mt-4 text-center">
+          <Link to="/join" className="text-blue-700 underline">Join QueCab AdbS</Link>
+        </div>
       </form>
     </div>
   );
 }
-
