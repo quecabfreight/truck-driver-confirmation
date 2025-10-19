@@ -1,12 +1,10 @@
 import React from "react";
-import { createRoot } from "react-dom/client";
-import { BrowserRouter } from "react-router-dom";
+import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
+import "./pages/verify.css";
 
-createRoot(document.getElementById("root")).render(
+ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    {/* Use self-closing with children to avoid any tag-mismatch weirdness */}
-    <BrowserRouter basename="/" children={<App />} />
+    <App />
   </React.StrictMode>
 );
-
