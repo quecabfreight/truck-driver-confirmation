@@ -1,14 +1,17 @@
-import { Routes, Route, Navigate } from "react-router-dom";
-import Login from "./pages/Login.jsx";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Verify from "./pages/Verify.jsx";
+import Login from "./pages/Login.jsx";
 
 export default function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Login />} />
-      <Route path="/verify" element={<Verify />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Navigate to="/verify" replace />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/verify" element={<Verify />} />
+        <Route path="*" element={<div style={{padding: 24}}>Not Found</div>} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
