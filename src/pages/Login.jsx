@@ -1,36 +1,36 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function Login() {
-  const navigate = useNavigate();
+  const nav = useNavigate();
+  const [code, setCode] = useState("");
 
-  function handleSubmit(e) {
+  function handleLogin(e) {
     e.preventDefault();
-    // temporary: just go to /verify so we can test the flow
-    navigate("/verify");
+    // Minimal local role gate:
+    // In production, replace with your real auth (Firebase/Email link, etc.)
+    if (code.trim().length >= 6) {
+      localStorage.setItem("qc_role", "checker");
+      nav("/verify");
+    } else {
+      alert("Enter your 6+ char access code.");
+    }
   }
 
   return (
-    <div style={{minHeight:"100vh", display:"grid", placeItems:"center", fontFamily:"system-ui, sans-serif", background:"#f7f7f8"}}>
-      <div style={{width:"100%", maxWidth:440, padding:24, borderRadius:16, background:"#fff", boxShadow:"0 10px 30px rgba(0,0,0,.08)"}}>
-        <div style={{textAlign:"center", marginBottom:16}}>
-          <h1 style={{margin:0, fontSize:28, letterSpacing:.3}}>QueCab AdbS</h1>
-          <p style={{margin:"6px 0 0 0", opacity:.7}}>Broker/Shipper Login</p>
-        </div>
-
-        <form onSubmit={handleSubmit}>
-          <label style={{display:"block", marginBottom:12}}>
-            <span>Email</span>
-            <input type="email" required style={{width:"100%", marginTop:6, padding:10, borderRadius:10, border:"1px solid #ddd"}}/>
-          </label>
-          <label style={{display:"block", marginBottom:16}}>
-            <span>Password</span>
-            <input type="password" required style={{width:"100%", marginTop:6, padding:10, borderRadius:10, border:"1px solid #ddd"}}/>
-          </label>
-          <button type="submit" style={{width:"100%", padding:12, border:"0", borderRadius:12, fontWeight:600, cursor:"pointer"}}>
-            Sign in
-          </button>
-        </form>
-      </div>
+    <div className="min-h-screen grid place-items-center bg-neutral-100">
+      <form onSubmit={handleLogin} className="w-full max-w-sm bg-white p-6 rounded-2xl shadow">
+        <h1 className="text-xl font-semibold mb-4">QueCab AdbS — Check-In Login</h1>
+        <label className="block text-sm mb-2">Access Code</label>
+        <input
+          value={code}
+          onChange={(e)=>setCode(e.target.value)}
+          className="w-full border rounded-lg px-3 py-2 mb-4 outline-none focus:ring"
+          placeholder="Enter code from your admin"
+        />
+        <button className="w-full rounded-xl py-2 bg-black text-white hover:opacity-90">Sign In</button>
+        <p className="text-xs text-neutral-500 mt-3">This locally enables the phone link on the verify screen for authorized personnel only.</p>
+      </form>
     </div>
   );
 }
