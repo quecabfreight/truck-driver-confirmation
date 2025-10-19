@@ -70,3 +70,6 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui, -app
   from{box-shadow:0 0 0 0 rgba(225,29,45,.0)}
   to{box-shadow:0 0 0 12px rgba(225,29,45,.28)}
 }
+.verify-footer-link{margin-top:14px;display:flex;justify-content:flex-end}
+.footer-cta{color:#c5d5ff;text-decoration:underline}
+.footer-cta:hover{opacity:.9}
