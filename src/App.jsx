@@ -12,7 +12,7 @@ export default function App() {
         <Route path="/verify" element={<Verify />} />
         <Route path="/join" element={<Register />} />
         <Route path="/register" element={<Register />} />
-        <Route path="*" element={<div style={{padding: 24}}>Not Found</div>} />
+        <Route path="*" element={<div style={{ padding: 24 }}>Not Found</div>} />
       </Routes>
     </BrowserRouter>
   );
