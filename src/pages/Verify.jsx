@@ -7,13 +7,14 @@ export default function Verify() {
   const [params] = useSearchParams();
   const nav = useNavigate();
 
-  const dot = params.get("dot") || "";
+  // Accept both ?dot= and ?usdot= (either will work)
+  const dot = params.get("dot") || params.get("usdot") || "";
   const driver = params.get("driver") || "";
   const phoneRaw = params.get("phone") || "";
   const carrier = params.get("carrier") || "";
   const loadId = params.get("load") || "";
 
-  const phone = useMemo(()=>formatPhone(phoneRaw), [phoneRaw]);
+  const phone = useMemo(() => formatPhone(phoneRaw), [phoneRaw]);
 
   const [matchDot, setMatchDot] = useState(null);
   const [answered, setAnswered] = useState(null);
@@ -47,7 +48,10 @@ export default function Verify() {
   return (
     <div className={`verify-wrap ${verdict === "caution" && flash ? "flash" : ""}`}>
       <audio ref={audioRef} preload="auto">
-        <source src="data:audio/wav;base64,UklGRhIAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABYAAAABAAACaWQAAACAAAAAgP///wAAAP///wAAAP///wAAAP///wAA" type="audio/wav" />
+        <source
+          src="data:audio/wav;base64,UklGRhIAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABYAAAABAAACaWQAAACAAAAAgP///wAAAP///wAAAP///wAAAP///wAA"
+          type="audio/wav"
+        />
       </audio>
 
       <header className="verify-header">
@@ -73,9 +77,17 @@ export default function Verify() {
           <div className="driver-line">
             <span className="muted">Phone:</span>
             {role === "checker" ? (
-              phone ? <a className="tel-link" href={`tel:${phone.replace(/[^0-9]/g,"")}`}>{phone}</a> : <span>—</span>
+              phone ? (
+                <a className="tel-link" href={`tel:${phone.replace(/[^0-9]/g, "")}`}>{phone}</a>
+              ) : (
+                <span>—</span>
+              )
             ) : (
-              <button className="tel-locked" onClick={requireLoginIfNoRole} title="Authorized personnel only">
+              <button
+                className="tel-locked"
+                onClick={requireLoginIfNoRole}
+                title="Authorized personnel only"
+              >
                 {phone || "—"} <span className="lock">🔒</span>
               </button>
             )}
@@ -103,8 +115,16 @@ function CheckRow({ label, value, setValue }) {
     <div className="check-row">
       <div className="label">{label}</div>
       <div className="yn">
-        <button type="button" className={`yn-btn ${value === true ? "on" : ""}`} onClick={() => setValue(true)}>Y</button>
-        <button type="button" className={`yn-btn ${value === false ? "on" : ""}`} onClick={() => setValue(false)}>N</button>
+        <button
+          type="button"
+          className={`yn-btn ${value === true ? "on" : ""}`}
+          onClick={() => setValue(true)}
+        >Y</button>
+        <button
+          type="button"
+          className={`yn-btn ${value === false ? "on" : ""}`}
+          onClick={() => setValue(false)}
+        >N</button>
       </div>
     </div>
   );
