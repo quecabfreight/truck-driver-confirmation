@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
+
 import Hello from "./pages/Hello.jsx";       // <-- note the "./"
 import Verify from "./pages/Verify.jsx";     // <-- note the "./"
 import Login from "./pages/Login.jsx";       // <-- note the "./"
