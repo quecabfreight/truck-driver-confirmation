@@ -3,7 +3,7 @@ import ErrorBoundary from "/src/components/ErrorBoundary.jsx";
 import Hello from "/src/pages/Hello.jsx";
 import Verify from "/src/pages/Verify.jsx";
 import Login from "/src/pages/Login.jsx";
-import Register from "/src/pages/Register.jsx";
+import Join from "/src/pages/Join.jsx";
 
 function App() {
   return (
@@ -14,8 +14,8 @@ function App() {
           <Route path="/hello" element={<Hello />} />
           <Route path="/login" element={<Login />} />
           <Route path="/verify" element={<Verify />} />
-          <Route path="/join" element={<Register />} />
-          <Route path="/register" element={<Register />} />
+          <Route path="/join" element={<Join />} />
+          <Route path="/register" element={<Join />} />
           <Route path="*" element={<div style={{ padding: 24 }}>Not Found</div>} />
         </Routes>
       </ErrorBoundary>
@@ -23,5 +23,5 @@ function App() {
   );
 }
 
-export default App;   // <-- default export (required by Vite entry)
-export { App };      // <-- named export too (extra-safe)
+export default App;
+export { App };
