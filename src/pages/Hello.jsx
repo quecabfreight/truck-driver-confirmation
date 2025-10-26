@@ -9,30 +9,64 @@ export default function Hello() {
         display: "flex",
         flexDirection: "column",
         background:
-          "radial-gradient(circle at 20% 20%, rgba(30,32,40,.4) 0%, rgba(11,11,12,0) 70%), var(--bg)",
+          // very dark base with a faint industrial wash
+          "radial-gradient(circle at 20% 20%, rgba(40,45,55,.4) 0%, rgba(11,11,12,0) 70%), var(--bg)",
         color: "var(--text)",
       }}
     >
-      {/* HEADER */}
+      {/* TOP CONSOLE BAR */}
       <header
         className="verify-header"
         style={{
+          display: "flex",
           justifyContent: "center",
+          alignItems: "center",
           borderBottom: "1px solid var(--ring)",
-          background: "linear-gradient(180deg,#101114 0%,rgba(0,0,0,0) 80%)",
+          background:
+            "linear-gradient(180deg,#0f1014 0%,#0a0b0d 60%,rgba(0,0,0,0) 100%)",
+          boxShadow:
+            "0 30px 60px rgba(0,0,0,.9), 0 0 40px rgba(255,255,255,.06) inset",
         }}
       >
         <div
-          className="brand"
           style={{
-            fontSize: "20px",
+            display: "inline-flex",
+            flexDirection: "column",
+            alignItems: "center",
+            lineHeight: 1.2,
+            padding: "6px 10px 8px",
+            borderRadius: "10px",
+            background:
+              "linear-gradient(180deg,rgba(20,22,28,.6) 0%,rgba(0,0,0,0) 100%)",
+            border: "1px solid rgba(255,255,255,.08)",
+            boxShadow:
+              "0 8px 24px rgba(0,0,0,.8), 0 0 24px rgba(255,255,255,.08)",
+            minWidth: "160px",
             textAlign: "center",
-            fontWeight: 800,
-            letterSpacing: ".3px",
-            color: "var(--text)",
           }}
         >
-          QueCab <span className="sub">AdbS</span>
+          <div
+            className="brand"
+            style={{
+              fontSize: "14px",
+              fontWeight: 700,
+              letterSpacing: ".3px",
+              color: "var(--text)",
+            }}
+          >
+            QueCab <span className="sub">AdbS</span>
+          </div>
+          <div
+            style={{
+              fontSize: "10px",
+              fontWeight: 500,
+              color: "var(--muted)",
+              letterSpacing: ".4px",
+              marginTop: "2px",
+            }}
+          >
+            AUTHORIZED ACCESS ONLY
+          </div>
         </div>
       </header>
 
@@ -51,20 +85,20 @@ export default function Hello() {
         <div
           style={{
             width: "100%",
-            maxWidth: "460px",
+            maxWidth: "480px",
             background:
-              // dark card with subtle navy/steel bloom
-              "radial-gradient(circle at 10% 0%, rgba(120,150,255,.10) 0%, rgba(0,0,0,0) 60%), var(--card)",
+              // card body gets subtle cold light like warehouse LEDs
+              "radial-gradient(circle at 10% 0%, rgba(200,210,255,.06) 0%, rgba(0,0,0,0) 60%), var(--card)",
             border: "1px solid var(--ring)",
             borderRadius: "20px",
             boxShadow:
-              "0 30px 80px rgba(0,0,0,.85), 0 0 160px rgba(90,107,255,.18)",
+              "0 30px 80px rgba(0,0,0,.9), 0 0 200px rgba(180,200,255,.18)",
             padding: "28px 24px 24px",
             textAlign: "center",
             position: "relative",
           }}
         >
-          {/* inner frame / secure-module sheen */}
+          {/* inner rim glow / security module vibe */}
           <div
             style={{
               position: "absolute",
@@ -72,68 +106,51 @@ export default function Hello() {
               borderRadius: "20px",
               pointerEvents: "none",
               boxShadow:
-                "0 0 120px rgba(90,107,255,.12) inset, 0 0 32px rgba(255,255,255,.06) inset",
+                "0 0 160px rgba(200,210,255,.07) inset, 0 0 32px rgba(255,255,255,.05) inset",
             }}
           />
 
-          {/* BADGE + halo */}
+          {/* BADGE AREA */}
           <div
             style={{
+              position: "relative",
               display: "grid",
               placeItems: "center",
               marginBottom: "20px",
-              position: "relative",
             }}
           >
-            {/* glow plate BEHIND the badge */}
+            {/* cold-metal halo BEHIND logo */}
             <div
               style={{
                 position: "absolute",
-                width: "200px",
-                height: "200px",
-                borderRadius: "24px",
+                width: "220px",
+                height: "220px",
+                borderRadius: "999px",
                 background:
-                  // cold steel / light blue metallic gradient
-                  "radial-gradient(circle at 50% 40%, rgba(180,200,255,.28) 0%, rgba(60,70,110,0) 70%)",
+                  // less blue, more steel/white bounce
+                  "radial-gradient(circle at 50% 40%, rgba(220,230,255,.28) 0%, rgba(40,50,80,0) 70%)",
                 filter:
-                  "blur(30px) drop-shadow(0 30px 60px rgba(0,0,0,.9))",
+                  "blur(32px) drop-shadow(0 40px 80px rgba(0,0,0,.9))",
                 boxShadow:
-                  "0 40px 90px rgba(0,0,0,.9), 0 0 120px rgba(120,160,255,.4)",
+                  "0 50px 110px rgba(0,0,0,.9), 0 0 140px rgba(200,220,255,.4)",
               }}
             />
 
-            {/* actual badge */}
-            <div
+            {/* free-floating logo itself */}
+            <img
+              src="/qc-logo.png"
+              alt="QueCab AdbS Logo"
               style={{
                 width: "180px",
                 height: "180px",
-                borderRadius: "20px",
-                background:
-                  // subtle panel reflection on the face of the badge container
-                  "radial-gradient(circle at 30% 30%, rgba(255,255,255,.16) 0%, rgba(0,0,0,0) 70%)",
-                border: "1px solid rgba(255,255,255,.18)",
-                boxShadow:
-                  "0 32px 80px rgba(0,0,0,.9), 0 0 90px rgba(120,160,255,.5)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: "12px",
+                objectFit: "contain",
+                filter:
+                  // deep base shadow + edge pop so it reads like metal
+                  "drop-shadow(0 14px 18px rgba(0,0,0,.9)) drop-shadow(0 0 14px rgba(255,255,255,.22))",
                 position: "relative",
+                zIndex: 2,
               }}
-            >
-              <img
-                src="/qc-logo.png"
-                alt="QueCab AdbS Logo"
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "contain",
-                  filter:
-                    // deep drop shadow to give the metal badge presence
-                    "drop-shadow(0 12px 16px rgba(0,0,0,.9)) drop-shadow(0 0 12px rgba(255,255,255,.22))",
-                }}
-              />
-            </div>
+            />
           </div>
 
           {/* PRODUCT NAME + TAGLINE */}
@@ -180,7 +197,7 @@ export default function Hello() {
                 padding: "14px 16px 12px",
                 letterSpacing: ".3px",
                 boxShadow:
-                  "0 15px 40px rgba(0,0,0,.8), 0 0 30px rgba(120,160,255,.28)",
+                  "0 15px 40px rgba(0,0,0,.8), 0 0 30px rgba(180,200,255,.28)",
               }}
             >
               Request Access
@@ -215,7 +232,7 @@ export default function Hello() {
                 padding: "14px 16px 12px",
                 letterSpacing: ".3px",
                 boxShadow:
-                  "0 15px 40px rgba(0,0,0,.8), 0 0 30px rgba(120,160,255,.22)",
+                  "0 15px 40px rgba(0,0,0,.8), 0 0 30px rgba(180,200,255,.22)",
               }}
             >
               Already Authorized? Log In
@@ -233,7 +250,7 @@ export default function Hello() {
             </a>
           </div>
 
-          {/* INFO BLOCK */}
+          {/* INFO / SYSTEM PITCH */}
           <div
             style={{
               textAlign: "left",
@@ -282,7 +299,7 @@ export default function Hello() {
           background:
             "linear-gradient(180deg,#0d0e12 0%,rgba(0,0,0,0) 60%)",
           boxShadow:
-            "0 -20px 60px rgba(0,0,0,.9), 0 0 80px rgba(90,107,255,.15)",
+            "0 -20px 60px rgba(0,0,0,.9), 0 0 80px rgba(180,200,255,.15)",
         }}
       >
         Anti-Double Brokering System • Verified Carrier Authenticity • © QueCab
