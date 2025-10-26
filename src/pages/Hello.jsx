@@ -9,12 +9,11 @@ export default function Hello() {
         display: "flex",
         flexDirection: "column",
         background:
-          // very dark base with a faint industrial wash
           "radial-gradient(circle at 20% 20%, rgba(40,45,55,.4) 0%, rgba(11,11,12,0) 70%), var(--bg)",
         color: "var(--text)",
       }}
     >
-      {/* TOP CONSOLE BAR */}
+      {/* SYSTEM HEADER BAR */}
       <header
         className="verify-header"
         style={{
@@ -26,6 +25,8 @@ export default function Hello() {
             "linear-gradient(180deg,#0f1014 0%,#0a0b0d 60%,rgba(0,0,0,0) 100%)",
           boxShadow:
             "0 30px 60px rgba(0,0,0,.9), 0 0 40px rgba(255,255,255,.06) inset",
+          paddingTop: "12px",
+          paddingBottom: "12px",
         }}
       >
         <div
@@ -33,7 +34,7 @@ export default function Hello() {
             display: "inline-flex",
             flexDirection: "column",
             alignItems: "center",
-            lineHeight: 1.2,
+            lineHeight: 1.3,
             padding: "6px 10px 8px",
             borderRadius: "10px",
             background:
@@ -41,20 +42,20 @@ export default function Hello() {
             border: "1px solid rgba(255,255,255,.08)",
             boxShadow:
               "0 8px 24px rgba(0,0,0,.8), 0 0 24px rgba(255,255,255,.08)",
-            minWidth: "160px",
+            minWidth: "220px",
             textAlign: "center",
           }}
         >
           <div
-            className="brand"
             style={{
-              fontSize: "14px",
-              fontWeight: 700,
-              letterSpacing: ".3px",
+              fontSize: "11px",
+              fontWeight: 600,
+              letterSpacing: ".4px",
               color: "var(--text)",
+              textTransform: "uppercase",
             }}
           >
-            QueCab <span className="sub">AdbS</span>
+            Anti-Double Brokering System
           </div>
           <div
             style={{
@@ -62,10 +63,11 @@ export default function Hello() {
               fontWeight: 500,
               color: "var(--muted)",
               letterSpacing: ".4px",
+              textTransform: "uppercase",
               marginTop: "2px",
             }}
           >
-            AUTHORIZED ACCESS ONLY
+            Authorized Access Only
           </div>
         </div>
       </header>
@@ -87,7 +89,6 @@ export default function Hello() {
             width: "100%",
             maxWidth: "480px",
             background:
-              // card body gets subtle cold light like warehouse LEDs
               "radial-gradient(circle at 10% 0%, rgba(200,210,255,.06) 0%, rgba(0,0,0,0) 60%), var(--card)",
             border: "1px solid var(--ring)",
             borderRadius: "20px",
@@ -98,7 +99,7 @@ export default function Hello() {
             position: "relative",
           }}
         >
-          {/* inner rim glow / security module vibe */}
+          {/* inner rim glow */}
           <div
             style={{
               position: "absolute",
@@ -116,10 +117,10 @@ export default function Hello() {
               position: "relative",
               display: "grid",
               placeItems: "center",
-              marginBottom: "20px",
+              marginBottom: "24px",
             }}
           >
-            {/* cold-metal halo BEHIND logo */}
+            {/* halo behind badge */}
             <div
               style={{
                 position: "absolute",
@@ -127,7 +128,6 @@ export default function Hello() {
                 height: "220px",
                 borderRadius: "999px",
                 background:
-                  // less blue, more steel/white bounce
                   "radial-gradient(circle at 50% 40%, rgba(220,230,255,.28) 0%, rgba(40,50,80,0) 70%)",
                 filter:
                   "blur(32px) drop-shadow(0 40px 80px rgba(0,0,0,.9))",
@@ -136,45 +136,20 @@ export default function Hello() {
               }}
             />
 
-            {/* free-floating logo itself */}
+            {/* the actual logo = the identity */}
             <img
               src="/qc-logo.png"
-              alt="QueCab AdbS Logo"
+              alt="QueCab AdbS Badge"
               style={{
                 width: "180px",
                 height: "180px",
                 objectFit: "contain",
                 filter:
-                  // deep base shadow + edge pop so it reads like metal
                   "drop-shadow(0 14px 18px rgba(0,0,0,.9)) drop-shadow(0 0 14px rgba(255,255,255,.22))",
                 position: "relative",
                 zIndex: 2,
               }}
             />
-          </div>
-
-          {/* PRODUCT NAME + TAGLINE */}
-          <div style={{ marginBottom: "20px", lineHeight: 1.3 }}>
-            <div
-              style={{
-                color: "var(--text)",
-                fontWeight: 700,
-                fontSize: "20px",
-                letterSpacing: ".2px",
-              }}
-            >
-              QueCab AdbS
-            </div>
-            <div
-              style={{
-                color: "var(--muted)",
-                fontWeight: 500,
-                fontSize: "13px",
-                marginTop: "6px",
-              }}
-            >
-              Secure Your Load
-            </div>
           </div>
 
           {/* ACTION BUTTONS */}
@@ -250,7 +225,7 @@ export default function Hello() {
             </a>
           </div>
 
-          {/* INFO / SYSTEM PITCH */}
+          {/* INFO / PITCH */}
           <div
             style={{
               textAlign: "left",
@@ -278,9 +253,8 @@ export default function Hello() {
               What is QueCab AdbS?
             </div>
             <div style={{ fontSize: "12px" }}>
-              QueCab AdbS is an Anti-Double Brokering System. We confirm who is
-              actually hauling your freight, and we warn you when something
-              doesn’t match at the dock.
+              QueCab AdbS confirms who is actually hauling your freight, and
+              warns you when something doesn’t match at the dock.
             </div>
           </div>
         </div>
