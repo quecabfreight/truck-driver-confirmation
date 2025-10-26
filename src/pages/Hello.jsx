@@ -8,18 +8,35 @@ export default function Hello() {
         minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
-        background: "var(--bg)",
+        background: "radial-gradient(circle at 20% 20%, rgba(30,32,40,.4) 0%, rgba(11,11,12,0) 70%), var(--bg)",
         color: "var(--text)",
       }}
     >
-      {/* HEADER (optional placeholder for now, same style as verify header for brand consistency) */}
-      <header className="verify-header" style={{ justifyContent: "center" }}>
-        <div className="brand" style={{ fontSize: "20px", textAlign: "center" }}>
+      {/* HEADER (brand bar) */}
+      <header
+        className="verify-header"
+        style={{
+          justifyContent: "center",
+          borderBottom: "1px solid var(--ring)",
+          background:
+            "linear-gradient(180deg,#101114 0%,rgba(0,0,0,0) 80%)",
+        }}
+      >
+        <div
+          className="brand"
+          style={{
+            fontSize: "20px",
+            textAlign: "center",
+            fontWeight: 800,
+            letterSpacing: ".3px",
+            color: "var(--text)",
+          }}
+        >
           QueCab <span className="sub">AdbS</span>
         </div>
       </header>
 
-      {/* MAIN CONTENT CARD */}
+      {/* MAIN CONTENT */}
       <main
         className="verify-main"
         style={{
@@ -27,95 +44,83 @@ export default function Hello() {
           display: "grid",
           placeItems: "center",
           width: "100%",
+          paddingTop: "24px",
+          paddingBottom: "24px",
         }}
       >
         <div
           style={{
             width: "100%",
-            maxWidth: "420px",
-            background: "var(--card)",
+            maxWidth: "460px",
+            background:
+              "radial-gradient(circle at 10% 0%, rgba(90,107,255,.08) 0%, rgba(0,0,0,0) 60%), var(--card)",
             border: "1px solid var(--ring)",
-            borderRadius: "18px",
-            boxShadow: "0 24px 60px rgba(0,0,0,.6)",
-            padding: "24px 24px 20px",
+            borderRadius: "20px",
+            boxShadow:
+              "0 30px 80px rgba(0,0,0,.85), 0 0 160px rgba(90,107,255,.18)",
+            padding: "28px 24px 24px",
             textAlign: "center",
+            position: "relative",
           }}
         >
-          {/* Logo / Identity */}
+          {/* faint border ring / frame accent for robustness */}
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              borderRadius: "20px",
+              pointerEvents: "none",
+              boxShadow:
+                "0 0 120px rgba(90,107,255,.12) inset, 0 0 32px rgba(255,255,255,.06) inset",
+            }}
+          />
+
+          {/* LOGO BLOCK */}
           <div
             style={{
               display: "grid",
               placeItems: "center",
-              marginBottom: "16px",
+              marginBottom: "20px",
             }}
           >
-            {/* This is where your metallic shield/chain/truck logo will go.
-               For now, we render a strong placeholder badge block. Later we can
-               swap this div with an <img src="...logo..." /> once we drop your final PNG. */}
             <div
               style={{
-                width: "88px",
-                height: "88px",
-                borderRadius: "18px",
+                width: "104px",
+                height: "104px",
+                borderRadius: "16px",
                 background:
-                  "radial-gradient(circle at 30% 30%, #4b4d57 0%, #1a1b20 60%)",
-                border: "1px solid #5a5d6b",
+                  "radial-gradient(circle at 30% 30%, rgba(255,255,255,.18) 0%, rgba(0,0,0,0) 70%)",
+                border: "1px solid rgba(255,255,255,.18)",
                 boxShadow:
-                  "0 12px 32px rgba(0,0,0,.8), 0 0 20px rgba(255,255,255,.08) inset",
+                  "0 24px 60px rgba(0,0,0,.9), 0 0 60px rgba(90,107,255,.4)",
                 display: "flex",
-                flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
-                fontFamily:
-                  "system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif",
+                padding: "8px",
               }}
             >
-              <div
+              {/* Swap this img src with your real metallic logo asset */}
+              <img
+                src="/qc-logo.png"
+                alt="QueCab AdbS Logo"
                 style={{
-                  fontSize: "11px",
-                  fontWeight: 600,
-                  color: "#fff",
-                  letterSpacing: "0.4px",
-                  lineHeight: 1.2,
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "contain",
+                  filter:
+                    "drop-shadow(0 8px 12px rgba(0,0,0,.8)) drop-shadow(0 0 8px rgba(255,255,255,.15))",
                 }}
-              >
-                QueCab
-              </div>
-              <div
-                style={{
-                  fontSize: "10px",
-                  fontWeight: 500,
-                  color: "#9aa0a6",
-                  lineHeight: 1.2,
-                }}
-              >
-                AdbS
-              </div>
-              <div
-                style={{
-                  marginTop: "6px",
-                  fontSize: "8px",
-                  fontWeight: 500,
-                  padding: "2px 6px",
-                  borderRadius: "999px",
-                  border: "1px solid #5a6bff55",
-                  color: "#c5d5ff",
-                  background:
-                    "linear-gradient(to bottom right, rgba(90,107,255,.18), rgba(0,0,0,0) 60%)",
-                }}
-              >
-                SECURE
-              </div>
+              />
             </div>
           </div>
 
-          {/* Product Name + Tagline */}
+          {/* PRODUCT NAME + TAGLINE */}
           <div style={{ marginBottom: "20px", lineHeight: 1.3 }}>
             <div
               style={{
                 color: "var(--text)",
                 fontWeight: 700,
-                fontSize: "18px",
+                fontSize: "20px",
                 letterSpacing: ".2px",
               }}
             >
@@ -126,16 +131,16 @@ export default function Hello() {
                 color: "var(--muted)",
                 fontWeight: 500,
                 fontSize: "13px",
-                marginTop: "4px",
+                marginTop: "6px",
               }}
             >
               Secure Your Load
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div style={{ display: "grid", gap: "12px", marginBottom: "20px" }}>
-            {/* Request Access / Join */}
+          {/* ACTION BUTTONS */}
+          <div style={{ display: "grid", gap: "14px", marginBottom: "24px" }}>
+            {/* REQUEST ACCESS */}
             <a
               href="/join"
               style={{
@@ -150,8 +155,10 @@ export default function Hello() {
                 textAlign: "center",
                 borderRadius: "12px",
                 border: "1px solid #2e3240",
-                padding: "12px 16px",
+                padding: "14px 16px 12px",
                 letterSpacing: ".3px",
+                boxShadow:
+                  "0 15px 40px rgba(0,0,0,.8), 0 0 30px rgba(90,107,255,.22)",
               }}
             >
               Request Access
@@ -168,13 +175,14 @@ export default function Hello() {
               </div>
             </a>
 
-            {/* Login */}
+            {/* LOGIN */}
             <a
               href="/login"
               style={{
                 display: "block",
                 width: "100%",
-                background: "transparent",
+                background:
+                  "linear-gradient(180deg,rgba(16,17,23,.3) 0%,rgba(10,11,13,0) 100%)",
                 color: "#c5d5ff",
                 fontWeight: 600,
                 fontSize: "14px",
@@ -182,8 +190,10 @@ export default function Hello() {
                 textAlign: "center",
                 borderRadius: "12px",
                 border: "1px solid #3a3d46",
-                padding: "12px 16px",
+                padding: "14px 16px 12px",
                 letterSpacing: ".3px",
+                boxShadow:
+                  "0 15px 40px rgba(0,0,0,.8), 0 0 30px rgba(90,107,255,.18)",
               }}
             >
               Already Authorized? Log In
@@ -201,24 +211,34 @@ export default function Hello() {
             </a>
           </div>
 
-          {/* Info / Context */}
+          {/* INFO CARD */}
           <div
             style={{
               textAlign: "left",
-              background: "#1a1b20",
+              background:
+                "linear-gradient(180deg,#1a1b20 0%,rgba(0,0,0,0) 140%)",
               borderRadius: "12px",
               border: "1px solid #2a2d35",
-              padding: "12px 14px",
+              padding: "14px 16px",
               fontSize: "12px",
               lineHeight: 1.4,
               color: "var(--muted)",
               fontWeight: 400,
+              boxShadow:
+                "0 20px 50px rgba(0,0,0,.8), 0 0 24px rgba(255,255,255,.04) inset",
             }}
           >
-            <div style={{ fontWeight: 600, color: "var(--text)", fontSize: "12px", marginBottom: "4px" }}>
+            <div
+              style={{
+                fontWeight: 600,
+                color: "var(--text)",
+                fontSize: "12px",
+                marginBottom: "6px",
+              }}
+            >
               What is QueCab AdbS?
             </div>
-            <div>
+            <div style={{ fontSize: "12px" }}>
               QueCab AdbS is an Anti-Double Brokering System. We confirm who is
               actually hauling your freight, and we warn you when something
               doesn’t match at the dock.
@@ -239,6 +259,8 @@ export default function Hello() {
           borderTop: "1px solid var(--ring)",
           background:
             "linear-gradient(180deg,#0d0e12 0%,rgba(0,0,0,0) 60%)",
+          boxShadow:
+            "0 -20px 60px rgba(0,0,0,.9), 0 0 80px rgba(90,107,255,.15)",
         }}
       >
         Anti-Double Brokering System • Verified Carrier Authenticity • © QueCab
