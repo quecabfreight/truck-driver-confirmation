@@ -13,7 +13,7 @@ export default function Hello() {
         color: "var(--text)",
       }}
     >
-      {/* HEADER (brand bar) */}
+      {/* HEADER */}
       <header
         className="verify-header"
         style={{
@@ -53,7 +53,8 @@ export default function Hello() {
             width: "100%",
             maxWidth: "460px",
             background:
-              "radial-gradient(circle at 10% 0%, rgba(90,107,255,.08) 0%, rgba(0,0,0,0) 60%), var(--card)",
+              // dark card with subtle navy/steel bloom
+              "radial-gradient(circle at 10% 0%, rgba(120,150,255,.10) 0%, rgba(0,0,0,0) 60%), var(--card)",
             border: "1px solid var(--ring)",
             borderRadius: "20px",
             boxShadow:
@@ -63,7 +64,7 @@ export default function Hello() {
             position: "relative",
           }}
         >
-          {/* subtle inner frame for "secure module" feel */}
+          {/* inner frame / secure-module sheen */}
           <div
             style={{
               position: "absolute",
@@ -75,28 +76,49 @@ export default function Hello() {
             }}
           />
 
-          {/* LOGO BLOCK - enlarged and glowing */}
+          {/* BADGE + halo */}
           <div
             style={{
               display: "grid",
               placeItems: "center",
               marginBottom: "20px",
+              position: "relative",
             }}
           >
+            {/* glow plate BEHIND the badge */}
             <div
               style={{
-                width: "140px",
-                height: "140px",
-                borderRadius: "18px",
+                position: "absolute",
+                width: "200px",
+                height: "200px",
+                borderRadius: "24px",
                 background:
+                  // cold steel / light blue metallic gradient
+                  "radial-gradient(circle at 50% 40%, rgba(180,200,255,.28) 0%, rgba(60,70,110,0) 70%)",
+                filter:
+                  "blur(30px) drop-shadow(0 30px 60px rgba(0,0,0,.9))",
+                boxShadow:
+                  "0 40px 90px rgba(0,0,0,.9), 0 0 120px rgba(120,160,255,.4)",
+              }}
+            />
+
+            {/* actual badge */}
+            <div
+              style={{
+                width: "180px",
+                height: "180px",
+                borderRadius: "20px",
+                background:
+                  // subtle panel reflection on the face of the badge container
                   "radial-gradient(circle at 30% 30%, rgba(255,255,255,.16) 0%, rgba(0,0,0,0) 70%)",
                 border: "1px solid rgba(255,255,255,.18)",
                 boxShadow:
-                  "0 28px 70px rgba(0,0,0,.9), 0 0 80px rgba(90,107,255,.45)",
+                  "0 32px 80px rgba(0,0,0,.9), 0 0 90px rgba(120,160,255,.5)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                padding: "10px",
+                padding: "12px",
+                position: "relative",
               }}
             >
               <img
@@ -107,7 +129,8 @@ export default function Hello() {
                   height: "100%",
                   objectFit: "contain",
                   filter:
-                    "drop-shadow(0 10px 14px rgba(0,0,0,.85)) drop-shadow(0 0 10px rgba(255,255,255,.18))",
+                    // deep drop shadow to give the metal badge presence
+                    "drop-shadow(0 12px 16px rgba(0,0,0,.9)) drop-shadow(0 0 12px rgba(255,255,255,.22))",
                 }}
               />
             </div>
@@ -157,7 +180,7 @@ export default function Hello() {
                 padding: "14px 16px 12px",
                 letterSpacing: ".3px",
                 boxShadow:
-                  "0 15px 40px rgba(0,0,0,.8), 0 0 30px rgba(90,107,255,.22)",
+                  "0 15px 40px rgba(0,0,0,.8), 0 0 30px rgba(120,160,255,.28)",
               }}
             >
               Request Access
@@ -192,7 +215,7 @@ export default function Hello() {
                 padding: "14px 16px 12px",
                 letterSpacing: ".3px",
                 boxShadow:
-                  "0 15px 40px rgba(0,0,0,.8), 0 0 30px rgba(90,107,255,.18)",
+                  "0 15px 40px rgba(0,0,0,.8), 0 0 30px rgba(120,160,255,.22)",
               }}
             >
               Already Authorized? Log In
@@ -210,7 +233,7 @@ export default function Hello() {
             </a>
           </div>
 
-          {/* INFO / EXPLAINER */}
+          {/* INFO BLOCK */}
           <div
             style={{
               textAlign: "left",
