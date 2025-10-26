@@ -8,7 +8,8 @@ export default function Hello() {
         minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
-        background: "radial-gradient(circle at 20% 20%, rgba(30,32,40,.4) 0%, rgba(11,11,12,0) 70%), var(--bg)",
+        background:
+          "radial-gradient(circle at 20% 20%, rgba(30,32,40,.4) 0%, rgba(11,11,12,0) 70%), var(--bg)",
         color: "var(--text)",
       }}
     >
@@ -18,8 +19,7 @@ export default function Hello() {
         style={{
           justifyContent: "center",
           borderBottom: "1px solid var(--ring)",
-          background:
-            "linear-gradient(180deg,#101114 0%,rgba(0,0,0,0) 80%)",
+          background: "linear-gradient(180deg,#101114 0%,rgba(0,0,0,0) 80%)",
         }}
       >
         <div
@@ -63,7 +63,7 @@ export default function Hello() {
             position: "relative",
           }}
         >
-          {/* faint border ring / frame accent for robustness */}
+          {/* subtle inner frame for "secure module" feel */}
           <div
             style={{
               position: "absolute",
@@ -75,7 +75,7 @@ export default function Hello() {
             }}
           />
 
-          {/* LOGO BLOCK */}
+          {/* LOGO BLOCK - enlarged and glowing */}
           <div
             style={{
               display: "grid",
@@ -85,21 +85,20 @@ export default function Hello() {
           >
             <div
               style={{
-                width: "104px",
-                height: "104px",
-                borderRadius: "16px",
+                width: "140px",
+                height: "140px",
+                borderRadius: "18px",
                 background:
-                  "radial-gradient(circle at 30% 30%, rgba(255,255,255,.18) 0%, rgba(0,0,0,0) 70%)",
+                  "radial-gradient(circle at 30% 30%, rgba(255,255,255,.16) 0%, rgba(0,0,0,0) 70%)",
                 border: "1px solid rgba(255,255,255,.18)",
                 boxShadow:
-                  "0 24px 60px rgba(0,0,0,.9), 0 0 60px rgba(90,107,255,.4)",
+                  "0 28px 70px rgba(0,0,0,.9), 0 0 80px rgba(90,107,255,.45)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                padding: "8px",
+                padding: "10px",
               }}
             >
-              {/* Swap this img src with your real metallic logo asset */}
               <img
                 src="/qc-logo.png"
                 alt="QueCab AdbS Logo"
@@ -108,7 +107,7 @@ export default function Hello() {
                   height: "100%",
                   objectFit: "contain",
                   filter:
-                    "drop-shadow(0 8px 12px rgba(0,0,0,.8)) drop-shadow(0 0 8px rgba(255,255,255,.15))",
+                    "drop-shadow(0 10px 14px rgba(0,0,0,.85)) drop-shadow(0 0 10px rgba(255,255,255,.18))",
                 }}
               />
             </div>
@@ -211,7 +210,7 @@ export default function Hello() {
             </a>
           </div>
 
-          {/* INFO CARD */}
+          {/* INFO / EXPLAINER */}
           <div
             style={{
               textAlign: "left",
