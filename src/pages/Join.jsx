@@ -18,7 +18,16 @@ export default function Join() {
   // detect public email domain
   const emailDomainFlag = useMemo(() => {
     if (!email.includes("@")) return false;
-    const publicDomains = ["gmail.com", "yahoo.com", "outlook.com", "hotmail.com", "aol.com", "icloud.com", "proton.me", "protonmail.com"];
+    const publicDomains = [
+      "gmail.com",
+      "yahoo.com",
+      "outlook.com",
+      "hotmail.com",
+      "aol.com",
+      "icloud.com",
+      "proton.me",
+      "protonmail.com",
+    ];
     const domain = email.split("@").pop().toLowerCase().trim();
     return publicDomains.includes(domain);
   }, [email]);
@@ -28,22 +37,24 @@ export default function Join() {
 
     // build the application record
     const application = {
-        ts: new Date().toISOString(),
-        company,
-        contactName,
-        role,
-        mcNumber: role === "broker" ? mcNumber : "",
-        usdotNumber: role === "shipper" ? usdotNumber : "",
-        phone,
-        email,
-        scac,
-        notes,
-        status: "pending-review",
+      ts: new Date().toISOString(),
+      company,
+      contactName,
+      role,
+      mcNumber: role === "broker" ? mcNumber : "",
+      usdotNumber: role === "shipper" ? usdotNumber : "",
+      phone,
+      email,
+      scac,
+      notes,
+      status: "pending-review",
     };
 
     // store locally for now so you can inspect it in DevTools
     try {
-      const existing = JSON.parse(localStorage.getItem("qc_join_requests") || "[]");
+      const existing = JSON.parse(
+        localStorage.getItem("qc_join_requests") || "[]"
+      );
       existing.push(application);
       localStorage.setItem("qc_join_requests", JSON.stringify(existing));
       console.log("QueCab AdbS application logged:", application);
@@ -59,23 +70,33 @@ export default function Join() {
     return (
       <div className="verify-wrap" style={{ minHeight: "100vh" }}>
         <header className="verify-header">
-          <div className="brand">QueCab <span className="sub">AdbS</span></div>
+          <div className="brand">
+            QueCab <span className="sub">AdbS</span>
+          </div>
         </header>
 
         <main className="verify-main">
           <div className="result clear" style={{ marginTop: "24px" }}>
-            <div className="title" style={{ fontSize: "22px" }}>Request Received</div>
+            <div className="title" style={{ fontSize: "22px" }}>
+              Request Received
+            </div>
             <div className="desc">
               Thank you, {contactName || "applicant"}.
               <br />
               Your access request has been submitted for manual review.
               <br />
-              Once verified, you'll receive your QueCab AdbS authorization code.
+              Once verified, you'll receive your QueCab AdbS authorization
+              code.
             </div>
           </div>
 
-          <div className="verify-footer-link" style={{ justifyContent: "flex-start" }}>
-            <a className="footer-cta" href="/login">Already have a code? Log in</a>
+          <div
+            className="verify-footer-link"
+            style={{ justifyContent: "flex-start" }}
+          >
+            <a className="footer-cta" href="/login">
+              Already have a code? Log in
+            </a>
           </div>
         </main>
       </div>
@@ -85,32 +106,50 @@ export default function Join() {
   return (
     <div className="verify-wrap" style={{ minHeight: "100vh" }}>
       <header className="verify-header">
-        <div className="brand">QueCab <span className="sub">AdbS</span></div>
+        <div className="brand">
+          QueCab <span className="sub">AdbS</span>
+        </div>
       </header>
 
       <main className="verify-main">
         {/* Title card */}
-        <div
-          className="dot-box"
-          style={{ marginBottom: "24px" }}
-        >
-          <div className="dot-label" style={{ fontSize: "14px", color: "var(--muted)" }}>
+        <div className="dot-box" style={{ marginBottom: "24px" }}>
+          <div
+            className="dot-label"
+            style={{ fontSize: "14px", color: "var(--muted)" }}
+          >
             Request Access
           </div>
-          <div className="dot-value" style={{ fontSize: "28px", lineHeight: 1.2 }}>
+          <div
+            className="dot-value"
+            style={{ fontSize: "28px", lineHeight: 1.2 }}
+          >
             Join QueCab AdbS
           </div>
-          <div style={{ fontSize: "13px", color: "var(--muted)", marginTop: "8px", fontWeight: 500 }}>
-            Brokers and shippers only.
-            After review, approved accounts receive an authorization code to verify carriers at the dock.
+          <div
+            style={{
+              fontSize: "13px",
+              color: "var(--muted)",
+              marginTop: "8px",
+              fontWeight: 500,
+            }}
+          >
+            Brokers and shippers only. After review, approved accounts receive
+            an authorization code to verify carriers at the dock.
           </div>
         </div>
 
         {/* Form card */}
         <form className="driver-card" onSubmit={handleSubmit}>
           {/* Company / individual name */}
-          <div className="driver-line" style={{ flexDirection: "column", alignItems: "flex-start" }}>
-            <label className="muted" style={{ fontSize: "13px", fontWeight: 600 }}>
+          <div
+            className="driver-line"
+            style={{ flexDirection: "column", alignItems: "flex-start" }}
+          >
+            <label
+              className="muted"
+              style={{ fontSize: "13px", fontWeight: 600 }}
+            >
               Legal Company Name (or Your Name)
             </label>
             <input
@@ -118,13 +157,19 @@ export default function Join() {
               required
               placeholder="Example: Power Logistics LLC"
               value={company}
-              onChange={e => setCompany(e.target.value)}
+              onChange={(e) => setCompany(e.target.value)}
             />
           </div>
 
           {/* Contact name */}
-          <div className="driver-line" style={{ flexDirection: "column", alignItems: "flex-start" }}>
-            <label className="muted" style={{ fontSize: "13px", fontWeight: 600 }}>
+          <div
+            className="driver-line"
+            style={{ flexDirection: "column", alignItems: "flex-start" }}
+          >
+            <label
+              className="muted"
+              style={{ fontSize: "13px", fontWeight: 600 }}
+            >
               Contact Person Name
             </label>
             <input
@@ -132,17 +177,30 @@ export default function Join() {
               required
               placeholder="Dispatcher / Compliance / Shipping Manager"
               value={contactName}
-              onChange={e => setContactName(e.target.value)}
+              onChange={(e) => setContactName(e.target.value)}
             />
           </div>
 
           {/* Role */}
-          <div className="driver-line" style={{ flexDirection: "column", alignItems: "flex-start" }}>
-            <label className="muted" style={{ fontSize: "13px", fontWeight: 600 }}>
+          <div
+            className="driver-line"
+            style={{ flexDirection: "column", alignItems: "flex-start" }}
+          >
+            <label
+              className="muted"
+              style={{ fontSize: "13px", fontWeight: 600 }}
+            >
               Your Role
             </label>
             <div style={{ display: "flex", gap: "12px" }}>
-              <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "14px" }}>
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  fontSize: "14px",
+                }}
+              >
                 <input
                   type="radio"
                   name="role"
@@ -152,7 +210,14 @@ export default function Join() {
                 />
                 Broker
               </label>
-              <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "14px" }}>
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  fontSize: "14px",
+                }}
+              >
                 <input
                   type="radio"
                   name="role"
@@ -164,52 +229,103 @@ export default function Join() {
               </label>
             </div>
 
-            <div style={{ fontSize: "12px", color: "var(--muted)", lineHeight: 1.4, marginTop: "6px" }}>
-              Broker = you arrange loads / dispatch carriers. Shipper = you own the freight.
+            <div
+              style={{
+                fontSize: "12px",
+                color: "var(--muted)",
+                lineHeight: 1.4,
+                marginTop: "6px",
+              }}
+            >
+              Broker = you arrange loads / dispatch carriers. Shipper = you own
+              the freight.
             </div>
           </div>
 
           {/* MC for brokers */}
           {role === "broker" && (
-            <div className="driver-line" style={{ flexDirection: "column", alignItems: "flex-start" }}>
-              <label className="muted" style={{ fontSize: "13px", fontWeight: 600 }}>
+            <div
+              className="driver-line"
+              style={{ flexDirection: "column", alignItems: "flex-start" }}
+            >
+              <label
+                className="muted"
+                style={{ fontSize: "13px", fontWeight: 600 }}
+              >
                 MC Number (required for brokers)
               </label>
               <input
                 className="input"
                 required={role === "broker"}
-                placeholder="MC 123456"
+                placeholder="Enter MC Number (digits only)"
                 value={mcNumber}
-                onChange={e => setMcNumber(e.target.value)}
+                onChange={(e) => {
+                  // keep digits only
+                  const onlyDigits = e.target.value.replace(/\D+/g, "");
+                  setMcNumber(onlyDigits);
+                }}
               />
-              <div style={{ fontSize: "12px", color: "var(--muted)", lineHeight: 1.4, marginTop: "6px" }}>
-                We use this to confirm your legal authority and stop carrier impersonation.
+              <div
+                style={{
+                  fontSize: "12px",
+                  color: "var(--muted)",
+                  lineHeight: 1.4,
+                  marginTop: "6px",
+                }}
+              >
+                We use this to confirm your legal broker authority and stop
+                carrier impersonation. Do not include the letters “MC” — just
+                the number.
               </div>
             </div>
           )}
 
-          {/* USDOT for shippers / carriers */}
+          {/* USDOT for shippers */}
           {role === "shipper" && (
-            <div className="driver-line" style={{ flexDirection: "column", alignItems: "flex-start" }}>
-              <label className="muted" style={{ fontSize: "13px", fontWeight: 600 }}>
+            <div
+              className="driver-line"
+              style={{ flexDirection: "column", alignItems: "flex-start" }}
+            >
+              <label
+                className="muted"
+                style={{ fontSize: "13px", fontWeight: 600 }}
+              >
                 USDOT Number (if available)
               </label>
               <input
                 className="input"
                 required={false}
-                placeholder="1234567"
+                placeholder="Enter USDOT Number (digits only)"
                 value={usdotNumber}
-                onChange={e => setUsdotNumber(e.target.value)}
+                onChange={(e) => {
+                  const onlyDigits = e.target.value.replace(/\D+/g, "");
+                  setUsdotNumber(onlyDigits);
+                }}
               />
-              <div style={{ fontSize: "12px", color: "var(--muted)", lineHeight: 1.4, marginTop: "6px" }}>
-                If you run trucks under your own authority, enter that USDOT #. If not, leave blank.
+              <div
+                style={{
+                  fontSize: "12px",
+                  color: "var(--muted)",
+                  lineHeight: 1.4,
+                  marginTop: "6px",
+                }}
+              >
+                If you operate trucks under your own authority, enter that
+                USDOT #. If you only tender freight to carriers, leave this
+                blank. Do not include the word “USDOT” — just the number.
               </div>
             </div>
           )}
 
           {/* Phone */}
-          <div className="driver-line" style={{ flexDirection: "column", alignItems: "flex-start" }}>
-            <label className="muted" style={{ fontSize: "13px", fontWeight: 600 }}>
+          <div
+            className="driver-line"
+            style={{ flexDirection: "column", alignItems: "flex-start" }}
+          >
+            <label
+              className="muted"
+              style={{ fontSize: "13px", fontWeight: 600 }}
+            >
               Business Phone
             </label>
             <input
@@ -217,13 +333,19 @@ export default function Join() {
               required
               placeholder="555-123-4567"
               value={phone}
-              onChange={e => setPhone(e.target.value)}
+              onChange={(e) => setPhone(e.target.value)}
             />
           </div>
 
           {/* Email */}
-          <div className="driver-line" style={{ flexDirection: "column", alignItems: "flex-start" }}>
-            <label className="muted" style={{ fontSize: "13px", fontWeight: 600 }}>
+          <div
+            className="driver-line"
+            style={{ flexDirection: "column", alignItems: "flex-start" }}
+          >
+            <label
+              className="muted"
+              style={{ fontSize: "13px", fontWeight: 600 }}
+            >
               Business Email
             </label>
             <input
@@ -232,36 +354,62 @@ export default function Join() {
               type="email"
               placeholder="dispatch@yourcompany.com"
               value={email}
-              onChange={e => setEmail(e.target.value)}
+              onChange={(e) => setEmail(e.target.value)}
             />
             {email && emailDomainFlag && (
-              <div style={{ fontSize: "12px", color: "var(--accent)", lineHeight: 1.4, marginTop: "6px" }}>
-                Public email domain detected (gmail / yahoo / outlook).
-                This will require manual review before approval.
+              <div
+                style={{
+                  fontSize: "12px",
+                  color: "var(--accent)",
+                  lineHeight: 1.4,
+                  marginTop: "6px",
+                }}
+              >
+                Public email domain detected (gmail / yahoo / outlook). This
+                will require manual review before approval.
               </div>
             )}
           </div>
 
           {/* SCAC */}
-          <div className="driver-line" style={{ flexDirection: "column", alignItems: "flex-start" }}>
-            <label className="muted" style={{ fontSize: "13px", fontWeight: 600 }}>
+          <div
+            className="driver-line"
+            style={{ flexDirection: "column", alignItems: "flex-start" }}
+          >
+            <label
+              className="muted"
+              style={{ fontSize: "13px", fontWeight: 600 }}
+            >
               SCAC (optional)
             </label>
             <input
               className="input"
               placeholder="ABCD"
               value={scac}
-              onChange={e => setScac(e.target.value.toUpperCase())}
+              onChange={(e) => setScac(e.target.value.toUpperCase())}
               maxLength={6}
             />
-            <div style={{ fontSize: "12px", color: "var(--muted)", lineHeight: 1.4, marginTop: "6px" }}>
+            <div
+              style={{
+                fontSize: "12px",
+                color: "var(--muted)",
+                lineHeight: 1.4,
+                marginTop: "6px",
+              }}
+            >
               If you have an assigned SCAC, enter it. If not, leave blank.
             </div>
           </div>
 
           {/* Notes */}
-          <div className="driver-line" style={{ flexDirection: "column", alignItems: "flex-start" }}>
-            <label className="muted" style={{ fontSize: "13px", fontWeight: 600 }}>
+          <div
+            className="driver-line"
+            style={{ flexDirection: "column", alignItems: "flex-start" }}
+          >
+            <label
+              className="muted"
+              style={{ fontSize: "13px", fontWeight: 600 }}
+            >
               Notes / Comments (optional)
             </label>
             <textarea
@@ -269,7 +417,7 @@ export default function Join() {
               style={{ minHeight: "70px", resize: "vertical" }}
               placeholder="Anything we should know? Typical lanes, concerns, fraud incidents, etc."
               value={notes}
-              onChange={e => setNotes(e.target.value)}
+              onChange={(e) => setNotes(e.target.value)}
             />
           </div>
 
@@ -278,15 +426,28 @@ export default function Join() {
             Request Access
           </button>
 
-          <div style={{ fontSize: "12px", color: "var(--muted)", lineHeight: 1.4, marginTop: "10px" }}>
-            Submitting this form does NOT instantly activate you.
-            QueCab AdbS will review your request. Approved users receive a secure authorization code.
+          <div
+            style={{
+              fontSize: "12px",
+              color: "var(--muted)",
+              lineHeight: 1.4,
+              marginTop: "10px",
+            }}
+          >
+            Submitting this form does NOT instantly activate you. QueCab AdbS
+            will review your request. Approved users receive a secure
+            authorization code.
           </div>
         </form>
 
         {/* footer link */}
-        <div className="verify-footer-link" style={{ justifyContent: "flex-start" }}>
-          <a className="footer-cta" href="/login">Already have a code? Log in</a>
+        <div
+          className="verify-footer-link"
+          style={{ justifyContent: "flex-start" }}
+        >
+          <a className="footer-cta" href="/login">
+            Already have a code? Log in
+          </a>
         </div>
       </main>
     </div>
