@@ -120,32 +120,32 @@ export default function Hello() {
               marginBottom: "24px",
             }}
           >
-            {/* halo behind badge */}
+            {/* halo behind badge - scaled up for 220px badge */}
             <div
               style={{
                 position: "absolute",
-                width: "220px",
-                height: "220px",
+                width: "260px",
+                height: "260px",
                 borderRadius: "999px",
                 background:
                   "radial-gradient(circle at 50% 40%, rgba(220,230,255,.28) 0%, rgba(40,50,80,0) 70%)",
                 filter:
-                  "blur(32px) drop-shadow(0 40px 80px rgba(0,0,0,.9))",
+                  "blur(34px) drop-shadow(0 44px 90px rgba(0,0,0,.9))",
                 boxShadow:
-                  "0 50px 110px rgba(0,0,0,.9), 0 0 140px rgba(200,220,255,.4)",
+                  "0 54px 120px rgba(0,0,0,.9), 0 0 160px rgba(200,220,255,.4)",
               }}
             />
 
-            {/* the actual logo = the identity */}
+            {/* larger free-floating badge */}
             <img
               src="/qc-logo.png"
               alt="QueCab AdbS Badge"
               style={{
-                width: "180px",
-                height: "180px",
+                width: "220px",
+                height: "220px",
                 objectFit: "contain",
                 filter:
-                  "drop-shadow(0 14px 18px rgba(0,0,0,.9)) drop-shadow(0 0 14px rgba(255,255,255,.22))",
+                  "drop-shadow(0 16px 20px rgba(0,0,0,.9)) drop-shadow(0 0 16px rgba(255,255,255,.22))",
                 position: "relative",
                 zIndex: 2,
               }}
