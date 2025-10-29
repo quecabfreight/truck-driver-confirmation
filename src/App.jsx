@@ -1,27 +1,34 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import ErrorBoundary from "/src/components/ErrorBoundary.jsx";
-import Hello from "/src/pages/Hello.jsx";
-import Verify from "/src/pages/Verify.jsx";
-import Login from "/src/pages/Login.jsx";
-import Join from "/src/pages/Join.jsx";
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
+// IMPORT YOUR PAGES
+import Login from "./pages/Login";
+// If you already have Join / Authorization Request form screen:
+import Join from "./pages/Join"; 
+// If you have a dashboard/home landing after login:
+import Home from "./pages/Home"; 
+// ^ If you don't have Home yet, make a placeholder to avoid crash.
 
 function App() {
   return (
-    <BrowserRouter>
-      <ErrorBoundary>
+    // Global app shell.
+    // This wrapper is where you keep the same dark professional background
+    // (industrial dock / warehouse vibe, subtle texture, etc.)
+    <div className="app-shell min-h-screen w-full bg-black text-white">
+      <Router>
         <Routes>
-          <Route path="/" element={<Navigate to="/hello" replace />} />
-          <Route path="/hello" element={<Hello />} />
+          {/* Landing after auth */}
+          <Route path="/" element={<Home />} />
+
+          {/* Broker/Shipper login */}
           <Route path="/login" element={<Login />} />
-          <Route path="/verify" element={<Verify />} />
+
+          {/* Request authorization / join flow */}
           <Route path="/join" element={<Join />} />
-          <Route path="/register" element={<Join />} />
-          <Route path="*" element={<div style={{ padding: 24 }}>Not Found</div>} />
         </Routes>
-      </ErrorBoundary>
-    </BrowserRouter>
+      </Router>
+    </div>
   );
 }
 
 export default App;
-export { App };
