@@ -3,21 +3,21 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 // IMPORT YOUR PAGES
 import Login from "./pages/Login";
-// If you already have Join / Authorization Request form screen:
-import Join from "./pages/Join"; 
-// If you have a dashboard/home landing after login:
-import Home from "./pages/Home"; 
-// ^ If you don't have Home yet, make a placeholder to avoid crash.
+import Join from "./pages/Join";
+import Home from "./pages/Home";
 
 function App() {
   return (
-    // Global app shell.
-    // This wrapper is where you keep the same dark professional background
-    // (industrial dock / warehouse vibe, subtle texture, etc.)
     <div className="app-shell min-h-screen w-full bg-black text-white">
+      {/* 
+        Global app shell.
+        Keep your dark / industrial background styling here 
+        (loading dock vibe, subtle texture, etc.).
+        We are not changing branding, colors, or layout tone.
+      */}
       <Router>
         <Routes>
-          {/* Landing after auth */}
+          {/* Landing after auth / dashboard placeholder */}
           <Route path="/" element={<Home />} />
 
           {/* Broker/Shipper login */}
