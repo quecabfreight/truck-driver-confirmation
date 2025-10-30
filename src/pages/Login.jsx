@@ -1,106 +1,252 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-function Login() {
-  const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [rememberDevice, setRememberDevice] = useState(true);
-  const [errorMsg, setErrorMsg] = useState("");
+// -------------------------------------
+// CONSTANTS
+// -------------------------------------
+const LS_KEY_EMAIL = "quecab-remembered-email";
+const LS_KEY_REMEMBER = "quecab-remember-device";
 
-  const handleSubmit = (e) => {
+// -------------------------------------
+// STYLES
+// -------------------------------------
+const s = {
+  page: {
+    minHeight: "100vh",
+    width: "100%",
+    background: "var(--bg)",
+    color: "var(--text)",
+    display: "flex",
+    flexDirection: "column",
+  },
+  topbar: {
+    width: "100%",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: "14px 16px",
+    borderBottom: "1px solid var(--border)",
+    background: "color-mix(in oklab, var(--bg) 92%, black 8%)",
+    fontSize: 14,
+    letterSpacing: "0.02em",
+    fontWeight: 600,
+  },
+  wrap: {
+    flex: 1,
+    width: "100%",
+    display: "flex",
+    justifyContent: "center",
+    padding: "28px 16px",
+  },
+  card: {
+    width: "100%",
+    maxWidth: 560,
+    background: "var(--card)",
+    border: "1px solid var(--border)",
+    borderRadius: 14,
+    boxShadow: "0 28px 90px rgba(0,0,0,0.25)",
+    padding: 20,
+  },
+  head: {
+    marginBottom: 14,
+  },
+  product: {
+    fontSize: 18,
+    fontWeight: 700,
+    letterSpacing: "-0.02em",
+  },
+  sub: {
+    marginTop: 4,
+    fontSize: 13.5,
+    color: "var(--muted)",
+    letterSpacing: "0.02em",
+  },
+  err: {
+    marginTop: 12,
+    marginBottom: 12,
+    fontSize: 14.5,
+    color: "#fca5a5",
+    background: "color-mix(in oklab, var(--bg) 70%, #7f1d1d 30%)",
+    border: "1px solid color-mix(in oklab, #ef4444 70%, black 30%)",
+    borderRadius: 8,
+    padding: "10px 12px",
+  },
+  form: { marginTop: 6 },
+  label: {
+    fontSize: 13.5,
+    fontWeight: 700,
+    letterSpacing: "0.04em",
+    textTransform: "uppercase",
+    marginBottom: 6,
+  },
+  input: {
+    width: "100%",
+    fontSize: 16,
+    lineHeight: 1.4,
+    color: "var(--text)",
+    background: "color-mix(in oklab, var(--bg) 80%, black 20%)",
+    border: "1px solid color-mix(in oklab, var(--border) 70%, var(--text) 30%)",
+    borderRadius: 8,
+    padding: "11px 12px",
+    outline: "none",
+  },
+  row: { marginTop: 14 },
+  remember: { display: "flex", alignItems: "flex-start", gap: 10, marginTop: 4 },
+  checkbox: {
+    marginTop: 4,
+    width: 18,
+    height: 18,
+    accentColor: "#dc2626",
+  },
+  rememberText: { fontSize: 13.5 },
+  rememberHint: { fontSize: 12.5, color: "var(--muted)" },
+  button: {
+    width: "100%",
+    marginTop: 16,
+    fontSize: 16,
+    fontWeight: 800,
+    letterSpacing: "0.06em",
+    textTransform: "uppercase",
+    color: "white",
+    background: "#dc2626",
+    border: "1px solid color-mix(in oklab, #dc2626 70%, black 30%)",
+    borderRadius: 10,
+    padding: "12px 14px",
+    cursor: "pointer",
+    boxShadow: "0 18px 40px rgba(220,38,38,0.30)",
+  },
+  links: { marginTop: 18, display: "flex", flexDirection: "column", gap: 10 },
+  link: {
+    fontSize: 14,
+    color: "var(--muted)",
+    textDecoration: "underline",
+    textUnderlineOffset: 3,
+  },
+  legal: {
+    marginTop: 4,
+    fontSize: 12.5,
+    color: "var(--muted)",
+    lineHeight: 1.5,
+  },
+};
+
+// -------------------------------------
+// MAIN COMPONENT
+// -------------------------------------
+export default function Login() {
+  const nav = useNavigate();
+  const [email, setEmail] = useState("");
+  const [pwd, setPwd] = useState("");
+  const [rememberDevice, setRememberDevice] = useState(false);
+  const [err, setErr] = useState("");
+
+  // ✅ Load saved email if Remember Device was checked
+  useEffect(() => {
+    const savedRemember = localStorage.getItem(LS_KEY_REMEMBER) === "1";
+    const savedEmail = savedRemember ? localStorage.getItem(LS_KEY_EMAIL) || "" : "";
+    if (savedRemember) {
+      setRememberDevice(true);
+      setEmail(savedEmail);
+    }
+  }, []);
+
+  // ✅ Handle login form submission
+  const submit = (e) => {
     e.preventDefault();
-    if (!email.trim() || !password.trim()) {
-      setErrorMsg("Email and password are required.");
+
+    const normalizedEmail = email.trim().toLowerCase(); // emails are not case-sensitive
+    if (!normalizedEmail || !pwd.trim()) {
+      setErr("Email and password are required.");
       return;
     }
-    // TODO: replace with real auth
-    navigate("/");
+
+    // If "Remember this device" is checked, store email
+    if (rememberDevice) {
+      localStorage.setItem(LS_KEY_REMEMBER, "1");
+      localStorage.setItem(LS_KEY_EMAIL, normalizedEmail);
+    } else {
+      localStorage.removeItem(LS_KEY_REMEMBER);
+      localStorage.removeItem(LS_KEY_EMAIL);
+    }
+
+    // Placeholder for real authentication logic
+    // TODO: Replace with actual API / authorization check
+    if (normalizedEmail.includes("@")) {
+      setErr("");
+      nav("/"); // Navigate to home if successful
+    } else {
+      setErr("Unauthorized or invalid email format.");
+    }
   };
 
   return (
-    <div className="min-h-screen w-full bg-black text-gray-100 flex flex-col">
-      <div className="w-full flex items-center justify-between px-4 py-3 text-[11px] tracking-wide text-gray-300 border-b border-[rgba(255,255,255,0.08)] bg-[rgba(0,0,0,0.6)]">
-        <div className="font-semibold uppercase text-gray-200">QUECAB ADBS</div>
-        <div className="text-[10px] text-gray-500 uppercase font-medium">Secure Login</div>
+    <div style={s.page}>
+      {/* Header bar */}
+      <div style={s.topbar}>
+        <div>QUECAB ADBS</div>
+        <div style={{ fontSize: 12, fontWeight: 500, color: "var(--muted)", textTransform: "uppercase" }}>
+          Secure Login
+        </div>
       </div>
 
-      <div className="flex-1 w-full flex items-start justify-center px-4 py-8">
-        <div className="w-full max-w-md bg-[rgba(20,20,20,0.75)] border border-[rgba(255,255,255,0.08)] rounded-md shadow-[0_25px_60px_rgba(0,0,0,0.9)] backdrop-blur-[6px] p-4 text-gray-100">
-          <div className="flex flex-col text-left mb-4">
-            <div className="text-[10px] font-bold text-gray-400 mb-2 leading-tight">LOGO</div>
-            <div className="text-[13px] font-semibold text-gray-100 leading-tight">
-              QueCab <span className="text-red-500 font-bold">AdbS</span>
+      <div style={s.wrap}>
+        <div style={s.card}>
+          <div style={s.head}>
+            <div style={s.product}>
+              QueCab <span style={{ color: "var(--muted)", fontWeight: 700 }}>AdbS</span>
             </div>
-            <div className="text-[10px] text-gray-400 tracking-wide mt-1 uppercase">
-              Broker / Shipper Access
-            </div>
+            <div style={s.sub}>Broker / Shipper Access</div>
           </div>
 
-          {errorMsg && (
-            <div className="mb-4 text-[12px] font-semibold text-red-400 bg-[rgba(120,0,0,0.2)] border border-[rgba(255,0,0,0.4)] rounded px-3 py-2 leading-snug">
-              {errorMsg}
-            </div>
-          )}
+          {err ? <div style={s.err}>{err}</div> : null}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="flex flex-col">
-              <label htmlFor="email" className="text-[11px] font-semibold text-gray-300 tracking-wide mb-1 uppercase">
-                Business Email
-              </label>
+          <form onSubmit={submit} style={s.form}>
+            <div style={s.row}>
+              <label htmlFor="email" style={s.label}>Business Email</label>
               <input
                 id="email"
                 type="email"
-                autoComplete="email"
-                className="w-full bg-[rgba(0,0,0,0.6)] border border-[rgba(255,255,255,0.18)] rounded-[4px] px-3 py-2 text-[13px] text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-red-500/60 focus:border-red-500/60"
                 placeholder="name@company.com"
+                style={s.input}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
               />
             </div>
 
-            <div className="flex flex-col">
-              <label htmlFor="password" className="text-[11px] font-semibold text-gray-300 tracking-wide mb-1 uppercase">
-                Password
-              </label>
+            <div style={s.row}>
+              <label htmlFor="pwd" style={s.label}>Password</label>
               <input
-                id="password"
+                id="pwd"
                 type="password"
-                autoComplete="current-password"
-                className="w-full bg-[rgba(0,0,0,0.6)] border border-[rgba(255,255,255,0.18)] rounded-[4px] px-3 py-2 text-[13px] text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-red-500/60 focus:border-red-500/60"
                 placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                style={s.input}
+                value={pwd}
+                onChange={(e) => setPwd(e.target.value)}
+                autoComplete="current-password"
               />
             </div>
 
-            <div className="flex items-start gap-2">
+            <div style={{ ...s.row, ...s.remember }}>
               <input
                 id="rememberDevice"
                 type="checkbox"
-                className="mt-[3px] h-4 w-4 bg-[rgba(0,0,0,0.6)] border border-[rgba(255,255,255,0.4)] rounded-[2px] checked:bg-red-600 checked:border-red-600 focus:outline-none focus:ring-2 focus:ring-red-500/60"
+                style={s.checkbox}
                 checked={rememberDevice}
                 onChange={(e) => setRememberDevice(e.target.checked)}
               />
-              <label htmlFor="rememberDevice" className="text-[11px] text-gray-300 leading-snug select-none">
+              <label htmlFor="rememberDevice" style={s.rememberText}>
                 Remember this device
-                <div className="text-[10px] text-gray-500 leading-snug">Do not use on shared / public equipment.</div>
+                <div style={s.rememberHint}>Do not use on shared / public equipment.</div>
               </label>
             </div>
 
-            <button
-              type="submit"
-              className="w-full select-none bg-red-600 hover:bg-red-700 text-white font-semibold tracking-wide text-[12px] uppercase rounded-[4px] border border-red-700/70 shadow-[0_15px_40px_rgba(255,0,0,0.3)] px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-red-500/60"
-            >
-              Sign In
-            </button>
+            <button type="submit" style={s.button}>Sign In</button>
           </form>
 
-          <div className="mt-5 flex flex-col text-left gap-3">
-            <a href="/join" className="text-[11px] text-gray-400 hover:text-gray-200 underline underline-offset-2 tracking-wide text-left">
-              Need access? Request Authorization
-            </a>
-            <div className="text-[10px] text-gray-500 leading-snug">
+          <div style={s.links}>
+            <a href="/join" style={s.link}>Need access? Request Authorization</a>
+            <div style={s.legal}>
               Authorized use only; activity may be monitored and recorded. By continuing you consent to monitoring.
             </div>
           </div>
@@ -109,5 +255,3 @@ function Login() {
     </div>
   );
 }
-
-export default Login;
