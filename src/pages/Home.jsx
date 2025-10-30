@@ -1,117 +1,149 @@
 import React from "react";
+import ThemeToggle from "../components/ThemeToggle";
+
+const s = {
+  page: {
+    minHeight: "100vh",
+    width: "100%",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    background:
+      "radial-gradient(circle at 20% 0%, rgba(40,40,40,0.08) 0%, rgba(0,0,0,0.0) 60%), var(--bg)",
+    color: "var(--text)",
+    fontFamily:
+      "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, 'Apple Color Emoji','Segoe UI Emoji'",
+  },
+  header: {
+    width: "100%",
+    maxWidth: 800,
+    textAlign: "center",
+    paddingTop: 24,
+    paddingBottom: 12,
+    color: "var(--text)",
+    fontWeight: 600,
+    letterSpacing: "-0.03em",
+    fontSize: 20,
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 12,
+    paddingLeft: 12,
+    paddingRight: 12,
+  },
+  title: { margin: "0 auto" },
+  card: {
+    width: "100%",
+    maxWidth: 800,
+    borderRadius: 16,
+    background: "var(--card)",
+    border: "1px solid var(--border)",
+    boxShadow: "0 30px 120px rgba(0,0,0,0.18)",
+    padding: 24,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+  },
+  logoWrap: { display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 18 },
+  logoPlate: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 14,
+    background: "var(--plate)",
+    border: "1px solid var(--border)",
+    boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
+    padding: 16,
+  },
+  brandTitle: { marginTop: 12, fontSize: 20, fontWeight: 600, letterSpacing: "-0.03em", color: "var(--text)" },
+  brandSub: { marginTop: 4, fontSize: 13, color: "var(--muted)" },
+  buttonBlock: {
+    width: "100%",
+    maxWidth: 500,
+    textAlign: "left",
+    borderRadius: 12,
+    background: "var(--card)",
+    border: "1px solid var(--border)",
+    boxShadow: "0 20px 60px rgba(0,0,0,0.08)",
+    padding: "14px 16px",
+    marginBottom: 12,
+    textDecoration: "none",
+    color: "var(--text)",
+    transition: "background .2s ease, border-color .2s ease",
+    display: "block",
+  },
+  buttonTitle: { fontSize: 15, fontWeight: 600, letterSpacing: "-0.03em" },
+  buttonSub: { marginTop: 2, fontSize: 12, color: "var(--muted)" },
+  infoPanel: {
+    width: "100%",
+    maxWidth: 500,
+    textAlign: "left",
+    borderRadius: 12,
+    background: "var(--cardSoft)",
+    border: "1px solid var(--border)",
+    boxShadow: "0 20px 60px rgba(0,0,0,0.08)",
+    padding: "14px 16px",
+    marginBottom: 8,
+  },
+  infoTitle: { fontSize: 14, fontWeight: 600, marginBottom: 4, color: "var(--text)" },
+  infoText: { fontSize: 12, color: "var(--muted)", lineHeight: 1.5 },
+  footer: {
+    width: "100%",
+    maxWidth: 800,
+    textAlign: "center",
+    padding: "22px 0 28px",
+    color: "var(--muted)",
+    fontSize: 11,
+    letterSpacing: "-0.02em",
+  },
+};
 
 function Home() {
   return (
-    <div className="min-h-screen w-full bg-[#0a0a0a] text-gray-100 flex flex-col items-center">
-      {/* Top brand text */}
-      <header className="w-full max-w-[800px] text-center pt-8 pb-4">
-        <div className="text-[20px] font-semibold text-gray-100 tracking-[-0.03em]">
-          <span className="text-gray-100">QueCab</span>{" "}
-          <span className="text-gray-300">AdbS</span>
+    <div style={s.page}>
+      {/* Top brand text + theme switch */}
+      <header style={s.header}>
+        <div style={{ width: 140, textAlign: "left" }}>
+          <ThemeToggle compact />
         </div>
+        <div style={s.title}>
+          <span style={{ color: "var(--text)" }}>QueCab</span>{" "}
+          <span style={{ color: "var(--muted)" }}>AdbS</span>
+        </div>
+        <div style={{ width: 140 }} /> {/* spacer to keep title centered */}
       </header>
 
-      {/* Main card */}
-      <main
-        className="w-full max-w-[800px] mx-auto
-                   rounded-2xl
-                   border border-[rgba(255,255,255,0.08)]
-                   shadow-[0_30px_120px_rgba(0,0,0,0.9)]
-                   text-center
-                   px-6 py-8
-                   flex flex-col items-center"
-        style={{
-          backgroundColor: "rgba(15,15,15,0.6)",
-          backgroundImage:
-            "radial-gradient(circle at 20% 0%, rgba(40,40,40,0.6) 0%, rgba(10,10,10,0.6) 60%)",
-          backdropFilter: "blur(8px)",
-        }}
-      >
-        {/* Logo block */}
-        <div className="flex flex-col items-center mb-6">
-          <div
-            className="flex items-center justify-center rounded-xl
-                       bg-[rgba(0,0,0,0.6)]
-                       border border-[rgba(255,255,255,0.12)]
-                       shadow-[0_20px_60px_rgba(0,0,0,0.9)]
-                       p-4"
-          >
-            <img
-              src="/qc-logo.png"
-              alt="QueCab AdbS Logo"
-              style={{ width: "220px", maxWidth: "220px", height: "auto" }}
-            />
+      <main style={s.card}>
+        <div style={s.logoWrap}>
+          <div style={s.logoPlate}>
+            <img src="/qc-logo.png" alt="QueCab AdbS Logo" style={{ width: 220, height: "auto", display: "block" }} />
           </div>
-
-          <div className="text-[20px] font-semibold text-gray-100 mt-4 leading-tight">
-            QueCab <span className="text-gray-300">AdbS</span>
+          <div style={s.brandTitle}>
+            QueCab <span style={{ color: "var(--muted)" }}>AdbS</span>
           </div>
-
-          <div className="text-[13px] text-gray-400 mt-1 leading-tight">
-            Secure Your Load
-          </div>
+          <div style={s.brandSub}>Secure Your Load</div>
         </div>
 
-        {/* Request Access */}
-        <a
-          href="/join"
-          className="w-full max-w-[500px]
-                     bg-[rgba(15,15,15,0.8)]
-                     hover:bg-[rgba(20,20,20,0.9)]
-                     text-gray-100
-                     border border-[rgba(255,255,255,0.18)]
-                     rounded-xl px-4 py-4 mb-3 transition-all
-                     text-left shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex flex-col"
-        >
-          <div className="text-[15px] font-semibold tracking-[-0.03em] text-gray-100">
-            Request Access
-          </div>
-          <div className="text-[12px] text-gray-400 mt-[2px]">
-            Brokers / Shippers — apply for authorization
-          </div>
+        <a href="/join" style={s.buttonBlock}>
+          <div style={s.buttonTitle}>Request Access</div>
+          <div style={s.buttonSub}>Brokers / Shippers — apply for authorization</div>
         </a>
 
-        {/* Login */}
-        <a
-          href="/login"
-          className="w-full max-w-[500px]
-                     bg-[rgba(15,15,15,0.8)]
-                     hover:bg-[rgba(20,20,20,0.9)]
-                     text-gray-100
-                     border border-[rgba(255,255,255,0.18)]
-                     rounded-xl px-4 py-4 mb-3 transition-all
-                     text-left shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex flex-col"
-        >
-          <div className="text-[15px] font-semibold tracking-[-0.03em] text-gray-100">
-            Already Authorized? Log In
-          </div>
-          <div className="text-[12px] text-gray-400 mt-[2px]">
-            Use your QueCab AdbS code to unlock verification tools
-          </div>
+        <a href="/login" style={s.buttonBlock}>
+          <div style={s.buttonTitle}>Already Authorized? Log In</div>
+          <div style={s.buttonSub}>Use your QueCab AdbS code to unlock verification tools</div>
         </a>
 
-        {/* What is QueCab AdbS? */}
-        <div
-          className="w-full max-w-[500px]
-                     bg-[rgba(15,15,15,0.4)]
-                     text-gray-100
-                     border border-[rgba(255,255,255,0.08)]
-                     rounded-xl px-4 py-4 mb-4 text-left
-                     shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex flex-col"
-        >
-          <div className="text-[14px] font-semibold tracking-[-0.03em] text-gray-100 mb-1">
-            What is QueCab AdbS?
-          </div>
-          <div className="text-[12px] text-gray-400 leading-relaxed">
-            QueCab AdbS is an Anti-Double Brokering System. We confirm who is
-            actually hauling your freight, and we warn you when something
-            doesn’t match at the dock.
+        <div style={s.infoPanel}>
+          <div style={s.infoTitle}>What is QueCab AdbS?</div>
+          <div style={s.infoText}>
+            QueCab AdbS is an Anti-Double Brokering System. We confirm who is actually hauling your freight,
+            and we warn you when something doesn’t match at the dock.
           </div>
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="w-full max-w-[800px] text-center text-[11px] text-gray-500 tracking-[-0.03em] py-6">
+      <footer style={s.footer}>
         Anti-Double Brokering System • Verified Carrier Authenticity • © QueCab Inc.
       </footer>
     </div>
