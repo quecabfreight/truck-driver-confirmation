@@ -1,10 +1,9 @@
 import React from "react";
-import qcLogo from "../assets/qc-logo.png"; // <-- make sure this file exists
 
 function Home() {
   return (
     <div className="min-h-screen w-full bg-[#0a0a0a] text-gray-100 flex flex-col items-center">
-      {/* Top brand text (QueCab AdbS) */}
+      {/* Top brand text */}
       <header className="w-full max-w-[800px] text-center pt-8 pb-4">
         <div className="text-[20px] font-semibold text-gray-100 tracking-[-0.03em]">
           <span className="text-gray-100">QueCab</span>{" "}
@@ -15,7 +14,6 @@ function Home() {
       {/* Main card */}
       <main
         className="w-full max-w-[800px] mx-auto
-                   bg-[radial-gradient(circle_at_20%_0%,rgba(40,40,40,0.6)_0%,rgba(10,10,10,0.6)_60%)]
                    rounded-2xl
                    border border-[rgba(255,255,255,0.08)]
                    shadow-[0_30px_120px_rgba(0,0,0,0.9)]
@@ -24,6 +22,8 @@ function Home() {
                    flex flex-col items-center"
         style={{
           backgroundColor: "rgba(15,15,15,0.6)",
+          backgroundImage:
+            "radial-gradient(circle at 20% 0%, rgba(40,40,40,0.6) 0%, rgba(10,10,10,0.6) 60%)",
           backdropFilter: "blur(8px)",
         }}
       >
@@ -37,14 +37,9 @@ function Home() {
                        p-4"
           >
             <img
-              src={qcLogo}
+              src="/qc-logo.png"
               alt="QueCab AdbS Logo"
-              className="block"
-              style={{
-                width: "220px",
-                maxWidth: "220px",
-                height: "auto",
-              }}
+              style={{ width: "220px", maxWidth: "220px", height: "auto" }}
             />
           </div>
 
@@ -57,7 +52,7 @@ function Home() {
           </div>
         </div>
 
-        {/* Request Access button */}
+        {/* Request Access */}
         <a
           href="/join"
           className="w-full max-w-[500px]
@@ -65,13 +60,8 @@ function Home() {
                      hover:bg-[rgba(20,20,20,0.9)]
                      text-gray-100
                      border border-[rgba(255,255,255,0.18)]
-                     rounded-xl
-                     px-4 py-4
-                     mb-3
-                     transition-all
-                     text-left
-                     shadow-[0_20px_60px_rgba(0,0,0,0.8)]
-                     flex flex-col"
+                     rounded-xl px-4 py-4 mb-3 transition-all
+                     text-left shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex flex-col"
         >
           <div className="text-[15px] font-semibold tracking-[-0.03em] text-gray-100">
             Request Access
@@ -81,7 +71,7 @@ function Home() {
           </div>
         </a>
 
-        {/* Login button block */}
+        {/* Login */}
         <a
           href="/login"
           className="w-full max-w-[500px]
@@ -89,13 +79,8 @@ function Home() {
                      hover:bg-[rgba(20,20,20,0.9)]
                      text-gray-100
                      border border-[rgba(255,255,255,0.18)]
-                     rounded-xl
-                     px-4 py-4
-                     mb-3
-                     transition-all
-                     text-left
-                     shadow-[0_20px_60px_rgba(0,0,0,0.8)]
-                     flex flex-col"
+                     rounded-xl px-4 py-4 mb-3 transition-all
+                     text-left shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex flex-col"
         >
           <div className="text-[15px] font-semibold tracking-[-0.03em] text-gray-100">
             Already Authorized? Log In
@@ -105,31 +90,27 @@ function Home() {
           </div>
         </a>
 
-        {/* "What is QueCab AdbS?" block */}
+        {/* What is QueCab AdbS? */}
         <div
           className="w-full max-w-[500px]
                      bg-[rgba(15,15,15,0.4)]
                      text-gray-100
                      border border-[rgba(255,255,255,0.08)]
-                     rounded-xl
-                     px-4 py-4
-                     mb-4
-                     text-left
-                     shadow-[0_20px_60px_rgba(0,0,0,0.8)]
-                     flex flex-col"
+                     rounded-xl px-4 py-4 mb-4 text-left
+                     shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex flex-col"
         >
           <div className="text-[14px] font-semibold tracking-[-0.03em] text-gray-100 mb-1">
             What is QueCab AdbS?
           </div>
           <div className="text-[12px] text-gray-400 leading-relaxed">
-            QueCab AdbS is an Anti-Double Brokering System.
-            We confirm who is actually hauling your freight,
-            and we warn you when something doesn’t match at the dock.
+            QueCab AdbS is an Anti-Double Brokering System. We confirm who is
+            actually hauling your freight, and we warn you when something
+            doesn’t match at the dock.
           </div>
         </div>
       </main>
 
-      {/* Footer line */}
+      {/* Footer */}
       <footer className="w-full max-w-[800px] text-center text-[11px] text-gray-500 tracking-[-0.03em] py-6">
         Anti-Double Brokering System • Verified Carrier Authenticity • © QueCab Inc.
       </footer>
