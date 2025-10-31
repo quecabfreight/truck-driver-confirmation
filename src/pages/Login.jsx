@@ -10,24 +10,29 @@ const s = {
   page: {
     minHeight: "100vh",
     width: "100%",
-    // Make dark theme feel truly black; the light theme still uses variables
     background: "var(--bg)",
     color: "var(--text)",
     display: "flex",
     flexDirection: "column",
   },
+  // Header bar: remove left label; keep only subtle 'SECURE LOGIN' on right
   topbar: {
     width: "100%",
     display: "flex",
-    justifyContent: "space-between",
+    justifyContent: "flex-end",
     alignItems: "center",
     padding: "14px 16px",
     borderBottom: "1px solid var(--border)",
     background: "color-mix(in oklab, var(--bg) 96%, black 4%)",
-    fontSize: 14,
-    letterSpacing: "0.02em",
-    fontWeight: 600,
   },
+  secure: {
+    fontSize: 12,
+    fontWeight: 600,
+    color: "var(--muted)",
+    textTransform: "uppercase",
+    letterSpacing: "0.04em",
+  },
+
   wrap: {
     flex: 1,
     width: "100%",
@@ -39,15 +44,14 @@ const s = {
     width: "100%",
     maxWidth: 560,
     borderRadius: 16,
-    // Layered depth: subtle gradient + border + outer & inner shadows
-    background:
-      "linear-gradient(180deg, rgba(22,22,22,0.98), rgba(14,14,14,0.98))",
+    background: "linear-gradient(180deg, rgba(22,22,22,0.98), rgba(14,14,14,0.98))",
     border: "1px solid rgba(255,255,255,0.08)",
-    boxShadow:
-      "0 40px 120px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.03)",
+    boxShadow: "0 40px 120px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.03)",
     padding: 22,
   },
+
   head: { marginBottom: 16 },
+
   logoPlateOuter: {
     display: "flex",
     justifyContent: "center",
@@ -58,26 +62,24 @@ const s = {
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 14,
-    background:
-      "radial-gradient(ellipse at 40% 30%, rgba(0,0,0,0.85), rgba(0,0,0,0.65))",
+    background: "radial-gradient(ellipse at 40% 30%, rgba(0,0,0,0.85), rgba(0,0,0,0.65))",
     border: "1px solid rgba(255,255,255,0.10)",
-    boxShadow:
-      "0 30px 90px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.05)",
+    boxShadow: "0 30px 90px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.05)",
     padding: 14,
   },
-  product: {
+
+  title: {
     fontSize: 18,
     fontWeight: 700,
     letterSpacing: "-0.02em",
-    textAlign: "left",
   },
-  sub: {
+  subtitle: {
     marginTop: 4,
     fontSize: 13.5,
     color: "var(--muted)",
     letterSpacing: "0.02em",
-    textAlign: "left",
   },
+
   err: {
     marginTop: 12,
     marginBottom: 12,
@@ -88,7 +90,9 @@ const s = {
     borderRadius: 8,
     padding: "10px 12px",
   },
+
   form: { marginTop: 6 },
+
   label: {
     fontSize: 13.5,
     fontWeight: 700,
@@ -101,8 +105,7 @@ const s = {
     fontSize: 16,
     lineHeight: 1.4,
     color: "var(--text)",
-    background:
-      "linear-gradient(180deg, rgba(0,0,0,0.70), rgba(0,0,0,0.60))",
+    background: "linear-gradient(180deg, rgba(0,0,0,0.70), rgba(0,0,0,0.60))",
     border: "1px solid rgba(255,255,255,0.16)",
     borderRadius: 10,
     padding: "12px 13px",
@@ -110,6 +113,7 @@ const s = {
     boxShadow: "inset 0 1px 2px rgba(0,0,0,0.4)",
   },
   row: { marginTop: 14 },
+
   remember: {
     display: "flex",
     alignItems: "flex-start",
@@ -120,12 +124,11 @@ const s = {
     marginTop: 4,
     width: 18,
     height: 18,
-    accentColor: "#1f2937", // dark gray tick to match black theme
+    accentColor: "#1f2937",
   },
   rememberText: { fontSize: 13.5 },
   rememberHint: { fontSize: 12.5, color: "var(--muted)" },
 
-  // Black submit button with subtle glow
   button: {
     width: "100%",
     marginTop: 16,
@@ -134,39 +137,26 @@ const s = {
     letterSpacing: "0.06em",
     textTransform: "uppercase",
     color: "#e5e7eb",
-    background:
-      "linear-gradient(180deg, rgba(18,18,18,1), rgba(0,0,0,1))",
+    background: "linear-gradient(180deg, rgba(18,18,18,1), rgba(0,0,0,1))",
     border: "1px solid rgba(255,255,255,0.10)",
     borderRadius: 12,
     padding: "12px 14px",
     cursor: "pointer",
-    boxShadow:
-      "0 18px 40px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.04)",
+    boxShadow: "0 18px 40px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.04)",
   },
   buttonHover: {
-    background:
-      "linear-gradient(180deg, rgba(30,30,30,1), rgba(10,10,10,1))",
+    background: "linear-gradient(180deg, rgba(30,30,30,1), rgba(10,10,10,1))",
     borderColor: "rgba(255,255,255,0.16)",
   },
 
-  links: {
-    marginTop: 18,
-    display: "flex",
-    flexDirection: "column",
-    gap: 10,
-  },
+  links: { marginTop: 18, display: "flex", flexDirection: "column", gap: 10 },
   link: {
     fontSize: 14,
     color: "var(--muted)",
     textDecoration: "underline",
     textUnderlineOffset: 3,
   },
-  legal: {
-    marginTop: 4,
-    fontSize: 12.5,
-    color: "var(--muted)",
-    lineHeight: 1.5,
-  },
+  legal: { marginTop: 4, fontSize: 12.5, color: "var(--muted)", lineHeight: 1.5 },
 };
 
 export default function Login() {
@@ -177,12 +167,10 @@ export default function Login() {
   const [err, setErr] = useState("");
   const [btnStyle, setBtnStyle] = useState(s.button);
 
-  // Prefill remembered email
+  // Prefill saved email if device was remembered
   useEffect(() => {
     const savedRemember = localStorage.getItem(LS_KEY_REMEMBER) === "1";
-    const savedEmail = savedRemember
-      ? localStorage.getItem(LS_KEY_EMAIL) || ""
-      : "";
+    const savedEmail = savedRemember ? localStorage.getItem(LS_KEY_EMAIL) || "" : "";
     if (savedRemember) {
       setRememberDevice(true);
       setEmail(savedEmail);
@@ -192,7 +180,7 @@ export default function Login() {
   const submit = (e) => {
     e.preventDefault();
 
-    const normalizedEmail = email.trim().toLowerCase(); // email is case-insensitive
+    const normalizedEmail = email.trim().toLowerCase();
     if (!normalizedEmail || !pwd.trim()) {
       setErr("Email and password are required.");
       return;
@@ -206,31 +194,21 @@ export default function Login() {
       localStorage.removeItem(LS_KEY_EMAIL);
     }
 
-    // TODO: swap with real auth
+    // TODO: replace with real auth
     setErr("");
     nav("/");
   };
 
   return (
     <div style={s.page}>
-      {/* Header bar (unchanged) */}
+      {/* Header bar (no left brand text) */}
       <div style={s.topbar}>
-        <div>QUECAB ADBS</div>
-        <div
-          style={{
-            fontSize: 12,
-            fontWeight: 500,
-            color: "var(--muted)",
-            textTransform: "uppercase",
-          }}
-        >
-          Secure Login
-        </div>
+        <div style={s.secure}>Secure Login</div>
       </div>
 
       <div style={s.wrap}>
         <div style={s.card}>
-          {/* Logo + heading */}
+          {/* Logo */}
           <div style={s.head}>
             <div style={s.logoPlateOuter}>
               <div style={s.logoPlate}>
@@ -241,11 +219,10 @@ export default function Login() {
                 />
               </div>
             </div>
-
-            <div style={s.product}>
+            <div style={s.title}>
               QueCab <span style={{ color: "var(--muted)", fontWeight: 700 }}>AdbS</span>
             </div>
-            <div style={s.sub}>Broker / Shipper Access</div>
+            <div style={s.subtitle}>Broker / Shipper Access</div>
           </div>
 
           {/* Error */}
@@ -254,9 +231,7 @@ export default function Login() {
           {/* Form */}
           <form onSubmit={submit} style={s.form}>
             <div style={s.row}>
-              <label htmlFor="email" style={s.label}>
-                Business Email
-              </label>
+              <label htmlFor="email" style={s.label}>Business Email</label>
               <input
                 id="email"
                 type="email"
@@ -269,9 +244,7 @@ export default function Login() {
             </div>
 
             <div style={s.row}>
-              <label htmlFor="pwd" style={s.label}>
-                Password
-              </label>
+              <label htmlFor="pwd" style={s.label}>Password</label>
               <input
                 id="pwd"
                 type="password"
@@ -293,18 +266,14 @@ export default function Login() {
               />
               <label htmlFor="rememberDevice" style={s.rememberText}>
                 Remember this device
-                <div style={s.rememberHint}>
-                  Do not use on shared / public equipment.
-                </div>
+                <div style={s.rememberHint}>Do not use on shared / public equipment.</div>
               </label>
             </div>
 
             <button
               type="submit"
               style={btnStyle}
-              onMouseEnter={() =>
-                setBtnStyle({ ...s.button, ...s.buttonHover })
-              }
+              onMouseEnter={() => setBtnStyle({ ...s.button, ...s.buttonHover })}
               onMouseLeave={() => setBtnStyle(s.button)}
             >
               SIGN IN
@@ -312,12 +281,9 @@ export default function Login() {
           </form>
 
           <div style={s.links}>
-            <a href="/join" style={s.link}>
-              Need access? Request Authorization
-            </a>
+            <a href="/join" style={s.link}>Need access? Request Authorization</a>
             <div style={s.legal}>
-              Authorized use only; activity may be monitored and recorded. By
-              continuing you consent to monitoring.
+              Authorized use only; activity may be monitored and recorded. By continuing you consent to monitoring.
             </div>
           </div>
         </div>
