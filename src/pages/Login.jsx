@@ -47,19 +47,30 @@ const s = {
     boxShadow: "0 28px 90px rgba(0,0,0,0.25)",
     padding: 20,
   },
-  head: {
-    marginBottom: 14,
+  head: { marginBottom: 16 },
+  logoPlate: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 14,
+    background: "var(--plate)",
+    border: "1px solid var(--border)",
+    boxShadow: "0 18px 60px rgba(0,0,0,0.18)",
+    padding: 14,
+    marginBottom: 10,
   },
   product: {
     fontSize: 18,
     fontWeight: 700,
     letterSpacing: "-0.02em",
+    textAlign: "left",
   },
   sub: {
     marginTop: 4,
     fontSize: 13.5,
     color: "var(--muted)",
     letterSpacing: "0.02em",
+    textAlign: "left",
   },
   err: {
     marginTop: 12,
@@ -140,7 +151,7 @@ export default function Login() {
   const [rememberDevice, setRememberDevice] = useState(false);
   const [err, setErr] = useState("");
 
-  // ✅ Load saved email if Remember Device was checked
+  // Load saved email if Remember Device was previously checked
   useEffect(() => {
     const savedRemember = localStorage.getItem(LS_KEY_REMEMBER) === "1";
     const savedEmail = savedRemember ? localStorage.getItem(LS_KEY_EMAIL) || "" : "";
@@ -150,17 +161,16 @@ export default function Login() {
     }
   }, []);
 
-  // ✅ Handle login form submission
   const submit = (e) => {
     e.preventDefault();
 
-    const normalizedEmail = email.trim().toLowerCase(); // emails are not case-sensitive
+    const normalizedEmail = email.trim().toLowerCase(); // email case-insensitive
     if (!normalizedEmail || !pwd.trim()) {
       setErr("Email and password are required.");
       return;
     }
 
-    // If "Remember this device" is checked, store email
+    // Remember email based on checkbox
     if (rememberDevice) {
       localStorage.setItem(LS_KEY_REMEMBER, "1");
       localStorage.setItem(LS_KEY_EMAIL, normalizedEmail);
@@ -169,14 +179,9 @@ export default function Login() {
       localStorage.removeItem(LS_KEY_EMAIL);
     }
 
-    // Placeholder for real authentication logic
-    // TODO: Replace with actual API / authorization check
-    if (normalizedEmail.includes("@")) {
-      setErr("");
-      nav("/"); // Navigate to home if successful
-    } else {
-      setErr("Unauthorized or invalid email format.");
-    }
+    // TODO: real auth check here
+    setErr("");
+    nav("/");
   };
 
   return (
@@ -191,7 +196,18 @@ export default function Login() {
 
       <div style={s.wrap}>
         <div style={s.card}>
+          {/* Logo + product heading */}
           <div style={s.head}>
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}>
+              <div style={s.logoPlate}>
+                <img
+                  src="/qc-logo.png"
+                  alt="QueCab AdbS Logo"
+                  style={{ width: 200, height: "auto", display: "block" }}
+                />
+              </div>
+            </div>
+
             <div style={s.product}>
               QueCab <span style={{ color: "var(--muted)", fontWeight: 700 }}>AdbS</span>
             </div>
