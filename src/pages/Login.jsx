@@ -5,106 +5,33 @@ const LS_KEY_EMAIL = "quecab-remembered-email";
 const LS_KEY_REMEMBER = "quecab-remember-device";
 
 const s = {
-  page: {
-    minHeight: "100vh",
-    width: "100%",
-    background: "var(--bg)",
-    color: "var(--text)",
-    display: "flex",
-    flexDirection: "column",
-  },
-  topbar: {
-    width: "100%",
-    display: "flex",
-    justifyContent: "flex-end",
-    alignItems: "center",
-    padding: "14px 16px",
-    borderBottom: "1px solid var(--border)",
-    background: "color-mix(in oklab, var(--bg) 96%, black 4%)",
-  },
-  secure: {
-    fontSize: 12,
-    fontWeight: 600,
-    color: "var(--muted)",
-    textTransform: "uppercase",
-    letterSpacing: "0.04em",
-  },
-  wrap: {
-    flex: 1,
-    width: "100%",
-    display: "flex",
-    justifyContent: "center",
-    padding: "28px 16px",
-  },
+  page: { minHeight: "100vh", width: "100%", background: "var(--bg)", color: "var(--text)", display: "flex", flexDirection: "column" },
+  topbar: { width: "100%", display: "flex", justifyContent: "flex-end", alignItems: "center", padding: "14px 16px", borderBottom: "1px solid var(--border)", background: "color-mix(in oklab, var(--bg) 96%, black 4%)" },
+  secure: { fontSize: 12, fontWeight: 600, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.04em" },
+  wrap: { flex: 1, width: "100%", display: "flex", justifyContent: "center", padding: "28px 16px" },
   card: {
-    width: "100%",
-    maxWidth: 560,
-    borderRadius: 16,
-    background:
-      "linear-gradient(180deg, rgba(22,22,22,0.98), rgba(14,14,14,0.98))",
+    width: "100%", maxWidth: 560, borderRadius: 16,
+    background: "linear-gradient(180deg, rgba(22,22,22,0.98), rgba(14,14,14,0.98))",
     border: "1px solid rgba(255,255,255,0.08)",
-    boxShadow:
-      "0 40px 120px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.03)",
-    padding: 22,
+    boxShadow: "0 40px 120px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.03)",
+    padding: 22
   },
-  logoPlateOuter: {
-    display: "flex",
-    justifyContent: "center",
-    marginBottom: 10,
-  },
+  logoPlateOuter: { display: "flex", justifyContent: "center", marginBottom: 10 },
   logoPlate: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 14,
-    background:
-      "radial-gradient(ellipse at 40% 30%, rgba(0,0,0,0.85), rgba(0,0,0,0.65))",
-    border: "1px solid rgba(255,255,255,0.10)",
-    boxShadow:
-      "0 30px 90px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.05)",
-    padding: 14,
+    display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 14,
+    background: "radial-gradient(ellipse at 40% 30%, rgba(0,0,0,0.85), rgba(0,0,0,0.65))",
+    border: "1px solid rgba(255,255,255,0.10)", boxShadow: "0 30px 90px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.05)", padding: 14
   },
-  title: {
-    fontSize: 18,
-    fontWeight: 700,
-    letterSpacing: "-0.02em",
-  },
-  subtitle: {
-    marginTop: 4,
-    fontSize: 13.5,
-    color: "var(--muted)",
-    letterSpacing: "0.02em",
-  },
-  err: {
-    marginTop: 12,
-    marginBottom: 12,
-    fontSize: 14.5,
-    color: "#fca5a5",
-    background: "color-mix(in oklab, var(--bg) 70%, #7f1d1d 30%)",
-    border: "1px solid color-mix(in oklab, #ef4444 70%, black 30%)",
-    borderRadius: 8,
-    padding: "10px 12px",
-  },
+  title: { fontSize: 18, fontWeight: 700, letterSpacing: "-0.02em" },
+  subtitle: { marginTop: 4, fontSize: 13.5, color: "var(--muted)", letterSpacing: "0.02em" },
+  err: { marginTop: 12, marginBottom: 12, fontSize: 14.5, color: "#fca5a5", background: "color-mix(in oklab, var(--bg) 70%, #7f1d1d 30%)", border: "1px solid color-mix(in oklab, #ef4444 70%, black 30%)", borderRadius: 8, padding: "10px 12px" },
   form: { marginTop: 6 },
-  label: {
-    fontSize: 13.5,
-    fontWeight: 700,
-    letterSpacing: "0.04em",
-    textTransform: "uppercase",
-    marginBottom: 6,
-  },
+  label: { fontSize: 13.5, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 6 },
   input: {
-    width: "100%",
-    fontSize: 16,
-    lineHeight: 1.4,
-    color: "var(--text)",
-    background:
-      "linear-gradient(180deg, rgba(0,0,0,0.70), rgba(0,0,0,0.60))",
-    border: "1px solid rgba(255,255,255,0.16)",
-    borderRadius: 10,
-    padding: "12px 13px",
-    outline: "none",
-    boxShadow: "inset 0 1px 2px rgba(0,0,0,0.4)",
+    width: "100%", fontSize: 16, lineHeight: 1.4, color: "var(--text)",
+    background: "linear-gradient(180deg, rgba(0,0,0,0.70), rgba(0,0,0,0.60))",
+    border: "1px solid rgba(255,255,255,0.16)", borderRadius: 10, padding: "12px 13px",
+    outline: "none", boxShadow: "inset 0 1px 2px rgba(0,0,0,0.4)"
   },
   row: { marginTop: 14 },
   remember: { display: "flex", alignItems: "flex-start", gap: 10, marginTop: 4 },
@@ -112,49 +39,22 @@ const s = {
   rememberText: { fontSize: 13.5 },
   rememberHint: { fontSize: 12.5, color: "var(--muted)" },
   button: {
-    width: "100%",
-    marginTop: 16,
-    fontSize: 16,
-    fontWeight: 800,
-    letterSpacing: "0.06em",
-    textTransform: "uppercase",
-    color: "#e5e7eb",
-    background:
-      "linear-gradient(180deg, rgba(18,18,18,1), rgba(0,0,0,1))",
-    border: "1px solid rgba(255,255,255,0.10)",
-    borderRadius: 12,
-    padding: "12px 14px",
-    cursor: "pointer",
-    boxShadow:
-      "0 18px 40px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.04)",
+    width: "100%", marginTop: 16, fontSize: 16, fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase",
+    color: "#e5e7eb", background: "linear-gradient(180deg, rgba(18,18,18,1), rgba(0,0,0,1))",
+    border: "1px solid rgba(255,255,255,0.10)", borderRadius: 12, padding: "12px 14px", cursor: "pointer",
+    boxShadow: "0 18px 40px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.04)"
   },
-  buttonHover: {
-    background:
-      "linear-gradient(180deg, rgba(30,30,30,1), rgba(10,10,10,1))",
-    borderColor: "rgba(255,255,255,0.16)",
-  },
-
-  infoBoxWrap: {
-    marginTop: 26,
-    display: "flex",
-    flexDirection: "column",
-    gap: 10,
-  },
-  infoBox: {
-    background: "rgba(0,0,0,0.6)",
-    border: "1px solid rgba(255,255,255,0.12)",
-    borderRadius: 10,
-    padding: "12px 14px",
-    boxShadow: "0 6px 18px rgba(0,0,0,0.25)",
-  },
+  buttonHover: { background: "linear-gradient(180deg, rgba(30,30,30,1), rgba(10,10,10,1))", borderColor: "rgba(255,255,255,0.16)" },
+  infoBoxWrap: { marginTop: 26, display: "flex", flexDirection: "column", gap: 10 },
+  infoBox: { background: "rgba(0,0,0,0.6)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, padding: "12px 14px", boxShadow: "0 6px 18px rgba(0,0,0,0.25)" },
   infoTitle: { fontWeight: 700, fontSize: 15.5 },
-  infoDesc: { fontSize: 13.5, color: "var(--muted)", marginTop: 3 },
+  infoDesc: { fontSize: 13.5, color: "var(--muted)", marginTop: 3 }
 };
 
 export default function Login() {
   const nav = useNavigate();
   const [email, setEmail] = useState("");
-  const [pwd, setPwd] = useState("");
+  const [authCode, setAuthCode] = useState("");         // renamed
   const [rememberDevice, setRememberDevice] = useState(false);
   const [err, setErr] = useState("");
   const [btnStyle, setBtnStyle] = useState(s.button);
@@ -168,13 +68,20 @@ export default function Login() {
     }
   }, []);
 
+  // Normalize code: strip non-alphanumerics, uppercase
+  const normalizeCode = (val) => (val || "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+
   const submit = (e) => {
     e.preventDefault();
     const normalizedEmail = email.trim().toLowerCase();
-    if (!normalizedEmail || !pwd.trim()) {
-      setErr("Email and password are required.");
+    const normalizedCode = normalizeCode(authCode);
+
+    if (!normalizedEmail || !normalizedCode) {
+      setErr("Email and authorization code are required.");
       return;
     }
+
+    // Remember only email
     if (rememberDevice) {
       localStorage.setItem(LS_KEY_REMEMBER, "1");
       localStorage.setItem(LS_KEY_EMAIL, normalizedEmail);
@@ -182,31 +89,26 @@ export default function Login() {
       localStorage.removeItem(LS_KEY_REMEMBER);
       localStorage.removeItem(LS_KEY_EMAIL);
     }
+
+    // TODO: Replace this with real server-side auth check:
+    // send { email: normalizedEmail, code: normalizedCode }
     setErr("");
-    nav("/");
+    nav("/"); // on success
   };
 
   return (
     <div style={s.page}>
-      <div style={s.topbar}>
-        <div style={s.secure}>Secure Login</div>
-      </div>
+      <div style={s.topbar}><div style={s.secure}>Secure Login</div></div>
 
       <div style={s.wrap}>
         <div style={s.card}>
-          <div style={s.logoPlateOuter}>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}>
             <div style={s.logoPlate}>
-              <img
-                src="/qc-logo.png"
-                alt="QueCab AdbS Logo"
-                style={{ width: 220, height: "auto", display: "block" }}
-              />
+              <img src="/qc-logo.png" alt="QueCab AdbS Logo" style={{ width: 220, height: "auto", display: "block" }} />
             </div>
           </div>
 
-          <div style={s.title}>
-            QueCab <span style={{ color: "var(--muted)", fontWeight: 700 }}>AdbS</span>
-          </div>
+          <div style={s.title}>QueCab <span style={{ color: "var(--muted)", fontWeight: 700 }}>AdbS</span></div>
           <div style={s.subtitle}>Broker / Shipper Access</div>
 
           {err ? <div style={s.err}>{err}</div> : null}
@@ -215,36 +117,25 @@ export default function Login() {
             <div style={s.row}>
               <label htmlFor="email" style={s.label}>Business Email</label>
               <input
-                id="email"
-                type="email"
-                placeholder="name@company.com"
-                style={s.input}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                autoComplete="email"
+                id="email" type="email" placeholder="name@company.com"
+                style={s.input} value={email}
+                onChange={(e) => setEmail(e.target.value)} autoComplete="email"
               />
             </div>
 
             <div style={s.row}>
-              <label htmlFor="pwd" style={s.label}>Password</label>
+              <label htmlFor="code" style={s.label}>Authorization Code</label>
               <input
-                id="pwd"
-                type="password"
-                placeholder="••••••••"
-                style={s.input}
-                value={pwd}
-                onChange={(e) => setPwd(e.target.value)}
-                autoComplete="current-password"
+                id="code" type="password" placeholder="e.g., QC-1A2B-3C4D"
+                style={s.input} value={authCode}
+                onChange={(e) => setAuthCode(e.target.value)} autoComplete="one-time-code"
               />
             </div>
 
             <div style={{ ...s.row, ...s.remember }}>
               <input
-                id="rememberDevice"
-                type="checkbox"
-                style={s.checkbox}
-                checked={rememberDevice}
-                onChange={(e) => setRememberDevice(e.target.checked)}
+                id="rememberDevice" type="checkbox" style={s.checkbox}
+                checked={rememberDevice} onChange={(e) => setRememberDevice(e.target.checked)}
               />
               <label htmlFor="rememberDevice" style={s.rememberText}>
                 Remember this device
@@ -253,8 +144,7 @@ export default function Login() {
             </div>
 
             <button
-              type="submit"
-              style={btnStyle}
+              type="submit" style={btnStyle}
               onMouseEnter={() => setBtnStyle({ ...s.button, ...s.buttonHover })}
               onMouseLeave={() => setBtnStyle(s.button)}
             >
@@ -262,7 +152,7 @@ export default function Login() {
             </button>
           </form>
 
-          {/* Bottom professional info boxes */}
+          {/* Professional info boxes */}
           <div style={s.infoBoxWrap}>
             <div style={s.infoBox}>
               <div style={s.infoTitle}>Request Access</div>
