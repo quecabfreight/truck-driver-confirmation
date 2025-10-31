@@ -1,19 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-// -------------------------------------
-// CONSTANTS
-// -------------------------------------
+// LocalStorage keys
 const LS_KEY_EMAIL = "quecab-remembered-email";
 const LS_KEY_REMEMBER = "quecab-remember-device";
 
-// -------------------------------------
-// STYLES
-// -------------------------------------
+// Styles
 const s = {
   page: {
     minHeight: "100vh",
     width: "100%",
+    // Make dark theme feel truly black; the light theme still uses variables
     background: "var(--bg)",
     color: "var(--text)",
     display: "flex",
@@ -26,7 +23,7 @@ const s = {
     alignItems: "center",
     padding: "14px 16px",
     borderBottom: "1px solid var(--border)",
-    background: "color-mix(in oklab, var(--bg) 92%, black 8%)",
+    background: "color-mix(in oklab, var(--bg) 96%, black 4%)",
     fontSize: 14,
     letterSpacing: "0.02em",
     fontWeight: 600,
@@ -41,23 +38,32 @@ const s = {
   card: {
     width: "100%",
     maxWidth: 560,
-    background: "var(--card)",
-    border: "1px solid var(--border)",
-    borderRadius: 14,
-    boxShadow: "0 28px 90px rgba(0,0,0,0.25)",
-    padding: 20,
+    borderRadius: 16,
+    // Layered depth: subtle gradient + border + outer & inner shadows
+    background:
+      "linear-gradient(180deg, rgba(22,22,22,0.98), rgba(14,14,14,0.98))",
+    border: "1px solid rgba(255,255,255,0.08)",
+    boxShadow:
+      "0 40px 120px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.03)",
+    padding: 22,
   },
   head: { marginBottom: 16 },
+  logoPlateOuter: {
+    display: "flex",
+    justifyContent: "center",
+    marginBottom: 10,
+  },
   logoPlate: {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 14,
-    background: "var(--plate)",
-    border: "1px solid var(--border)",
-    boxShadow: "0 18px 60px rgba(0,0,0,0.18)",
+    background:
+      "radial-gradient(ellipse at 40% 30%, rgba(0,0,0,0.85), rgba(0,0,0,0.65))",
+    border: "1px solid rgba(255,255,255,0.10)",
+    boxShadow:
+      "0 30px 90px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.05)",
     padding: 14,
-    marginBottom: 10,
   },
   product: {
     fontSize: 18,
@@ -95,22 +101,31 @@ const s = {
     fontSize: 16,
     lineHeight: 1.4,
     color: "var(--text)",
-    background: "color-mix(in oklab, var(--bg) 80%, black 20%)",
-    border: "1px solid color-mix(in oklab, var(--border) 70%, var(--text) 30%)",
-    borderRadius: 8,
-    padding: "11px 12px",
+    background:
+      "linear-gradient(180deg, rgba(0,0,0,0.70), rgba(0,0,0,0.60))",
+    border: "1px solid rgba(255,255,255,0.16)",
+    borderRadius: 10,
+    padding: "12px 13px",
     outline: "none",
+    boxShadow: "inset 0 1px 2px rgba(0,0,0,0.4)",
   },
   row: { marginTop: 14 },
-  remember: { display: "flex", alignItems: "flex-start", gap: 10, marginTop: 4 },
+  remember: {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: 10,
+    marginTop: 4,
+  },
   checkbox: {
     marginTop: 4,
     width: 18,
     height: 18,
-    accentColor: "#dc2626",
+    accentColor: "#1f2937", // dark gray tick to match black theme
   },
   rememberText: { fontSize: 13.5 },
   rememberHint: { fontSize: 12.5, color: "var(--muted)" },
+
+  // Black submit button with subtle glow
   button: {
     width: "100%",
     marginTop: 16,
@@ -118,15 +133,28 @@ const s = {
     fontWeight: 800,
     letterSpacing: "0.06em",
     textTransform: "uppercase",
-    color: "white",
-    background: "#dc2626",
-    border: "1px solid color-mix(in oklab, #dc2626 70%, black 30%)",
-    borderRadius: 10,
+    color: "#e5e7eb",
+    background:
+      "linear-gradient(180deg, rgba(18,18,18,1), rgba(0,0,0,1))",
+    border: "1px solid rgba(255,255,255,0.10)",
+    borderRadius: 12,
     padding: "12px 14px",
     cursor: "pointer",
-    boxShadow: "0 18px 40px rgba(220,38,38,0.30)",
+    boxShadow:
+      "0 18px 40px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.04)",
   },
-  links: { marginTop: 18, display: "flex", flexDirection: "column", gap: 10 },
+  buttonHover: {
+    background:
+      "linear-gradient(180deg, rgba(30,30,30,1), rgba(10,10,10,1))",
+    borderColor: "rgba(255,255,255,0.16)",
+  },
+
+  links: {
+    marginTop: 18,
+    display: "flex",
+    flexDirection: "column",
+    gap: 10,
+  },
   link: {
     fontSize: 14,
     color: "var(--muted)",
@@ -141,20 +169,20 @@ const s = {
   },
 };
 
-// -------------------------------------
-// MAIN COMPONENT
-// -------------------------------------
 export default function Login() {
   const nav = useNavigate();
   const [email, setEmail] = useState("");
   const [pwd, setPwd] = useState("");
   const [rememberDevice, setRememberDevice] = useState(false);
   const [err, setErr] = useState("");
+  const [btnStyle, setBtnStyle] = useState(s.button);
 
-  // Load saved email if Remember Device was previously checked
+  // Prefill remembered email
   useEffect(() => {
     const savedRemember = localStorage.getItem(LS_KEY_REMEMBER) === "1";
-    const savedEmail = savedRemember ? localStorage.getItem(LS_KEY_EMAIL) || "" : "";
+    const savedEmail = savedRemember
+      ? localStorage.getItem(LS_KEY_EMAIL) || ""
+      : "";
     if (savedRemember) {
       setRememberDevice(true);
       setEmail(savedEmail);
@@ -164,13 +192,12 @@ export default function Login() {
   const submit = (e) => {
     e.preventDefault();
 
-    const normalizedEmail = email.trim().toLowerCase(); // email case-insensitive
+    const normalizedEmail = email.trim().toLowerCase(); // email is case-insensitive
     if (!normalizedEmail || !pwd.trim()) {
       setErr("Email and password are required.");
       return;
     }
 
-    // Remember email based on checkbox
     if (rememberDevice) {
       localStorage.setItem(LS_KEY_REMEMBER, "1");
       localStorage.setItem(LS_KEY_EMAIL, normalizedEmail);
@@ -179,31 +206,38 @@ export default function Login() {
       localStorage.removeItem(LS_KEY_EMAIL);
     }
 
-    // TODO: real auth check here
+    // TODO: swap with real auth
     setErr("");
     nav("/");
   };
 
   return (
     <div style={s.page}>
-      {/* Header bar */}
+      {/* Header bar (unchanged) */}
       <div style={s.topbar}>
         <div>QUECAB ADBS</div>
-        <div style={{ fontSize: 12, fontWeight: 500, color: "var(--muted)", textTransform: "uppercase" }}>
+        <div
+          style={{
+            fontSize: 12,
+            fontWeight: 500,
+            color: "var(--muted)",
+            textTransform: "uppercase",
+          }}
+        >
           Secure Login
         </div>
       </div>
 
       <div style={s.wrap}>
         <div style={s.card}>
-          {/* Logo + product heading */}
+          {/* Logo + heading */}
           <div style={s.head}>
-            <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}>
+            <div style={s.logoPlateOuter}>
               <div style={s.logoPlate}>
                 <img
                   src="/qc-logo.png"
                   alt="QueCab AdbS Logo"
-                  style={{ width: 200, height: "auto", display: "block" }}
+                  style={{ width: 220, height: "auto", display: "block" }}
                 />
               </div>
             </div>
@@ -214,11 +248,15 @@ export default function Login() {
             <div style={s.sub}>Broker / Shipper Access</div>
           </div>
 
+          {/* Error */}
           {err ? <div style={s.err}>{err}</div> : null}
 
+          {/* Form */}
           <form onSubmit={submit} style={s.form}>
             <div style={s.row}>
-              <label htmlFor="email" style={s.label}>Business Email</label>
+              <label htmlFor="email" style={s.label}>
+                Business Email
+              </label>
               <input
                 id="email"
                 type="email"
@@ -231,7 +269,9 @@ export default function Login() {
             </div>
 
             <div style={s.row}>
-              <label htmlFor="pwd" style={s.label}>Password</label>
+              <label htmlFor="pwd" style={s.label}>
+                Password
+              </label>
               <input
                 id="pwd"
                 type="password"
@@ -253,17 +293,31 @@ export default function Login() {
               />
               <label htmlFor="rememberDevice" style={s.rememberText}>
                 Remember this device
-                <div style={s.rememberHint}>Do not use on shared / public equipment.</div>
+                <div style={s.rememberHint}>
+                  Do not use on shared / public equipment.
+                </div>
               </label>
             </div>
 
-            <button type="submit" style={s.button}>Sign In</button>
+            <button
+              type="submit"
+              style={btnStyle}
+              onMouseEnter={() =>
+                setBtnStyle({ ...s.button, ...s.buttonHover })
+              }
+              onMouseLeave={() => setBtnStyle(s.button)}
+            >
+              SIGN IN
+            </button>
           </form>
 
           <div style={s.links}>
-            <a href="/join" style={s.link}>Need access? Request Authorization</a>
+            <a href="/join" style={s.link}>
+              Need access? Request Authorization
+            </a>
             <div style={s.legal}>
-              Authorized use only; activity may be monitored and recorded. By continuing you consent to monitoring.
+              Authorized use only; activity may be monitored and recorded. By
+              continuing you consent to monitoring.
             </div>
           </div>
         </div>
