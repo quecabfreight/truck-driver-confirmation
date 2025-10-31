@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-// LocalStorage keys
 const LS_KEY_EMAIL = "quecab-remembered-email";
 const LS_KEY_REMEMBER = "quecab-remember-device";
 
-// Styles
 const s = {
   page: {
     minHeight: "100vh",
@@ -15,7 +13,6 @@ const s = {
     display: "flex",
     flexDirection: "column",
   },
-  // Header bar: remove left label; keep only subtle 'SECURE LOGIN' on right
   topbar: {
     width: "100%",
     display: "flex",
@@ -32,7 +29,6 @@ const s = {
     textTransform: "uppercase",
     letterSpacing: "0.04em",
   },
-
   wrap: {
     flex: 1,
     width: "100%",
@@ -44,14 +40,13 @@ const s = {
     width: "100%",
     maxWidth: 560,
     borderRadius: 16,
-    background: "linear-gradient(180deg, rgba(22,22,22,0.98), rgba(14,14,14,0.98))",
+    background:
+      "linear-gradient(180deg, rgba(22,22,22,0.98), rgba(14,14,14,0.98))",
     border: "1px solid rgba(255,255,255,0.08)",
-    boxShadow: "0 40px 120px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.03)",
+    boxShadow:
+      "0 40px 120px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.03)",
     padding: 22,
   },
-
-  head: { marginBottom: 16 },
-
   logoPlateOuter: {
     display: "flex",
     justifyContent: "center",
@@ -62,12 +57,13 @@ const s = {
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 14,
-    background: "radial-gradient(ellipse at 40% 30%, rgba(0,0,0,0.85), rgba(0,0,0,0.65))",
+    background:
+      "radial-gradient(ellipse at 40% 30%, rgba(0,0,0,0.85), rgba(0,0,0,0.65))",
     border: "1px solid rgba(255,255,255,0.10)",
-    boxShadow: "0 30px 90px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.05)",
+    boxShadow:
+      "0 30px 90px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.05)",
     padding: 14,
   },
-
   title: {
     fontSize: 18,
     fontWeight: 700,
@@ -79,7 +75,6 @@ const s = {
     color: "var(--muted)",
     letterSpacing: "0.02em",
   },
-
   err: {
     marginTop: 12,
     marginBottom: 12,
@@ -90,9 +85,7 @@ const s = {
     borderRadius: 8,
     padding: "10px 12px",
   },
-
   form: { marginTop: 6 },
-
   label: {
     fontSize: 13.5,
     fontWeight: 700,
@@ -105,7 +98,8 @@ const s = {
     fontSize: 16,
     lineHeight: 1.4,
     color: "var(--text)",
-    background: "linear-gradient(180deg, rgba(0,0,0,0.70), rgba(0,0,0,0.60))",
+    background:
+      "linear-gradient(180deg, rgba(0,0,0,0.70), rgba(0,0,0,0.60))",
     border: "1px solid rgba(255,255,255,0.16)",
     borderRadius: 10,
     padding: "12px 13px",
@@ -113,22 +107,10 @@ const s = {
     boxShadow: "inset 0 1px 2px rgba(0,0,0,0.4)",
   },
   row: { marginTop: 14 },
-
-  remember: {
-    display: "flex",
-    alignItems: "flex-start",
-    gap: 10,
-    marginTop: 4,
-  },
-  checkbox: {
-    marginTop: 4,
-    width: 18,
-    height: 18,
-    accentColor: "#1f2937",
-  },
+  remember: { display: "flex", alignItems: "flex-start", gap: 10, marginTop: 4 },
+  checkbox: { marginTop: 4, width: 18, height: 18, accentColor: "#1f2937" },
   rememberText: { fontSize: 13.5 },
   rememberHint: { fontSize: 12.5, color: "var(--muted)" },
-
   button: {
     width: "100%",
     marginTop: 16,
@@ -137,26 +119,36 @@ const s = {
     letterSpacing: "0.06em",
     textTransform: "uppercase",
     color: "#e5e7eb",
-    background: "linear-gradient(180deg, rgba(18,18,18,1), rgba(0,0,0,1))",
+    background:
+      "linear-gradient(180deg, rgba(18,18,18,1), rgba(0,0,0,1))",
     border: "1px solid rgba(255,255,255,0.10)",
     borderRadius: 12,
     padding: "12px 14px",
     cursor: "pointer",
-    boxShadow: "0 18px 40px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.04)",
+    boxShadow:
+      "0 18px 40px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.04)",
   },
   buttonHover: {
-    background: "linear-gradient(180deg, rgba(30,30,30,1), rgba(10,10,10,1))",
+    background:
+      "linear-gradient(180deg, rgba(30,30,30,1), rgba(10,10,10,1))",
     borderColor: "rgba(255,255,255,0.16)",
   },
 
-  links: { marginTop: 18, display: "flex", flexDirection: "column", gap: 10 },
-  link: {
-    fontSize: 14,
-    color: "var(--muted)",
-    textDecoration: "underline",
-    textUnderlineOffset: 3,
+  infoBoxWrap: {
+    marginTop: 26,
+    display: "flex",
+    flexDirection: "column",
+    gap: 10,
   },
-  legal: { marginTop: 4, fontSize: 12.5, color: "var(--muted)", lineHeight: 1.5 },
+  infoBox: {
+    background: "rgba(0,0,0,0.6)",
+    border: "1px solid rgba(255,255,255,0.12)",
+    borderRadius: 10,
+    padding: "12px 14px",
+    boxShadow: "0 6px 18px rgba(0,0,0,0.25)",
+  },
+  infoTitle: { fontWeight: 700, fontSize: 15.5 },
+  infoDesc: { fontSize: 13.5, color: "var(--muted)", marginTop: 3 },
 };
 
 export default function Login() {
@@ -167,7 +159,6 @@ export default function Login() {
   const [err, setErr] = useState("");
   const [btnStyle, setBtnStyle] = useState(s.button);
 
-  // Prefill saved email if device was remembered
   useEffect(() => {
     const savedRemember = localStorage.getItem(LS_KEY_REMEMBER) === "1";
     const savedEmail = savedRemember ? localStorage.getItem(LS_KEY_EMAIL) || "" : "";
@@ -179,13 +170,11 @@ export default function Login() {
 
   const submit = (e) => {
     e.preventDefault();
-
     const normalizedEmail = email.trim().toLowerCase();
     if (!normalizedEmail || !pwd.trim()) {
       setErr("Email and password are required.");
       return;
     }
-
     if (rememberDevice) {
       localStorage.setItem(LS_KEY_REMEMBER, "1");
       localStorage.setItem(LS_KEY_EMAIL, normalizedEmail);
@@ -193,42 +182,35 @@ export default function Login() {
       localStorage.removeItem(LS_KEY_REMEMBER);
       localStorage.removeItem(LS_KEY_EMAIL);
     }
-
-    // TODO: replace with real auth
     setErr("");
     nav("/");
   };
 
   return (
     <div style={s.page}>
-      {/* Header bar (no left brand text) */}
       <div style={s.topbar}>
         <div style={s.secure}>Secure Login</div>
       </div>
 
       <div style={s.wrap}>
         <div style={s.card}>
-          {/* Logo */}
-          <div style={s.head}>
-            <div style={s.logoPlateOuter}>
-              <div style={s.logoPlate}>
-                <img
-                  src="/qc-logo.png"
-                  alt="QueCab AdbS Logo"
-                  style={{ width: 220, height: "auto", display: "block" }}
-                />
-              </div>
+          <div style={s.logoPlateOuter}>
+            <div style={s.logoPlate}>
+              <img
+                src="/qc-logo.png"
+                alt="QueCab AdbS Logo"
+                style={{ width: 220, height: "auto", display: "block" }}
+              />
             </div>
-            <div style={s.title}>
-              QueCab <span style={{ color: "var(--muted)", fontWeight: 700 }}>AdbS</span>
-            </div>
-            <div style={s.subtitle}>Broker / Shipper Access</div>
           </div>
 
-          {/* Error */}
+          <div style={s.title}>
+            QueCab <span style={{ color: "var(--muted)", fontWeight: 700 }}>AdbS</span>
+          </div>
+          <div style={s.subtitle}>Broker / Shipper Access</div>
+
           {err ? <div style={s.err}>{err}</div> : null}
 
-          {/* Form */}
           <form onSubmit={submit} style={s.form}>
             <div style={s.row}>
               <label htmlFor="email" style={s.label}>Business Email</label>
@@ -280,10 +262,22 @@ export default function Login() {
             </button>
           </form>
 
-          <div style={s.links}>
-            <a href="/join" style={s.link}>Need access? Request Authorization</a>
-            <div style={s.legal}>
-              Authorized use only; activity may be monitored and recorded. By continuing you consent to monitoring.
+          {/* Bottom professional info boxes */}
+          <div style={s.infoBoxWrap}>
+            <div style={s.infoBox}>
+              <div style={s.infoTitle}>Request Access</div>
+              <div style={s.infoDesc}>Brokers / Shippers — apply for authorization.</div>
+            </div>
+            <div style={s.infoBox}>
+              <div style={s.infoTitle}>Already Authorized? Log In</div>
+              <div style={s.infoDesc}>Use your QueCab AdbS code to unlock verification tools.</div>
+            </div>
+            <div style={s.infoBox}>
+              <div style={s.infoTitle}>What is QueCab AdbS?</div>
+              <div style={s.infoDesc}>
+                QueCab AdbS is an Anti-Double Brokering System. We confirm who is actually hauling your freight,
+                and we warn you when something doesn’t match at the dock.
+              </div>
             </div>
           </div>
         </div>
