@@ -1,153 +1,164 @@
 import React from "react";
-import ThemeToggle from "../components/ThemeToggle";
+import { Link } from "react-router-dom";
 
 const s = {
   page: {
     minHeight: "100vh",
     width: "100%",
+    background: "var(--bg)",
+    color: "var(--text)",
     display: "flex",
     flexDirection: "column",
-    alignItems: "center",
-    background:
-      "radial-gradient(circle at 20% 0%, rgba(40,40,40,0.08) 0%, rgba(0,0,0,0.0) 60%), var(--bg)",
-    color: "var(--text)",
-    fontFamily:
-      "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, 'Apple Color Emoji','Segoe UI Emoji'",
   },
   header: {
     width: "100%",
-    maxWidth: 800,
-    textAlign: "center",
-    paddingTop: 24,
-    paddingBottom: 12,
-    color: "var(--text)",
-    fontWeight: 600,
-    letterSpacing: "-0.03em",
-    fontSize: 20,
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    gap: 12,
-    paddingLeft: 12,
-    paddingRight: 12,
+    padding: "16px 18px",
+    borderBottom: "1px solid var(--border)",
+    background: "color-mix(in oklab, var(--bg) 96%, white 4%)",
   },
-  title: { margin: "0 auto" },
-  card: {
+  brand: {
+    fontWeight: 800,
+    letterSpacing: "-0.02em",
+  },
+  wrap: {
+    flex: 1,
     width: "100%",
-    maxWidth: 800,
-    borderRadius: 16,
-    background: "var(--card)",
-    border: "1px solid var(--border)",
-    boxShadow: "0 30px 120px rgba(0,0,0,0.18)",
-    padding: 24,
     display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-  },
-  logoWrap: { display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 18 },
-  logoPlate: {
-    display: "flex",
-    alignItems: "center",
     justifyContent: "center",
-    borderRadius: 14,
-    background: "var(--plate)",
-    border: "1px solid var(--border)",
-    boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
-    padding: 16,
+    padding: "36px 16px",
   },
-  brandTitle: { marginTop: 12, fontSize: 20, fontWeight: 600, letterSpacing: "-0.03em", color: "var(--text)" },
-  brandSub: { marginTop: 4, fontSize: 13, color: "var(--muted)" },
-  buttonBlock: {
+  shell: {
     width: "100%",
-    maxWidth: 500,
-    textAlign: "left",
-    borderRadius: 12,
+    maxWidth: "860px", // wider so the UI doesn’t look “tiny” on desktop
     background: "var(--card)",
     border: "1px solid var(--border)",
-    boxShadow: "0 20px 60px rgba(0,0,0,0.08)",
-    padding: "14px 16px",
+    borderRadius: 18,
+    boxShadow: "0 42px 120px rgba(0,0,0,0.22)",
+    padding: "26px",
+  },
+
+  // LOGO AREA — natural with a soft halo (no visible square plate)
+  logoWrap: {
+    display: "flex",
+    justifyContent: "center",
+    marginTop: 4,
     marginBottom: 12,
-    textDecoration: "none",
-    color: "var(--text)",
-    transition: "background .2s ease, border-color .2s ease",
+    position: "relative",
+  },
+  logoHalo: {
+    position: "absolute",
+    inset: 0,
+    pointerEvents: "none",
+    borderRadius: 18,
+    boxShadow:
+      "0 0 80px 12px rgba(0,0,0,0.06)", // very soft vignette to help the logo pop without a plate
+  },
+  logo: {
+    width: 260, // bigger logo per your note
+    height: "auto",
     display: "block",
   },
-  buttonTitle: { fontSize: 15, fontWeight: 600, letterSpacing: "-0.03em" },
-  buttonSub: { marginTop: 2, fontSize: 12, color: "var(--muted)" },
-  infoPanel: {
-    width: "100%",
-    maxWidth: 500,
-    textAlign: "left",
-    borderRadius: 12,
-    background: "var(--cardSoft)",
-    border: "1px solid var(--border)",
-    boxShadow: "0 20px 60px rgba(0,0,0,0.08)",
-    padding: "14px 16px",
-    marginBottom: 8,
-  },
-  infoTitle: { fontSize: 14, fontWeight: 600, marginBottom: 4, color: "var(--text)" },
-  infoText: { fontSize: 12, color: "var(--muted)", lineHeight: 1.5 },
-  footer: {
-    width: "100%",
-    maxWidth: 800,
+
+  hProduct: {
+    marginTop: 6,
     textAlign: "center",
-    padding: "22px 0 28px",
-    color: "var(--muted)",
-    fontSize: 11,
+    fontSize: "1.35rem",
+    fontWeight: 800,
     letterSpacing: "-0.02em",
+  },
+  hSub: {
+    textAlign: "center",
+    marginTop: 6,
+    fontSize: "0.95rem",
+    color: "var(--muted)",
+  },
+
+  // CALL-TO-ACTION BOXES (bigger)
+  boxes: {
+    marginTop: 18,
+    display: "flex",
+    flexDirection: "column",
+    gap: 12,
+  },
+  box: {
+    background: "color-mix(in oklab, var(--card) 92%, white 8%)",
+    border: "1px solid var(--border)",
+    borderRadius: 14,
+    padding: "14px 16px",
+    boxShadow: "0 8px 26px rgba(0,0,0,0.08)",
+  },
+  boxTitle: {
+    fontWeight: 800,
+    fontSize: "1.05rem",
+    letterSpacing: "-0.01em",
+  },
+  boxDesc: {
+    marginTop: 4,
+    fontSize: "0.95rem",
+    color: "var(--muted)",
+    lineHeight: 1.55,
+  },
+
+  footer: {
+    marginTop: 20,
+    textAlign: "center",
+    fontSize: "0.85rem",
+    color: "var(--muted)",
   },
 };
 
-function Home() {
+export default function Home() {
   return (
     <div style={s.page}>
-      {/* Top brand text + theme switch */}
-      <header style={s.header}>
-        <div style={{ width: 140, textAlign: "left" }}>
-          <ThemeToggle compact />
+      <div style={s.header}>
+        <div style={s.brand}>QueCab <span style={{ color: "var(--muted)" }}>AdbS</span></div>
+        <div style={{ fontSize: "0.8rem", color: "var(--muted)", textTransform: "uppercase", fontWeight: 700 }}>
+          Secure Your Load
         </div>
-        <div style={s.title}>
-          <span style={{ color: "var(--text)" }}>QueCab</span>{" "}
-          <span style={{ color: "var(--muted)" }}>AdbS</span>
-        </div>
-        <div style={{ width: 140 }} /> {/* spacer to keep title centered */}
-      </header>
+      </div>
 
-      <main style={s.card}>
-        <div style={s.logoWrap}>
-          <div style={s.logoPlate}>
-            <img src="/qc-logo.png" alt="QueCab AdbS Logo" style={{ width: 220, height: "auto", display: "block" }} />
+      <div style={s.wrap}>
+        <div style={s.shell}>
+          {/* Natural logo (no square plate) */}
+          <div style={s.logoWrap}>
+            <div style={s.logoHalo} />
+            <img src="/qc-logo.png" alt="QueCab AdbS" style={s.logo} />
           </div>
-          <div style={s.brandTitle}>
-            QueCab <span style={{ color: "var(--muted)" }}>AdbS</span>
+
+          <div style={s.hProduct}>QueCab <span style={{ color: "var(--muted)" }}>AdbS</span></div>
+          <div style={s.hSub}>Secure Your Load</div>
+
+          {/* Big professional info boxes */}
+          <div style={s.boxes}>
+            <div style={s.box}>
+              <div style={s.boxTitle}>Request Access</div>
+              <div style={s.boxDesc}>Brokers / Shippers — apply for authorization.</div>
+            </div>
+
+            <div style={s.box}>
+              <div style={s.boxTitle}>Already Authorized? Log In</div>
+              <div style={s.boxDesc}>
+                Use your QueCab AdbS code to unlock verification tools.
+              </div>
+            </div>
+
+            <div style={s.box}>
+              <div style={s.boxTitle}>What is QueCab AdbS?</div>
+              <div style={s.boxDesc}>
+                QueCab AdbS is an Anti-Double Brokering System. We confirm who is actually
+                hauling your freight, and we warn you when something doesn’t match at the dock.
+              </div>
+            </div>
           </div>
-          <div style={s.brandSub}>Secure Your Load</div>
-        </div>
 
-        <a href="/join" style={s.buttonBlock}>
-          <div style={s.buttonTitle}>Request Access</div>
-          <div style={s.buttonSub}>Brokers / Shippers — apply for authorization</div>
-        </a>
-
-        <a href="/login" style={s.buttonBlock}>
-          <div style={s.buttonTitle}>Already Authorized? Log In</div>
-          <div style={s.buttonSub}>Use your QueCab AdbS code to unlock verification tools</div>
-        </a>
-
-        <div style={s.infoPanel}>
-          <div style={s.infoTitle}>What is QueCab AdbS?</div>
-          <div style={s.infoText}>
-            QueCab AdbS is an Anti-Double Brokering System. We confirm who is actually hauling your freight,
-            and we warn you when something doesn’t match at the dock.
+          <div style={s.footer}>
+            Anti-Double Brokering System • Verified Carrier Authenticity • © QueCab Inc.
           </div>
         </div>
-      </main>
-
-      <footer style={s.footer}>
-        Anti-Double Brokering System • Verified Carrier Authenticity • © QueCab Inc.
-      </footer>
+      </div>
     </div>
   );
 }
-
-export default Home;
