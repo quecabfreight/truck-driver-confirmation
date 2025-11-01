@@ -6,20 +6,16 @@ const LS_EMAIL = "qc_login_email";
 const LS_REMEMBER = "qc_login_remember";
 const LS_SESSION = "qc_session"; // { email, role, code, ts }
 
-function normalizeEmail(v) {
-  return (v || "").trim().toLowerCase();
-}
+// Helpers
+const normalizeEmail = (v) => (v || "").trim().toLowerCase();
+const normalizeCode  = (v) => (v || "").trim().toUpperCase();
 
-function normalizeCode(v) {
-  return (v || "").trim().toUpperCase();
-}
-
-// accepts QC-BRK-12345 or QC-SHP-12345 (case-insensitive), with or without hyphens
+// Accept QC-BRK-12345 or QC-SHP-12345 (case-insensitive), with/without hyphens
 function parseAccessCode(raw) {
   const code = normalizeCode(raw).replace(/\s+/g, "");
-  // Allow both QC-BRK-12345 and QCBRK12345 by re-inserting hyphens for testing
-  const withHyphens =
-    code.includes("-") ? code : code.replace(/^QC(BRK|SHP)(\d{5})$/, "QC-$1-$2");
+  const withHyphens = code.includes("-")
+    ? code
+    : code.replace(/^QC(BRK|SHP)(\d{5})$/, "QC-$1-$2");
   const m = withHyphens.match(/^QC-(BRK|SHP)-(\d{5})$/i);
   if (!m) return null;
   const role = m[1].toUpperCase() === "BRK" ? "broker" : "shipper";
@@ -43,12 +39,6 @@ export default function Login() {
     if (e) setEmail(e);
   }, []);
 
-  // If we already have a session, you could auto-forward. (Kept off by default.)
-  // useEffect(() => {
-  //   const s = localStorage.getItem(LS_SESSION);
-  //   if (s) navigate("/", { replace: true });
-  // }, [navigate]);
-
   function onSubmit(e) {
     e.preventDefault();
     setError("");
@@ -57,13 +47,10 @@ export default function Login() {
     const nEmail = normalizeEmail(email);
     const parsed = parseAccessCode(code);
 
-    // save email pref if remember is on
     localStorage.setItem(LS_REMEMBER, remember ? "1" : "0");
     if (remember) localStorage.setItem(LS_EMAIL, nEmail);
     else localStorage.removeItem(LS_EMAIL);
 
-    // For now we accept any syntactically valid code and create a local session.
-    // When backend is ready, swap this block for a real fetch().
     if (!nEmail) {
       setError("Enter your business email.");
       setSubmitting(false);
@@ -77,19 +64,22 @@ export default function Login() {
 
     const session = {
       email: nEmail,
-      role: parsed.role,    // 'broker' | 'shipper'
-      code: parsed.code,    // normalized QC-XXX-##### format
+      role: parsed.role,
+      code: parsed.code,
       ts: Date.now(),
     };
-    try {
-      localStorage.setItem(LS_SESSION, JSON.stringify(session));
-    } catch {}
+    try { localStorage.setItem(LS_SESSION, JSON.stringify(session)); } catch {}
 
-    // Navigate to the dashboard/home
-    navigate("/", { replace: true });
+    // Rock-solid redirect (SPA navigate + hard redirect fallback)
+    try { navigate("/", { replace: true }); } catch {}
+    setTimeout(() => {
+      if (window?.location?.pathname !== "/") {
+        window.location.assign("/");
+      }
+    }, 50);
   }
 
-  // ---- Styling (kept aligned with your dark, realistic theme) ----
+  // ===== Styles (larger type + watermark) =====
   const page = {
     minHeight: "100vh",
     width: "100%",
@@ -97,35 +87,43 @@ export default function Login() {
     color: "var(--text)",
     display: "flex",
     flexDirection: "column",
+    fontSize: "17px",           // bump base size a touch
   };
-  const topBar = {
-    width: "100%",
-    padding: "12px 16px",
-    fontSize: 12,
-    fontWeight: 800,
-    letterSpacing: "0.04em",
-    color: "var(--muted)",
-    display: "flex",
-    justifyContent: "flex-end",
-    textTransform: "uppercase",
-    borderBottom: "1px solid var(--border)",
-  };
-  const wrap = {
+
+  const watermarkWrap = {
+    position: "relative",
     flex: 1,
     width: "100%",
     display: "flex",
     justifyContent: "center",
-    padding: "36px 16px",
+    padding: "42px 16px",
+    overflow: "hidden",
   };
+
+  const watermark = {
+    position: "absolute",
+    inset: 0,
+    pointerEvents: "none",
+    backgroundImage: "url('/qc-logo.png')",
+    backgroundRepeat: "no-repeat",
+    backgroundPosition: "center 10%",
+    backgroundSize: "min(70vmin, 680px)",
+    opacity: 0.06,              // subtle, professional
+    filter: "grayscale(100%)",
+  };
+
   const card = {
+    position: "relative",
     width: "100%",
-    maxWidth: 540,
+    maxWidth: 560,
     background: "var(--card)",
     border: "1px solid var(--border)",
     borderRadius: 16,
     boxShadow: "0 42px 120px rgba(0,0,0,0.22)",
-    padding: 22,
+    padding: 24,
+    zIndex: 1, // sits above watermark
   };
+
   const header = { display: "flex", flexDirection: "column", alignItems: "center", gap: 14 };
   const logoBox = {
     width: 180,
@@ -138,13 +136,13 @@ export default function Login() {
     justifyContent: "center",
     boxShadow: "0 18px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)",
   };
-  const hTitle = { fontSize: 18, fontWeight: 900, letterSpacing: "-0.01em" };
-  const hSub = { fontSize: 12, fontWeight: 700, color: "var(--muted)", letterSpacing: "0.08em", textTransform: "uppercase" };
+  const hTitle = { fontSize: "20px", fontWeight: 900, letterSpacing: "-0.01em" };
+  const hSub = { fontSize: "12px", fontWeight: 800, color: "var(--muted)", letterSpacing: "0.08em", textTransform: "uppercase" };
 
-  const form = { marginTop: 10 };
-  const row = { marginTop: 14 };
+  const form = { marginTop: 12 };
+  const row = { marginTop: 16 };
   const label = {
-    fontSize: "0.95rem",
+    fontSize: "0.98rem",
     fontWeight: 900,
     letterSpacing: "0.04em",
     textTransform: "uppercase",
@@ -152,21 +150,21 @@ export default function Login() {
   };
   const input = {
     width: "100%",
-    fontSize: "1rem",
-    lineHeight: 1.4,
+    fontSize: "1.05rem",        // slightly larger input text
+    lineHeight: 1.5,
     color: "var(--text)",
     background: "color-mix(in oklab, var(--card) 96%, white 4%)",
     border: "1px solid var(--border)",
     borderRadius: 10,
-    padding: "12px 13px",
+    padding: "13px 14px",
     outline: "none",
     boxShadow: "inset 0 1px 2px rgba(0,0,0,0.06)",
   };
-  const rememberRow = { display: "flex", alignItems: "center", gap: 10, marginTop: 8, color: "var(--muted)", fontSize: 12, fontWeight: 700 };
+  const rememberRow = { display: "flex", alignItems: "center", gap: 10, marginTop: 8, color: "var(--muted)", fontSize: "13px", fontWeight: 800 };
   const btn = {
     width: "100%",
-    marginTop: 16,
-    fontSize: "1rem",
+    marginTop: 18,
+    fontSize: "1.05rem",
     fontWeight: 900,
     letterSpacing: "0.06em",
     textTransform: "uppercase",
@@ -174,23 +172,22 @@ export default function Login() {
     background: "linear-gradient(180deg, rgba(18,18,18,1), rgba(0,0,0,1))",
     border: "1px solid rgba(255,255,255,0.10)",
     borderRadius: 12,
-    padding: "12px 14px",
+    padding: "13px 15px",
     cursor: "pointer",
     boxShadow: "0 18px 40px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.04)",
     opacity: submitting ? 0.7 : 1,
   };
-  const linkRow = { marginTop: 14, fontSize: 13, color: "var(--muted)" };
-  const err = { marginTop: 10, color: "#ffb4b4", fontSize: 13, fontWeight: 800 };
+  const linkRow = { marginTop: 16, fontSize: "14px", color: "var(--muted)" };
+  const err = { marginTop: 10, color: "#ffb4b4", fontSize: "14px", fontWeight: 900 };
 
   return (
     <div style={page}>
-      <div style={topBar}>Secure Login</div>
+      <div style={watermarkWrap}>
+        <div style={watermark} />
 
-      <div style={wrap}>
         <div style={card}>
           <div style={header}>
             <div style={logoBox}>
-              {/* If you have the 220px logo in /public, you can use <img src="/qc-logo.png" alt="QueCab AdbS" style={{width: 140}} /> */}
               <img src="/qc-logo.png" alt="QueCab AdbS" style={{ width: 150, height: "auto", opacity: 0.92 }} />
             </div>
             <div style={hTitle}>QueCab AdbS</div>
@@ -242,7 +239,7 @@ export default function Login() {
             <div style={linkRow}>
               Need access? <Link to="/join">Request Authorization</Link>
             </div>
-            <div style={{ marginTop: 6, color: "var(--muted)", fontSize: 12 }}>
+            <div style={{ marginTop: 6, color: "var(--muted)", fontSize: "12px" }}>
               Authorized use only; activity may be monitored and recorded. By continuing you consent to monitoring.
             </div>
           </form>
