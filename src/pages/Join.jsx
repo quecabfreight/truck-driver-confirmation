@@ -32,7 +32,7 @@ export default function Join() {
     alert("Submitted (stub).");
   };
 
-  // ------- Styles (theme-aware using CSS vars) -------
+  // ------- Theme-aware styles -------
   const page = {
     minHeight: "100vh",
     width: "100%",
@@ -65,16 +65,15 @@ export default function Join() {
   const row = { marginTop: 16 };
 
   const label = {
-    fontSize: "0.95rem",
+    fontSize: "0.98rem",
     fontWeight: 900,
     letterSpacing: "0.04em",
     textTransform: "uppercase",
-    marginBottom: 6,
+    marginBottom: 8,
     color: "var(--text)",
-    opacity: 0.92,
+    opacity: 0.96,
   };
 
-  // inputs: use clean white on light / polished dark on dark
   const baseInput = {
     width: "100%",
     fontSize: "1rem",
@@ -137,16 +136,8 @@ export default function Join() {
 
   return (
     <div style={page}>
-      {/* Local CSS for placeholder color and light/dark polish */}
+      {/* Light/Dark refinements + placeholder color (if any future field adds one) */}
       <style>{`
-        /* Make placeholders readable using your muted var */
-        .join-form input::placeholder,
-        .join-form textarea::placeholder {
-          color: var(--muted);
-          opacity: 0.95;
-        }
-
-        /* Light theme polish */
         html.light .join-form .input {
           background: #ffffff;
           border-color: rgba(15,23,42,0.10);
@@ -157,8 +148,6 @@ export default function Join() {
           border-color: rgba(15,23,42,0.10);
           color: #4b5563;
         }
-
-        /* Dark theme polish */
         html.dark .join-form .input {
           background: linear-gradient(180deg, rgba(0,0,0,0.70), rgba(0,0,0,0.60));
           border-color: rgba(255,255,255,0.14);
@@ -180,31 +169,31 @@ export default function Join() {
           </div>
 
           <form onSubmit={submit} style={form}>
-            {/* Legal Name */}
+            {/* Legal Name (no placeholder) */}
             <div style={row}>
               <div style={label}>Legal Name (or Legal Business Name)</div>
               <input
                 className="input"
                 style={baseInput}
                 type="text"
-                placeholder="Example: Power Logistics LLC / or John R. Carter"
                 value={legalName}
                 onChange={(e) => setLegalName(e.target.value)}
                 required
+                autoCapitalize="words"
               />
             </div>
 
-            {/* Contact Person */}
+            {/* Contact Person (no placeholder) */}
             <div style={row}>
               <div style={label}>Contact Person Name</div>
               <input
                 className="input"
                 style={baseInput}
                 type="text"
-                placeholder="Dispatcher / Compliance / Shipping Manager"
                 value={contact}
                 onChange={(e) => setContact(e.target.value)}
                 required
+                autoCapitalize="words"
               />
             </div>
 
@@ -235,7 +224,7 @@ export default function Join() {
               </div>
             </div>
 
-            {/* MC / SHP Number */}
+            {/* MC / SHP Number with fixed prefix */}
             <div style={row}>
               <div style={label}>{role === "broker" ? "MC Number" : "SHP Number"}</div>
               <div style={prefWrap}>
@@ -245,7 +234,6 @@ export default function Join() {
                   style={prefInput}
                   type="text"
                   inputMode="numeric"
-                  placeholder="Enter number"
                   value={mcShp}
                   onChange={(e) => handleMcShp(e.target.value)}
                   required
@@ -261,38 +249,37 @@ export default function Join() {
                 style={baseInput}
                 type="text"
                 inputMode="numeric"
-                placeholder="##-#######"
                 value={ein}
                 onChange={(e) => setEin(fmtEIN(e.target.value))}
               />
             </div>
 
-            {/* Business Phone */}
+            {/* Phone */}
             <div style={row}>
               <div style={label}>Business Phone</div>
               <input
                 className="input"
                 style={baseInput}
                 type="tel"
-                placeholder="555-123-4567"
                 value={phone}
                 onChange={(e) => setPhone(fmtPhone(e.target.value))}
                 required
+                autoComplete="tel"
               />
             </div>
 
-            {/* Business Email */}
+            {/* Email (no placeholder) */}
             <div style={row}>
               <div style={label}>Business Email</div>
               <input
                 className="input"
                 style={baseInput}
                 type="email"
-                placeholder="dispatch@yourcompany.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="email"
+                spellCheck="false"
               />
             </div>
 
