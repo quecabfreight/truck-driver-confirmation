@@ -1,175 +1,251 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 
-const LS_KEY_EMAIL = "quecab-remembered-email";
-const LS_KEY_REMEMBER = "quecab-remember-device";
+// LocalStorage keys
+const LS_EMAIL = "qc_login_email";
+const LS_REMEMBER = "qc_login_remember";
+const LS_SESSION = "qc_session"; // { email, role, code, ts }
 
-const s = {
-  page: { minHeight: "100vh", width: "100%", background: "var(--bg)", color: "var(--text)", display: "flex", flexDirection: "column" },
-  topbar: { width: "100%", display: "flex", justifyContent: "flex-end", alignItems: "center", padding: "14px 16px", borderBottom: "1px solid var(--border)", background: "color-mix(in oklab, var(--bg) 96%, black 4%)" },
-  secure: { fontSize: 12, fontWeight: 600, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.04em" },
-  wrap: { flex: 1, width: "100%", display: "flex", justifyContent: "center", padding: "28px 16px" },
-  card: {
-    width: "100%", maxWidth: 560, borderRadius: 16,
-    background: "linear-gradient(180deg, rgba(22,22,22,0.98), rgba(14,14,14,0.98))",
-    border: "1px solid rgba(255,255,255,0.08)",
-    boxShadow: "0 40px 120px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.03)",
-    padding: 22
-  },
-  logoPlateOuter: { display: "flex", justifyContent: "center", marginBottom: 10 },
-  logoPlate: {
-    display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 14,
-    background: "radial-gradient(ellipse at 40% 30%, rgba(0,0,0,0.85), rgba(0,0,0,0.65))",
-    border: "1px solid rgba(255,255,255,0.10)", boxShadow: "0 30px 90px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.05)", padding: 14
-  },
-  title: { fontSize: 18, fontWeight: 700, letterSpacing: "-0.02em" },
-  subtitle: { marginTop: 4, fontSize: 13.5, color: "var(--muted)", letterSpacing: "0.02em" },
-  err: { marginTop: 12, marginBottom: 12, fontSize: 14.5, color: "#fca5a5", background: "color-mix(in oklab, var(--bg) 70%, #7f1d1d 30%)", border: "1px solid color-mix(in oklab, #ef4444 70%, black 30%)", borderRadius: 8, padding: "10px 12px" },
-  form: { marginTop: 6 },
-  label: { fontSize: 13.5, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", marginBottom: 6 },
-  input: {
-    width: "100%", fontSize: 16, lineHeight: 1.4, color: "var(--text)",
-    background: "linear-gradient(180deg, rgba(0,0,0,0.70), rgba(0,0,0,0.60))",
-    border: "1px solid rgba(255,255,255,0.16)", borderRadius: 10, padding: "12px 13px",
-    outline: "none", boxShadow: "inset 0 1px 2px rgba(0,0,0,0.4)"
-  },
-  row: { marginTop: 14 },
-  remember: { display: "flex", alignItems: "flex-start", gap: 10, marginTop: 4 },
-  checkbox: { marginTop: 4, width: 18, height: 18, accentColor: "#1f2937" },
-  rememberText: { fontSize: 13.5 },
-  rememberHint: { fontSize: 12.5, color: "var(--muted)" },
-  button: {
-    width: "100%", marginTop: 16, fontSize: 16, fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase",
-    color: "#e5e7eb", background: "linear-gradient(180deg, rgba(18,18,18,1), rgba(0,0,0,1))",
-    border: "1px solid rgba(255,255,255,0.10)", borderRadius: 12, padding: "12px 14px", cursor: "pointer",
-    boxShadow: "0 18px 40px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.04)"
-  },
-  buttonHover: { background: "linear-gradient(180deg, rgba(30,30,30,1), rgba(10,10,10,1))", borderColor: "rgba(255,255,255,0.16)" },
-  infoBoxWrap: { marginTop: 26, display: "flex", flexDirection: "column", gap: 10 },
-  infoBox: { background: "rgba(0,0,0,0.6)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, padding: "12px 14px", boxShadow: "0 6px 18px rgba(0,0,0,0.25)" },
-  infoTitle: { fontWeight: 700, fontSize: 15.5 },
-  infoDesc: { fontSize: 13.5, color: "var(--muted)", marginTop: 3 }
-};
+function normalizeEmail(v) {
+  return (v || "").trim().toLowerCase();
+}
+
+function normalizeCode(v) {
+  return (v || "").trim().toUpperCase();
+}
+
+// accepts QC-BRK-12345 or QC-SHP-12345 (case-insensitive), with or without hyphens
+function parseAccessCode(raw) {
+  const code = normalizeCode(raw).replace(/\s+/g, "");
+  // Allow both QC-BRK-12345 and QCBRK12345 by re-inserting hyphens for testing
+  const withHyphens =
+    code.includes("-") ? code : code.replace(/^QC(BRK|SHP)(\d{5})$/, "QC-$1-$2");
+  const m = withHyphens.match(/^QC-(BRK|SHP)-(\d{5})$/i);
+  if (!m) return null;
+  const role = m[1].toUpperCase() === "BRK" ? "broker" : "shipper";
+  return { role, code: `QC-${m[1].toUpperCase()}-${m[2]}` };
+}
 
 export default function Login() {
-  const nav = useNavigate();
-  const [email, setEmail] = useState("");
-  const [authCode, setAuthCode] = useState("");         // renamed
-  const [rememberDevice, setRememberDevice] = useState(false);
-  const [err, setErr] = useState("");
-  const [btnStyle, setBtnStyle] = useState(s.button);
+  const navigate = useNavigate();
 
+  const [email, setEmail] = useState("");
+  const [code, setCode] = useState("");
+  const [remember, setRemember] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  // Prefill from localStorage
   useEffect(() => {
-    const savedRemember = localStorage.getItem(LS_KEY_REMEMBER) === "1";
-    const savedEmail = savedRemember ? localStorage.getItem(LS_KEY_EMAIL) || "" : "";
-    if (savedRemember) {
-      setRememberDevice(true);
-      setEmail(savedEmail);
-    }
+    const r = localStorage.getItem(LS_REMEMBER);
+    const e = localStorage.getItem(LS_EMAIL);
+    if (r !== null) setRemember(r === "1");
+    if (e) setEmail(e);
   }, []);
 
-  // Normalize code: strip non-alphanumerics, uppercase
-  const normalizeCode = (val) => (val || "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+  // If we already have a session, you could auto-forward. (Kept off by default.)
+  // useEffect(() => {
+  //   const s = localStorage.getItem(LS_SESSION);
+  //   if (s) navigate("/", { replace: true });
+  // }, [navigate]);
 
-  const submit = (e) => {
+  function onSubmit(e) {
     e.preventDefault();
-    const normalizedEmail = email.trim().toLowerCase();
-    const normalizedCode = normalizeCode(authCode);
+    setError("");
+    setSubmitting(true);
 
-    if (!normalizedEmail || !normalizedCode) {
-      setErr("Email and authorization code are required.");
+    const nEmail = normalizeEmail(email);
+    const parsed = parseAccessCode(code);
+
+    // save email pref if remember is on
+    localStorage.setItem(LS_REMEMBER, remember ? "1" : "0");
+    if (remember) localStorage.setItem(LS_EMAIL, nEmail);
+    else localStorage.removeItem(LS_EMAIL);
+
+    // For now we accept any syntactically valid code and create a local session.
+    // When backend is ready, swap this block for a real fetch().
+    if (!nEmail) {
+      setError("Enter your business email.");
+      setSubmitting(false);
+      return;
+    }
+    if (!parsed) {
+      setError("Enter a valid access code (e.g., QC-BRK-12345).");
+      setSubmitting(false);
       return;
     }
 
-    // Remember only email
-    if (rememberDevice) {
-      localStorage.setItem(LS_KEY_REMEMBER, "1");
-      localStorage.setItem(LS_KEY_EMAIL, normalizedEmail);
-    } else {
-      localStorage.removeItem(LS_KEY_REMEMBER);
-      localStorage.removeItem(LS_KEY_EMAIL);
-    }
+    const session = {
+      email: nEmail,
+      role: parsed.role,    // 'broker' | 'shipper'
+      code: parsed.code,    // normalized QC-XXX-##### format
+      ts: Date.now(),
+    };
+    try {
+      localStorage.setItem(LS_SESSION, JSON.stringify(session));
+    } catch {}
 
-    // TODO: Replace this with real server-side auth check:
-    // send { email: normalizedEmail, code: normalizedCode }
-    setErr("");
-    nav("/"); // on success
+    // Navigate to the dashboard/home
+    navigate("/", { replace: true });
+  }
+
+  // ---- Styling (kept aligned with your dark, realistic theme) ----
+  const page = {
+    minHeight: "100vh",
+    width: "100%",
+    background: "var(--bg)",
+    color: "var(--text)",
+    display: "flex",
+    flexDirection: "column",
   };
+  const topBar = {
+    width: "100%",
+    padding: "12px 16px",
+    fontSize: 12,
+    fontWeight: 800,
+    letterSpacing: "0.04em",
+    color: "var(--muted)",
+    display: "flex",
+    justifyContent: "flex-end",
+    textTransform: "uppercase",
+    borderBottom: "1px solid var(--border)",
+  };
+  const wrap = {
+    flex: 1,
+    width: "100%",
+    display: "flex",
+    justifyContent: "center",
+    padding: "36px 16px",
+  };
+  const card = {
+    width: "100%",
+    maxWidth: 540,
+    background: "var(--card)",
+    border: "1px solid var(--border)",
+    borderRadius: 16,
+    boxShadow: "0 42px 120px rgba(0,0,0,0.22)",
+    padding: 22,
+  };
+  const header = { display: "flex", flexDirection: "column", alignItems: "center", gap: 14 };
+  const logoBox = {
+    width: 180,
+    height: 180,
+    borderRadius: 18,
+    background: "linear-gradient(180deg, rgba(0,0,0,0.70), rgba(0,0,0,0.60))",
+    border: "1px solid rgba(255,255,255,0.08)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    boxShadow: "0 18px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)",
+  };
+  const hTitle = { fontSize: 18, fontWeight: 900, letterSpacing: "-0.01em" };
+  const hSub = { fontSize: 12, fontWeight: 700, color: "var(--muted)", letterSpacing: "0.08em", textTransform: "uppercase" };
+
+  const form = { marginTop: 10 };
+  const row = { marginTop: 14 };
+  const label = {
+    fontSize: "0.95rem",
+    fontWeight: 900,
+    letterSpacing: "0.04em",
+    textTransform: "uppercase",
+    marginBottom: 8,
+  };
+  const input = {
+    width: "100%",
+    fontSize: "1rem",
+    lineHeight: 1.4,
+    color: "var(--text)",
+    background: "color-mix(in oklab, var(--card) 96%, white 4%)",
+    border: "1px solid var(--border)",
+    borderRadius: 10,
+    padding: "12px 13px",
+    outline: "none",
+    boxShadow: "inset 0 1px 2px rgba(0,0,0,0.06)",
+  };
+  const rememberRow = { display: "flex", alignItems: "center", gap: 10, marginTop: 8, color: "var(--muted)", fontSize: 12, fontWeight: 700 };
+  const btn = {
+    width: "100%",
+    marginTop: 16,
+    fontSize: "1rem",
+    fontWeight: 900,
+    letterSpacing: "0.06em",
+    textTransform: "uppercase",
+    color: "#e5e7eb",
+    background: "linear-gradient(180deg, rgba(18,18,18,1), rgba(0,0,0,1))",
+    border: "1px solid rgba(255,255,255,0.10)",
+    borderRadius: 12,
+    padding: "12px 14px",
+    cursor: "pointer",
+    boxShadow: "0 18px 40px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.04)",
+    opacity: submitting ? 0.7 : 1,
+  };
+  const linkRow = { marginTop: 14, fontSize: 13, color: "var(--muted)" };
+  const err = { marginTop: 10, color: "#ffb4b4", fontSize: 13, fontWeight: 800 };
 
   return (
-    <div style={s.page}>
-      <div style={s.topbar}><div style={s.secure}>Secure Login</div></div>
+    <div style={page}>
+      <div style={topBar}>Secure Login</div>
 
-      <div style={s.wrap}>
-        <div style={s.card}>
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}>
-            <div style={s.logoPlate}>
-              <img src="/qc-logo.png" alt="QueCab AdbS Logo" style={{ width: 220, height: "auto", display: "block" }} />
+      <div style={wrap}>
+        <div style={card}>
+          <div style={header}>
+            <div style={logoBox}>
+              {/* If you have the 220px logo in /public, you can use <img src="/qc-logo.png" alt="QueCab AdbS" style={{width: 140}} /> */}
+              <img src="/qc-logo.png" alt="QueCab AdbS" style={{ width: 150, height: "auto", opacity: 0.92 }} />
             </div>
+            <div style={hTitle}>QueCab AdbS</div>
+            <div style={hSub}>Broker / Shipper Access</div>
           </div>
 
-          <div style={s.title}>QueCab <span style={{ color: "var(--muted)", fontWeight: 700 }}>AdbS</span></div>
-          <div style={s.subtitle}>Broker / Shipper Access</div>
-
-          {err ? <div style={s.err}>{err}</div> : null}
-
-          <form onSubmit={submit} style={s.form}>
-            <div style={s.row}>
-              <label htmlFor="email" style={s.label}>Business Email</label>
+          <form onSubmit={onSubmit} style={form}>
+            <div style={row}>
+              <div style={label}>Business Email</div>
               <input
-                id="email" type="email" placeholder="name@company.com"
-                style={s.input} value={email}
-                onChange={(e) => setEmail(e.target.value)} autoComplete="email"
+                style={input}
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+                spellCheck="false"
+                required
               />
             </div>
 
-            <div style={s.row}>
-              <label htmlFor="code" style={s.label}>Authorization Code</label>
+            <div style={row}>
+              <div style={label}>Access Code</div>
               <input
-                id="code" type="password" placeholder="e.g., QC-1A2B-3C4D"
-                style={s.input} value={authCode}
-                onChange={(e) => setAuthCode(e.target.value)} autoComplete="one-time-code"
+                style={input}
+                type="text"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                placeholder="QC-BRK-12345"
+                required
               />
             </div>
 
-            <div style={{ ...s.row, ...s.remember }}>
+            <div style={rememberRow}>
               <input
-                id="rememberDevice" type="checkbox" style={s.checkbox}
-                checked={rememberDevice} onChange={(e) => setRememberDevice(e.target.checked)}
+                id="remember"
+                type="checkbox"
+                checked={remember}
+                onChange={(e) => setRemember(e.target.checked)}
               />
-              <label htmlFor="rememberDevice" style={s.rememberText}>
-                Remember this device
-                <div style={s.rememberHint}>Do not use on shared / public equipment.</div>
-              </label>
+              <label htmlFor="remember">Remember this device</label>
             </div>
 
-            <button
-              type="submit" style={btnStyle}
-              onMouseEnter={() => setBtnStyle({ ...s.button, ...s.buttonHover })}
-              onMouseLeave={() => setBtnStyle(s.button)}
-            >
-              SIGN IN
+            {error && <div style={err}>{error}</div>}
+
+            <button type="submit" style={btn} disabled={submitting}>
+              {submitting ? "Signing in…" : "Sign In"}
             </button>
-          </form>
 
-          {/* Professional info boxes */}
-          <div style={s.infoBoxWrap}>
-            <div style={s.infoBox}>
-              <div style={s.infoTitle}>Request Access</div>
-              <div style={s.infoDesc}>Brokers / Shippers — apply for authorization.</div>
+            <div style={linkRow}>
+              Need access? <Link to="/join">Request Authorization</Link>
             </div>
-            <div style={s.infoBox}>
-              <div style={s.infoTitle}>Already Authorized? Log In</div>
-              <div style={s.infoDesc}>Use your QueCab AdbS code to unlock verification tools.</div>
+            <div style={{ marginTop: 6, color: "var(--muted)", fontSize: 12 }}>
+              Authorized use only; activity may be monitored and recorded. By continuing you consent to monitoring.
             </div>
-            <div style={s.infoBox}>
-              <div style={s.infoTitle}>What is QueCab AdbS?</div>
-              <div style={s.infoDesc}>
-                QueCab AdbS is an Anti-Double Brokering System. We confirm who is actually hauling your freight,
-                and we warn you when something doesn’t match at the dock.
-              </div>
-            </div>
-          </div>
+          </form>
         </div>
       </div>
     </div>
