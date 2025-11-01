@@ -1,81 +1,65 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1"
+      content="width=device-width, initial-scale=1, maximum-scale=1"
     />
-    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#000000" />
     <title>QueCab AdbS — Secure Your Load</title>
 
-    <!-- Favicons (optional; keep or remove if you don't use them) -->
-    <link rel="icon" href="/favicon.ico" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-
-    <!-- THEME VARIABLES: Dark / Light palettes -->
     <style>
-      :root[data-theme="dark"] {
-        --bg: #0a0a0a;
-        --card: rgba(20, 20, 20, 0.88);
-        --cardSoft: rgba(15, 15, 15, 0.5);
-        --plate: rgba(0, 0, 0, 0.6);
-        --text: #e5e7eb;   /* near-white */
-        --muted: #9ca3af;  /* gray-400 */
-        --border: rgba(255, 255, 255, 0.08);
+      :root {
+        /* LIGHT THEME (app-wide) */
+        --bg: #eef1f4;         /* full-page background (the grey you prefer) */
+        --card: #ffffff;       /* cards/panels */
+        --plate: rgba(255,255,255,0.85);
+        --text: #0b0e11;
+        --muted: #5e6672;
+        --border: rgba(15, 23, 42, 0.08);
+        --accent: #0b0e11;
       }
-      :root[data-theme="light"] {
-        --bg: #f6f7f9;
-        --card: #ffffff;
-        --cardSoft: #ffffff;
-        --plate: #ffffff;
-        --text: #111827;   /* almost-black */
-        --muted: #6b7280;  /* gray-500 */
-        --border: rgba(0, 0, 0, 0.08);
+      :root.dark {
+        /* DARK THEME (app-wide) */
+        --bg: #000000;         /* true black page background */
+        --card: #0f0f10;       /* panels */
+        --plate: rgba(0,0,0,0.75);
+        --text: #f4f6f8;
+        --muted: #a1a7b0;
+        --border: rgba(255, 255, 255, 0.10);
+        --accent: #111315;
       }
 
-      /* Base page background using the variables so the toggle applies globally */
-      html, body {
+      /* Base typography sizing (bigger, readable) */
+      html { font-size: 17px; }     /* desktop default */
+      @media (max-width: 680px) {
+        html { font-size: 16px; }   /* mobile base */
+      }
+      body {
         margin: 0;
-        padding: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
         background: var(--bg);
         color: var(--text);
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
-        min-height: 100%;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
       }
 
-      /* Root mounting node should stretch full height */
-      #root {
-        min-height: 100vh;
+      /* Make anchor focus nice & subtle */
+      a { color: inherit; }
+      a:focus-visible, button:focus-visible, input:focus-visible {
+        outline: 2px solid rgba(80,130,255,0.35);
+        outline-offset: 2px;
+        border-radius: 8px;
       }
+
+      /* Root app mount */
+      #root, #app { min-height: 100vh; }
     </style>
-
-    <!-- INITIALIZE THEME from localStorage (defaults to 'dark') -->
-    <script>
-      (function () {
-        try {
-          var saved = localStorage.getItem("qc-theme") || "dark";
-          // Safety check
-          if (saved !== "dark" && saved !== "light") saved = "dark";
-          document.documentElement.setAttribute("data-theme", saved);
-        } catch (e) {
-          // If storage is blocked, just ensure dark
-          document.documentElement.setAttribute("data-theme", "dark");
-        }
-      })();
-    </script>
   </head>
 
   <body>
-    <noscript
-      >QueCab AdbS requires JavaScript enabled for the secure verification
-      tools.</noscript
-    >
     <div id="root"></div>
-
-    <!-- Vite/React entry point.
-         If your entry file is different, replace the path below with your current one. -->
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
