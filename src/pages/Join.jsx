@@ -14,7 +14,7 @@ export default function Join() {
     role: 'Broker',
     mc: '',
     ein: '',
-    phone: ''
+    phone: '',
   })
 
   function update(field, value) {
@@ -41,7 +41,9 @@ export default function Join() {
     <div className="centered">
       <Card>
         <h2>Request Access</h2>
-        <form onSubmit={handleSubmit} className="form">
+
+        {/* Wide desktop grid */}
+        <form onSubmit={handleSubmit} className="form form-wide">
           <label>
             <span>Legal Name</span>
             <input
