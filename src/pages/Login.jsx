@@ -1,13 +1,20 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 
-const LS_EMAIL = "qc_login_email";
+const LS_EMAIL    = "qc_login_email";
 const LS_REMEMBER = "qc_login_remember";
-const LS_SESSION = "qc_session";
+const LS_SESSION  = "qc_session";
+
+// Legacy keys (to preserve your earlier working flow)
+const LEGACY_EMAIL   = "qc_email";
+const LEGACY_ROLE    = "qc_role";          // "broker" | "shipper"
+const LEGACY_CODE    = "qc_access_code";   // e.g., QC-BRK-51164
+const LEGACY_OK_FLAG = "qc_is_authorized"; // "1" means logged in
 
 const normalizeEmail = (v) => (v || "").trim().toLowerCase();
 const normalizeCode  = (v) => (v || "").trim().toUpperCase();
 
+// Accept QC-BRK-12345 or QC-SHP-12345 (case-insensitive), with/without hyphens
 function parseAccessCode(raw) {
   const code = normalizeCode(raw).replace(/\s+/g, "");
   const withHyphens = code.includes("-")
@@ -28,13 +35,13 @@ export default function Login() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  // If we already have a session, bounce to "/"
+  // If we already have a session (new OR legacy), bounce to "/"
   useEffect(() => {
     try {
       const s = localStorage.getItem(LS_SESSION);
-      if (s) {
+      const legacyOK = localStorage.getItem(LEGACY_OK_FLAG) === "1";
+      if (s || legacyOK) {
         try { navigate("/", { replace: true }); } catch {}
-        // Hard fallback in case SPA nav is ignored
         setTimeout(() => {
           if (window?.location?.pathname !== "/") window.location.replace("/");
         }, 10);
@@ -65,16 +72,24 @@ export default function Login() {
     if (!nEmail) { setError("Enter your business email."); setSubmitting(false); return; }
     if (!parsed) { setError("Enter a valid access code (e.g., QC-BRK-12345)."); setSubmitting(false); return; }
 
+    // New session (current build)
     const session = { email: nEmail, role: parsed.role, code: parsed.code, ts: Date.now() };
     try { localStorage.setItem(LS_SESSION, JSON.stringify(session)); } catch {}
 
-    // Try SPA navigate first
+    // Legacy keys (so the earlier Home/dashboard logic still works)
+    try {
+      localStorage.setItem(LEGACY_EMAIL, nEmail);
+      localStorage.setItem(LEGACY_ROLE, parsed.role);
+      localStorage.setItem(LEGACY_CODE, parsed.code);
+      localStorage.setItem(LEGACY_OK_FLAG, "1"); // <- your old code likely checks this
+    } catch {}
+
+    // Navigate now; hard replace fallback
     try { navigate("/", { replace: true }); } catch {}
-    // Then hard redirect immediately (no timeout)
     if (window?.location?.pathname !== "/") window.location.replace("/");
   }
 
-  // ==== (styles + markup exactly as your last good version; trimmed for brevity) ====
+  // ===== same styling you approved =====
   const page = { minHeight:"100vh", width:"100%", background:"var(--bg)", color:"var(--text)", display:"flex", flexDirection:"column", fontSize:"17px" };
   const watermarkWrap = { position:"relative", flex:1, width:"100%", display:"flex", justifyContent:"center", padding:"42px 16px", overflow:"hidden" };
   const watermark = { position:"absolute", inset:0, pointerEvents:"none", backgroundImage:"url('/qc-logo.png')", backgroundRepeat:"no-repeat", backgroundPosition:"center 10%", backgroundSize:"min(70vmin, 680px)", opacity:0.06, filter:"grayscale(100%)" };
@@ -101,21 +116,29 @@ export default function Login() {
             <div style={hTitle}>QueCab AdbS</div>
             <div style={hSub}>Broker / Shipper Access</div>
           </div>
+
           <form onSubmit={onSubmit} style={form} noValidate>
             <div style={row}>
               <div style={label}>Business Email</div>
               <input style={input} type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" spellCheck="false" required />
             </div>
+
             <div style={row}>
               <div style={label}>Access Code</div>
               <input style={input} type="text" value={code} onChange={(e) => setCode(e.target.value)} placeholder="QC-BRK-12345" required />
             </div>
+
             <div style={rememberRow}>
               <input id="remember" type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
               <label htmlFor="remember">Remember this device</label>
             </div>
+
             {error && <div style={err}>{error}</div>}
-            <button type="submit" style={btn} disabled={submitting}>{submitting ? "Signing in…" : "Sign In"}</button>
+
+            <button type="submit" style={btn} disabled={submitting}>
+              {submitting ? "Signing in…" : "Sign In"}
+            </button>
+
             <div style={linkRow}>Need access? <Link to="/join">Request Authorization</Link></div>
             <div style={{ marginTop: 6, color: "var(--muted)", fontSize: "12px" }}>
               Authorized use only; activity may be monitored and recorded. By continuing you consent to monitoring.
