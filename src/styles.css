@@ -1,151 +1,109 @@
-/* -------- Theme -------- */
-:root {
-  --bg: #0f1216;
-  --card: #151a21;
-  --text: #e9edf2;
-  --muted: #aab3bd;
-  --edge: #1f2630;
-  --btn: #2a3340;
-  --btnText: #e9edf2;
-  --accent: #9a1d1d;
-  --shadow: 0 22px 60px rgba(0,0,0,.55);
+/* ===== THEME ===== */
+:root{
+  --bg:#0f1216;--card:#151a21;--text:#e9edf2;--muted:#aab3bd;--edge:#1f2630;
+  --btn:#2a3340;--btnText:#e9edf2;--accent:#9a1d1d;--shadow:0 26px 70px rgba(0,0,0,.6);
+}
+html[data-theme="light"]{
+  --bg:#f4f6f8;--card:#fff;--text:#0f1216;--muted:#4c5560;--edge:#e6e8eb;
+  --btn:#10161d;--btnText:#fff;--accent:#b22626;--shadow:0 20px 48px rgba(0,0,0,.14);
 }
 
-html[data-theme="light"] {
-  --bg: #f4f6f8;
-  --card: #ffffff;
-  --text: #0f1216;
-  --muted: #4c5560;
-  --edge: #e6e8eb;
-  --btn: #10161d;
-  --btnText: #ffffff;
-  --accent: #b22626;
-  --shadow: 0 18px 44px rgba(0,0,0,.14);
+/* ===== BASE – XL ===== */
+*{box-sizing:border-box}
+html,body,#root{height:100%}
+body{
+  margin:0;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Arial;
+  /* BIG on desktop, still sane on small screens */
+  font-size:clamp(22px,1.6vw + 12px,28px);
+  line-height:1.5;
+  background:radial-gradient(1600px 800px at 25% -10%,rgba(154,29,29,.10),transparent 40%),var(--bg);
+  color:var(--text);
 }
 
-/* -------- Base type (XL) -------- */
-* { box-sizing: border-box; }
-html, body, #root { height: 100%; }
-body {
-  margin: 0;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, "Helvetica Neue", Arial;
-  /* Large on desktop, still sane on smaller displays */
-  font-size: clamp(20px, 1.3vw + 12px, 24px);
-  line-height: 1.5;
-  background: radial-gradient(1400px 700px at 30% -10%, rgba(154,29,29,.10), transparent 40%), var(--bg);
-  color: var(--text);
+/* ===== SHELL ===== */
+.app-shell{min-height:100%;display:grid;grid-template-rows:auto 1fr auto}
+.app-header{
+  display:flex;align-items:center;justify-content:flex-end;gap:24px;
+  padding:28px 48px;border-bottom:1px solid var(--edge);
+  background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,0)),var(--bg);
+  position:sticky;top:0;z-index:10;
 }
 
-/* -------- Shell -------- */
-.app-shell { min-height: 100%; display: grid; grid-template-rows: auto 1fr auto; }
+/* ===== NAV + TOGGLE (BIGGER) ===== */
+.top-nav{display:flex;gap:22px}
+.nav-link{
+  padding:16px 24px;border:1px solid transparent;border-radius:18px;
+  text-decoration:none;color:var(--text);font-weight:900;
+  font-size:clamp(20px,1vw + 12px,24px);
+}
+.nav-link:hover{border-color:var(--edge);background:rgba(255,255,255,.08)}
+.nav-link.active{border-color:var(--edge);background:rgba(255,255,255,.12)}
 
-.app-header {
-  display: flex; align-items: center; justify-content: flex-end;
-  gap: 22px; padding: 26px 40px;
-  border-bottom: 1px solid var(--edge);
-  background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0)), var(--bg);
-  position: sticky; top: 0; z-index: 10;
+.theme-switch{position:relative;display:inline-flex;align-items:center;cursor:pointer;user-select:none}
+.theme-switch input{display:none}
+.theme-switch .slider{
+  position:relative;width:200px;height:56px;border:1px solid var(--edge);
+  border-radius:999px;background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,0)),var(--card);
+  box-shadow:var(--shadow);overflow:hidden;display:inline-flex;align-items:center;justify-content:space-between;padding:0 22px
+}
+.theme-switch .labels{width:100%;display:flex;justify-content:space-between;font-size:18px;color:var(--muted);font-weight:900;z-index:1}
+.theme-switch .thumb{position:absolute;top:8px;left:8px;width:94px;height:40px;border-radius:999px;background:var(--btn);border:1px solid var(--edge);transition:transform 180ms ease;z-index:0}
+html[data-theme="dark"] .theme-switch .thumb{transform:translateX( ninetyTwoPx )}
+/* workaround because calc text isn't allowed above; replace via CSS variable */
+:root{--thumbShift:92px}
+html[data-theme="dark"] .theme-switch .thumb{transform:translateX(var(--thumbShift))}
+
+/* ===== MAIN – FULL BLEED ===== */
+.app-main{
+  max-width:none;              /* NO max width */
+  width:100%;
+  margin:56px 0 72px;
+  padding:0 64px;              /* page gutters */
 }
 
-/* -------- Nav + toggle (bigger) -------- */
-.top-nav { display: flex; gap: 18px; }
-.nav-link {
-  padding: 14px 20px;
-  border: 1px solid transparent;
-  border-radius: 16px;
-  text-decoration: none;
-  color: var(--text);
-  font-weight: 900;
-  font-size: clamp(18px, 0.9vw + 10px, 22px);
+/* ===== CARD – EDGE TO EDGE (WITH NICE GUTTERS) ===== */
+.card{
+  background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,0)),var(--card);
+  border:1px solid var(--edge);border-radius:28px;padding:48px;
+  box-shadow:var(--shadow);
+  width:100%;
 }
-.nav-link:hover { border-color: var(--edge); background: rgba(255,255,255,.06); }
-.nav-link.active { border-color: var(--edge); background: rgba(255,255,255,.10); }
+.card h2{margin:0 0 24px;font-size:clamp(40px,3vw + 12px,56px)}
 
-/* Big switch */
-.theme-switch { position: relative; display: inline-flex; align-items: center; cursor: pointer; user-select: none; }
-.theme-switch input { display: none; }
-.theme-switch .slider {
-  position: relative; width: 180px; height: 52px;
-  border: 1px solid var(--edge); border-radius: 999px;
-  background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0)), var(--card);
-  box-shadow: var(--shadow);
-  overflow: hidden; display: inline-flex; align-items: center; justify-content: space-between; padding: 0 20px;
+/* ===== LAYOUT HELPERS ===== */
+.stack{display:grid;gap:32px}
+.centered{display:grid;place-items:center}
+.row{display:flex;align-items:center;gap:16px}
+
+/* ===== FORM – TRUE DESKTOP 2 COL, HUGE CONTROLS ===== */
+.form{display:grid;gap:24px;width:100%}
+.form label{display:grid;gap:10px}
+.form-wide{grid-template-columns:1fr}
+@media (min-width:1100px){
+  .form-wide{grid-template-columns:1fr 1fr;column-gap:40px}
+  .form-wide .btn{grid-column:1 / -1}
 }
-.theme-switch .labels { width: 100%; display: flex; justify-content: space-between; font-size: 16px; color: var(--muted); font-weight: 900; z-index: 1; }
-.theme-switch .thumb { position: absolute; top: 7px; left: 7px; width: 86px; height: 38px; border-radius: 999px; background: var(--btn); border: 1px solid var(--edge); transition: transform 180ms ease; z-index: 0; }
-html[data-theme="dark"] .theme-switch .thumb { transform: translateX(87px); }
+.form span{font-weight:900;font-size:clamp(22px,1.1vw + 12px,26px)}
 
-/* -------- Main area (use the page) -------- */
-.app-main {
-  max-width: 1920px;            /* allow very wide desktop */
-  margin: 48px auto 64px;
-  padding: 0 48px;
+input,select{
+  background:var(--bg);color:var(--text);border:1px solid var(--edge);border-radius:20px;
+  padding:22px 22px;font-size:clamp(22px,1.1vw + 12px,26px);outline:none;width:100%
 }
+input::placeholder{color:#8a93a1}
+input:focus,select:focus{border-color:var(--accent)}
 
-/* -------- Card (wide) -------- */
-.card {
-  background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0)), var(--card);
-  border: 1px solid var(--edge);
-  border-radius: 26px;
-  padding: 40px;
-  box-shadow: var(--shadow);
-  width: min(100%, 1480px);     /* WIDE card */
-}
-.card h2 { margin: 0 0 18px; font-size: clamp(36px, 2.8vw + 12px, 48px); }
-
-/* -------- Helpers -------- */
-.stack { display: grid; gap: 28px; }
-.centered { display: grid; place-items: center; }
-.row { display: flex; align-items: center; gap: 14px; }
-
-/* -------- Forms (true 2-col desktop) -------- */
-.form { display: grid; gap: 20px; max-width: 1400px; }
-.form label { display: grid; gap: 10px; }
-
-.form-wide { grid-template-columns: 1fr; }
-@media (min-width: 1100px) {
-  .form-wide { grid-template-columns: 1fr 1fr; column-gap: 36px; }
-  .form-wide .btn { grid-column: 1 / -1; }
+.btn{
+  display:inline-block;border:1px solid var(--edge);
+  background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,0)),var(--btn);
+  color:var(--btnText);padding:22px 28px;border-radius:20px;text-decoration:none;
+  font-weight:900;font-size:clamp(20px,1vw + 12px,24px);cursor:pointer;box-shadow:var(--shadow)
 }
 
-.form span {
-  font-weight: 900;
-  font-size: clamp(20px, 1.0vw + 12px, 22px);
+/* ===== FOOTER (BIGGER) ===== */
+.app-footer{
+  border-top:1px solid var(--edge);padding:34px 48px;color:var(--muted);
+  background:var(--bg);text-align:center;font-size:clamp(18px,0.9vw + 12px,22px)
 }
 
-input, select {
-  background: var(--bg);
-  color: var(--text);
-  border: 1px solid var(--edge);
-  border-radius: 18px;
-  padding: 20px 20px;           /* tall controls */
-  font-size: clamp(20px, 1.0vw + 12px, 22px);
-  outline: none; width: 100%;
-}
-input::placeholder { color: #7f8894; }
-input:focus, select:focus { border-color: var(--accent); }
-
-/* Buttons */
-.btn {
-  display: inline-block;
-  border: 1px solid var(--edge);
-  background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,0)), var(--btn);
-  color: var(--btnText);
-  padding: 20px 26px;
-  border-radius: 18px;
-  text-decoration: none;
-  font-weight: 900;
-  font-size: clamp(18px, 0.9vw + 12px, 22px);
-  cursor: pointer;
-  box-shadow: var(--shadow);
-}
-
-/* -------- Footer (bigger) -------- */
-.app-footer {
-  border-top: 1px solid var(--edge);
-  padding: 30px 40px;
-  color: var(--muted);
-  background: var(--bg);
-  text-align: center;
-  font-size: clamp(18px, 0.8vw + 12px, 20px);
-}
+/* No toy badges. No micro text. */
