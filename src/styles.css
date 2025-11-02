@@ -27,7 +27,9 @@ html[data-theme="light"] {
 html, body, #root { height: 100%; }
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, "Helvetica Neue", Arial;
+  font-size: 18px;              /* ⬆️ larger base font */
+  line-height: 1.45;
   background: radial-gradient(1200px 600px at 30% -10%, rgba(154,29,29,.10), transparent 40%), var(--bg);
   color: var(--text);
 }
@@ -44,7 +46,7 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 18px 22px;
+  padding: 22px 26px;           /* ⬆️ a bit taller */
   border-bottom: 1px solid var(--edge);
   background:
     linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0)),
@@ -54,37 +56,30 @@ body {
   z-index: 10;
 }
 
-.brand { display: flex; align-items: center; gap: 14px; }
-.brand-logo { width: 220px; height: auto; image-rendering: -webkit-optimize-contrast; }
-
-/* header title/sub removed per your request, so no .brand-text here */
+/* Right-justified header variant (brand removed) */
+.app-header--right { justify-content: flex-end; gap: 18px; }
 
 .header-actions { display: flex; align-items: center; gap: 16px; }
 
-.top-nav { display: flex; gap: 10px; }
+.top-nav { display: flex; gap: 12px; }
 .nav-link {
-  padding: 8px 12px;
+  padding: 10px 14px;
   border: 1px solid transparent;
-  border-radius: 10px;
+  border-radius: 12px;
   text-decoration: none;
   color: var(--text);
+  font-weight: 600;             /* bolder for readability */
 }
 .nav-link:hover { border-color: var(--edge); background: rgba(255,255,255,.03); }
 .nav-link.active { border-color: var(--edge); background: rgba(255,255,255,.05); }
 
-/* New: switch-style theme toggle */
-.theme-switch {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  cursor: pointer;
-  user-select: none;
-}
+/* Switch-style theme toggle */
+.theme-switch { position: relative; display: inline-flex; align-items: center; cursor: pointer; user-select: none; }
 .theme-switch input { display: none; }
 .theme-switch .slider {
   position: relative;
-  width: 120px;
-  height: 36px;
+  width: 132px;                 /* ⬆️ wider */
+  height: 40px;                 /* ⬆️ taller */
   border: 1px solid var(--edge);
   background:
     linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0)),
@@ -95,39 +90,37 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 12px;
+  padding: 0 14px;
 }
 .theme-switch .labels {
   width: 100%;
   display: flex;
   justify-content: space-between;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--muted);
   pointer-events: none;
   z-index: 1;
+  font-weight: 700;
 }
-.theme-switch .lbl { font-weight: 700; }
 .theme-switch .thumb {
   position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 54px;
-  height: 30px;
+  top: 4px;
+  left: 4px;
+  width: 60px;
+  height: 32px;
   border-radius: 999px;
   background: var(--btn);
   border: 1px solid var(--edge);
   transition: transform 180ms ease;
   z-index: 0;
 }
-html[data-theme="dark"] .theme-switch .thumb {
-  transform: translateX(63px);
-}
+html[data-theme="dark"] .theme-switch .thumb { transform: translateX(68px); }
 
 /* Main */
 .app-main {
-  max-width: 980px;
-  margin: 28px auto 40px;
-  padding: 0 20px;
+  max-width: 1200px;            /* ⬆️ wider content area */
+  margin: 34px auto 44px;
+  padding: 0 24px;
 }
 
 /* Card */
@@ -136,28 +129,28 @@ html[data-theme="dark"] .theme-switch .thumb {
     linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0)),
     var(--card);
   border: 1px solid var(--edge);
-  border-radius: 18px;
-  padding: 22px;
+  border-radius: 20px;
+  padding: 26px;                /* ⬆️ */
   box-shadow: var(--shadow);
 }
-.card h2 { margin-top: 0; font-size: 24px; }
+.card h2 { margin-top: 0; font-size: 28px; }  /* ⬆️ */
 
 /* Layout helpers */
-.stack { display: grid; gap: 18px; }
+.stack { display: grid; gap: 22px; }
 .centered { display: grid; place-items: center; }
-.row { display: flex; align-items: center; gap: 10px; }
+.row { display: flex; align-items: center; gap: 12px; }
 
 /* Form */
-.form { display: grid; gap: 14px; max-width: 560px; }
-.form label { display: grid; gap: 6px; }
-.form span { font-weight: 600; }
+.form { display: grid; gap: 16px; max-width: 680px; }   /* ⬆️ wider form */
+.form label { display: grid; gap: 8px; }
+.form span { font-weight: 700; font-size: 16px; }       /* ⬆️ label size */
 input, select {
   background: var(--bg);
   color: var(--text);
   border: 1px solid var(--edge);
-  border-radius: 12px;
-  padding: 12px 12px;
-  font-size: 16px;
+  border-radius: 14px;
+  padding: 14px 14px;                                   /* ⬆️ input padding */
+  font-size: 18px;                                      /* ⬆️ input font */
   outline: none;
 }
 input:focus, select:focus { border-color: var(--accent); }
@@ -167,10 +160,11 @@ input:focus, select:focus { border-color: var(--accent); }
   border: 1px solid var(--edge);
   background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0)), var(--btn);
   color: var(--btnText);
-  padding: 12px 16px;
-  border-radius: 12px;
+  padding: 14px 18px;                                   /* ⬆️ button size */
+  border-radius: 14px;
   text-decoration: none;
-  font-weight: 700;
+  font-weight: 800;
+  font-size: 16px;                                      /* ⬆️ */
   cursor: pointer;
   box-shadow: var(--shadow);
 }
@@ -178,10 +172,11 @@ input:focus, select:focus { border-color: var(--accent); }
 /* Footer */
 .app-footer {
   border-top: 1px solid var(--edge);
-  padding: 18px 22px;
+  padding: 22px 26px;                                    /* ⬆️ */
   color: var(--muted);
   background: var(--bg);
   text-align: center;
+  font-size: 16px;                                       /* ⬆️ */
 }
 
-/* Respect “no toy hints”. No micro text, no badges, no corner labels. */
+/* No micro text, no badges, no corner labels. */
