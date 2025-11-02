@@ -7,14 +7,13 @@
     <meta name="color-scheme" content="dark light" />
 
     <style>
-      /* Global theme tokens (dark/light) driven by html[data-theme] */
+      /* THEME TOKENS (global) */
       :root {
         --bg: #0b0d10;
         --card: #14181f;
         --border: rgba(255,255,255,0.10);
         --text: #e7edf6;
         --muted: rgba(231,237,246,0.70);
-        --accent: #e74c3c; /* not used here, but reserved */
       }
       html[data-theme="light"] {
         --bg: #eef1f5;
@@ -24,28 +23,25 @@
         --muted: rgba(14,19,32,0.65);
       }
 
-      /* Base reset + body background from theme */
+      /* base */
       * { box-sizing: border-box; }
       html, body, #root { height: 100%; }
       body {
-        margin: 0;
-        background: var(--bg);
-        color: var(--text);
-        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
+        margin: 0; background: var(--bg); color: var(--text);
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+        -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
       }
 
-      /* Optional: minimal focus ring for accessibility */
-      :focus-visible {
-        outline: 2px solid rgba(99, 102, 241, 0.8);
-        outline-offset: 2px;
-      }
+      /* make links always clickable even if something overlaps */
+      a { pointer-events: auto; position: relative; z-index: 5; }
+
+      /* optional focus ring */
+      :focus-visible { outline: 2px solid rgba(99,102,241,.8); outline-offset: 2px; }
     </style>
 
     <script>
-      // Apply saved theme early (no flash)
-      (function() {
+      // Apply saved theme immediately
+      (function () {
         try {
           var saved = localStorage.getItem("qc_theme");
           if (saved === "light" || saved === "dark") {
@@ -53,22 +49,33 @@
           }
         } catch (e) {}
       })();
-      // Global helper the React button can call
-      window.__qcToggleTheme = function() {
+
+      // Public helpers for the toggle button
+      window.__qcToggleTheme = function () {
         var html = document.documentElement;
         var next = html.getAttribute("data-theme") === "dark" ? "light" : "dark";
         html.setAttribute("data-theme", next);
         try { localStorage.setItem("qc_theme", next); } catch (e) {}
         return next;
       };
-      window.__qcGetTheme = function() {
-        var html = document.documentElement;
-        return html.getAttribute("data-theme") || "dark";
+      window.__qcGetTheme = function () {
+        return document.documentElement.getAttribute("data-theme") || "dark";
       };
+
+      // Safety: if already authorized and stuck on /login, jump to /
+      (function () {
+        try {
+          if (location.pathname === "/login") {
+            if (localStorage.getItem("qc_is_authorized") === "1") {
+              location.replace("/");
+            }
+          }
+        } catch (e) {}
+      })();
     </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root" data-qc-build="1102B"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
