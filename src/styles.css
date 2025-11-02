@@ -8,7 +8,7 @@
   --btn: #2a3340;
   --btnText: #e9edf2;
   --accent: #9a1d1d;
-  --shadow: 0 14px 36px rgba(0,0,0,.48);
+  --shadow: 0 18px 44px rgba(0,0,0,.50);
 }
 
 html[data-theme="light"] {
@@ -20,142 +20,130 @@ html[data-theme="light"] {
   --btn: #10161d;
   --btnText: #ffffff;
   --accent: #b22626;
-  --shadow: 0 12px 30px rgba(0,0,0,.12);
+  --shadow: 0 14px 34px rgba(0,0,0,.12);
 }
 
-/* -------- Base type (bigger) -------- */
+/* -------- Base type (larger) -------- */
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; }
 
 body {
   margin: 0;
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, "Helvetica Neue", Arial;
-  font-size: clamp(18px, 1.1vw + 12px, 22px);      /* ⬆️ bigger base font */
-  line-height: 1.45;
+  font-size: clamp(18px, 1.0vw + 12px, 22px);
+  line-height: 1.5;
   background: radial-gradient(1200px 600px at 30% -10%, rgba(154,29,29,.10), transparent 40%), var(--bg);
   color: var(--text);
 }
 
-/* -------- App shell -------- */
-.app-shell {
-  min-height: 100%;
-  display: grid;
-  grid-template-rows: auto 1fr auto;
-}
+/* -------- Shell -------- */
+.app-shell { min-height: 100%; display: grid; grid-template-rows: auto 1fr auto; }
 
 .app-header {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;     /* right side per your call */
-  gap: 18px;
-  padding: 22px 28px;
+  display: flex; align-items: center; justify-content: flex-end;
+  gap: 18px; padding: 24px 32px;
   border-bottom: 1px solid var(--edge);
-  background:
-    linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0)),
-    var(--bg);
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0)), var(--bg);
+  position: sticky; top: 0; z-index: 10;
 }
 
-/* -------- Nav + Toggle -------- */
-.top-nav { display: flex; gap: 14px; }
+/* -------- Nav + toggle -------- */
+.top-nav { display: flex; gap: 16px; }
 .nav-link {
-  padding: 12px 16px;            /* ⬆️ larger hit area */
+  padding: 12px 18px;
   border: 1px solid transparent;
   border-radius: 14px;
   text-decoration: none;
   color: var(--text);
-  font-weight: 700;               /* ⬆️ */
+  font-weight: 800;
 }
-.nav-link:hover { border-color: var(--edge); background: rgba(255,255,255,.04); }
-.nav-link.active { border-color: var(--edge); background: rgba(255,255,255,.06); }
+.nav-link:hover { border-color: var(--edge); background: rgba(255,255,255,.05); }
+.nav-link.active { border-color: var(--edge); background: rgba(255,255,255,.08); }
 
-/* Switch-style theme toggle (bigger) */
+/* Big switch */
 .theme-switch { position: relative; display: inline-flex; align-items: center; cursor: pointer; user-select: none; }
 .theme-switch input { display: none; }
 .theme-switch .slider {
-  position: relative;
-  width: 150px; height: 44px;    /* ⬆️ */
-  border: 1px solid var(--edge);
+  position: relative; width: 160px; height: 48px;
+  border: 1px solid var(--edge); border-radius: 999px;
   background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0)), var(--card);
-  border-radius: 999px;
   box-shadow: var(--shadow);
-  overflow: hidden;
-  display: inline-flex; align-items: center; justify-content: space-between;
-  padding: 0 16px;
+  overflow: hidden; display: inline-flex; align-items: center; justify-content: space-between; padding: 0 18px;
 }
-.theme-switch .labels { width: 100%; display: flex; justify-content: space-between; font-size: 14px; color: var(--muted); font-weight: 800; z-index: 1; }
-.theme-switch .thumb {
-  position: absolute; top: 5px; left: 5px;
-  width: 70px; height: 34px; border-radius: 999px;
-  background: var(--btn); border: 1px solid var(--edge);
-  transition: transform 180ms ease; z-index: 0;
-}
-html[data-theme="dark"] .theme-switch .thumb { transform: translateX(75px); }
+.theme-switch .labels { width: 100%; display: flex; justify-content: space-between; font-size: 15px; color: var(--muted); font-weight: 900; z-index: 1; }
+.theme-switch .thumb { position: absolute; top: 6px; left: 6px; width: 76px; height: 36px; border-radius: 999px; background: var(--btn); border: 1px solid var(--edge); transition: transform 180ms ease; z-index: 0; }
+html[data-theme="dark"] .theme-switch .thumb { transform: translateX(78px); }
 
-/* -------- Main area (wider) -------- */
+/* -------- Main area (much wider) -------- */
 .app-main {
-  max-width: 1400px;             /* ⬆️ much wider content zone */
-  margin: 40px auto 50px;
-  padding: 0 28px;
+  max-width: 1600px;             /* use the page width */
+  margin: 44px auto 56px;
+  padding: 0 36px;
 }
 
-/* -------- Card (wider + bigger headings) -------- */
+/* -------- Card (wide) -------- */
 .card {
   background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0)), var(--card);
   border: 1px solid var(--edge);
-  border-radius: 22px;
-  padding: 30px;                  /* ⬆️ */
+  border-radius: 24px;
+  padding: 34px;
   box-shadow: var(--shadow);
-  width: min(100%, 980px);        /* ⬆️ wider card */
+  width: min(100%, 1280px);      /* <-- wide card */
 }
-.card h2 { margin-top: 0; font-size: clamp(30px, 2.2vw + 14px, 38px); }
+.card h2 { margin: 0 0 12px; font-size: clamp(32px, 2.3vw + 14px, 42px); }
 
-/* -------- Layout helpers -------- */
-.stack { display: grid; gap: 24px; }
+/* -------- Helpers -------- */
+.stack { display: grid; gap: 26px; }
 .centered { display: grid; place-items: center; }
 .row { display: flex; align-items: center; gap: 12px; }
 
-/* -------- Forms (wider inputs + bigger text) -------- */
-.form { display: grid; gap: 18px; max-width: 900px; }   /* ⬆️ 900px form */
+/* -------- Forms (true desktop two-column) -------- */
+.form { display: grid; gap: 18px; max-width: 1220px; }
 .form label { display: grid; gap: 8px; }
-.form span { font-weight: 800; font-size: clamp(16px, 1vw + 10px, 18px); }
+
+.form-wide { grid-template-columns: 1fr; }
+@media (min-width: 980px) {
+  .form-wide { grid-template-columns: 1fr 1fr; column-gap: 28px; }
+  .form-wide .btn { grid-column: 1 / -1; } /* button spans both columns */
+}
+
+.form span { font-weight: 900; font-size: clamp(18px, 1.0vw + 10px, 20px); }
 
 input, select {
   background: var(--bg);
   color: var(--text);
   border: 1px solid var(--edge);
   border-radius: 16px;
-  padding: 16px 16px;            /* ⬆️ taller inputs */
-  font-size: clamp(18px, 1vw + 12px, 20px);
-  outline: none;
-  width: 100%;
+  padding: 18px 18px;            /* taller inputs */
+  font-size: clamp(18px, 1.0vw + 12px, 20px);
+  outline: none; width: 100%;
 }
+input::placeholder { color: #77808b; }
 input:focus, select:focus { border-color: var(--accent); }
 
+/* Buttons */
 .btn {
   display: inline-block;
   border: 1px solid var(--edge);
-  background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0)), var(--btn);
+  background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,0)), var(--btn);
   color: var(--btnText);
-  padding: 16px 20px;            /* ⬆️ */
+  padding: 18px 22px;
   border-radius: 16px;
   text-decoration: none;
   font-weight: 900;
-  font-size: clamp(16px, 1vw + 10px, 18px);
+  font-size: clamp(17px, 0.9vw + 11px, 19px);
   cursor: pointer;
   box-shadow: var(--shadow);
 }
 
-/* -------- Footer (larger text) -------- */
+/* -------- Footer (bigger) -------- */
 .app-footer {
   border-top: 1px solid var(--edge);
-  padding: 26px 28px;
+  padding: 26px 32px;
   color: var(--muted);
   background: var(--bg);
   text-align: center;
-  font-size: clamp(16px, 0.7vw + 12px, 18px);
+  font-size: clamp(16px, 0.8vw + 12px, 18px);
 }
 
-/* No micro text. No toy badges. */
+/* No micro text. No badges. No corner labels. */
