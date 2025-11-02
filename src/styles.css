@@ -56,8 +56,8 @@ body {
 
 .brand { display: flex; align-items: center; gap: 14px; }
 .brand-logo { width: 220px; height: auto; image-rendering: -webkit-optimize-contrast; }
-.brand-text h1 { margin: 0; font-size: 26px; letter-spacing: .3px; }
-.brand-sub { margin: 2px 0 0; color: var(--muted); font-size: 14px; }
+
+/* header title/sub removed per your request, so no .brand-text here */
 
 .header-actions { display: flex; align-items: center; gap: 16px; }
 
@@ -72,14 +72,55 @@ body {
 .nav-link:hover { border-color: var(--edge); background: rgba(255,255,255,.03); }
 .nav-link.active { border-color: var(--edge); background: rgba(255,255,255,.05); }
 
-.toggle {
-  border: 1px solid var(--edge);
-  background: var(--btn);
-  color: var(--btnText);
-  padding: 8px 12px;
-  border-radius: 10px;
+/* New: switch-style theme toggle */
+.theme-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
   cursor: pointer;
+  user-select: none;
+}
+.theme-switch input { display: none; }
+.theme-switch .slider {
+  position: relative;
+  width: 120px;
+  height: 36px;
+  border: 1px solid var(--edge);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0)),
+    var(--card);
+  border-radius: 999px;
   box-shadow: var(--shadow);
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+}
+.theme-switch .labels {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--muted);
+  pointer-events: none;
+  z-index: 1;
+}
+.theme-switch .lbl { font-weight: 700; }
+.theme-switch .thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 54px;
+  height: 30px;
+  border-radius: 999px;
+  background: var(--btn);
+  border: 1px solid var(--edge);
+  transition: transform 180ms ease;
+  z-index: 0;
+}
+html[data-theme="dark"] .theme-switch .thumb {
+  transform: translateX(63px);
 }
 
 /* Main */
@@ -143,4 +184,4 @@ input:focus, select:focus { border-color: var(--accent); }
   text-align: center;
 }
 
-/* Respect “no toy hints”. No micro text, no badges, no labels stuck to corners. */
+/* Respect “no toy hints”. No micro text, no badges, no corner labels. */
