@@ -8,102 +8,119 @@ html[data-theme="light"]{
   --btn:#10161d;--btnText:#fff;--accent:#b22626;--shadow:0 20px 48px rgba(0,0,0,.14);
 }
 
-/* ===== BASE – XL ===== */
+/* ===== BASE ===== */
 *{box-sizing:border-box}
 html,body,#root{height:100%}
 body{
   margin:0;
   font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Arial;
-  /* BIG on desktop, still sane on small screens */
-  font-size:clamp(22px,1.6vw + 12px,28px);
+  font-size:clamp(20px,1.3vw + 12px,24px);
   line-height:1.5;
-  background:radial-gradient(1600px 800px at 25% -10%,rgba(154,29,29,.10),transparent 40%),var(--bg);
+  background:radial-gradient(1400px 700px at 25% -10%,rgba(154,29,29,.10),transparent 40%),var(--bg);
   color:var(--text);
 }
 
 /* ===== SHELL ===== */
 .app-shell{min-height:100%;display:grid;grid-template-rows:auto 1fr auto}
 .app-header{
-  display:flex;align-items:center;justify-content:flex-end;gap:24px;
-  padding:28px 48px;border-bottom:1px solid var(--edge);
+  display:flex;align-items:center;justify-content:flex-end;gap:22px;
+  padding:26px 40px;border-bottom:1px solid var(--edge);
   background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,0)),var(--bg);
   position:sticky;top:0;z-index:10;
 }
 
-/* ===== NAV + TOGGLE (BIGGER) ===== */
-.top-nav{display:flex;gap:22px}
+/* NAV */
+.top-nav{display:flex;gap:18px}
 .nav-link{
-  padding:16px 24px;border:1px solid transparent;border-radius:18px;
+  padding:14px 20px;border:1px solid transparent;border-radius:16px;
   text-decoration:none;color:var(--text);font-weight:900;
-  font-size:clamp(20px,1vw + 12px,24px);
+  font-size:clamp(18px,0.9vw + 10px,22px);
 }
-.nav-link:hover{border-color:var(--edge);background:rgba(255,255,255,.08)}
-.nav-link.active{border-color:var(--edge);background:rgba(255,255,255,.12)}
+.nav-link:hover{border-color:var(--edge);background:rgba(255,255,255,.06)}
+.nav-link.active{border-color:var(--edge);background:rgba(255,255,255,.10)}
 
 .theme-switch{position:relative;display:inline-flex;align-items:center;cursor:pointer;user-select:none}
 .theme-switch input{display:none}
 .theme-switch .slider{
-  position:relative;width:200px;height:56px;border:1px solid var(--edge);
-  border-radius:999px;background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,0)),var(--card);
-  box-shadow:var(--shadow);overflow:hidden;display:inline-flex;align-items:center;justify-content:space-between;padding:0 22px
+  position:relative;width:180px;height:52px;border:1px solid var(--edge);border-radius:999px;
+  background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,0)),var(--card);
+  box-shadow:var(--shadow);overflow:hidden;display:inline-flex;align-items:center;justify-content:space-between;padding:0 20px
 }
-.theme-switch .labels{width:100%;display:flex;justify-content:space-between;font-size:18px;color:var(--muted);font-weight:900;z-index:1}
-.theme-switch .thumb{position:absolute;top:8px;left:8px;width:94px;height:40px;border-radius:999px;background:var(--btn);border:1px solid var(--edge);transition:transform 180ms ease;z-index:0}
-html[data-theme="dark"] .theme-switch .thumb{transform:translateX( ninetyTwoPx )}
-/* workaround because calc text isn't allowed above; replace via CSS variable */
-:root{--thumbShift:92px}
+.theme-switch .labels{width:100%;display:flex;justify-content:space-between;font-size:16px;color:var(--muted);font-weight:900;z-index:1}
+.theme-switch .thumb{position:absolute;top:7px;left:7px;width:86px;height:38px;border-radius:999px;background:var(--btn);border:1px solid var(--edge);transition:transform 180ms ease;z-index:0}
+:root{--thumbShift:87px}
 html[data-theme="dark"] .theme-switch .thumb{transform:translateX(var(--thumbShift))}
 
-/* ===== MAIN – FULL BLEED ===== */
-.app-main{
-  max-width:none;              /* NO max width */
-  width:100%;
-  margin:56px 0 72px;
-  padding:0 64px;              /* page gutters */
-}
+/* ===== MAIN ===== */
+.app-main{width:100%;margin:48px 0 64px;padding:0 48px}
 
-/* ===== CARD – EDGE TO EDGE (WITH NICE GUTTERS) ===== */
+/* ===== CARD WIDTH: ~62% ON DESKTOP, RESPONSIVE ON PHONE ===== */
 .card{
   background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,0)),var(--card);
-  border:1px solid var(--edge);border-radius:28px;padding:48px;
-  box-shadow:var(--shadow);
-  width:100%;
+  border:1px solid var(--edge);border-radius:26px;padding:40px;box-shadow:var(--shadow);
+  width:clamp(340px, 62vw, 1480px); /* <-- ~62% desktop width */
+  margin-inline:auto;
 }
-.card h2{margin:0 0 24px;font-size:clamp(40px,3vw + 12px,56px)}
+.card h2{margin:0 0 18px;font-size:clamp(34px,2.6vw + 12px,46px)}
 
-/* ===== LAYOUT HELPERS ===== */
-.stack{display:grid;gap:32px}
+/* ===== HELPERS ===== */
+.stack{display:grid;gap:28px}
 .centered{display:grid;place-items:center}
-.row{display:flex;align-items:center;gap:16px}
+.row{display:flex;align-items:center;gap:14px}
 
-/* ===== FORM – TRUE DESKTOP 2 COL, HUGE CONTROLS ===== */
-.form{display:grid;gap:24px;width:100%}
+/* ===== FORM (2-col desktop, 1-col phone) ===== */
+.form{display:grid;gap:20px;width:100%}
 .form label{display:grid;gap:10px}
 .form-wide{grid-template-columns:1fr}
 @media (min-width:1100px){
-  .form-wide{grid-template-columns:1fr 1fr;column-gap:40px}
+  .form-wide{grid-template-columns:1fr 1fr;column-gap:36px}
   .form-wide .btn{grid-column:1 / -1}
 }
-.form span{font-weight:900;font-size:clamp(22px,1.1vw + 12px,26px)}
+.form span{font-weight:900;font-size:clamp(18px,0.9vw + 12px,22px)}
 
 input,select{
-  background:var(--bg);color:var(--text);border:1px solid var(--edge);border-radius:20px;
-  padding:22px 22px;font-size:clamp(22px,1.1vw + 12px,26px);outline:none;width:100%
+  background:var(--bg);color:var(--text);border:1px solid var(--edge);border-radius:18px;
+  padding:18px 18px;font-size:clamp(18px,0.9vw + 12px,22px);outline:none;width:100%
 }
-input::placeholder{color:#8a93a1}
+input::placeholder{color:#7f8894}
 input:focus,select:focus{border-color:var(--accent)}
 
 .btn{
   display:inline-block;border:1px solid var(--edge);
-  background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,0)),var(--btn);
-  color:var(--btnText);padding:22px 28px;border-radius:20px;text-decoration:none;
-  font-weight:900;font-size:clamp(20px,1vw + 12px,24px);cursor:pointer;box-shadow:var(--shadow)
+  background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,0)),var(--btn);
+  color:var(--btnText);padding:18px 22px;border-radius:18px;text-decoration:none;
+  font-weight:900;font-size:clamp(18px,0.9vw + 12px,22px);cursor:pointer;box-shadow:var(--shadow)
 }
 
-/* ===== FOOTER (BIGGER) ===== */
+/* ===== FOOTER ===== */
 .app-footer{
-  border-top:1px solid var(--edge);padding:34px 48px;color:var(--muted);
-  background:var(--bg);text-align:center;font-size:clamp(18px,0.9vw + 12px,22px)
+  border-top:1px solid var(--edge);padding:30px 40px;color:var(--muted);
+  background:var(--bg);text-align:center;font-size:clamp(16px,0.8vw + 12px,20px)
 }
 
-/* No toy badges. No micro text. */
+/* ===== PHONE / TABLET TUNING ===== */
+@media (max-width:1024px){
+  .app-main{padding:0 28px}
+  .card{width:88vw;padding:32px}       /* tablet width */
+}
+@media (max-width:768px){
+  body{font-size:clamp(16px,2.4vw + 10px,18px)}
+  .app-header{padding:18px 20px}
+  .top-nav{gap:10px}
+  .nav-link{padding:10px 12px;font-size:16px;border-radius:12px}
+  .theme-switch .slider{width:128px;height:40px;padding:0 12px}
+  .theme-switch .thumb{top:4px;left:4px;width:56px;height:32px}
+  :root{--thumbShift:60px}
+
+  .app-main{padding:0 16px;margin:28px 0 40px}
+  .card{width:92vw;padding:24px;border-radius:18px}  /* phone width */
+  .card h2{font-size:24px}
+
+  .form-wide{grid-template-columns:1fr}
+  .form span{font-size:16px}
+  input,select{padding:14px 14px;font-size:16px;border-radius:12px}
+  .btn{padding:14px 16px;font-size:16px;border-radius:12px}
+}
+@media (max-width:420px){
+  .card{width:94vw;padding:20px}
+}
