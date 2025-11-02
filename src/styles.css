@@ -1,0 +1,146 @@
+/* Base theme variables */
+:root {
+  --bg: #0f1216;
+  --card: #151a21;
+  --text: #e9edf2;
+  --muted: #aab3bd;
+  --edge: #1f2630;
+  --btn: #2a3340;
+  --btnText: #e9edf2;
+  --accent: #9a1d1d; /* subtle truck-red accent */
+  --shadow: 0 12px 30px rgba(0,0,0,.45);
+}
+
+html[data-theme="light"] {
+  --bg: #f4f6f8;
+  --card: #ffffff;
+  --text: #0f1216;
+  --muted: #4c5560;
+  --edge: #e6e8eb;
+  --btn: #10161d;
+  --btnText: #ffffff;
+  --accent: #b22626;
+  --shadow: 0 10px 24px rgba(0,0,0,.10);
+}
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  background: radial-gradient(1200px 600px at 30% -10%, rgba(154,29,29,.10), transparent 40%), var(--bg);
+  color: var(--text);
+}
+
+/* Shell */
+.app-shell {
+  min-height: 100%;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--edge);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0)),
+    var(--bg);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.brand { display: flex; align-items: center; gap: 14px; }
+.brand-logo { width: 220px; height: auto; image-rendering: -webkit-optimize-contrast; }
+.brand-text h1 { margin: 0; font-size: 26px; letter-spacing: .3px; }
+.brand-sub { margin: 2px 0 0; color: var(--muted); font-size: 14px; }
+
+.header-actions { display: flex; align-items: center; gap: 16px; }
+
+.top-nav { display: flex; gap: 10px; }
+.nav-link {
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  text-decoration: none;
+  color: var(--text);
+}
+.nav-link:hover { border-color: var(--edge); background: rgba(255,255,255,.03); }
+.nav-link.active { border-color: var(--edge); background: rgba(255,255,255,.05); }
+
+.toggle {
+  border: 1px solid var(--edge);
+  background: var(--btn);
+  color: var(--btnText);
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+}
+
+/* Main */
+.app-main {
+  max-width: 980px;
+  margin: 28px auto 40px;
+  padding: 0 20px;
+}
+
+/* Card */
+.card {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0)),
+    var(--card);
+  border: 1px solid var(--edge);
+  border-radius: 18px;
+  padding: 22px;
+  box-shadow: var(--shadow);
+}
+.card h2 { margin-top: 0; font-size: 24px; }
+
+/* Layout helpers */
+.stack { display: grid; gap: 18px; }
+.centered { display: grid; place-items: center; }
+.row { display: flex; align-items: center; gap: 10px; }
+
+/* Form */
+.form { display: grid; gap: 14px; max-width: 560px; }
+.form label { display: grid; gap: 6px; }
+.form span { font-weight: 600; }
+input, select {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--edge);
+  border-radius: 12px;
+  padding: 12px 12px;
+  font-size: 16px;
+  outline: none;
+}
+input:focus, select:focus { border-color: var(--accent); }
+
+.btn {
+  display: inline-block;
+  border: 1px solid var(--edge);
+  background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0)), var(--btn);
+  color: var(--btnText);
+  padding: 12px 16px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+}
+
+/* Footer */
+.app-footer {
+  border-top: 1px solid var(--edge);
+  padding: 18px 22px;
+  color: var(--muted);
+  background: var(--bg);
+  text-align: center;
+}
+
+/* Respect “no toy hints”. No micro text, no badges, no labels stuck to corners. */
