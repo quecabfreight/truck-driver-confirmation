@@ -1,4 +1,4 @@
-/* Base theme variables */
+/* -------- Theme -------- */
 :root {
   --bg: #0f1216;
   --card: #151a21;
@@ -7,8 +7,8 @@
   --edge: #1f2630;
   --btn: #2a3340;
   --btnText: #e9edf2;
-  --accent: #9a1d1d; /* subtle truck-red accent */
-  --shadow: 0 12px 30px rgba(0,0,0,.45);
+  --accent: #9a1d1d;
+  --shadow: 0 14px 36px rgba(0,0,0,.48);
 }
 
 html[data-theme="light"] {
@@ -20,21 +20,23 @@ html[data-theme="light"] {
   --btn: #10161d;
   --btnText: #ffffff;
   --accent: #b22626;
-  --shadow: 0 10px 24px rgba(0,0,0,.10);
+  --shadow: 0 12px 30px rgba(0,0,0,.12);
 }
 
+/* -------- Base type (bigger) -------- */
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; }
+
 body {
   margin: 0;
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, "Helvetica Neue", Arial;
-  font-size: 18px;              /* ⬆️ larger base font */
+  font-size: clamp(18px, 1.1vw + 12px, 22px);      /* ⬆️ bigger base font */
   line-height: 1.45;
   background: radial-gradient(1200px 600px at 30% -10%, rgba(154,29,29,.10), transparent 40%), var(--bg);
   color: var(--text);
 }
 
-/* Shell */
+/* -------- App shell -------- */
 .app-shell {
   min-height: 100%;
   display: grid;
@@ -44,9 +46,9 @@ body {
 .app-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 22px 26px;           /* ⬆️ a bit taller */
+  justify-content: flex-end;     /* right side per your call */
+  gap: 18px;
+  padding: 22px 28px;
   border-bottom: 1px solid var(--edge);
   background:
     linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0)),
@@ -56,127 +58,104 @@ body {
   z-index: 10;
 }
 
-/* Right-justified header variant (brand removed) */
-.app-header--right { justify-content: flex-end; gap: 18px; }
-
-.header-actions { display: flex; align-items: center; gap: 16px; }
-
-.top-nav { display: flex; gap: 12px; }
+/* -------- Nav + Toggle -------- */
+.top-nav { display: flex; gap: 14px; }
 .nav-link {
-  padding: 10px 14px;
+  padding: 12px 16px;            /* ⬆️ larger hit area */
   border: 1px solid transparent;
-  border-radius: 12px;
+  border-radius: 14px;
   text-decoration: none;
   color: var(--text);
-  font-weight: 600;             /* bolder for readability */
+  font-weight: 700;               /* ⬆️ */
 }
-.nav-link:hover { border-color: var(--edge); background: rgba(255,255,255,.03); }
-.nav-link.active { border-color: var(--edge); background: rgba(255,255,255,.05); }
+.nav-link:hover { border-color: var(--edge); background: rgba(255,255,255,.04); }
+.nav-link.active { border-color: var(--edge); background: rgba(255,255,255,.06); }
 
-/* Switch-style theme toggle */
+/* Switch-style theme toggle (bigger) */
 .theme-switch { position: relative; display: inline-flex; align-items: center; cursor: pointer; user-select: none; }
 .theme-switch input { display: none; }
 .theme-switch .slider {
   position: relative;
-  width: 132px;                 /* ⬆️ wider */
-  height: 40px;                 /* ⬆️ taller */
+  width: 150px; height: 44px;    /* ⬆️ */
   border: 1px solid var(--edge);
-  background:
-    linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0)),
-    var(--card);
+  background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0)), var(--card);
   border-radius: 999px;
   box-shadow: var(--shadow);
   overflow: hidden;
-  display: inline-flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 14px;
+  display: inline-flex; align-items: center; justify-content: space-between;
+  padding: 0 16px;
 }
-.theme-switch .labels {
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  font-size: 13px;
-  color: var(--muted);
-  pointer-events: none;
-  z-index: 1;
-  font-weight: 700;
-}
+.theme-switch .labels { width: 100%; display: flex; justify-content: space-between; font-size: 14px; color: var(--muted); font-weight: 800; z-index: 1; }
 .theme-switch .thumb {
-  position: absolute;
-  top: 4px;
-  left: 4px;
-  width: 60px;
-  height: 32px;
-  border-radius: 999px;
-  background: var(--btn);
-  border: 1px solid var(--edge);
-  transition: transform 180ms ease;
-  z-index: 0;
+  position: absolute; top: 5px; left: 5px;
+  width: 70px; height: 34px; border-radius: 999px;
+  background: var(--btn); border: 1px solid var(--edge);
+  transition: transform 180ms ease; z-index: 0;
 }
-html[data-theme="dark"] .theme-switch .thumb { transform: translateX(68px); }
+html[data-theme="dark"] .theme-switch .thumb { transform: translateX(75px); }
 
-/* Main */
+/* -------- Main area (wider) -------- */
 .app-main {
-  max-width: 1200px;            /* ⬆️ wider content area */
-  margin: 34px auto 44px;
-  padding: 0 24px;
+  max-width: 1400px;             /* ⬆️ much wider content zone */
+  margin: 40px auto 50px;
+  padding: 0 28px;
 }
 
-/* Card */
+/* -------- Card (wider + bigger headings) -------- */
 .card {
-  background:
-    linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0)),
-    var(--card);
+  background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,0)), var(--card);
   border: 1px solid var(--edge);
-  border-radius: 20px;
-  padding: 26px;                /* ⬆️ */
+  border-radius: 22px;
+  padding: 30px;                  /* ⬆️ */
   box-shadow: var(--shadow);
+  width: min(100%, 980px);        /* ⬆️ wider card */
 }
-.card h2 { margin-top: 0; font-size: 28px; }  /* ⬆️ */
+.card h2 { margin-top: 0; font-size: clamp(30px, 2.2vw + 14px, 38px); }
 
-/* Layout helpers */
-.stack { display: grid; gap: 22px; }
+/* -------- Layout helpers -------- */
+.stack { display: grid; gap: 24px; }
 .centered { display: grid; place-items: center; }
 .row { display: flex; align-items: center; gap: 12px; }
 
-/* Form */
-.form { display: grid; gap: 16px; max-width: 680px; }   /* ⬆️ wider form */
+/* -------- Forms (wider inputs + bigger text) -------- */
+.form { display: grid; gap: 18px; max-width: 900px; }   /* ⬆️ 900px form */
 .form label { display: grid; gap: 8px; }
-.form span { font-weight: 700; font-size: 16px; }       /* ⬆️ label size */
+.form span { font-weight: 800; font-size: clamp(16px, 1vw + 10px, 18px); }
+
 input, select {
   background: var(--bg);
   color: var(--text);
   border: 1px solid var(--edge);
-  border-radius: 14px;
-  padding: 14px 14px;                                   /* ⬆️ input padding */
-  font-size: 18px;                                      /* ⬆️ input font */
+  border-radius: 16px;
+  padding: 16px 16px;            /* ⬆️ taller inputs */
+  font-size: clamp(18px, 1vw + 12px, 20px);
   outline: none;
+  width: 100%;
 }
 input:focus, select:focus { border-color: var(--accent); }
 
 .btn {
   display: inline-block;
   border: 1px solid var(--edge);
-  background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0)), var(--btn);
+  background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0)), var(--btn);
   color: var(--btnText);
-  padding: 14px 18px;                                   /* ⬆️ button size */
-  border-radius: 14px;
+  padding: 16px 20px;            /* ⬆️ */
+  border-radius: 16px;
   text-decoration: none;
-  font-weight: 800;
-  font-size: 16px;                                      /* ⬆️ */
+  font-weight: 900;
+  font-size: clamp(16px, 1vw + 10px, 18px);
   cursor: pointer;
   box-shadow: var(--shadow);
 }
 
-/* Footer */
+/* -------- Footer (larger text) -------- */
 .app-footer {
   border-top: 1px solid var(--edge);
-  padding: 22px 26px;                                    /* ⬆️ */
+  padding: 26px 28px;
   color: var(--muted);
   background: var(--bg);
   text-align: center;
-  font-size: 16px;                                       /* ⬆️ */
+  font-size: clamp(16px, 0.7vw + 12px, 18px);
 }
 
-/* No micro text, no badges, no corner labels. */
+/* No micro text. No toy badges. */
