@@ -8,12 +8,10 @@ export default function App() {
     <div className="app-shell">
       <header className="app-header">
         <div className="brand">
+          {/* Logo only (title/subtitle removed per your note) */}
           <img src="/qc-logo.png" alt="QueCab AdbS" className="brand-logo" />
-          <div className="brand-text">
-            <h1>QueCab AdbS</h1>
-            <p className="brand-sub">Anti-Double Brokering System</p>
-          </div>
         </div>
+
         <div className="header-actions">
           <nav className="top-nav">
             <Link className={`nav-link${pathname === '/' ? ' active' : ''}`} to="/">Home</Link>
