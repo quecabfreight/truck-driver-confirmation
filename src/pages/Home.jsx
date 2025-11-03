@@ -21,10 +21,7 @@ export default function Home() {
 
         <Card>
           <h2>About</h2>
-          <p>
-            QueCab AdbS helps brokers and shippers verify carriers quickly and confidently — realistic UI, no fluff, built for busy docks and office workflows.
-            Phase 2 will add the dock check-in flow and verification display (USDOT# match + driver answered call Y/N).
-          </p>
+          <p>QueCab AdbS helps brokers and shippers verify carriers quickly and confidently.</p>
         </Card>
       </div>
     </>
