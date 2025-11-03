@@ -1,78 +1,58 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Card from '../components/Card.jsx'
+import BrandHero from '../components/BrandHero.jsx'
 
 export default function Login() {
   const nav = useNavigate()
-  const [businessEmail, setBusinessEmail] = useState('')
-  const [accessCode, setAccessCode] = useState('')
-  const [remember, setRemember] = useState(true)
-
-  // Pre-fill if remembered
-  useEffect(() => {
-    const stored = localStorage.getItem('qc_login')
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored)
-        setBusinessEmail(parsed.businessEmail || '')
-        setAccessCode(parsed.accessCode || '')
-        setRemember(true)
-      } catch { /* ignore */ }
-    }
-  }, [])
+  const [email, setEmail] = useState(localStorage.getItem('qc_email') || '')
+  const [code, setCode] = useState('')
+  const [remember, setRemember] = useState(
+    localStorage.getItem('qc_remember') === '1'
+  )
 
   function handleSubmit(e) {
     e.preventDefault()
-    // Minimal front-end checks only (Phase 1)
-    if (!businessEmail || !accessCode) {
-      alert('Enter Business Email and Access Code.')
-      return
-    }
+    if (!email.trim()) return alert('Enter your business email.')
+    if (!code.trim()) return alert('Enter your access code.')
     if (remember) {
-      localStorage.setItem('qc_login', JSON.stringify({ businessEmail, accessCode }))
+      localStorage.setItem('qc_email', email)
+      localStorage.setItem('qc_remember', '1')
     } else {
-      localStorage.removeItem('qc_login')
+      localStorage.removeItem('qc_email')
+      localStorage.removeItem('qc_remember')
     }
-    nav('/') // redirect to Home
+    nav('/')
   }
 
   return (
-    <div className="centered">
-      <Card>
-        <h2>Log In</h2>
-        <form onSubmit={handleSubmit} className="form">
-          <label>
-            <span>Business Email</span>
-            <input
-              type="email"
-              autoComplete="email"
-              value={businessEmail}
-              onChange={e => setBusinessEmail(e.target.value)}
-            />
-          </label>
-
-          <label>
-            <span>Access Code</span>
-            <input
-              type="password"
-              autoComplete="current-password"
-              value={accessCode}
-              onChange={e => setAccessCode(e.target.value)}
-            />
-          </label>
-
-          <label className="row">
-            <input
-              type="checkbox"
-              checked={remember}
-              onChange={e => setRemember(e.target.checked)}
-            />
-            <span>Remember this device</span>
-          </label>
-
-          <button className="btn" type="submit">Continue</button>
-        </form>
-      </Card>
-    </div>
+    <>
+      <BrandHero compact />
+      <div className="centered">
+        <Card>
+          <h2>Log In</h2>
+          <form onSubmit={handleSubmit} className="form">
+            <label>
+              <span>Business Email</span>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} />
+            </label>
+            <label>
+              <span>Access Code</span>
+              <input type="password" value={code} onChange={e => setCode(e.target.value)} />
+            </label>
+            <label className="row">
+              <input
+                type="checkbox"
+                checked={remember}
+                onChange={e => setRemember(e.target.checked)}
+                style={{ width: 20, height: 20 }}
+              />
+              <span>Remember this device</span>
+            </label>
+            <button className="btn" type="submit">Continue</button>
+          </form>
+        </Card>
+      </div>
+    </>
   )
 }
