@@ -1,24 +1,28 @@
-import { useTheme } from '../theme/ThemeProvider.jsx'
+import { getTheme, setTheme } from '../utils/theme.js'
 
 export default function ThemeToggle() {
-  const { theme, toggle } = useTheme()
-  const isDark = theme === 'dark'
+  const cur = getTheme()
+  const isLight = cur === 'light'
+  const isDark  = cur !== 'light'
 
   return (
-    <label className="theme-switch" title="Toggle Light/Dark">
-      <input
-        type="checkbox"
-        checked={isDark}
-        onChange={toggle}
-        aria-label="Toggle Light/Dark theme"
-      />
-      <span className="slider" aria-hidden="true">
-        <span className="thumb" />
-        <span className="labels">
-          <span className="lbl">Light</span>
-          <span className="lbl">Dark</span>
-        </span>
-      </span>
-    </label>
+    <div style={{ display:'flex', gap:8 }}>
+      <button
+        type="button"
+        className="btn"
+        onClick={() => setTheme('light')}
+        style={{ opacity: isLight ? 1 : 0.6 }}
+      >
+        Light
+      </button>
+      <button
+        type="button"
+        className="btn"
+        onClick={() => setTheme('dark')}
+        style={{ opacity: isDark ? 1 : 0.6 }}
+      >
+        Dark
+      </button>
+    </div>
   )
 }
