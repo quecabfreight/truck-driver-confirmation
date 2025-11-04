@@ -1,161 +1,117 @@
-/* ===== THEME ===== */
+/* ====== QueCab AdbS – Global Styles (safe overwrite) ====== */
 :root{
-  --bg:#0f1216;--card:#151a21;--text:#e9edf2;--muted:#aab3bd;--edge:#1f2630;
-  --btn:#2a3340;--btnText:#e9edf2;--accent:#9a1d1d;--shadow:0 26px 70px rgba(0,0,0,.6);
-}
-html[data-theme="light"]{
-  --bg:#f4f6f8;--card:#fff;--text:#0f1216;--muted:#4c5560;--edge:#e6e8eb;
-  --btn:#10161d;--btnText:#fff;--accent:#b22626;--shadow:0 20px 48px rgba(0,0,0,.14);
+  --bg: #0f1318;
+  --panel: rgba(255,255,255,.04);
+  --panel-2: rgba(255,255,255,.06);
+  --edge: rgba(255,255,255,.14);
+  --edge-soft: rgba(255,255,255,.10);
+  --text: #e9eef5;
+  --muted: #9aa4b2;
+  --accent: #44b0ff;
 }
 
-/* ===== BASE ===== */
-*{box-sizing:border-box}
-html,body,#root{height:100%}
+html, body, #root { height: 100%; }
+html[data-theme="light"]{
+  --bg:#f6f7fa; --text:#0e1216; --muted:#5b6471;
+  --panel: rgba(0,0,0,.05); --panel-2: rgba(0,0,0,.06);
+  --edge: rgba(0,0,0,.12); --edge-soft: rgba(0,0,0,.09);
+}
+*{ box-sizing: border-box; }
+
 body{
   margin:0;
-  font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Arial;
-  font-size:clamp(20px,1.3vw + 12px,24px);
-  line-height:1.5;
-  background:radial-gradient(1400px 700px at 25% -10%,rgba(154,29,29,.10),transparent 40%),var(--bg);
-  color:var(--text);
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji", "Segoe UI Symbol";
+  /* ↑ bigger base everywhere */
+  font-size: 18px;
+  line-height: 1.35;
 }
 
-/* ===== SHELL ===== */
-.app-shell{min-height:100%;display:grid;grid-template-rows:auto 1fr auto}
-.app-header{
-  position:sticky;top:0;z-index:20;
-  display:flex;align-items:center;gap:22px;
-  justify-content:space-between;
-  padding:22px 40px;             /* slightly tighter for compact look */
-  border-bottom:1px solid var(--edge);
-  background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,0)),var(--bg);
+h1,h2,h3{ margin: 0 0 10px 0; font-weight: 900; }
+h1{ font-size: 38px; }
+h2{ font-size: 28px; }
+h3{ font-size: 22px; }
+p{ margin: 8px 0; color: var(--text); }
+small, .muted{ color: var(--muted); }
+
+a{ color: inherit; }
+
+/* ====== Layout ====== */
+.topbar .navlink.active{ }
+.app-main{ padding: 26px 16px; }
+.centered{ max-width: 1280px; margin: 0 auto; }
+
+/* ====== Cards ====== */
+.card, .verify-card, .glass{
+  background: linear-gradient(180deg, var(--panel-2), var(--panel));
+  border: 1px solid var(--edge-soft);
+  border-radius: 16px;
+  box-shadow: 0 18px 60px rgba(0,0,0,.35);
+  padding: 18px;
 }
 
-/* BRAND (desktop only) */
-.brand { display:flex; align-items:center; min-width:220px; }
-.brand img{ width:220px; height:auto; display:block; }
-
-/* ===== DESKTOP NAV ===== */
-.top-nav{display:flex;gap:18px}
-.nav-link{
-  padding:14px 20px;border:1px solid transparent;border-radius:16px;
-  text-decoration:none;color:var(--text);font-weight:900;
-  font-size:clamp(18px,0.9vw + 10px,22px);
+/* ====== Inputs / Buttons – Bigger & Clear ====== */
+input, select, textarea{
+  width: 100%;
+  background: rgba(0,0,0,.18);
+  color: var(--text);
+  border: 1px solid var(--edge);
+  border-radius: 12px;
+  padding: 14px 14px;
+  height: 54px;
+  outline: none;
+  font-size: 18px;
 }
-.nav-link:hover{border-color:var(--edge);background:rgba(255,255,255,.06)}
-.nav-link.active{border-color:var(--edge);background:rgba(255,255,255,.10)}
+input::placeholder{ color: var(--muted); }
 
-/* ===== THEME SWITCH ===== */
-.theme-switch{position:relative;display:inline-flex;align-items:center;cursor:pointer;user-select:none}
-.theme-switch input{display:none}
-.theme-switch .slider{
-  position:relative;width:180px;height:52px;border:1px solid var(--edge);border-radius:999px;
-  background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,0)),var(--card);
-  box-shadow:var(--shadow);overflow:hidden;display:inline-flex;align-items:center;justify-content:space-between;padding:0 20px
-}
-.theme-switch .labels{width:100%;display:flex;justify-content:space-between;font-size:16px;color:var(--muted);font-weight:900;z-index:1}
-.theme-switch .thumb{position:absolute;top:7px;left:7px;width:86px;height:38px;border-radius:999px;background:var(--btn);border:1px solid var(--edge);transition:transform 180ms ease;z-index:0}
-:root{--thumbShift:87px}
-html[data-theme="dark"] .theme-switch .thumb{transform:translateX(var(--thumbShift))}
-
-/* ===== MAIN ===== */
-.app-main{width:100%;margin:40px 0 56px;padding:0 48px}
-
-/* ===== CARD WIDTH (desktop ~62%) ===== */
-.card{
-  background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,0)),var(--card);
-  border:1px solid var(--edge);border-radius:26px;padding:36px;box-shadow:var(--shadow);
-  width:clamp(340px, 62vw, 1480px);
-  margin-inline:auto;
-}
-.card h2{margin:0 0 16px;font-size:clamp(34px,2.6vw + 12px,46px)}
-
-/* ===== HELPERS ===== */
-.stack{display:grid;gap:24px}
-.centered{display:grid;place-items:center}
-.row{display:flex;align-items:center;gap:14px}
-
-/* ===== FORM ===== */
-.form{display:grid;gap:18px;width:100%}
-.form label{display:grid;gap:8px}
-.form-wide{grid-template-columns:1fr}
-@media (min-width:1100px){
-  .form-wide{grid-template-columns:1fr 1fr;column-gap:32px}
-  .form-wide .btn{grid-column:1 / -1}
-}
-.form span{font-weight:900;font-size:clamp(18px,0.9vw + 12px,22px)}
-input,select{
-  background:var(--bg);color:var(--text);border:1px solid var(--edge);border-radius:18px;
-  padding:16px 16px;font-size:clamp(18px,0.9vw + 12px,22px);outline:none;width:100%
-}
-input::placeholder{color:#7f8894}
-input:focus,select:focus{border-color:var(--accent)}
 .btn{
-  display:inline-block;border:1px solid var(--edge);
-  background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,0)),var(--btn);
-  color:var(--btnText);padding:16px 18px;border-radius:18px;text-decoration:none;
-  font-weight:900;font-size:clamp(18px,0.9vw + 12px,22px);cursor:pointer;box-shadow:var(--shadow)
+  display: inline-flex;
+  align-items: center; justify-content: center;
+  gap: 8px;
+  background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
+  color: var(--text);
+  border: 1px solid var(--edge);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-weight: 900;
+  cursor: pointer;
+  user-select: none;
+  min-height: 48px;
+}
+.btn.big{ padding: 14px 18px; font-size: 18px; }
+.btn.active{ box-shadow: 0 8px 24px rgba(0,0,0,.35); border-color: var(--edge); }
+.btn.red{ border-color: rgba(201,28,28,.55); }
+.btn:disabled{ opacity:.5; cursor: not-allowed; }
+
+/* Y/N buttons on verify – larger, easy to hit */
+.verify-yn .btn{
+  width: 54px; height: 48px; font-size: 20px;
 }
 
-/* ===== FOOTER ===== */
-.app-footer{
-  border-top:1px solid var(--edge);padding:24px 40px;color:var(--muted);
-  background:var(--bg);text-align:center;font-size:clamp(16px,0.8vw + 12px,20px)
+/* ====== Verify page layout ====== */
+.page.verify-page{
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 20px 10px 40px;
 }
 
-/* ===== RESPONSIVE (COMPACT MOBILE) ===== */
-@media (max-width:900px){
-  /* Hide giant brand on phones to save vertical space */
-  .brand{display:none}
+/* Make verify card comfortably wide on desktops */
+.verify-card{
+  width: clamp(380px, 74vw, 1100px);
+  margin: 0 auto;
 }
 
+/* PIN card is narrower (we set an extra class in JSX) */
+.verify-card.pin{
+  width: 420px;
+}
+
+/* Hero logo size */
+.hero__logo{ width: 280px; display:block; margin: 0 auto 12px; }
 @media (max-width:768px){
-  .app-header{padding:14px 16px}
-  .top-nav{gap:10px}
-  .nav-link{padding:10px 12px;font-size:16px;border-radius:12px}
-
-  .theme-switch .slider{width:128px;height:40px;padding:0 12px}
-  .theme-switch .thumb{top:4px;left:4px;width:56px;height:32px}
-  :root{--thumbShift:60px}
-
-  .app-main{padding:0 14px;margin:18px 0 24px}
-
-  .card{width:92vw;padding:18px;border-radius:16px}
-  .card h2{font-size:22px;margin-bottom:10px}
-
-  .form-wide{grid-template-columns:1fr}
-  .form{gap:12px}
-  .form span{font-size:15px}
-  input,select{padding:12px 12px;font-size:16px;border-radius:12px}
-  .btn{padding:12px 14px;font-size:16px;border-radius:12px}
-
-  /* Smaller footer on phone so you don’t have to scroll */
-  .app-footer{padding:12px 16px;font-size:14px}
+  body{ font-size: 16px; }
+  h1{ font-size: 30px; }
+  h2{ font-size: 24px; }
+  .hero__logo{ width: 180px; }
 }
-@media (max-width:420px){
-  .card{width:94vw;padding:16px}
-}
-/* ===== BRAND HERO (logo strip under header) ===== */
-.hero{
-  display:grid; place-items:center;
-  margin:18px 0 26px;
-}
-.hero--compact{ margin:12px 0 18px; }
-.hero__logo{
-  width:220px; height:auto; display:block;
-  filter: drop-shadow(0 10px 24px rgba(0,0,0,.35));
-}
-
-/* Phone scaling so it never crowds the page */
-@media (max-width:768px){
-  .hero{ margin:10px 0 16px; }
-  .hero__logo{ width:160px; }
-}
-/* --- Logo size override (safe, isolated) --- */
-.hero__logo { width: 300px; }              /* was 220px */
-@media (max-width:768px){
-  .hero__logo { width: 180px; }            /* was 160px on phones */
-}
-/* Bigger hero logo, safe override */
-.hero__logo { width: 340px; }
-@media (max-width:768px){ .hero__logo { width: 200px; } }
