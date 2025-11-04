@@ -8,6 +8,10 @@ import Join from './pages/Join.jsx'
 import DriverPing from './pages/DriverPing.jsx'
 import VerifyDriver from './pages/VerifyDriver.jsx'
 import './styles.css'
+import { applyInitialTheme } from './utils/theme.js'
+
+// set theme before anything renders
+applyInitialTheme()
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
@@ -17,7 +21,6 @@ createRoot(document.getElementById('root')).render(
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/join" element={<Join />} />
-
           {/* Smart Link routes */}
           <Route path="/s/:token" element={<DriverPing />} />
           <Route path="/verify/:token" element={<VerifyDriver />} />
