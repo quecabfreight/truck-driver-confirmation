@@ -156,3 +156,6 @@ input:focus,select:focus{border-color:var(--accent)}
 @media (max-width:768px){
   .hero__logo { width: 180px; }            /* was 160px on phones */
 }
+/* Bigger hero logo, safe override */
+.hero__logo { width: 340px; }
+@media (max-width:768px){ .hero__logo { width: 200px; } }
