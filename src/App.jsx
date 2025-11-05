@@ -10,7 +10,6 @@ import SmartLink from "./pages/SmartLink.jsx";
 
 export default function App() {
   useEffect(() => {
-    // Dark by default with persistence
     const saved = localStorage.getItem("theme");
     const prefers = saved || "dark";
     document.documentElement.classList.toggle("dark", prefers === "dark");
