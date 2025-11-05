@@ -1,65 +1,107 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import Card from '../components/Card.jsx'
-import BrandHero from '../components/BrandHero.jsx'
-
-const mcRegex = /^MC\s*\d+$/i
-const phoneRegex = /^[0-9()\-\s.+]{7,20}$/
-const einRegex = /^\d{2}-?\d{7}$/
+import React, { useState } from "react";
 
 export default function Join() {
-  const nav = useNavigate()
   const [form, setForm] = useState({
-    legalName: '', contactName: '', role: 'Broker',
-    mc: '', ein: '', phone: '',
-  })
+    legalName: "",
+    contactName: "",
+    role: "Broker",
+    mc: "",
+    ein: "",
+    phone: "",
+  });
 
-  function update(field, value) { setForm(prev => ({ ...prev, [field]: value })) }
+  const onChange = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
-  function handleSubmit(e) {
-    e.preventDefault()
-    if (!form.legalName.trim()) return alert('Enter Legal Name.')
-    if (!form.contactName.trim()) return alert('Enter Contact Name.')
-    if (!mcRegex.test(form.mc.trim())) return alert('MC must be "MC" followed by digits only (e.g., MC123456).')
-    if (form.ein && !einRegex.test(form.ein.trim())) return alert('EIN format 12-3456789.')
-    if (!phoneRegex.test(form.phone.trim())) return alert('Enter a valid Business Phone.')
+  const mcMask = (val) => {
+    // Allow "MC" (case-insensitive) + digits (show tag+digits only)
+    const clean = val.toUpperCase().replace(/[^MC0-9]/g, "");
+    // Ensure it starts with MC
+    if (!clean.startsWith("MC")) return "MC" + clean.replace(/[^0-9]/g, "");
+    return clean;
+  };
 
-    localStorage.setItem('qc_join_draft', JSON.stringify(form))
-    alert('Request received (Phase 1). In Phase 2 this will submit to email/DB.')
-    nav('/')
-  }
+  const phoneMask = (val) => {
+    const digits = val.replace(/\D/g, "").slice(0, 10);
+    const p1 = digits.slice(0,3);
+    const p2 = digits.slice(3,6);
+    const p3 = digits.slice(6,10);
+    if (digits.length > 6) return `${p1}-${p2}-${p3}`;
+    if (digits.length > 3) return `${p1}-${p2}`;
+    return p1;
+  };
+
+  const submit = (e) => {
+    e.preventDefault();
+    // Phase 1: no backend. Just show a simple confirmation.
+    alert("Request received. We’ll review and email you an access code.");
+  };
 
   return (
-    <>
-      <BrandHero compact />
-      <div className="centered">
-        <Card>
-          <h2>Request Access</h2>
-          <form onSubmit={handleSubmit} className="form form-wide">
-            <label><span>Legal Name</span>
-              <input type="text" value={form.legalName} onChange={e => update('legalName', e.target.value)} />
-            </label>
-            <label><span>Contact Name</span>
-              <input type="text" value={form.contactName} onChange={e => update('contactName', e.target.value)} />
-            </label>
-            <label><span>Role</span>
-              <select value={form.role} onChange={e => update('role', e.target.value)}>
-                <option>Broker</option><option>Shipper</option>
-              </select>
-            </label>
-            <label><span>MC (tag + digits)</span>
-              <input type="text" value={form.mc} onChange={e => update('mc', e.target.value.toUpperCase())} placeholder="MC123456" />
-            </label>
-            <label><span>EIN (optional)</span>
-              <input type="text" value={form.ein} onChange={e => update('ein', e.target.value)} placeholder="12-3456789" />
-            </label>
-            <label><span>Business Phone</span>
-              <input type="tel" value={form.phone} onChange={e => update('phone', e.target.value)} />
-            </label>
-            <button className="btn" type="submit">Submit Request</button>
-          </form>
-        </Card>
-      </div>
-    </>
-  )
+    <div className="card">
+      <h2 style={{ marginTop: 0, marginBottom: 10 }}>Request Access</h2>
+      <form className="form" onSubmit={submit}>
+        <div>
+          <div className="form-label">Legal Name</div>
+          <input
+            className="input"
+            placeholder="Company Inc."
+            value={form.legalName}
+            onChange={(e) => onChange("legalName", e.target.value)}
+            required
+          />
+        </div>
+        <div>
+          <div className="form-label">Contact Name</div>
+          <input
+            className="input"
+            placeholder="First Last"
+            value={form.contactName}
+            onChange={(e) => onChange("contactName", e.target.value)}
+            required
+          />
+        </div>
+        <div>
+          <div className="form-label">Role</div>
+          <select
+            className="select"
+            value={form.role}
+            onChange={(e) => onChange("role", e.target.value)}
+          >
+            <option>Broker</option>
+            <option>Shipper</option>
+          </select>
+        </div>
+        <div>
+          <div className="form-label">MC (tag+digits only)</div>
+          <input
+            className="input"
+            placeholder="MC123456"
+            value={form.mc}
+            onChange={(e) => onChange("mc", mcMask(e.target.value))}
+            required
+          />
+        </div>
+        <div>
+          <div className="form-label">EIN (optional)</div>
+          <input
+            className="input"
+            placeholder="##-#######"
+            value={form.ein}
+            onChange={(e) => onChange("ein", e.target.value)}
+          />
+        </div>
+        <div>
+          <div className="form-label">Business Phone</div>
+          <input
+            className="input"
+            placeholder="123-456-7890"
+            value={form.phone}
+            onChange={(e) => onChange("phone", phoneMask(e.target.value))}
+          />
+        </div>
+
+        <button className="btn primary" type="submit">Submit</button>
+      </form>
+    </div>
+  );
 }
