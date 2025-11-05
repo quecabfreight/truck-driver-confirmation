@@ -15,23 +15,30 @@ function useAudio(src) {
         ref.current.currentTime = 0;
         ref.current.play().catch(() => {});
       }
-    }
+    },
   };
 }
 
 export default function VerifyDriver() {
   const { token } = useParams();
+
+  // Gate
   const [pin, setPin] = useState("");
   const [tries, setTries] = useState(0);
   const [locked, setLocked] = useState(false);
   const [passed, setPassed] = useState(false);
 
-  const [usdot, setUsdot] = useState("");
+  // Form
+  const [bolUsdot, setBolUsdot] = useState("");     // from paperwork
+  const [truckUsdot, setTruckUsdot] = useState(""); // from the truck decal
+  const [plate, setPlate] = useState("");           // optional capture (doesn't affect logic)
   const [driverPhone, setDriverPhone] = useState("");
-  const [matchYes, setMatchYes] = useState(null);
-  const [answeredYes, setAnsweredYes] = useState(null);
-  const [flash, setFlash] = useState(false);
 
+  // Checks
+  const [matchYes, setMatchYes] = useState(null);     // auto-computed (read-only)
+  const [answeredYes, setAnsweredYes] = useState(null);
+
+  const [flash, setFlash] = useState(false);
   const alertAudio = useAudio("/alert.mp3");
   const tokenShort = useMemo(() => (token || "").slice(0, 12), [token]);
 
@@ -46,6 +53,8 @@ export default function VerifyDriver() {
     else setTries((t) => t + 1);
   };
 
+  // Helpers
+  const maskUsd = (val) => val.replace(/\D/g, "").slice(0, 10);
   const phoneMask = (val) => {
     const d = val.replace(/\D/g, "").slice(0, 10);
     const a = d.slice(0, 3), b = d.slice(3, 6), c = d.slice(6, 10);
@@ -53,6 +62,15 @@ export default function VerifyDriver() {
     if (d.length > 3) return `${a}-${b}`;
     return a;
   };
+
+  // Auto-evaluate USDOT match when both present
+  useEffect(() => {
+    if (bolUsdot && truckUsdot) {
+      setMatchYes(bolUsdot === truckUsdot);
+    } else {
+      setMatchYes(null);
+    }
+  }, [bolUsdot, truckUsdot]);
 
   const submitVerification = (e) => {
     e.preventDefault();
@@ -67,6 +85,7 @@ export default function VerifyDriver() {
     alert("CLEAR TO LOAD");
   };
 
+  // ----- PIN gate -----
   if (!passed) {
     return (
       <div className="card pin-wrap" style={{ textAlign: "center" }}>
@@ -95,6 +114,7 @@ export default function VerifyDriver() {
     );
   }
 
+  // ----- Verification form -----
   return (
     <>
       {flash && <div className="flash-overlay" />}
@@ -103,20 +123,42 @@ export default function VerifyDriver() {
         <h2 style={{ textAlign: "center", marginTop: 6, marginBottom: 14 }}>
           Truck-Driver Verification
         </h2>
+
         <form className="form" onSubmit={submitVerification}>
           <div>
-            <div className="form-label">USDOT#</div>
+            <div className="form-label">USDOT# on B.O.L.</div>
             <input
               className="input"
               placeholder="e.g., 1234567"
-              value={usdot}
-              onChange={(e) => setUsdot(e.target.value.replace(/\D/g, "").slice(0, 10))}
+              value={bolUsdot}
+              onChange={(e) => setBolUsdot(maskUsd(e.target.value))}
               required
             />
           </div>
 
           <div>
-            <div className="form-label">Driver Phone (clickable on dock screen only)</div>
+            <div className="form-label">USDOT# on Truck (door decal)</div>
+            <input
+              className="input"
+              placeholder="e.g., 1234567"
+              value={truckUsdot}
+              onChange={(e) => setTruckUsdot(maskUsd(e.target.value))}
+              required
+            />
+          </div>
+
+          <div>
+            <div className="form-label">License Plate (optional capture)</div>
+            <input
+              className="input"
+              placeholder="e.g., ABC12345"
+              value={plate}
+              onChange={(e) => setPlate(e.target.value.toUpperCase().slice(0, 12))}
+            />
+          </div>
+
+          <div>
+            <div className="form-label">Driver Phone (click to call from dock)</div>
             <input
               className="input"
               placeholder="123-456-7890"
@@ -125,29 +167,69 @@ export default function VerifyDriver() {
             />
           </div>
 
+          {/* Check 1: USDOT match (auto) */}
           <div>
             <div className="form-label" style={{ marginBottom: 10 }}>
-              DOES THE USDOT# ON THE TRUCK MATCH?
+              DOES THE USDOT# ON THE TRUCK MATCH THE B.O.L.?
             </div>
-            <div className="yesno">
-              <button type="button" className="btn ok" aria-pressed={matchYes === true} onClick={() => setMatchYes(true)}>Yes</button>
-              <button type="button" className="btn warn" aria-pressed={matchYes === false} onClick={() => setMatchYes(false)}>No</button>
+            <div className="yesno" aria-live="polite">
+              <button
+                type="button"
+                className="btn ok"
+                aria-pressed={matchYes === true}
+                disabled
+                title="Auto-evaluated from the two USDOT fields"
+                style={{ opacity: matchYes === true ? 1 : 0.5 }}
+              >
+                Yes
+              </button>
+              <button
+                type="button"
+                className="btn warn"
+                aria-pressed={matchYes === false}
+                disabled
+                title="Auto-evaluated from the two USDOT fields"
+                style={{ opacity: matchYes === false ? 1 : 0.5 }}
+              >
+                No
+              </button>
             </div>
+            {matchYes === null && (
+              <div className="subtle" style={{ marginTop: 6 }}>
+                Enter both USDOT numbers to evaluate match.
+              </div>
+            )}
           </div>
 
+          {/* Check 2: phone answered (manual) */}
           <div>
             <div className="form-label" style={{ marginBottom: 10 }}>
               DID THE DRIVER ANSWER THEIR PHONE?
             </div>
             <div className="yesno">
-              <button type="button" className="btn ok" aria-pressed={answeredYes === true} onClick={() => setAnsweredYes(true)}>Yes</button>
-              <button type="button" className="btn warn" aria-pressed={answeredYes === false} onClick={() => setAnsweredYes(false)}>No</button>
+              <button
+                type="button"
+                className="btn ok"
+                aria-pressed={answeredYes === true}
+                onClick={() => setAnsweredYes(true)}
+              >
+                Yes
+              </button>
+              <button
+                type="button"
+                className="btn warn"
+                aria-pressed={answeredYes === false}
+                onClick={() => setAnsweredYes(false)}
+              >
+                No
+              </button>
             </div>
           </div>
 
           {driverPhone && (
             <div className="subtle" style={{ marginTop: 6 }}>
-              Dock-only call link: <a href={`tel:${driverPhone.replace(/\D/g, "")}`}>{driverPhone}</a>
+              Dock-only call link:{" "}
+              <a href={`tel:${driverPhone.replace(/\D/g, "")}`}>{driverPhone}</a>
             </div>
           )}
 
