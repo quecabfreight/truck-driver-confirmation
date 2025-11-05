@@ -11,141 +11,172 @@
   --card-shadow: 0 10px 30px rgba(0,0,0,0.35);
 }
 
-/* ----- Base sizing (bigger, dock-friendly) ----- */
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; }
 
 html.dark body { background: var(--bg); color: var(--text); }
 
+/* Base font scales between ~17–21px depending on screen width */
 body {
   margin: 0;
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
-  font-size: 20px;          /* was 18px */
+  font-size: clamp(17px, 0.6vw + 12px, 21px);
   line-height: 1.45;
-  background: #0f1115;      /* start dark */
+  background: #0f1115;  /* dark by default */
   color: #e6e9ee;
 }
 
-/* Mobile still big, just a touch smaller */
-@media (max-width: 640px) {
-  body { font-size: 18px; }
+.container {
+  width: 100%;
+  max-width: 1200px;
+  padding: clamp(16px, 2vw, 28px);
+  margin: 0 auto;
 }
 
-/* Ultra-wide screens get a comfortable bump */
-@media (min-width: 1440px) {
-  body { font-size: 22px; }
-}
-
-.container { max-width: 1280px; margin: 0 auto; padding: 24px; width: 100%; }
-
-/* ----- Header ----- */
+/* ---------- Header ---------- */
 .header {
   position: sticky; top: 0; z-index: 50;
   background: rgba(15,17,21,0.6);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--panel-border);
 }
-.header-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 22px; }
+.header-inner {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: clamp(12px, 1.5vw, 18px) clamp(16px, 2vw, 24px);
+}
 .brand { display: flex; gap: 12px; align-items: center; font-weight: 800; letter-spacing: 0.3px; }
-.brand img { width: 44px; height: auto; display: block; }
+.brand img { width: clamp(32px, 3vw, 44px); height: auto; display: block; }
+.brand .tag { font-size: clamp(12px, 0.5vw + 10px, 16px); }
+@media (max-width: 520px) {
+  .brand .tag { display: none; }           /* hide the path pill on small screens */
+  .header-inner { flex-wrap: wrap; row-gap: 10px; }
+}
 
+/* ---------- Links ---------- */
 a { color: var(--link); text-decoration: none; }
 a:hover { opacity: 0.85; }
 
-/* ----- Cards/Rows ----- */
+/* ---------- Cards / Rows ---------- */
 .row-card {
-  margin: 16px 0; padding: 26px;
-  border: 1px solid var(--panel-border); background: var(--panel);
-  border-radius: 18px; box-shadow: var(--card-shadow);
+  margin: clamp(12px, 1.4vw, 18px) 0;
+  padding: clamp(18px, 2.2vw, 28px);
+  border: 1px solid var(--panel-border);
+  background: var(--panel);
+  border-radius: 18px;
+  box-shadow: var(--card-shadow);
 }
-.row-card h2 { margin: 0 0 12px 0; font-size: 30px; }  /* was 24px */
-.row-actions { display: flex; flex-wrap: wrap; gap: 14px; }
+.row-card h2 {
+  margin: 0 0 10px 0;
+  /* Title scales to “big sign” size on desktop (~36–48px), ~24px on phones */
+  font-size: clamp(24px, 2.2vw + 16px, 48px);
+}
 
-/* ----- Buttons ----- */
+.row-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+
+/* ---------- Buttons ---------- */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 10px;
-  min-height: 60px;                 /* was 54px */
-  padding: 16px 22px;               /* was 14px 18px */
+  min-height: clamp(52px, 2.5vw + 24px, 68px);
+  padding: clamp(12px, 1.2vw, 18px) clamp(16px, 1.6vw, 24px);
   border-radius: 14px;
   border: 1px solid var(--panel-border);
   background: #212634; color: var(--text);
   cursor: pointer; font-weight: 700;
-  font-size: 20px;                  /* was 18px */
+  font-size: clamp(16px, 0.4vw + 14px, 20px);
 }
 .btn.primary { background: #1d2433; }
 .btn.ok      { background: #1f3a2b; border-color: #2f6347; }
 .btn.warn    { background: #3d2020; border-color: #5b2a2a; }
 
-/* ----- Inputs/Selects ----- */
+/* ---------- Inputs / Selects ---------- */
 .input, .select {
   width: 100%;
-  min-height: 60px;                 /* was 54px */
-  padding: 16px;                    /* was 14px */
+  min-height: clamp(52px, 2.5vw + 24px, 68px);
+  padding: clamp(12px, 1.2vw, 18px);
   border-radius: 14px;
   border: 1px solid var(--panel-border);
   background: #121722; color: var(--text);
-  font-size: 20px;                  /* was 18px */
+  font-size: clamp(16px, 0.4vw + 14px, 20px);
 }
 .input::placeholder { color: var(--muted); }
 
-.form { display: grid; gap: 16px; }
-.form-label { font-weight: 700; margin-bottom: 6px; font-size: 18px; }
+.form { display: grid; gap: clamp(12px, 1.4vw, 18px); }
+.form-label { font-weight: 700; margin-bottom: 6px; font-size: clamp(15px, 0.4vw + 13px, 18px); }
 
-/* ----- Generic card ----- */
+/* ---------- Generic card ---------- */
 .card {
-  width: 100%; max-width: 860px;    /* was 720px */
-  margin: 0 auto; padding: 26px;
-  border-radius: 18px; border: 1px solid var(--panel-border);
-  background: var(--panel); box-shadow: var(--card-shadow);
+  width: 100%;
+  max-width: clamp(760px, 70vw, 920px);
+  margin: 0 auto;
+  padding: clamp(18px, 2.2vw, 28px);
+  border-radius: 18px;
+  border: 1px solid var(--panel-border);
+  background: var(--panel);
+  box-shadow: var(--card-shadow);
 }
 
-/* ----- Logo (no distortion) ----- */
+/* ---------- Logo (never distorted) ---------- */
 .centered-logo {
-  display: block; margin: 0 auto 14px auto;
-  max-width: 300px;                 /* was 260px */
+  display: block; margin: 0 auto clamp(10px, 1vw, 14px);
+  max-width: clamp(220px, 22vw, 320px);
   height: auto;
 }
 
-.subtle { color: var(--muted); font-size: 0.98em; }
-
-.yesno { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.subtle { color: var(--muted); font-size: clamp(14px, 0.35vw + 12px, 16px); }
+.yesno { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(10px, 1.2vw, 14px); }
 
 .tag {
-  display: inline-block; padding: 8px 12px; border-radius: 12px;
-  background: #1b2130; border: 1px solid var(--panel-border); color: var(--text); font-size: 16px;
+  display: inline-block;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: #1b2130;
+  border: 1px solid var(--panel-border);
+  color: var(--text);
+  font-size: clamp(12px, 0.4vw + 10px, 16px);
 }
 
+/* ---------- Footer ---------- */
 .footer {
   border-top: 1px solid var(--panel-border);
-  padding: 20px 22px 30px; margin-top: 30px; text-align: center; color: var(--muted);
+  padding: clamp(16px, 2vw, 22px) clamp(18px, 2.2vw, 30px) clamp(22px, 2.4vw, 30px);
+  margin-top: clamp(22px, 2.4vw, 30px);
+  text-align: center;
+  color: var(--muted);
   background: transparent;
 }
 
-/* ----- PIN screen specifics (centered & large) ----- */
-.pin-wrap { width: 100%; max-width: 480px; margin: 0 auto; }
+/* ---------- PIN screen ---------- */
+.pin-wrap { width: 100%; max-width: clamp(420px, 42vw, 520px); margin: 0 auto; }
 .pin-input {
-  width: 300px;                     /* was 260px */
+  width: clamp(220px, 24vw, 340px);
   margin: 12px auto 10px;
-  letter-spacing: 8px;              /* was 6px */
+  letter-spacing: clamp(6px, 0.6vw, 10px);
   text-align: center;
-  font-size: 30px;                  /* was 26px */
+  font-size: clamp(24px, 2.6vw + 6px, 36px);
   font-weight: 800;
   display: block;
 }
 .pin-meta { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 8px; }
 
-/* ----- CAUTION flash ----- */
-.flash-overlay { position: fixed; inset: 0; background: rgba(255,0,0,0.75); pointer-events: none; animation: flash 400ms ease-out forwards; z-index: 9999; }
+/* ---------- CAUTION flash ---------- */
+.flash-overlay {
+  position: fixed; inset: 0; background: rgba(255,0,0,0.75);
+  pointer-events: none; animation: flash 400ms ease-out forwards; z-index: 9999;
+}
 @keyframes flash { 0%{opacity:0} 15%{opacity:0.75} 100%{opacity:0} }
 
-/* ----- Table ----- */
+/* ---------- Table ---------- */
 .table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-.table th, .table td { text-align: left; border-bottom: 1px solid var(--panel-border); padding: 14px 12px; font-size: 18px; }
+.table th, .table td {
+  text-align: left;
+  border-bottom: 1px solid var(--panel-border);
+  padding: clamp(10px, 1.2vw, 14px);
+  font-size: clamp(14px, 0.4vw + 12px, 18px);
+}
 
-/* Keep light theme support when user toggles */
+/* Light theme support when toggled */
 body:not(.dark) {
-  background: #f7f8fb;
-  color: #0f1115;
+  background: #f7f8fb; color: #0f1115;
 }
 body:not(.dark) .header { background: rgba(255,255,255,0.7); border-bottom: 1px solid #e5e8ef; }
 body:not(.dark) .input, body:not(.dark) .select { background: #fff; color: #0f1115; border-color: #cfd6e6; }
