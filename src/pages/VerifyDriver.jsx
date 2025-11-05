@@ -15,7 +15,7 @@ function useAudio(src) {
         ref.current.currentTime = 0;
         ref.current.play().catch(() => {});
       }
-    },
+    }
   };
 }
 
@@ -28,12 +28,11 @@ export default function VerifyDriver() {
 
   const [usdot, setUsdot] = useState("");
   const [driverPhone, setDriverPhone] = useState("");
-  const [matchYes, setMatchYes] = useState(null); // true/false
+  const [matchYes, setMatchYes] = useState(null);
   const [answeredYes, setAnsweredYes] = useState(null);
   const [flash, setFlash] = useState(false);
 
   const alertAudio = useAudio("/alert.mp3");
-
   const tokenShort = useMemo(() => (token || "").slice(0, 12), [token]);
 
   useEffect(() => {
@@ -43,11 +42,8 @@ export default function VerifyDriver() {
   const onPinSubmit = (e) => {
     e.preventDefault();
     if (locked) return;
-    if (pin === DOCK_PIN) {
-      setPassed(true);
-    } else {
-      setTries((t) => t + 1);
-    }
+    if (pin === DOCK_PIN) setPassed(true);
+    else setTries((t) => t + 1);
   };
 
   const phoneMask = (val) => {
@@ -62,7 +58,6 @@ export default function VerifyDriver() {
     e.preventDefault();
     const ok = matchYes === true && answeredYes === true;
     if (!ok) {
-      // CAUTION
       setFlash(true);
       alertAudio.play();
       setTimeout(() => setFlash(false), 450);
@@ -135,18 +130,8 @@ export default function VerifyDriver() {
               DOES THE USDOT# ON THE TRUCK MATCH?
             </div>
             <div className="yesno">
-              <button
-                type="button"
-                className="btn ok"
-                aria-pressed={matchYes === true}
-                onClick={() => setMatchYes(true)}
-              >Yes</button>
-              <button
-                type="button"
-                className="btn warn"
-                aria-pressed={matchYes === false}
-                onClick={() => setMatchYes(false)}
-              >No</button>
+              <button type="button" className="btn ok" aria-pressed={matchYes === true} onClick={() => setMatchYes(true)}>Yes</button>
+              <button type="button" className="btn warn" aria-pressed={matchYes === false} onClick={() => setMatchYes(false)}>No</button>
             </div>
           </div>
 
@@ -155,18 +140,8 @@ export default function VerifyDriver() {
               DID THE DRIVER ANSWER THEIR PHONE?
             </div>
             <div className="yesno">
-              <button
-                type="button"
-                className="btn ok"
-                aria-pressed={answeredYes === true}
-                onClick={() => setAnsweredYes(true)}
-              >Yes</button>
-              <button
-                type="button"
-                className="btn warn"
-                aria-pressed={answeredYes === false}
-                onClick={() => setAnsweredYes(false)}
-              >No</button>
+              <button type="button" className="btn ok" aria-pressed={answeredYes === true} onClick={() => setAnsweredYes(true)}>Yes</button>
+              <button type="button" className="btn warn" aria-pressed={answeredYes === false} onClick={() => setAnsweredYes(false)}>No</button>
             </div>
           </div>
 
