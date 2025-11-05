@@ -1,65 +1,61 @@
-import { useState } from 'react'
-import Card from '../components/Card.jsx'
-import BrandHero from '../components/BrandHero.jsx'
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function Login() {
-  const [email, setEmail] = useState(localStorage.getItem('qc_email') || '')
-  const [code, setCode] = useState('')
-  const [remember, setRemember] = useState(localStorage.getItem('qc_remember') === '1')
-  const [saved, setSaved] = useState(false)
+  const nav = useNavigate();
+  const [email, setEmail] = useState("");
+  const [code, setCode] = useState("");
+  const [remember, setRemember] = useState(true);
 
-  function handleSubmit(e) {
-    e.preventDefault()
-    setSaved(false)
-
-    if (!email.trim()) return alert('Enter your business email.')
-    if (!code.trim()) return alert('Enter your access code.')
-
+  const onSubmit = (e) => {
+    e.preventDefault();
     if (remember) {
-      localStorage.setItem('qc_email', email)
-      localStorage.setItem('qc_remember', '1')
-    } else {
-      localStorage.removeItem('qc_email')
-      localStorage.removeItem('qc_remember')
+      localStorage.setItem("qcab_auth_hint", JSON.stringify({ email, ts: Date.now() }));
     }
-
-    // Stay on this page (no redirect). Show subtle confirmation.
-    setSaved(true)
-  }
+    // For Phase 1: go to panel (Smart Link generator demo)
+    nav("/panel", { replace: true });
+  };
 
   return (
-    <>
-      <BrandHero compact />
-      <div className="centered">
-        <Card>
-          <h2>Log In</h2>
-          <form onSubmit={handleSubmit} className="form">
-            <label>
-              <span>Business Email</span>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} />
-            </label>
-            <label>
-              <span>Access Code</span>
-              <input type="password" value={code} onChange={e => setCode(e.target.value)} />
-            </label>
-            <label className="row">
-              <input
-                type="checkbox"
-                checked={remember}
-                onChange={e => setRemember(e.target.checked)}
-                style={{ width: 20, height: 20 }}
-              />
-              <span>Remember this device</span>
-            </label>
-            <button className="btn" type="submit">Continue</button>
-            {saved && (
-              <div style={{ marginTop: 12, color: 'var(--muted)', fontWeight: 900 }}>
-                Saved on this device.
-              </div>
-            )}
-          </form>
-        </Card>
-      </div>
-    </>
-  )
+    <div className="card" style={{ textAlign: "center" }}>
+      <img src="/qc-logo.png" alt="QueCab AdbS" className="centered-logo" />
+      <h2 style={{ marginTop: 6, marginBottom: 14 }}>Log In</h2>
+      <form onSubmit={onSubmit} className="form" style={{ textAlign: "left", marginTop: 10 }}>
+        <div>
+          <div className="form-label">Business Email</div>
+          <input
+            className="input"
+            type="email"
+            placeholder="you@company.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            autoComplete="email"
+          />
+        </div>
+        <div>
+          <div className="form-label">Access Code</div>
+          <input
+            className="input"
+            type="password"
+            placeholder="••••••"
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+            required
+            autoComplete="current-password"
+          />
+        </div>
+        <label style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <input
+            type="checkbox"
+            checked={remember}
+            onChange={(e) => setRemember(e.target.checked)}
+            style={{ width: 20, height: 20 }}
+          />
+          Remember this device
+        </label>
+        <button className="btn primary" type="submit">Continue</button>
+      </form>
+    </div>
+  );
 }
