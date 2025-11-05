@@ -1,217 +1,186 @@
-import { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useParams } from "react-router-dom";
+
+const DOCK_PIN = "2580";
+const MAX_TRIES = 3;
+
+function useAudio(src) {
+  const ref = useRef(null);
+  useEffect(() => {
+    ref.current = new Audio(src);
+  }, [src]);
+  return {
+    play: () => {
+      if (ref.current) {
+        ref.current.currentTime = 0;
+        ref.current.play().catch(() => {});
+      }
+    },
+  };
+}
 
 export default function VerifyDriver() {
-  const [pinEntered, setPinEntered] = useState(false)
-  const [attempts, setAttempts] = useState(0)
-  const [inputPIN, setInputPIN] = useState('')
-  const [form, setForm] = useState({ usdot: '', phone: '', match: '', answered: '' })
-  const [flash, setFlash] = useState(false)
-  const [result, setResult] = useState('')
+  const { token } = useParams();
+  const [pin, setPin] = useState("");
+  const [tries, setTries] = useState(0);
+  const [locked, setLocked] = useState(false);
+  const [passed, setPassed] = useState(false);
 
-  const alertAudio = useRef(null)
-  const DOCK_PIN = '2580' // temporary
+  const [usdot, setUsdot] = useState("");
+  const [driverPhone, setDriverPhone] = useState("");
+  const [matchYes, setMatchYes] = useState(null); // true/false
+  const [answeredYes, setAnsweredYes] = useState(null);
+  const [flash, setFlash] = useState(false);
+
+  const alertAudio = useAudio("/alert.mp3");
+
+  const tokenShort = useMemo(() => (token || "").slice(0, 12), [token]);
 
   useEffect(() => {
-    alertAudio.current = new Audio('/alert.mp3') // place file in /public to enable
-    alertAudio.current.volume = 0.75
-  }, [])
+    if (tries >= MAX_TRIES && !passed) setLocked(true);
+  }, [tries, passed]);
 
-  // ----- PIN Gate -----
-  const handlePIN = (e) => {
-    e.preventDefault()
-    if (inputPIN === DOCK_PIN) {
-      setPinEntered(true)
+  const onPinSubmit = (e) => {
+    e.preventDefault();
+    if (locked) return;
+    if (pin === DOCK_PIN) {
+      setPassed(true);
     } else {
-      const next = attempts + 1
-      setAttempts(next)
-      if (next >= 3) alert('Unauthorized Dock Access. This attempt has been logged.')
-      else alert(`Incorrect PIN (${next}/3)`)
+      setTries((t) => t + 1);
     }
-  }
+  };
 
-  // ----- Submit Evaluate -----
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    const { match, answered } = form
-    if (match === 'Y' && answered === 'Y') {
-      setResult('clear')
-    } else {
-      setResult('caution')
-      try { alertAudio.current?.play() } catch {}
-      setFlash(true)
-      setTimeout(() => setFlash(false), 420)
+  const phoneMask = (val) => {
+    const d = val.replace(/\D/g, "").slice(0, 10);
+    const a = d.slice(0, 3), b = d.slice(3, 6), c = d.slice(6, 10);
+    if (d.length > 6) return `${a}-${b}-${c}`;
+    if (d.length > 3) return `${a}-${b}`;
+    return a;
+  };
+
+  const submitVerification = (e) => {
+    e.preventDefault();
+    const ok = matchYes === true && answeredYes === true;
+    if (!ok) {
+      // CAUTION
+      setFlash(true);
+      alertAudio.play();
+      setTimeout(() => setFlash(false), 450);
+      alert("CAUTION ALERT – DO NOT LOAD");
+      return;
     }
-  }
+    alert("CLEAR TO LOAD");
+  };
 
-  // Helpers
-  const formatPhone = (v) => {
-    const s = v.replace(/[^\d]/g, '').slice(0, 10)
-    if (s.length < 4) return s
-    if (s.length < 7) return `${s.slice(0, 3)}-${s.slice(3)}`
-    return `${s.slice(0, 3)}-${s.slice(3, 6)}-${s.slice(6)}`
-  }
-
-  // ===== Screens =====
-  if (!pinEntered && attempts < 3) {
+  if (!passed) {
     return (
-      <div className="page verify-page">
-        <div className="verify-card glass pin">
-          <h2>Dock Access</h2>
-          <p className="muted" style={{ marginBottom: 16 }}>Enter 4-digit Dock PIN to continue:</p>
-
-          <form onSubmit={handlePIN} style={{ display:'grid', gap:12 }}>
-            {/* Centered, visible PIN box */}
-            <input
-              type="password"
-              maxLength="4"
-              value={inputPIN}
-              onChange={(e) => setInputPIN(e.target.value.replace(/[^\d]/g,'').slice(0,4))}
-              placeholder="****"
-              style={{
-                width: 260, margin: '0 auto',
-                textAlign: 'center', letterSpacing: 8,
-                fontSize: 26, height: 58
-              }}
-            />
-            <button type="submit" className="btn big" style={{ width: 200, margin: '6px auto 0' }}>
-              Submit
-            </button>
-          </form>
-
-          <div style={{ display:'flex', justifyContent:'flex-end', marginTop: 8 }}>
-            <span className="muted" style={{ fontSize: 12 }}>Attempts: {attempts}/3</span>
+      <div className="card pin-wrap" style={{ textAlign: "center" }}>
+        <img src="/qc-logo.png" alt="QueCab AdbS" className="centered-logo" />
+        <h2 style={{ marginTop: 6, marginBottom: 8 }}>Dock PIN Required</h2>
+        <div className="subtle">Token: <code>{tokenShort || "—"}</code></div>
+        <form onSubmit={onPinSubmit} className="form" style={{ marginTop: 12 }}>
+          <input
+            className="input pin-input"
+            type="password"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            placeholder="••••"
+            value={pin}
+            onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
+          />
+          <div className="pin-meta">
+            <div className="subtle">Enter the 4-digit PIN</div>
+            <div className="subtle">Attempts: {Math.min(tries, MAX_TRIES)}/{MAX_TRIES}</div>
           </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (attempts >= 3) {
-    return (
-      <div className="page verify-page">
-        <div className="verify-card glass pin">
-          <h2 style={{ color: '#f66' }}>ACCESS DENIED</h2>
-          <p>This dock terminal has been temporarily locked.</p>
-        </div>
-      </div>
-    )
-  }
-
-  // ===== Verification Form =====
-  return (
-    <div className={`page verify-page ${flash ? 'flash' : ''}`}>
-      <style>{`
-        @keyframes redFlash {
-          0% { background: rgba(201,28,28,0.0); }
-          30% { background: rgba(201,28,28,0.25); }
-          100% { background: rgba(201,28,28,0.0); }
-        }
-        .flash { animation: redFlash 0.42s ease-in-out; }
-      `}</style>
-
-      <img src="/qc-logo.png" alt="QueCab AdbS" className="hero__logo" />
-
-      <div className="verify-card glass">
-        <h2>Truck-Driver Verification</h2>
-
-        <form onSubmit={handleSubmit}>
-          {/* Row 1: inputs */}
-          <div style={{ display: 'flex', gap: 14, margin: '12px 0 6px' }}>
-            <div style={{ flex: 1 }}>
-              <label>USDOT #</label>
-              <input
-                placeholder="e.g. 1234567"
-                value={form.usdot}
-                onChange={(e) =>
-                  setForm({ ...form, usdot: e.target.value.replace(/[^\d]/g, '').slice(0, 8) })
-                }
-              />
-            </div>
-            <div style={{ flex: 1 }}>
-              <label>Driver Phone</label>
-              <input
-                placeholder="123-456-7890"
-                value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: formatPhone(e.target.value) })}
-              />
-            </div>
-          </div>
-
-          {/* Row 2: Y/N */}
-          <div style={{ display: 'flex', gap: 14, marginTop: 10 }}>
-            <div style={{ flex: 1 }}>
-              <label>Does the USDOT# on the truck match?</label>
-              <div className="verify-yn" style={{ display: 'flex', gap: 10, marginTop: 8 }}>
-                <button
-                  type="button"
-                  className={`btn ${form.match === 'Y' ? 'active' : ''}`}
-                  onClick={() => setForm({ ...form, match: 'Y' })}
-                >Y</button>
-                <button
-                  type="button"
-                  className={`btn red ${form.match === 'N' ? 'active' : ''}`}
-                  onClick={() => setForm({ ...form, match: 'N' })}
-                >N</button>
-              </div>
-            </div>
-
-            <div style={{ flex: 1 }}>
-              <label>Did the driver answer their phone?</label>
-              <div className="verify-yn" style={{ display: 'flex', gap: 10, marginTop: 8 }}>
-                <button
-                  type="button"
-                  className={`btn ${form.answered === 'Y' ? 'active' : ''}`}
-                  onClick={() => setForm({ ...form, answered: 'Y' })}
-                >Y</button>
-                <button
-                  type="button"
-                  className={`btn red ${form.answered === 'N' ? 'active' : ''}`}
-                  onClick={() => setForm({ ...form, answered: 'N' })}
-                >N</button>
-              </div>
-            </div>
-          </div>
-
-          <button type="submit" className="btn big" style={{ marginTop: 18 }}>
-            Submit Verification
+          <button className="btn primary" type="submit" disabled={locked}>
+            {locked ? "Locked" : "Unlock"}
           </button>
         </form>
-
-        {/* Results */}
-        {result === 'clear' && (
-          <div
-            style={{
-              marginTop: 18,
-              padding: '16px 10px',
-              borderRadius: 14,
-              textAlign: 'center',
-              fontWeight: 900,
-              background: 'rgba(0,255,0,0.10)',
-              border: '1px solid rgba(0,255,0,0.28)',
-              color: '#bdf7bd',
-            }}
-          >
-            ✅ CLEAR TO LOAD
-          </div>
-        )}
-
-        {result === 'caution' && (
-          <div
-            style={{
-              marginTop: 18,
-              padding: '16px 10px',
-              borderRadius: 14,
-              textAlign: 'center',
-              fontWeight: 900,
-              background: 'rgba(201,28,28,0.12)',
-              border: '1px solid rgba(201,28,28,0.36)',
-              color: '#ffdcdc',
-            }}
-          >
-            ⚠️ CAUTION ALERT — DO NOT LOAD
-          </div>
-        )}
       </div>
-    </div>
-  )
+    );
+  }
+
+  return (
+    <>
+      {flash && <div className="flash-overlay" />}
+      <div className="card">
+        <img src="/qc-logo.png" alt="QueCab AdbS" className="centered-logo" />
+        <h2 style={{ textAlign: "center", marginTop: 6, marginBottom: 14 }}>
+          Truck-Driver Verification
+        </h2>
+        <form className="form" onSubmit={submitVerification}>
+          <div>
+            <div className="form-label">USDOT#</div>
+            <input
+              className="input"
+              placeholder="e.g., 1234567"
+              value={usdot}
+              onChange={(e) => setUsdot(e.target.value.replace(/\D/g, "").slice(0, 10))}
+              required
+            />
+          </div>
+
+          <div>
+            <div className="form-label">Driver Phone (clickable on dock screen only)</div>
+            <input
+              className="input"
+              placeholder="123-456-7890"
+              value={driverPhone}
+              onChange={(e) => setDriverPhone(phoneMask(e.target.value))}
+            />
+          </div>
+
+          <div>
+            <div className="form-label" style={{ marginBottom: 10 }}>
+              DOES THE USDOT# ON THE TRUCK MATCH?
+            </div>
+            <div className="yesno">
+              <button
+                type="button"
+                className="btn ok"
+                aria-pressed={matchYes === true}
+                onClick={() => setMatchYes(true)}
+              >Yes</button>
+              <button
+                type="button"
+                className="btn warn"
+                aria-pressed={matchYes === false}
+                onClick={() => setMatchYes(false)}
+              >No</button>
+            </div>
+          </div>
+
+          <div>
+            <div className="form-label" style={{ marginBottom: 10 }}>
+              DID THE DRIVER ANSWER THEIR PHONE?
+            </div>
+            <div className="yesno">
+              <button
+                type="button"
+                className="btn ok"
+                aria-pressed={answeredYes === true}
+                onClick={() => setAnsweredYes(true)}
+              >Yes</button>
+              <button
+                type="button"
+                className="btn warn"
+                aria-pressed={answeredYes === false}
+                onClick={() => setAnsweredYes(false)}
+              >No</button>
+            </div>
+          </div>
+
+          {driverPhone && (
+            <div className="subtle" style={{ marginTop: 6 }}>
+              Dock-only call link: <a href={`tel:${driverPhone.replace(/\D/g, "")}`}>{driverPhone}</a>
+            </div>
+          )}
+
+          <button className="btn primary" type="submit" style={{ marginTop: 8 }}>
+            Submit
+          </button>
+        </form>
+      </div>
+    </>
+  );
 }
