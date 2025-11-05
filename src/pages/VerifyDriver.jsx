@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 
 const DOCK_PIN = "2580";
 const MAX_TRIES = 3;
@@ -19,8 +19,24 @@ function useAudio(src) {
   };
 }
 
+const maskUsd = (val) => val.replace(/\D/g, "").slice(0, 10);
+const phoneMask = (val) => {
+  const d = val.replace(/\D/g, "").slice(0, 10);
+  const a = d.slice(0, 3), b = d.slice(3, 6), c = d.slice(6, 10);
+  if (d.length > 6) return `${a}-${b}-${c}`;
+  if (d.length > 3) return `${a}-${b}`;
+  return a;
+};
+
 export default function VerifyDriver() {
   const { token } = useParams();
+  const location = useLocation();
+
+  // Pre-populate from Smart Link query params
+  const params = new URLSearchParams(location.search);
+  const preBol = maskUsd(params.get("bol") || "");
+  const prePlate = (params.get("plate") || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12);
+  const prePhone = phoneMask(params.get("phone") || "");
 
   // Gate
   const [pin, setPin] = useState("");
@@ -28,14 +44,14 @@ export default function VerifyDriver() {
   const [locked, setLocked] = useState(false);
   const [passed, setPassed] = useState(false);
 
-  // Form
-  const [bolUsdot, setBolUsdot] = useState("");     // from paperwork
-  const [truckUsdot, setTruckUsdot] = useState(""); // from the truck decal
-  const [plate, setPlate] = useState("");           // optional capture (doesn't affect logic)
-  const [driverPhone, setDriverPhone] = useState("");
+  // Form (B.O.L. USDOT is read-only when prefilled)
+  const [bolUsdot, setBolUsdot] = useState(preBol);
+  const [truckUsdot, setTruckUsdot] = useState("");
+  const [plate, setPlate] = useState(prePlate);
+  const [driverPhone, setDriverPhone] = useState(prePhone);
 
   // Checks
-  const [matchYes, setMatchYes] = useState(null);     // auto-computed (read-only)
+  const [matchYes, setMatchYes] = useState(null);
   const [answeredYes, setAnsweredYes] = useState(null);
 
   const [flash, setFlash] = useState(false);
@@ -53,23 +69,10 @@ export default function VerifyDriver() {
     else setTries((t) => t + 1);
   };
 
-  // Helpers
-  const maskUsd = (val) => val.replace(/\D/g, "").slice(0, 10);
-  const phoneMask = (val) => {
-    const d = val.replace(/\D/g, "").slice(0, 10);
-    const a = d.slice(0, 3), b = d.slice(3, 6), c = d.slice(6, 10);
-    if (d.length > 6) return `${a}-${b}-${c}`;
-    if (d.length > 3) return `${a}-${b}`;
-    return a;
-  };
-
   // Auto-evaluate USDOT match when both present
   useEffect(() => {
-    if (bolUsdot && truckUsdot) {
-      setMatchYes(bolUsdot === truckUsdot);
-    } else {
-      setMatchYes(null);
-    }
+    if (bolUsdot && truckUsdot) setMatchYes(bolUsdot === truckUsdot);
+    else setMatchYes(null);
   }, [bolUsdot, truckUsdot]);
 
   const submitVerification = (e) => {
@@ -132,6 +135,7 @@ export default function VerifyDriver() {
               placeholder="e.g., 1234567"
               value={bolUsdot}
               onChange={(e) => setBolUsdot(maskUsd(e.target.value))}
+              readOnly={!!preBol} /* broker prefilled -> lock */
               required
             />
           </div>
@@ -148,12 +152,12 @@ export default function VerifyDriver() {
           </div>
 
           <div>
-            <div className="form-label">License Plate (optional capture)</div>
+            <div className="form-label">License Plate</div>
             <input
               className="input"
               placeholder="e.g., ABC12345"
               value={plate}
-              onChange={(e) => setPlate(e.target.value.toUpperCase().slice(0, 12))}
+              onChange={(e) => setPlate(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12))}
             />
           </div>
 
@@ -173,24 +177,10 @@ export default function VerifyDriver() {
               DOES THE USDOT# ON THE TRUCK MATCH THE B.O.L.?
             </div>
             <div className="yesno" aria-live="polite">
-              <button
-                type="button"
-                className="btn ok"
-                aria-pressed={matchYes === true}
-                disabled
-                title="Auto-evaluated from the two USDOT fields"
-                style={{ opacity: matchYes === true ? 1 : 0.5 }}
-              >
+              <button type="button" className="btn ok" aria-pressed={matchYes === true} disabled title="Auto-evaluated">
                 Yes
               </button>
-              <button
-                type="button"
-                className="btn warn"
-                aria-pressed={matchYes === false}
-                disabled
-                title="Auto-evaluated from the two USDOT fields"
-                style={{ opacity: matchYes === false ? 1 : 0.5 }}
-              >
+              <button type="button" className="btn warn" aria-pressed={matchYes === false} disabled title="Auto-evaluated">
                 No
               </button>
             </div>
@@ -207,29 +197,14 @@ export default function VerifyDriver() {
               DID THE DRIVER ANSWER THEIR PHONE?
             </div>
             <div className="yesno">
-              <button
-                type="button"
-                className="btn ok"
-                aria-pressed={answeredYes === true}
-                onClick={() => setAnsweredYes(true)}
-              >
-                Yes
-              </button>
-              <button
-                type="button"
-                className="btn warn"
-                aria-pressed={answeredYes === false}
-                onClick={() => setAnsweredYes(false)}
-              >
-                No
-              </button>
+              <button type="button" className="btn ok" aria-pressed={answeredYes === true} onClick={() => setAnsweredYes(true)}>Yes</button>
+              <button type="button" className="btn warn" aria-pressed={answeredYes === false} onClick={() => setAnsweredYes(false)}>No</button>
             </div>
           </div>
 
           {driverPhone && (
             <div className="subtle" style={{ marginTop: 6 }}>
-              Dock-only call link:{" "}
-              <a href={`tel:${driverPhone.replace(/\D/g, "")}`}>{driverPhone}</a>
+              Dock-only call link: <a href={`tel:${driverPhone.replace(/\D/g, "")}`}>{driverPhone}</a>
             </div>
           )}
 
