@@ -12,7 +12,6 @@ export default function Login() {
     if (remember) {
       localStorage.setItem("qcab_auth_hint", JSON.stringify({ email, ts: Date.now() }));
     }
-    // For Phase 1: go to panel (Smart Link generator demo)
     nav("/panel", { replace: true });
   };
 
