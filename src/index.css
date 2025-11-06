@@ -1,125 +1,65 @@
-/* ===== THEME MAPS (unchanged behavior) ===== */
+/* ========= THEME MAPS: DARK (default) ========= */
 :root{
-  --bg:#0f1115;--panel:#161a22;--panel-border:#2a3140;--text:#e6e9ee;--muted:#a9b1c3;--link:#9ec1ff;
-  --btn-bg:#212634;--btn-fg:#ffffff;--input-bg:#121722;--input-fg:#e6e9ee;
-  --header-bg:#0d0f14;--header-contrast-badge: color-mix(in oklab, var(--text) 6%, transparent);
-  --header-contrast-ring: color-mix(in oklab, var(--text) 12%, transparent);
-  --ok:#2ecc71;--warn:#ff5757;--shadow:0 10px 30px rgba(0,0,0,.35);--table-rule:#2a3140;
+  --bg:#0f1115;--panel:#161a22;--panel-border:#2a3140;
+  --text:#e6e9ee;--muted:#cbd2e2;            /* brighter muted for readability */
+  --link:#9ec1ff;
+
+  --btn-bg:#212634;--btn-fg:#ffffff;
+  --input-bg:#121722;--input-fg:#e6e9ee;
+
+  --header-bg:#0d0f14;
+  --header-contrast-badge: color-mix(in oklab, var(--text) 6%, transparent);
+  --header-contrast-ring:  color-mix(in oklab, var(--text) 12%, transparent);
+
+  --ok:#2ecc71;--warn:#ff5757;
+  --shadow:0 10px 30px rgba(0,0,0,.35);
+  --table-rule:#2a3140;
 }
+/* ========= THEME MAPS: LIGHT (inverse) ========= */
 html:not(.dark){
-  --bg:#ffffff;--panel:#f7f8fb;--panel-border:#d8dfec;--text:#0f1115;--muted:#3e4658;--link:#1d5fff;
-  --btn-bg:#0f1115;--btn-fg:#ffffff;--input-bg:#ffffff;--input-fg:#0f1115;
-  --header-bg:#ffffff;--header-contrast-badge: color-mix(in oklab, #000 6%, transparent);
-  --header-contrast-ring: color-mix(in oklab, #000 12%, transparent);
-  --shadow:0 10px 30px rgba(0,0,0,.10);--table-rule: var(--panel-border);
+  --bg:#ffffff;--panel:#f7f8fb;--panel-border:#d8dfec;
+  --text:#0f1115;--muted:#273049;            /* darker muted so it never fades */
+  --link:#1d5fff;
+
+  --btn-bg:#0f1115;--btn-fg:#ffffff;
+  --input-bg:#ffffff;--input-fg:#0f1115;
+
+  --header-bg:#ffffff;
+  --header-contrast-badge: color-mix(in oklab, #000 6%, transparent);
+  --header-contrast-ring:  color-mix(in oklab, #000 12%, transparent);
+
+  --shadow:0 10px 30px rgba(0,0,0,.10);
+  --table-rule: var(--panel-border);
 }
 
-/* ===== BASE SIZES (middle ground; no extremes) ===== */
+/* ========= BASE ========= */
 *{box-sizing:border-box}
 html,body,#root{height:100%}
 body{
   margin:0;
   font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;
-  /* modest bump on desktop, restrained on mobile */
-  font-size:clamp(18.5px, 0.55vw + 14px, 20px);
+  /* modest global bump */
+  font-size:clamp(19px, 0.6vw + 15px, 21.5px);
   line-height:1.45;background:var(--bg);color:var(--text);
 }
 .container{width:100%;max-width:1200px;padding:clamp(18px,2vw,28px);margin:0 auto}
 
-/* ===== HEADER (no text on left, bigger toggle) ===== */
+/* ========= HEADER ========= */
 .header{position:sticky;top:0;z-index:50;background:var(--header-bg);border-bottom:1px solid var(--panel-border)}
 .header-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;
   padding:clamp(12px,1.5vw,18px) clamp(16px,2vw,24px)}
-.brand{display:flex;align-items:center}
-.brand img{
-  width:clamp(44px, 3.2vw, 56px); /* slight bump so it reads at a glance */
-  height:auto;display:block;border-radius:10px;padding:4px;
-  background:var(--header-contrast-badge);box-shadow:inset 0 0 0 1px var(--header-contrast-ring);
-}
+/* Left side intentionally empty (tiny logo removed in Header.jsx) */
 
-/* Bigger, higher-contrast theme toggle */
+/* Toggle stays readable */
 .theme-toggle{
   display:inline-flex;align-items:center;gap:10px;
-  min-height:48px;               /* was ~36-ish; now thumb-friendly */
-  padding:10px 16px;
-  border:1px solid var(--panel-border);
+  min-height:48px;padding:10px 16px;border:1px solid var(--panel-border);
   border-radius:999px;background:var(--panel);color:var(--text);cursor:pointer;
-  font-weight:800;font-size:clamp(16px,0.35vw + 14px,18px);
+  font-weight:800;font-size:clamp(17px,0.4vw + 14px,19px)
 }
 .theme-toggle .toggle-sep{opacity:.6}
 
-/* ===== LINKS / TEXT ===== */
-a{color:var(--link);text-decoration:none}
-a:hover{opacity:.85}
-.subtle{color:var(--muted);font-size:clamp(14px,.35vw+12px,16px)}
+/* ========= TEXT / LINKS ========= */
+a{color:var(--link);text-decoration:none} a:hover{opacity:.85}
 
-/* ===== CARDS / ROWS ===== */
-.row-card{
-  margin:clamp(12px,1.4vw,18px) 0;padding:clamp(18px,2.2vw,28px);
-  border:1px solid var(--panel-border);background:var(--panel);
-  border-radius:18px;box-shadow:var(--shadow)
-}
-.row-card h2{margin:0 0 10px 0;font-size:clamp(26px, 1.6vw + 18px, 40px)} /* nudged down from jumbo */
-.row-actions{display:flex;flex-wrap:wrap;gap:12px}
-
-.card{
-  width:100%;max-width:clamp(780px,68vw,960px); /* slight tighten to feel less “vast” */
-  margin:0 auto;padding:clamp(18px,2.2vw,28px);
-  border-radius:18px;border:1px solid var(--panel-border);background:var(--panel);box-shadow:var(--shadow)
-}
-.centered-logo{display:block;margin:0 auto clamp(12px,1vw,16px);max-width:clamp(230px,20vw,320px);height:auto}
-
-/* ===== CONTROLS (sizes balanced) ===== */
-.btn{
-  display:inline-flex;align-items:center;justify-content:center;gap:10px;
-  min-height:clamp(52px, 2.2vw + 24px, 64px);
-  padding:clamp(12px,1.1vw,16px) clamp(16px,1.5vw,22px);
-  border-radius:14px;border:1px solid var(--panel-border);
-  background:var(--btn-bg);color:var(--btn-fg);cursor:pointer;font-weight:800;
-  font-size:clamp(16.5px, .4vw + 14px, 19px);
-}
-.btn.ok{background: color-mix(in oklab, var(--ok) 22%, var(--btn-bg)); border-color: color-mix(in oklab, var(--ok) 40%, var(--panel-border))}
-.btn.warn{background: color-mix(in oklab, var(--warn) 22%, var(--btn-bg)); border-color: color-mix(in oklab, var(--warn) 40%, var(--panel-border))}
-
-.input,.select{
-  width:100%;min-height:clamp(52px, 2.2vw + 24px, 64px);
-  padding:clamp(12px,1.1vw,16px);
-  border-radius:14px;border:1px solid var(--panel-border);
-  background:var(--input-bg);color:var(--input-fg);
-  font-size:clamp(16.5px, .4vw + 14px, 19px);
-}
-.input::placeholder{color:var(--muted)}
-.form{display:grid;gap:clamp(12px,1.3vw,18px)}
-.form-label{font-weight:800;margin-bottom:6px;font-size:clamp(16px,.4vw+13px,18px)}
-
-.yesno{display:grid;grid-template-columns:1fr 1fr;gap:clamp(10px,1.2vw,14px)}
-.tag{
-  display:inline-block;padding:8px 12px;border-radius:12px;
-  background: color-mix(in oklab, var(--text) 6%, transparent);
-  border:1px solid var(--panel-border);color:var(--text);
-  font-size:clamp(12px,.4vw+10px,15px)
-}
-
-/* ===== FOOTER ===== */
-.footer{
-  border-top:1px solid var(--panel-border);
-  padding:clamp(16px,2vw,22px) clamp(18px,2.2vw,30px) clamp(22px,2.4vw,30px);
-  margin-top:clamp(22px,2.4vw,30px);
-  text-align:center;color:var(--muted);background:transparent
-}
-
-/* ===== PIN SCREEN ===== */
-.pin-wrap{width:100%;max-width:clamp(440px,42vw,540px);margin:0 auto}
-.pin-input{
-  width:clamp(240px,24vw,340px);
-  margin:12px auto 10px;letter-spacing:clamp(6px,.6vw,10px);
-  text-align:center;font-size:clamp(26px,2.2vw+6px,34px);font-weight:800;display:block
-}
-.pin-meta{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px}
-
-/* ===== FLASH & TABLE ===== */
-.flash-overlay{position:fixed;inset:0;background:rgba(255,0,0,.75);pointer-events:none;animation:flash .4s ease-out forwards;z-index:9999}
-@keyframes flash{0%{opacity:0}15%{opacity:.75}100%{opacity:0}}
-.table{width:100%;border-collapse:collapse;margin-top:12px}
-.table th,.table td{ text-align:left;border-bottom:1px solid var(--table-rule);padding:clamp(10px,1.2vw,14px);
-  font-size:clamp(14px,.4vw+12px,17px)}
+/* HIGHER-VISIBILITY “subtle” lines (applies to the*
