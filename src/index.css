@@ -62,4 +62,43 @@ body{
 /* ========= TEXT / LINKS ========= */
 a{color:var(--link);text-decoration:none} a:hover{opacity:.85}
 
-/* HIGHER-VISIBILITY “subtle” lines (applies to the*
+/* HIGHER-VISIBILITY “subtle” lines (applies to the small gray text you circled) */
+.subtle{
+  color:var(--muted);
+  font-size:clamp(16.5px, 0.5vw + 14px, 19.5px);  /* bigger */
+  font-weight:600;                                /* stronger */
+  letter-spacing: .1px;
+}
+
+/* ========= CARDS / ROWS ========= */
+.row-card{
+  margin:clamp(12px,1.4vw,18px) 0;padding:clamp(18px,2.2vw,28px);
+  border:1px solid var(--panel-border);background:var(--panel);
+  border-radius:18px;box-shadow:var(--shadow)
+}
+.row-card h2{
+  margin:0 0 10px 0;
+  font-size:clamp(28px, 1.8vw + 18px, 44px); /* keep headings strong but not jumbo */
+}
+.row-actions{display:flex;flex-wrap:wrap;gap:12px}
+
+.card{
+  width:100%;max-width:clamp(780px,68vw,980px);margin:0 auto;padding:clamp(18px,2.2vw,28px);
+  border-radius:18px;border:1px solid var(--panel-border);background:var(--panel);box-shadow:var(--shadow)
+}
+.centered-logo{display:block;margin:0 auto clamp(12px,1vw,16px);max-width:clamp(240px,22vw,340px);height:auto}
+
+/* ========= CONTROLS ========= */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:10px;
+  min-height:clamp(54px, 2.3vw + 24px, 66px);
+  padding:clamp(12px,1.1vw,16px) clamp(16px,1.5vw,24px);
+  border-radius:14px;border:1px solid var(--panel-border);
+  background:var(--btn-bg);color:var(--btn-fg);cursor:pointer;font-weight:800;
+  font-size:clamp(17.5px, .45vw + 14px, 19.5px);  /* clearer button text */
+}
+.btn.ok   { background: color-mix(in oklab, var(--ok) 22%, var(--btn-bg)); border-color: color-mix(in oklab, var(--ok) 40%, var(--panel-border)) }
+.btn.warn { background: color-mix(in oklab, var(--warn) 22%, var(--btn-bg)); border-color: color-mix(in oklab, var(--warn) 40%, var(--panel-border)) }
+
+.input,.select{
+  width:100%;min-height:clamp(54px, 2.3vw
