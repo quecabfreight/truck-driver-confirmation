@@ -10,12 +10,10 @@ export default function Header() {
   return (
     <header className="header">
       <div className="header-inner">
-        {/* Left: logo only (no extra text, no pills) */}
-        <div className="brand" aria-label="QueCab AdbS">
-          <img src="/qc-logo.png" alt="QueCab AdbS" />
-        </div>
+        {/* LEFT SIDE INTENTIONALLY EMPTY — tiny logo removed */}
+        <div aria-hidden="true" />
 
-        {/* Right: clean nav + bigger theme switch */}
+        {/* RIGHT: clean nav + theme switch */}
         <nav className="row-actions">
           <Link className="btn" to="/">Home</Link>
           <Link className="btn" to="/login">Log In</Link>
