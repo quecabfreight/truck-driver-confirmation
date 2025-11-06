@@ -1,182 +1,160 @@
-:root {
-  --bg: #0f1115;
-  --panel: #161a22;
-  --panel-border: #2a3140;
-  --text: #e6e9ee;
-  --muted: #a9b1c3;
-  --link: #9ec1ff;
-  --ok: #2ecc71;
-  --warn: #ff5757;
-  --focus: #6ea8ff;
-  --card-shadow: 0 10px 30px rgba(0,0,0,0.35);
+/* ========= THEME MAPS: DARK (default) ========= */
+:root{
+  /* surfaces & text */
+  --bg:#0f1115;            /* page */
+  --panel:#161a22;         /* cards */
+  --panel-border:#2a3140;
+  --text:#e6e9ee;          /* primary text */
+  --muted:#a9b1c3;         /* secondary text */
+  --link:#9ec1ff;
+
+  /* controls */
+  --btn-bg:#212634;        /* buttons (filled) */
+  --btn-fg:#ffffff;
+  --input-bg:#121722;      /* inputs/selects */
+  --input-fg:#e6e9ee;
+
+  /* header */
+  --header-bg:#0d0f14;     /* solid: no banding */
+  --header-contrast-badge: color-mix(in oklab, var(--text) 6%, transparent);
+  --header-contrast-ring:  color-mix(in oklab, var(--text) 12%, transparent);
+
+  /* status */
+  --ok:#2ecc71;
+  --warn:#ff5757;
+
+  /* misc */
+  --shadow: 0 10px 30px rgba(0,0,0,.35);
+  --table-rule: var(--panel-border);
 }
 
-* { box-sizing: border-box; }
-html, body, #root { height: 100%; }
+/* ========= THEME MAPS: LIGHT (perfect inverse) ========= */
+html:not(.dark){
+  --bg:#ffffff;            /* white page */
+  --panel:#f7f8fb;         /* light card */
+  --panel-border:#d8dfec;
+  --text:#0f1115;          /* near-black text */
+  --muted:#3e4658;         /* darker muted so it never “disappears” */
+  --link:#1d5fff;
 
-html.dark body { background: var(--bg); color: var(--text); }
+  /* invert controls for contrast */
+  --btn-bg:#0f1115;        /* black button */
+  --btn-fg:#ffffff;        /* white text */
 
-/* Base font scales between ~17–21px depending on screen width */
-body {
-  margin: 0;
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
-  font-size: clamp(17px, 0.6vw + 12px, 21px);
-  line-height: 1.45;
-  background: #0f1115;  /* dark by default */
-  color: #e6e9ee;
+  --input-bg:#ffffff;      /* white fields */
+  --input-fg:#0f1115;      /* black text */
+
+  --header-bg:#ffffff;     /* solid white header */
+  --header-contrast-badge: color-mix(in oklab, #000 6%, transparent);
+  --header-contrast-ring:  color-mix(in oklab, #000 12%, transparent);
+
+  --shadow: 0 10px 30px rgba(0,0,0,.10);
+  --table-rule: var(--panel-border);
 }
 
-.container {
-  width: 100%;
-  max-width: 1200px;
-  padding: clamp(16px, 2vw, 28px);
-  margin: 0 auto;
+/* ========= BASE (sizes kept as-is) ========= */
+*{box-sizing:border-box}
+html,body,#root{height:100%}
+body{
+  margin:0;
+  font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;
+  font-size:clamp(18px,0.75vw + 14px,21.5px);
+  line-height:1.45;
+  background:var(--bg);
+  color:var(--text);
+}
+.container{width:100%;max-width:1200px;padding:clamp(18px,2vw,28px);margin:0 auto}
+
+/* ========= HEADER ========= */
+.header{
+  position:sticky;top:0;z-index:50;
+  background:var(--header-bg);
+  border-bottom:1px solid var(--panel-border);
+}
+.header-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:clamp(12px,1.5vw,18px) clamp(16px,2vw,24px)}
+.brand{display:flex;gap:12px;align-items:center;font-weight:800;letter-spacing:.3px}
+.brand img{
+  width:clamp(40px,3.2vw,54px);height:auto;display:block;border-radius:10px;padding:4px;
+  background:var(--header-contrast-badge);               /* prevents logo “vanish” */
+  box-shadow:inset 0 0 0 1px var(--header-contrast-ring);
+}
+.theme-toggle{
+  display:inline-flex;gap:8px;align-items:center;padding:10px 14px;border:1px solid var(--panel-border);
+  border-radius:999px;background:var(--panel);color:var(--text);cursor:pointer
 }
 
-/* ---------- Header ---------- */
-.header {
-  position: sticky; top: 0; z-index: 50;
-  background: rgba(15,17,21,0.6);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--panel-border);
-}
-.header-inner {
-  display: flex; align-items: center; justify-content: space-between; gap: 16px;
-  padding: clamp(12px, 1.5vw, 18px) clamp(16px, 2vw, 24px);
-}
-.brand { display: flex; gap: 12px; align-items: center; font-weight: 800; letter-spacing: 0.3px; }
-.brand img { width: clamp(32px, 3vw, 44px); height: auto; display: block; }
-.brand .tag { font-size: clamp(12px, 0.5vw + 10px, 16px); }
-@media (max-width: 520px) {
-  .brand .tag { display: none; }           /* hide the path pill on small screens */
-  .header-inner { flex-wrap: wrap; row-gap: 10px; }
-}
+/* ========= TYPO / LINKS ========= */
+a{color:var(--link);text-decoration:none}
+a:hover{opacity:.85}
+.subtle{color:var(--muted);font-size:clamp(14px,.35vw+12px,16px)}
 
-/* ---------- Links ---------- */
-a { color: var(--link); text-decoration: none; }
-a:hover { opacity: 0.85; }
-
-/* ---------- Cards / Rows ---------- */
-.row-card {
-  margin: clamp(12px, 1.4vw, 18px) 0;
-  padding: clamp(18px, 2.2vw, 28px);
-  border: 1px solid var(--panel-border);
-  background: var(--panel);
-  border-radius: 18px;
-  box-shadow: var(--card-shadow);
+/* ========= CARDS ========= */
+.row-card{
+  margin:clamp(12px,1.4vw,18px) 0;padding:clamp(18px,2.2vw,28px);
+  border:1px solid var(--panel-border);background:var(--panel);
+  border-radius:18px;box-shadow:var(--shadow)
 }
-.row-card h2 {
-  margin: 0 0 10px 0;
-  /* Title scales to “big sign” size on desktop (~36–48px), ~24px on phones */
-  font-size: clamp(24px, 2.2vw + 16px, 48px);
+.row-card h2{margin:0 0 10px 0;font-size:clamp(28px,2.2vw+18px,48px)}
+.row-actions{display:flex;flex-wrap:wrap;gap:12px}
+
+.card{
+  width:100%;max-width:clamp(780px,68vw,980px);margin:0 auto;padding:clamp(18px,2.2vw,28px);
+  border-radius:18px;border:1px solid var(--panel-border);background:var(--panel);box-shadow:var(--shadow)
 }
+.centered-logo{display:block;margin:0 auto clamp(12px,1vw,16px);max-width:clamp(240px,22vw,340px);height:auto}
 
-.row-actions { display: flex; flex-wrap: wrap; gap: 12px; }
-
-/* ---------- Buttons ---------- */
-.btn {
-  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
-  min-height: clamp(52px, 2.5vw + 24px, 68px);
-  padding: clamp(12px, 1.2vw, 18px) clamp(16px, 1.6vw, 24px);
-  border-radius: 14px;
-  border: 1px solid var(--panel-border);
-  background: #212634; color: var(--text);
-  cursor: pointer; font-weight: 700;
-  font-size: clamp(16px, 0.4vw + 14px, 20px);
+/* ========= CONTROLS ========= */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:10px;
+  min-height:clamp(54px,2.6vw+24px,72px);
+  padding:clamp(12px,1.2vw,18px) clamp(16px,1.6vw,26px);
+  border-radius:14px;border:1px solid var(--panel-border);
+  background:var(--btn-bg);color:var(--btn-fg);
+  cursor:pointer;font-weight:800;font-size:clamp(17px,.45vw+14px,20.5px)
 }
-.btn.primary { background: #1d2433; }
-.btn.ok      { background: #1f3a2b; border-color: #2f6347; }
-.btn.warn    { background: #3d2020; border-color: #5b2a2a; }
+/* status buttons stay readable in both themes */
+.btn.ok   { background: color-mix(in oklab, var(--ok) 22%, var(--btn-bg)); border-color: color-mix(in oklab, var(--ok) 40%, var(--panel-border)); color: var(--btn-fg); }
+.btn.warn { background: color-mix(in oklab, var(--warn) 22%, var(--btn-bg)); border-color: color-mix(in oklab, var(--warn) 40%, var(--panel-border)); color: var(--btn-fg); }
 
-/* ---------- Inputs / Selects ---------- */
-.input, .select {
-  width: 100%;
-  min-height: clamp(52px, 2.5vw + 24px, 68px);
-  padding: clamp(12px, 1.2vw, 18px);
-  border-radius: 14px;
-  border: 1px solid var(--panel-border);
-  background: #121722; color: var(--text);
-  font-size: clamp(16px, 0.4vw + 14px, 20px);
+.input,.select{
+  width:100%;min-height:clamp(54px,2.6vw+24px,72px);padding:clamp(12px,1.2vw,18px);
+  border-radius:14px;border:1px solid var(--panel-border);
+  background:var(--input-bg);color:var(--input-fg);
+  font-size:clamp(17px,.45vw+14px,20.5px)
 }
-.input::placeholder { color: var(--muted); }
+.input::placeholder{color:var(--muted)}
+.form{display:grid;gap:clamp(12px,1.4vw,18px)}
+.form-label{font-weight:800;margin-bottom:6px;font-size:clamp(16px,.45vw+13px,18.5px)}
 
-.form { display: grid; gap: clamp(12px, 1.4vw, 18px); }
-.form-label { font-weight: 700; margin-bottom: 6px; font-size: clamp(15px, 0.4vw + 13px, 18px); }
-
-/* ---------- Generic card ---------- */
-.card {
-  width: 100%;
-  max-width: clamp(760px, 70vw, 920px);
-  margin: 0 auto;
-  padding: clamp(18px, 2.2vw, 28px);
-  border-radius: 18px;
-  border: 1px solid var(--panel-border);
-  background: var(--panel);
-  box-shadow: var(--card-shadow);
+.yesno{display:grid;grid-template-columns:1fr 1fr;gap:clamp(10px,1.2vw,14px)}
+.tag{
+  display:inline-block;padding:8px 12px;border-radius:12px;
+  background: color-mix(in oklab, var(--text) 6%, transparent);
+  border:1px solid var(--panel-border);color:var(--text);
+  font-size:clamp(12px,.4vw+10px,16px)
 }
 
-/* ---------- Logo (never distorted) ---------- */
-.centered-logo {
-  display: block; margin: 0 auto clamp(10px, 1vw, 14px);
-  max-width: clamp(220px, 22vw, 320px);
-  height: auto;
+/* ========= FOOTER ========= */
+.footer{
+  border-top:1px solid var(--panel-border);
+  padding:clamp(16px,2vw,22px) clamp(18px,2.2vw,30px) clamp(22px,2.4vw,30px);
+  margin-top:clamp(22px,2.4vw,30px);
+  text-align:center;color:var(--muted);background:transparent
 }
 
-.subtle { color: var(--muted); font-size: clamp(14px, 0.35vw + 12px, 16px); }
-.yesno { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(10px, 1.2vw, 14px); }
-
-.tag {
-  display: inline-block;
-  padding: 8px 12px;
-  border-radius: 12px;
-  background: #1b2130;
-  border: 1px solid var(--panel-border);
-  color: var(--text);
-  font-size: clamp(12px, 0.4vw + 10px, 16px);
+/* ========= PIN SCREEN ========= */
+.pin-wrap{width:100%;max-width:clamp(440px,42vw,560px);margin:0 auto}
+.pin-input{
+  width:clamp(240px,24vw,360px);margin:12px auto 10px;letter-spacing:clamp(6px,.6vw,10px);
+  text-align:center;font-size:clamp(26px,2.6vw+6px,38px);font-weight:800;display:block
 }
+.pin-meta{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px}
 
-/* ---------- Footer ---------- */
-.footer {
-  border-top: 1px solid var(--panel-border);
-  padding: clamp(16px, 2vw, 22px) clamp(18px, 2.2vw, 30px) clamp(22px, 2.4vw, 30px);
-  margin-top: clamp(22px, 2.4vw, 30px);
-  text-align: center;
-  color: var(--muted);
-  background: transparent;
-}
+/* ========= FLASH & TABLE ========= */
+.flash-overlay{position:fixed;inset:0;background:rgba(255,0,0,.75);pointer-events:none;animation:flash .4s ease-out forwards;z-index:9999}
+@keyframes flash{0%{opacity:0}15%{opacity:.75}100%{opacity:0}}
 
-/* ---------- PIN screen ---------- */
-.pin-wrap { width: 100%; max-width: clamp(420px, 42vw, 520px); margin: 0 auto; }
-.pin-input {
-  width: clamp(220px, 24vw, 340px);
-  margin: 12px auto 10px;
-  letter-spacing: clamp(6px, 0.6vw, 10px);
-  text-align: center;
-  font-size: clamp(24px, 2.6vw + 6px, 36px);
-  font-weight: 800;
-  display: block;
-}
-.pin-meta { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 8px; }
-
-/* ---------- CAUTION flash ---------- */
-.flash-overlay {
-  position: fixed; inset: 0; background: rgba(255,0,0,0.75);
-  pointer-events: none; animation: flash 400ms ease-out forwards; z-index: 9999;
-}
-@keyframes flash { 0%{opacity:0} 15%{opacity:0.75} 100%{opacity:0} }
-
-/* ---------- Table ---------- */
-.table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-.table th, .table td {
-  text-align: left;
-  border-bottom: 1px solid var(--panel-border);
-  padding: clamp(10px, 1.2vw, 14px);
-  font-size: clamp(14px, 0.4vw + 12px, 18px);
-}
-
-/* Light theme support when toggled */
-body:not(.dark) {
-  background: #f7f8fb; color: #0f1115;
-}
-body:not(.dark) .header { background: rgba(255,255,255,0.7); border-bottom: 1px solid #e5e8ef; }
-body:not(.dark) .input, body:not(.dark) .select { background: #fff; color: #0f1115; border-color: #cfd6e6; }
+.table{width:100%;border-collapse:collapse;margin-top:12px}
+.table th,.table td{ text-align:left;border-bottom:1px solid var(--table-rule);padding:clamp(10px,1.2vw,14px);
+  font-size:clamp(14px,.4vw+12px,18px)}
