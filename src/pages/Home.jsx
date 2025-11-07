@@ -4,12 +4,12 @@ import { Link } from "react-router-dom";
 export default function Home() {
   return (
     <div className="container">
-      {/* Top-centered logo, same size treatment as Login/Verify */}
+      {/* Top-center metallic logo (same treatment as login/verify) */}
       <img
         src="/qc-logo.png"
         alt="QueCab AdbS"
         className="centered-logo"
-        style={{ maxWidth: 320, height: "auto", display: "block", margin: "0 auto 18px" }}
+        style={{ maxWidth: 360, height: "auto", display: "block", margin: "0 auto 18px" }}
       />
 
       <div className="row-card">
@@ -31,7 +31,7 @@ export default function Home() {
       <div className="row-card">
         <h2>About</h2>
         <p className="subtle">
-          QueCab AdbS — Truck-Driver confirmation built for busy docks. Realistic UI. Dark by default.
+          QueCab AdbS — Truck-Driver confirmation built for busy docks.
         </p>
       </div>
     </div>
