@@ -1,33 +1,19 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from "react";
 
 export default function Login() {
-  const nav = useNavigate();
-
-  // Prefill if previously remembered
+  // Prefill if previously remembered (no auto-redirect)
   const [email, setEmail] = useState(localStorage.getItem("qc_email") || "");
   const [code, setCode] = useState("");
   const [remember, setRemember] = useState(localStorage.getItem("qc_remember") === "1");
 
-  // If device remembered, skip this screen
-  useEffect(() => {
-    const remembered = localStorage.getItem("qc_remember") === "1";
-    const savedEmail = localStorage.getItem("qc_email");
-    if (remembered && savedEmail) {
-      nav("/smart", { replace: true });
-    }
-  }, [nav]);
-
   const onSubmit = (e) => {
     e.preventDefault();
 
-    // Phase 1 demo auth: require non-empty values
     if (!email.trim() || !code.trim()) {
       alert("Enter your business email and access code.");
       return;
     }
 
-    // Persist “remember this device”
     if (remember) {
       localStorage.setItem("qc_remember", "1");
       localStorage.setItem("qc_email", email.trim());
@@ -38,11 +24,11 @@ export default function Login() {
       localStorage.removeItem("qc_remember_at");
     }
 
-    // Mark this session authed (simple flag to avoid any guards)
+    // mark authed for this session (optional)
     localStorage.setItem("qc_authed", "1");
 
-    // Go straight to Smart Link panel (no loops)
-    nav("/smart", { replace: true });
+    // Hard route (works with HashRouter every time)
+    window.location.hash = "#/smart";
   };
 
   const forgetDevice = () => {
@@ -66,7 +52,7 @@ export default function Login() {
       />
 
       <div className="card" style={{ maxWidth: 760 }}>
-        {/* Title and helper line match Home sizes */}
+        {/* Titles sized same as Home */}
         <h2 style={{ margin: 0, marginBottom: 10, fontWeight: 800, fontSize: "clamp(26px, 2.8vw + 14px, 42px)" }}>
           Log In
         </h2>
