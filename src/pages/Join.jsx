@@ -9,7 +9,6 @@ export default function Join() {
     ein: "",
     phone: ""
   });
-
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
   const onPhone = (v) => {
@@ -26,7 +25,7 @@ export default function Join() {
 
   return (
     <div className="container">
-      {/* Big metallic logo — matches Login/Home */}
+      {/* Big metallic logo (top-center) */}
       <img
         src="/qc-logo.png"
         alt="QueCab AdbS"
@@ -35,29 +34,44 @@ export default function Join() {
       />
 
       <div className="card" style={{ maxWidth: 760 }}>
-        <h2>Request Access</h2>
-        <p className="subtle">Brokers &amp; Shippers only.</p>
+        {/* TITLE matches Home (≈32pt desktop) */}
+        <h2 style={{ margin: 0, marginBottom: 10, fontWeight: 800, fontSize: "clamp(26px, 2.8vw + 14px, 42px)" }}>
+          Request Access
+        </h2>
+        {/* SUBLINE matches Home helper size (≈24pt desktop) */}
+        <p
+          style={{
+            marginTop: 0,
+            marginBottom: 12,
+            color: "var(--muted)",
+            fontWeight: 600,
+            letterSpacing: ".1px",
+            fontSize: "clamp(18px, 1.6vw + 10px, 32px)"
+          }}
+        >
+          Brokers &amp; Shippers only.
+        </p>
 
         <form className="form" onSubmit={onSubmit} style={{ marginTop: 12 }}>
-          <label className="form-label">Legal Name</label>
+          <label className="form-label" style={{ fontSize: "clamp(18px, 0.9vw + 14px, 24px)" }}>Legal Name</label>
           <input className="input" value={form.legalName} onChange={(e)=>set("legalName", e.target.value)} placeholder="Company Inc." />
 
-          <label className="form-label">Contact Name</label>
+          <label className="form-label" style={{ fontSize: "clamp(18px, 0.9vw + 14px, 24px)" }}>Contact Name</label>
           <input className="input" value={form.contactName} onChange={(e)=>set("contactName", e.target.value)} placeholder="First Last" />
 
-          <label className="form-label">Role</label>
+          <label className="form-label" style={{ fontSize: "clamp(18px, 0.9vw + 14px, 24px)" }}>Role</label>
           <select className="select" value={form.role} onChange={(e)=>set("role", e.target.value)}>
             <option>Broker</option>
             <option>Shipper</option>
           </select>
 
-          <label className="form-label">MC (tag+digits only)</label>
+          <label className="form-label" style={{ fontSize: "clamp(18px, 0.9vw + 14px, 24px)" }}>MC (tag+digits only)</label>
           <input className="input" value={form.mc} onChange={(e)=>set("mc", e.target.value)} placeholder="MC123456" />
 
-          <label className="form-label">EIN (optional)</label>
+          <label className="form-label" style={{ fontSize: "clamp(18px, 0.9vw + 14px, 24px)" }}>EIN (optional)</label>
           <input className="input" value={form.ein} onChange={(e)=>set("ein", e.target.value)} placeholder="##-#######" />
 
-          <label className="form-label">Business Phone</label>
+          <label className="form-label" style={{ fontSize: "clamp(18px, 0.9vw + 14px, 24px)" }}>Business Phone</label>
           <input className="input" value={form.phone} onChange={(e)=>onPhone(e.target.value)} placeholder="123-456-7890" />
 
           <button className="btn primary" type="submit">Submit</button>
