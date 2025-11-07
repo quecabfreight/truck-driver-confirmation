@@ -1,104 +1,119 @@
-/* ========= THEME MAPS: DARK (default) ========= */
+/* ==== theme tokens unchanged from your current build (kept for safety) ==== */
 :root{
   --bg:#0f1115;--panel:#161a22;--panel-border:#2a3140;
-  --text:#e6e9ee;--muted:#cbd2e2;            /* brighter muted for readability */
-  --link:#9ec1ff;
-
-  --btn-bg:#212634;--btn-fg:#ffffff;
-  --input-bg:#121722;--input-fg:#e6e9ee;
-
+  --text:#e6e9ee;--muted:#cbd2e2;--link:#9ec1ff;
+  --btn-bg:#212634;--btn-fg:#ffffff;--input-bg:#121722;--input-fg:#e6e9ee;
   --header-bg:#0d0f14;
   --header-contrast-badge: color-mix(in oklab, var(--text) 6%, transparent);
   --header-contrast-ring:  color-mix(in oklab, var(--text) 12%, transparent);
-
-  --ok:#2ecc71;--warn:#ff5757;
-  --shadow:0 10px 30px rgba(0,0,0,.35);
-  --table-rule:#2a3140;
+  --ok:#2ecc71;--warn:#ff5757;--shadow:0 10px 30px rgba(0,0,0,.35);--table-rule:#2a3140;
 }
-/* ========= THEME MAPS: LIGHT (inverse) ========= */
 html:not(.dark){
   --bg:#ffffff;--panel:#f7f8fb;--panel-border:#d8dfec;
-  --text:#0f1115;--muted:#273049;            /* darker muted so it never fades */
-  --link:#1d5fff;
-
-  --btn-bg:#0f1115;--btn-fg:#ffffff;
-  --input-bg:#ffffff;--input-fg:#0f1115;
-
+  --text:#0f1115;--muted:#273049;--link:#1d5fff;
+  --btn-bg:#0f1115;--btn-fg:#ffffff;--input-bg:#ffffff;--input-fg:#0f1115;
   --header-bg:#ffffff;
   --header-contrast-badge: color-mix(in oklab, #000 6%, transparent);
   --header-contrast-ring:  color-mix(in oklab, #000 12%, transparent);
-
-  --shadow:0 10px 30px rgba(0,0,0,.10);
-  --table-rule: var(--panel-border);
+  --shadow:0 10px 30px rgba(0,0,0,.10);--table-rule: var(--panel-border);
 }
 
-/* ========= BASE ========= */
+/* ==== base sizing: bumped one clear notch, still professional ==== */
 *{box-sizing:border-box}
 html,body,#root{height:100%}
 body{
   margin:0;
   font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;
-  /* modest global bump */
-  font-size:clamp(19px, 0.6vw + 15px, 21.5px);
-  line-height:1.45;background:var(--bg);color:var(--text);
+  font-size:clamp(20px, 0.7vw + 16px, 22.5px);   /* was ~19→21.5; now 20→22.5 */
+  line-height:1.45;
+  background:var(--bg); color:var(--text);
 }
-.container{width:100%;max-width:1200px;padding:clamp(18px,2vw,28px);margin:0 auto}
+.container{width:100%;max-width:1200px;padding:clamp(20px,2.2vw,30px);margin:0 auto}
 
-/* ========= HEADER ========= */
+/* header (tiny logo already removed in Header.jsx) */
 .header{position:sticky;top:0;z-index:50;background:var(--header-bg);border-bottom:1px solid var(--panel-border)}
-.header-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;
-  padding:clamp(12px,1.5vw,18px) clamp(16px,2vw,24px)}
-/* Left side intentionally empty (tiny logo removed in Header.jsx) */
-
-/* Toggle stays readable */
+.header-inner{display:flex;align-items:center;justify-content:space-between;gap:18px;
+  padding:clamp(14px,1.6vw,20px) clamp(18px,2.2vw,26px)}
 .theme-toggle{
-  display:inline-flex;align-items:center;gap:10px;
-  min-height:48px;padding:10px 16px;border:1px solid var(--panel-border);
-  border-radius:999px;background:var(--panel);color:var(--text);cursor:pointer;
-  font-weight:800;font-size:clamp(17px,0.4vw + 14px,19px)
+  display:inline-flex;align-items:center;gap:10px;min-height:50px;padding:12px 18px;
+  border:1px solid var(--panel-border);border-radius:999px;background:var(--panel);color:var(--text);
+  cursor:pointer;font-weight:800;font-size:clamp(18px, .45vw + 15px, 20px)
 }
 .theme-toggle .toggle-sep{opacity:.6}
 
-/* ========= TEXT / LINKS ========= */
+/* text */
 a{color:var(--link);text-decoration:none} a:hover{opacity:.85}
+.subtle{color:var(--muted);font-size:clamp(18px, 0.5vw + 15px, 20px);font-weight:600;letter-spacing:.1px}
 
-/* HIGHER-VISIBILITY “subtle” lines (applies to the small gray text you circled) */
-.subtle{
-  color:var(--muted);
-  font-size:clamp(16.5px, 0.5vw + 14px, 19.5px);  /* bigger */
-  font-weight:600;                                /* stronger */
-  letter-spacing: .1px;
-}
-
-/* ========= CARDS / ROWS ========= */
+/* cards / rows */
 .row-card{
-  margin:clamp(12px,1.4vw,18px) 0;padding:clamp(18px,2.2vw,28px);
-  border:1px solid var(--panel-border);background:var(--panel);
-  border-radius:18px;box-shadow:var(--shadow)
+  margin:clamp(14px,1.6vw,20px) 0;padding:clamp(20px,2.4vw,32px);
+  border:1px solid var(--panel-border);background:var(--panel);border-radius:18px;box-shadow:var(--shadow)
 }
-.row-card h2{
-  margin:0 0 10px 0;
-  font-size:clamp(28px, 1.8vw + 18px, 44px); /* keep headings strong but not jumbo */
-}
-.row-actions{display:flex;flex-wrap:wrap;gap:12px}
+.row-card h2{margin:0 0 10px 0;font-size:clamp(32px, 2vw + 20px, 46px)}
+.row-actions{display:flex;flex-wrap:wrap;gap:14px}
 
 .card{
-  width:100%;max-width:clamp(780px,68vw,980px);margin:0 auto;padding:clamp(18px,2.2vw,28px);
-  border-radius:18px;border:1px solid var(--panel-border);background:var(--panel);box-shadow:var(--shadow)
+  width:100%;max-width:clamp(800px,68vw,1000px);margin:0 auto;
+  padding:clamp(20px,2.4vw,32px);border-radius:18px;border:1px solid var(--panel-border);
+  background:var(--panel);box-shadow:var(--shadow)
 }
-.centered-logo{display:block;margin:0 auto clamp(12px,1vw,16px);max-width:clamp(240px,22vw,340px);height:auto}
 
-/* ========= CONTROLS ========= */
+/* logo in cards (used by Home/Login/Verify) */
+.centered-logo{display:block;margin:0 auto clamp(14px,1.2vw,18px);max-width:clamp(260px, 24vw, 360px);height:auto}
+
+/* controls */
 .btn{
   display:inline-flex;align-items:center;justify-content:center;gap:10px;
-  min-height:clamp(54px, 2.3vw + 24px, 66px);
-  padding:clamp(12px,1.1vw,16px) clamp(16px,1.5vw,24px);
+  min-height:clamp(58px, 2.4vw + 26px, 72px);
+  padding:clamp(14px,1.2vw,18px) clamp(18px,1.6vw,26px);
   border-radius:14px;border:1px solid var(--panel-border);
   background:var(--btn-bg);color:var(--btn-fg);cursor:pointer;font-weight:800;
-  font-size:clamp(17.5px, .45vw + 14px, 19.5px);  /* clearer button text */
+  font-size:clamp(18.5px, .5vw + 15px, 20.5px)
 }
-.btn.ok   { background: color-mix(in oklab, var(--ok) 22%, var(--btn-bg)); border-color: color-mix(in oklab, var(--ok) 40%, var(--panel-border)) }
-.btn.warn { background: color-mix(in oklab, var(--warn) 22%, var(--btn-bg)); border-color: color-mix(in oklab, var(--warn) 40%, var(--panel-border)) }
+.btn.ok{background: color-mix(in oklab, var(--ok) 22%, var(--btn-bg)); border-color: color-mix(in oklab, var(--ok) 40%, var(--panel-border))}
+.btn.warn{background: color-mix(in oklab, var(--warn) 22%, var(--btn-bg)); border-color: color-mix(in oklab, var(--warn) 40%, var(--panel-border))}
 
 .input,.select{
-  width:100%;min-height:clamp(54px, 2.3vw
+  width:100%;min-height:clamp(58px, 2.4vw + 26px, 72px);
+  padding:clamp(14px,1.2vw,18px);
+  border-radius:14px;border:1px solid var(--panel-border);
+  background:var(--input-bg);color:var(--input-fg);
+  font-size:clamp(18.5px, .5vw + 15px, 20.5px)
+}
+.input::placeholder{color:var(--muted)}
+.form{display:grid;gap:clamp(14px,1.4vw,20px)}
+.form-label{font-weight:800;margin-bottom:6px;font-size:clamp(18px,.5vw+15px,20px)}
+
+.yesno{display:grid;grid-template-columns:1fr 1fr;gap:clamp(12px,1.4vw,18px)}
+.tag{
+  display:inline-block;padding:10px 14px;border-radius:12px;
+  background: color-mix(in oklab, var(--text) 6%, transparent);
+  border:1px solid var(--panel-border);color:var(--text);
+  font-size:clamp(14px,.45vw+11.5px,17.5px)
+}
+
+/* footer */
+.footer{
+  border-top:1px solid var(--panel-border);
+  padding:clamp(20px,2.2vw,26px);
+  margin-top:clamp(24px,2.6vw,32px);
+  text-align:center;color: color-mix(in oklab, var(--text) 80%, transparent);
+  font-size:clamp(18px, 0.5vw + 15px, 20px);
+  background:transparent;
+}
+
+/* pin */
+.pin-wrap{width:100%;max-width:clamp(460px,44vw,580px);margin:0 auto}
+.pin-input{
+  width:clamp(260px,24vw,380px);margin:12px auto 10px;letter-spacing:clamp(6px,.6vw,10px);
+  text-align:center;font-size:clamp(28px,2.6vw+6px,38px);font-weight:800;display:block
+}
+.pin-meta{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px}
+
+/* effects & table */
+.flash-overlay{position:fixed;inset:0;background:rgba(255,0,0,.75);pointer-events:none;animation:flash .4s ease-out forwards;z-index:9999}
+@keyframes flash{0%{opacity:0}15%{opacity:.75}100%{opacity:0}}
+.table{width:100%;border-collapse:collapse;margin-top:12px}
+.table th,.table td{ text-align:left;border-bottom:1px solid var(--table-rule);padding:clamp(12px,1.2vw,16px);
+  font-size:clamp(16.5px,.45vw+13.5px,19.5px)}
