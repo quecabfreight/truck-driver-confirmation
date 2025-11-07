@@ -1,15 +1,27 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>QueCab AdbS</title>
+    <script>
+      // Make dark the default BEFORE paint, honor saved choice
+      try {
+        const saved = localStorage.getItem("theme");
+        const root = document.documentElement;
+        if (saved === "light") root.classList.remove("dark");
+        else root.classList.add("dark");
+      } catch (_) {}
+    </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Hard fallback so you never see a blank page -->
+      <div style="padding:24px;font-family:system-ui,Segoe UI,Arial">
+        Loading QueCab AdbS…
+      </div>
+    </div>
+    <noscript>JavaScript is required to run this app.</noscript>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
