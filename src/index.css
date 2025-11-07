@@ -24,14 +24,13 @@ html,body,#root{height:100%}
 body{
   margin:0;
   font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;
-  /* comfortable base; headings/buttons handled below */
   font-size: clamp(20px, 0.7vw + 16px, 22px);
   line-height:1.45;
   background:var(--bg); color:var(--text);
 }
 .container{width:100%;max-width:1200px;padding:clamp(20px,2.2vw,30px);margin:0 auto}
 
-/* ==== header (left side empty per your request) ==== */
+/* ==== header (left empty per your request) ==== */
 .header{position:sticky;top:0;z-index:50;background:var(--header-bg);border-bottom:1px solid var(--panel-border)}
 .header-inner{display:flex;align-items:center;justify-content:space-between;gap:18px;
   padding:clamp(14px,1.6vw,20px) clamp(18px,2.2vw,26px)}
@@ -45,7 +44,7 @@ body{
 /* ==== links and helper text ==== */
 a{color:var(--link);text-decoration:none} a:hover{opacity:.85}
 
-/* Helper lines target = 24pt (~32px) on desktop, scale down on phones */
+/* helper lines = 24pt (~32px) desktop, scale for mobile */
 .subtle{
   color:var(--muted);
   font-weight:600;
@@ -58,28 +57,28 @@ a{color:var(--link);text-decoration:none} a:hover{opacity:.85}
   margin:clamp(14px,1.6vw,20px) 0;padding:clamp(20px,2.4vw,32px);
   border:1px solid var(--panel-border);background:var(--panel);border-radius:18px;box-shadow:var(--shadow)
 }
-
-/* Section titles target = 32pt (~42px) on desktop, scale down on phones */
-.row-card h2{
-  margin:0 0 10px 0;
-  font-weight: 800;
-  font-size: clamp(26px, 2.8vw + 14px, 42px);
-}
-
-.row-actions{display:flex;flex-wrap:wrap;gap:14px}
-
-/* card wrapper */
 .card{
   width:100%;max-width:clamp(800px,68vw,1000px);margin:0 auto;
   padding:clamp(20px,2.4vw,32px);border-radius:18px;border:1px solid var(--panel-border);
   background:var(--panel);box-shadow:var(--shadow)
 }
 
-/* logo in cards (Home/Login/Verify) */
+/* TITLES — unify size across Home (.row-card h2) + Login/Join (.card h2) */
+.row-card h2,
+.card h2{
+  margin:0 0 10px 0;
+  font-weight:800;
+  font-size: clamp(26px, 2.8vw + 14px, 42px); /* ≈32pt on desktop */
+}
+
+/* actions strip */
+.row-actions{display:flex;flex-wrap:wrap;gap:14px}
+
+/* centered logo on top of pages using it */
 .centered-logo{display:block;margin:0 auto clamp(14px,1.2vw,18px);max-width:clamp(260px, 24vw, 360px);height:auto}
 
 /* ==== controls ==== */
-/* Button labels target = 32pt (~42px) on desktop, scaled for mobile */
+/* button labels target up to ~42px desktop, scale down on mobile */
 .btn{
   display:inline-flex;align-items:center;justify-content:center;gap:10px;
   min-height: clamp(62px, 3vw + 28px, 78px);
@@ -91,7 +90,7 @@ a{color:var(--link);text-decoration:none} a:hover{opacity:.85}
 .btn.ok{background: color-mix(in oklab, var(--ok) 22%, var(--btn-bg)); border-color: color-mix(in oklab, var(--ok) 40%, var(--panel-border))}
 .btn.warn{background: color-mix(in oklab, var(--warn) 22%, var(--btn-bg)); border-color: color-mix(in oklab, var(--warn) 40%, var(--panel-border))}
 
-/* Inputs large but not goofy; labels already scaled via .form-label below */
+/* big but sane inputs */
 .input,.select{
   width:100%;min-height:clamp(60px, 2.4vw + 28px, 76px);
   padding:clamp(14px,1.2vw,18px);
@@ -101,13 +100,15 @@ a{color:var(--link);text-decoration:none} a:hover{opacity:.85}
 }
 .input::placeholder{color:var(--muted)}
 .form{display:grid;gap:clamp(14px,1.4vw,20px)}
-/* Field captions readable */
 .form-label{
   font-weight:800;margin-bottom:6px;
   font-size: clamp(18px, 0.9vw + 14px, 24px);
 }
 
+/* yes/no controls on verify */
 .yesno{display:grid;grid-template-columns:1fr 1fr;gap:clamp(12px,1.4vw,18px)}
+
+/* small tag pills if used */
 .tag{
   display:inline-block;padding:10px 14px;border-radius:12px;
   background: color-mix(in oklab, var(--text) 6%, transparent);
@@ -115,7 +116,7 @@ a{color:var(--link);text-decoration:none} a:hover{opacity:.85}
   font-size: clamp(14px, .7vw + 10px, 20px);
 }
 
-/* ==== footer ==== */
+/* footer */
 .footer{
   border-top:1px solid var(--panel-border);
   padding:clamp(20px,2.2vw,26px);
@@ -125,7 +126,7 @@ a{color:var(--link);text-decoration:none} a:hover{opacity:.85}
   background:transparent;
 }
 
-/* ==== PIN ==== */
+/* pin */
 .pin-wrap{width:100%;max-width:clamp(460px,44vw,580px);margin:0 auto}
 .pin-input{
   width:clamp(260px,24vw,380px);margin:12px auto 10px;letter-spacing:clamp(6px,.6vw,10px);
@@ -135,7 +136,4 @@ a{color:var(--link);text-decoration:none} a:hover{opacity:.85}
 
 /* effects & table */
 .flash-overlay{position:fixed;inset:0;background:rgba(255,0,0,.75);pointer-events:none;animation:flash .4s ease-out forwards;z-index:9999}
-@keyframes flash{0%{opacity:0}15%{opacity:.75}100%{opacity:0}}
-.table{width:100%;border-collapse:collapse;margin-top:12px}
-.table th,.table td{ text-align:left;border-bottom:1px solid var(--table-rule);padding:clamp(12px,1.2vw,16px);
-  font-size:clamp(16.5px,.45vw+13.5px,19.5px)}
+@keyframes flash{0%{opac
