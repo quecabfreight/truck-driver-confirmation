@@ -1,119 +1,85 @@
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 
-function makeToken(len = 9) {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789abcdefghijkmnpqrstuvwxyz";
+function randomToken(len = 10) {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789abcdefghijkmnpqrstuvwxyz";
   let out = "";
-  for (let i = 0; i < len; i++) out += chars[Math.floor(Math.random() * chars.length)];
+  for (let i = 0; i < len; i++) out += alphabet[Math.floor(Math.random() * alphabet.length)];
   return out;
 }
 
-const phoneMask = (val) => {
-  const d = val.replace(/\D/g, "").slice(0, 10);
-  const a = d.slice(0, 3), b = d.slice(3, 6), c = d.slice(6, 10);
-  if (d.length > 6) return `${a}-${b}-${c}`;
-  if (d.length > 3) return `${a}-${b}`;
-  return a;
-};
-
-const usdotMask = (val) => val.replace(/\D/g, "").slice(0, 10);
-const plateMask = (val) => val.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 10);
-
 export default function SmartLink() {
   const [token, setToken] = useState("");
-  const [bolUsdot, setBolUsdot] = useState("");
+  const [usdot, setUsdot] = useState("");
   const [plate, setPlate] = useState("");
-  const [phone, setPhone] = useState("");
+  const [driverPhone, setDriverPhone] = useState("");
 
-  const qs = useMemo(() => {
-    const params = new URLSearchParams();
-    if (bolUsdot) params.set("bol", bolUsdot);
-    if (plate) params.set("plate", plate);
-    if (phone) params.set("phone", phone);
-    const s = params.toString();
-    return s ? `?${s}` : "";
-  }, [bolUsdot, plate, phone]);
+  const onGen = () => setToken(randomToken(10));
 
-  const driverUrl = useMemo(
-    () => (token ? `/#/s/${token}` : ""),
-    [token]
-  );
-  const dockUrl = useMemo(
-    () => (token ? `/#/verify/${token}${qs}` : ""),
-    [token, qs]
-  );
-
-  const gen = () => setToken(makeToken(9));
+  const driverURL = token ? `${window.location.origin}/#/s/${token}` : "";
+  const dockURL   = token ? `${window.location.origin}/#/verify/${token}` : "";
 
   const copy = async (text) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      alert("Copied.");
-    } catch {
-      prompt("Copy URL:", text);
-    }
+    try { await navigator.clipboard.writeText(text); } catch {}
   };
 
   return (
-    <div className="card">
-      <h2 style={{ marginTop: 0, marginBottom: 6 }}>Create Smart Link</h2>
-      <p className="subtle" style={{ marginTop: 0 }}>
-        Optional: prefill B.O.L. data so dock staff only confirms.
-      </p>
+    <div className="container">
+      <div className="card" style={{ maxWidth: 720 }}>
+        <h2>Issue AdbS Verification Link</h2>
+        <p className="subtle">Create a verification link for this shipment. Driver receives the AdbS Truck-Driver Verify Link.</p>
 
-      <div className="form" style={{ marginTop: 8 }}>
-        <div>
-          <div className="form-label">B.O.L. USDOT# (optional prefill)</div>
+        <div className="form" style={{ marginTop: 10 }}>
+          <label className="form-label">USDOT# (optional for demo)</label>
+          <input className="input" value={usdot} onChange={e => setUsdot(e.target.value)} placeholder="e.g., 1234567" />
+
+          <label className="form-label">License Plate (optional for demo)</label>
+          <input className="input" value={plate} onChange={e => setPlate(e.target.value)} placeholder="e.g., ABC12345" />
+
+          <label className="form-label">Driver Phone (optional for demo)</label>
           <input
             className="input"
-            placeholder="e.g., 1234567"
-            value={bolUsdot}
-            onChange={(e) => setBolUsdot(usdotMask(e.target.value))}
-          />
-        </div>
-        <div>
-          <div className="form-label">License Plate (optional prefill)</div>
-          <input
-            className="input"
-            placeholder="e.g., ABC12345"
-            value={plate}
-            onChange={(e) => setPlate(plateMask(e.target.value))}
-          />
-        </div>
-        <div>
-          <div className="form-label">Driver/Dispatcher Phone (optional prefill)</div>
-          <input
-            className="input"
+            value={driverPhone}
+            onChange={(e) => {
+              // simple auto-format 123-456-7890
+              let v = e.target.value.replace(/[^\d]/g, "").slice(0, 10);
+              if (v.length > 6) v = `${v.slice(0,3)}-${v.slice(3,6)}-${v.slice(6)}`;
+              else if (v.length > 3) v = `${v.slice(0,3)}-${v.slice(3)}`;
+              setDriverPhone(v);
+            }}
             placeholder="123-456-7890"
-            value={phone}
-            onChange={(e) => setPhone(phoneMask(e.target.value))}
           />
+
+          <button className="btn primary" onClick={onGen}>Generate Token</button>
         </div>
 
-        <div className="row-actions" style={{ marginTop: 6 }}>
-          <button className="btn primary" onClick={gen} type="button">Generate Token</button>
-          {token && <span className="tag">Token: <code>{token}</code></span>}
-        </div>
+        {token && (
+          <div className="row-card" style={{ marginTop: 16 }}>
+            <h2 style={{ marginBottom: 8 }}>Links</h2>
+
+            <div className="form">
+              <div>
+                <div className="form-label">AdbS Truck-Driver Verify Link (send to driver)</div>
+                <div className="row-actions" style={{ gap: 10 }}>
+                  <input className="input" readOnly value={driverURL} />
+                  <button className="btn" onClick={() => copy(driverURL)}>Copy</button>
+                </div>
+              </div>
+
+              <div>
+                <div className="form-label">AdbS Verification (Dock) Link</div>
+                <div className="row-actions" style={{ gap: 10 }}>
+                  <input className="input" readOnly value={dockURL} />
+                  <button className="btn" onClick={() => copy(dockURL)}>Copy</button>
+                </div>
+              </div>
+            </div>
+
+            <p className="subtle" style={{ marginTop: 8 }}>
+              Demo only. No server yet. The Dock screen will still require the PIN before showing the Truck-Driver checks.
+            </p>
+          </div>
+        )}
       </div>
-
-      {token && (
-        <table className="table">
-          <thead>
-            <tr><th>Type</th><th>URL</th><th></th></tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Driver link</td>
-              <td style={{wordBreak:"break-all"}}><code>{driverUrl}</code></td>
-              <td><button className="btn" onClick={() => copy(driverUrl)} type="button">Copy</button></td>
-            </tr>
-            <tr>
-              <td>Dock link</td>
-              <td style={{wordBreak:"break-all"}}><code>{dockUrl}</code></td>
-              <td><button className="btn" onClick={() => copy(dockUrl)} type="button">Copy</button></td>
-            </tr>
-          </tbody>
-        </table>
-      )}
     </div>
   );
 }
