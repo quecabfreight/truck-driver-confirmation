@@ -1,9 +1,7 @@
-import React from "react";
-
 export default function Footer() {
   return (
     <footer className="footer">
-      © {new Date().getFullYear()} QueCab AdbS
+      &copy; {new Date().getFullYear()} QueCab AdbS
     </footer>
   );
 }
