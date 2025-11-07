@@ -26,6 +26,14 @@ export default function Join() {
 
   return (
     <div className="container">
+      {/* Big metallic logo — matches Login/Home */}
+      <img
+        src="/qc-logo.png"
+        alt="QueCab AdbS"
+        className="centered-logo"
+        style={{ maxWidth: 360, height: "auto", display: "block", margin: "0 auto 18px" }}
+      />
+
       <div className="card" style={{ maxWidth: 760 }}>
         <h2>Request Access</h2>
         <p className="subtle">Brokers &amp; Shippers only.</p>
