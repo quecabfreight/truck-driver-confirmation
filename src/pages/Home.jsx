@@ -4,9 +4,17 @@ import { Link } from "react-router-dom";
 export default function Home() {
   return (
     <div className="container">
+      {/* Top-centered logo, same size treatment as Login/Verify */}
+      <img
+        src="/qc-logo.png"
+        alt="QueCab AdbS"
+        className="centered-logo"
+        style={{ maxWidth: 320, height: "auto", display: "block", margin: "0 auto 18px" }}
+      />
+
       <div className="row-card">
         <h2>Request Access</h2>
-        <p className="subtle">Brokers & Shippers only.</p>
+        <p className="subtle">Brokers &amp; Shippers only.</p>
         <div className="row-actions">
           <Link className="btn primary" to="/join">Go to /join</Link>
         </div>
