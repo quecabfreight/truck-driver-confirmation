@@ -1,4 +1,4 @@
-/* ==== theme tokens unchanged from your current build (kept for safety) ==== */
+/* ==== theme tokens (unchanged) ==== */
 :root{
   --bg:#0f1115;--panel:#161a22;--panel-border:#2a3140;
   --text:#e6e9ee;--muted:#cbd2e2;--link:#9ec1ff;
@@ -18,19 +18,20 @@ html:not(.dark){
   --shadow:0 10px 30px rgba(0,0,0,.10);--table-rule: var(--panel-border);
 }
 
-/* ==== base sizing: bumped one clear notch, still professional ==== */
+/* ==== base sizing ==== */
 *{box-sizing:border-box}
 html,body,#root{height:100%}
 body{
   margin:0;
   font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;
-  font-size:clamp(20px, 0.7vw + 16px, 22.5px);   /* was ~19→21.5; now 20→22.5 */
+  /* comfortable base; headings/buttons handled below */
+  font-size: clamp(20px, 0.7vw + 16px, 22px);
   line-height:1.45;
   background:var(--bg); color:var(--text);
 }
 .container{width:100%;max-width:1200px;padding:clamp(20px,2.2vw,30px);margin:0 auto}
 
-/* header (tiny logo already removed in Header.jsx) */
+/* ==== header (left side empty per your request) ==== */
 .header{position:sticky;top:0;z-index:50;background:var(--header-bg);border-bottom:1px solid var(--panel-border)}
 .header-inner{display:flex;align-items:center;justify-content:space-between;gap:18px;
   padding:clamp(14px,1.6vw,20px) clamp(18px,2.2vw,26px)}
@@ -41,69 +42,90 @@ body{
 }
 .theme-toggle .toggle-sep{opacity:.6}
 
-/* text */
+/* ==== links and helper text ==== */
 a{color:var(--link);text-decoration:none} a:hover{opacity:.85}
-.subtle{color:var(--muted);font-size:clamp(18px, 0.5vw + 15px, 20px);font-weight:600;letter-spacing:.1px}
 
-/* cards / rows */
+/* Helper lines target = 24pt (~32px) on desktop, scale down on phones */
+.subtle{
+  color:var(--muted);
+  font-weight:600;
+  font-size: clamp(18px, 1.6vw + 10px, 32px);
+  letter-spacing:.1px;
+}
+
+/* ==== cards / rows ==== */
 .row-card{
   margin:clamp(14px,1.6vw,20px) 0;padding:clamp(20px,2.4vw,32px);
   border:1px solid var(--panel-border);background:var(--panel);border-radius:18px;box-shadow:var(--shadow)
 }
-.row-card h2{margin:0 0 10px 0;font-size:clamp(32px, 2vw + 20px, 46px)}
+
+/* Section titles target = 32pt (~42px) on desktop, scale down on phones */
+.row-card h2{
+  margin:0 0 10px 0;
+  font-weight: 800;
+  font-size: clamp(26px, 2.8vw + 14px, 42px);
+}
+
 .row-actions{display:flex;flex-wrap:wrap;gap:14px}
 
+/* card wrapper */
 .card{
   width:100%;max-width:clamp(800px,68vw,1000px);margin:0 auto;
   padding:clamp(20px,2.4vw,32px);border-radius:18px;border:1px solid var(--panel-border);
   background:var(--panel);box-shadow:var(--shadow)
 }
 
-/* logo in cards (used by Home/Login/Verify) */
+/* logo in cards (Home/Login/Verify) */
 .centered-logo{display:block;margin:0 auto clamp(14px,1.2vw,18px);max-width:clamp(260px, 24vw, 360px);height:auto}
 
-/* controls */
+/* ==== controls ==== */
+/* Button labels target = 32pt (~42px) on desktop, scaled for mobile */
 .btn{
   display:inline-flex;align-items:center;justify-content:center;gap:10px;
-  min-height:clamp(58px, 2.4vw + 26px, 72px);
-  padding:clamp(14px,1.2vw,18px) clamp(18px,1.6vw,26px);
+  min-height: clamp(62px, 3vw + 28px, 78px);
+  padding: clamp(14px, 1.2vw, 18px) clamp(18px, 1.8vw, 30px);
   border-radius:14px;border:1px solid var(--panel-border);
   background:var(--btn-bg);color:var(--btn-fg);cursor:pointer;font-weight:800;
-  font-size:clamp(18.5px, .5vw + 15px, 20.5px)
+  font-size: clamp(20px, 2vw + 12px, 42px);
 }
 .btn.ok{background: color-mix(in oklab, var(--ok) 22%, var(--btn-bg)); border-color: color-mix(in oklab, var(--ok) 40%, var(--panel-border))}
 .btn.warn{background: color-mix(in oklab, var(--warn) 22%, var(--btn-bg)); border-color: color-mix(in oklab, var(--warn) 40%, var(--panel-border))}
 
+/* Inputs large but not goofy; labels already scaled via .form-label below */
 .input,.select{
-  width:100%;min-height:clamp(58px, 2.4vw + 26px, 72px);
+  width:100%;min-height:clamp(60px, 2.4vw + 28px, 76px);
   padding:clamp(14px,1.2vw,18px);
   border-radius:14px;border:1px solid var(--panel-border);
   background:var(--input-bg);color:var(--input-fg);
-  font-size:clamp(18.5px, .5vw + 15px, 20.5px)
+  font-size: clamp(18px, 0.9vw + 14px, 24px);
 }
 .input::placeholder{color:var(--muted)}
 .form{display:grid;gap:clamp(14px,1.4vw,20px)}
-.form-label{font-weight:800;margin-bottom:6px;font-size:clamp(18px,.5vw+15px,20px)}
+/* Field captions readable */
+.form-label{
+  font-weight:800;margin-bottom:6px;
+  font-size: clamp(18px, 0.9vw + 14px, 24px);
+}
 
 .yesno{display:grid;grid-template-columns:1fr 1fr;gap:clamp(12px,1.4vw,18px)}
 .tag{
   display:inline-block;padding:10px 14px;border-radius:12px;
   background: color-mix(in oklab, var(--text) 6%, transparent);
   border:1px solid var(--panel-border);color:var(--text);
-  font-size:clamp(14px,.45vw+11.5px,17.5px)
+  font-size: clamp(14px, .7vw + 10px, 20px);
 }
 
-/* footer */
+/* ==== footer ==== */
 .footer{
   border-top:1px solid var(--panel-border);
   padding:clamp(20px,2.2vw,26px);
   margin-top:clamp(24px,2.6vw,32px);
   text-align:center;color: color-mix(in oklab, var(--text) 80%, transparent);
-  font-size:clamp(18px, 0.5vw + 15px, 20px);
+  font-size: clamp(18px, 0.7vw + 14px, 22px);
   background:transparent;
 }
 
-/* pin */
+/* ==== PIN ==== */
 .pin-wrap{width:100%;max-width:clamp(460px,44vw,580px);margin:0 auto}
 .pin-input{
   width:clamp(260px,24vw,380px);margin:12px auto 10px;letter-spacing:clamp(6px,.6vw,10px);
