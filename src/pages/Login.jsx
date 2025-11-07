@@ -4,37 +4,33 @@ import { useNavigate } from "react-router-dom";
 export default function Login() {
   const nav = useNavigate();
 
-  // Prefill from prior "remember this device"
+  // Prefill if previously remembered
   const [email, setEmail] = useState(localStorage.getItem("qc_email") || "");
   const [code, setCode] = useState("");
-  const [remember, setRemember] = useState(
-    localStorage.getItem("qc_remember") === "1" ? true : false
-  );
+  const [remember, setRemember] = useState(localStorage.getItem("qc_remember") === "1");
 
-  // If this device is remembered, skip the login screen entirely
+  // If device remembered, skip this screen
   useEffect(() => {
     const remembered = localStorage.getItem("qc_remember") === "1";
     const savedEmail = localStorage.getItem("qc_email");
     if (remembered && savedEmail) {
-      // Phase 1: no panel yet → send to Home (per spec)
-      nav("/", { replace: true });
+      nav("/smart", { replace: true });
     }
   }, [nav]);
 
   const onSubmit = (e) => {
     e.preventDefault();
 
-    // Phase 1: accept any non-empty email+code as demo auth
-    const ok = email.trim().length > 0 && code.trim().length > 0;
-    if (!ok) {
+    // Phase 1 demo auth: require non-empty values
+    if (!email.trim() || !code.trim()) {
       alert("Enter your business email and access code.");
       return;
     }
 
+    // Persist “remember this device”
     if (remember) {
       localStorage.setItem("qc_remember", "1");
       localStorage.setItem("qc_email", email.trim());
-      // optional: store a timestamp if we want expiry later
       localStorage.setItem("qc_remember_at", String(Date.now()));
     } else {
       localStorage.removeItem("qc_remember");
@@ -42,8 +38,11 @@ export default function Login() {
       localStorage.removeItem("qc_remember_at");
     }
 
-    // Phase 1 flow: redirect to Home until Smart Link panel is wired
-    nav("/", { replace: true });
+    // Mark this session authed (simple flag to avoid any guards)
+    localStorage.setItem("qc_authed", "1");
+
+    // Go straight to Smart Link panel (no loops)
+    nav("/smart", { replace: true });
   };
 
   const forgetDevice = () => {
