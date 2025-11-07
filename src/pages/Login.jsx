@@ -60,7 +60,3 @@ export default function Login() {
     </div>
   );
 }
-
-      <div className="card" style={{ maxWidth: 760 }}>
-        {/* TITLE: same size as Home (≈32pt desktop) */}
-        <h2 style={{ margin: 0, marginBottom: 10, fontWeight: 800, fontSize: "clamp(
