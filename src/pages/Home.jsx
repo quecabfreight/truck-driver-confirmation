@@ -1,10 +1,10 @@
 import React from "react";
 import { Link } from "react-router-dom";
 
+/** Minimal, safe home screen with big centered logo */
 export default function Home() {
   return (
     <div className="container">
-      {/* Big metallic logo — top-center, same treatment as Login */}
       <img
         src="/qc-logo.png"
         alt="QueCab AdbS"
