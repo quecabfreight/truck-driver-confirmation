@@ -9,52 +9,20 @@ export default function Login() {
 
   const onSubmit = (e) => {
     e.preventDefault();
-    if (remember) {
-      localStorage.setItem("qcab_auth_hint", JSON.stringify({ email, ts: Date.now() }));
-    }
-    nav("/panel", { replace: true });
+    if (remember) localStorage.setItem("qc_remember", "1");
+    nav("/login#/panel"); // placeholder flow per Phase 1
   };
 
   return (
-    <div className="card" style={{ textAlign: "center" }}>
-      <img src="/qc-logo.png" alt="QueCab AdbS" className="centered-logo" />
-      <h2 style={{ marginTop: 6, marginBottom: 14 }}>Log In</h2>
-      <form onSubmit={onSubmit} className="form" style={{ textAlign: "left", marginTop: 10 }}>
-        <div>
-          <div className="form-label">Business Email</div>
-          <input
-            className="input"
-            type="email"
-            placeholder="you@company.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            autoComplete="email"
-          />
-        </div>
-        <div>
-          <div className="form-label">Access Code</div>
-          <input
-            className="input"
-            type="password"
-            placeholder="••••••"
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            required
-            autoComplete="current-password"
-          />
-        </div>
-        <label style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <input
-            type="checkbox"
-            checked={remember}
-            onChange={(e) => setRemember(e.target.checked)}
-            style={{ width: 20, height: 20 }}
-          />
-          Remember this device
-        </label>
-        <button className="btn primary" type="submit">Continue</button>
-      </form>
-    </div>
-  );
-}
+    <div className="container">
+      {/* Big metallic logo (top-center) */}
+      <img
+        src="/qc-logo.png"
+        alt="QueCab AdbS"
+        className="centered-logo"
+        style={{ maxWidth: 360, height: "auto", display: "block", margin: "0 auto 18px" }}
+      />
+
+      <div className="card" style={{ maxWidth: 760 }}>
+        {/* TITLE: same size as Home (≈32pt desktop) */}
+        <h2 style={{ margin: 0, marginBottom: 10, fontWeight: 800, fontSize: "clamp(
