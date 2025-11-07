@@ -10,65 +10,51 @@ export default function Join() {
     phone: ""
   });
 
-  const onChange = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
-  const mcMask = (val) => {
-    const clean = val.toUpperCase().replace(/[^MC0-9]/g, "");
-    if (!clean.startsWith("MC")) return "MC" + clean.replace(/[^0-9]/g, "");
-    return clean;
+  const onPhone = (v) => {
+    let s = v.replace(/[^\d]/g, "").slice(0, 10);
+    if (s.length > 6) s = `${s.slice(0,3)}-${s.slice(3,6)}-${s.slice(6)}`;
+    else if (s.length > 3) s = `${s.slice(0,3)}-${s.slice(3)}`;
+    set("phone", s);
   };
 
-  const phoneMask = (val) => {
-    const digits = val.replace(/\D/g, "").slice(0, 10);
-    const p1 = digits.slice(0,3), p2 = digits.slice(3,6), p3 = digits.slice(6,10);
-    if (digits.length > 6) return `${p1}-${p2}-${p3}`;
-    if (digits.length > 3) return `${p1}-${p2}`;
-    return p1;
-  };
-
-  const submit = (e) => {
+  const onSubmit = (e) => {
     e.preventDefault();
-    alert("Request received. We’ll review and email you an access code.");
+    alert("Request submitted (demo).");
   };
 
   return (
-    <div className="card">
-      <h2 style={{ marginTop: 0, marginBottom: 10 }}>Request Access</h2>
-      <form className="form" onSubmit={submit}>
-        <div>
-          <div className="form-label">Legal Name</div>
-          <input className="input" placeholder="Company Inc." value={form.legalName}
-                 onChange={(e) => onChange("legalName", e.target.value)} required />
-        </div>
-        <div>
-          <div className="form-label">Contact Name</div>
-          <input className="input" placeholder="First Last" value={form.contactName}
-                 onChange={(e) => onChange("contactName", e.target.value)} required />
-        </div>
-        <div>
-          <div className="form-label">Role</div>
-          <select className="select" value={form.role} onChange={(e) => onChange("role", e.target.value)}>
+    <div className="container">
+      <div className="card" style={{ maxWidth: 760 }}>
+        <h2>Request Access</h2>
+        <p className="subtle">Brokers &amp; Shippers only.</p>
+
+        <form className="form" onSubmit={onSubmit} style={{ marginTop: 12 }}>
+          <label className="form-label">Legal Name</label>
+          <input className="input" value={form.legalName} onChange={(e)=>set("legalName", e.target.value)} placeholder="Company Inc." />
+
+          <label className="form-label">Contact Name</label>
+          <input className="input" value={form.contactName} onChange={(e)=>set("contactName", e.target.value)} placeholder="First Last" />
+
+          <label className="form-label">Role</label>
+          <select className="select" value={form.role} onChange={(e)=>set("role", e.target.value)}>
             <option>Broker</option>
             <option>Shipper</option>
           </select>
-        </div>
-        <div>
-          <div className="form-label">MC (tag+digits only)</div>
-          <input className="input" placeholder="MC123456" value={form.mc}
-                 onChange={(e) => onChange("mc", mcMask(e.target.value))} required />
-        </div>
-        <div>
-          <div className="form-label">EIN (optional)</div>
-          <input className="input" placeholder="##-#######" value={form.ein}
-                 onChange={(e) => onChange("ein", e.target.value)} />
-        </div>
-        <div>
-          <div className="form-label">Business Phone</div>
-          <input className="input" placeholder="123-456-7890" value={form.phone}
-                 onChange={(e) => onChange("phone", phoneMask(e.target.value))} />
-        </div>
-        <button className="btn primary" type="submit">Submit</button>
-      </form>
+
+          <label className="form-label">MC (tag+digits only)</label>
+          <input className="input" value={form.mc} onChange={(e)=>set("mc", e.target.value)} placeholder="MC123456" />
+
+          <label className="form-label">EIN (optional)</label>
+          <input className="input" value={form.ein} onChange={(e)=>set("ein", e.target.value)} placeholder="##-#######" />
+
+          <label className="form-label">Business Phone</label>
+          <input className="input" value={form.phone} onChange={(e)=>onPhone(e.target.value)} placeholder="123-456-7890" />
+
+          <button className="btn primary" type="submit">Submit</button>
+        </form>
+      </div>
     </div>
   );
 }
