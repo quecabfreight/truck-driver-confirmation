@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 export default function Home() {
   return (
     <div className="container">
-      {/* Top-center metallic logo (same treatment as login/verify) */}
+      {/* Big metallic logo — top-center, same treatment as Login */}
       <img
         src="/qc-logo.png"
         alt="QueCab AdbS"
@@ -30,9 +30,7 @@ export default function Home() {
 
       <div className="row-card">
         <h2>About</h2>
-        <p className="subtle">
-          QueCab AdbS — Truck-Driver confirmation built for busy docks.
-        </p>
+        <p className="subtle">QueCab AdbS — Truck-Driver confirmation built for busy docks.</p>
       </div>
     </div>
   );
