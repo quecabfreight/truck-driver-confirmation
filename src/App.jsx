@@ -1,19 +1,21 @@
 import React from "react";
-import { HashRouter as Router, Routes, Route } from "react-router-dom";
+import { HashRouter, Routes, Route } from "react-router-dom";
 
-import Header from "./components/Header";
-import Footer from "./components/Footer";
+// Components
+import Header from "./components/Header.jsx";
+import Footer from "./components/Footer.jsx";
 
-import Home from "./pages/Home";
-import Login from "./pages/Login";
-import Join from "./pages/Join";
-import VerifyDriver from "./pages/VerifyDriver";
-import DriverScreen from "./pages/DriverScreen";
-import SmartLink from "./pages/SmartLink";
+// Pages
+import Home from "./pages/Home.jsx";
+import Login from "./pages/Login.jsx";
+import Join from "./pages/Join.jsx";
+import VerifyDriver from "./pages/VerifyDriver.jsx";
+import DriverScreen from "./pages/DriverScreen.jsx";
+import SmartLink from "./pages/SmartLink.jsx";
 
-export default function App() {
+function App() {
   return (
-    <Router>
+    <HashRouter>
       <Header />
       <Routes>
         <Route path="/" element={<Home />} />
@@ -22,10 +24,12 @@ export default function App() {
         <Route path="/verify/:token" element={<VerifyDriver />} />
         <Route path="/s/:token" element={<DriverScreen />} />
         <Route path="/smart" element={<SmartLink />} />
-        {/* Fallback: render Home for any unknown route */}
+        {/* Catch-all fallback */}
         <Route path="*" element={<Home />} />
       </Routes>
       <Footer />
-    </Router>
+    </HashRouter>
   );
 }
+
+export default App;
