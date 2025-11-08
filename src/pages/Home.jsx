@@ -1,37 +1,44 @@
 import React from "react";
 import { Link } from "react-router-dom";
 
-/** Minimal, safe home screen with big centered logo */
-export default function Home() {
+/**
+ * Home:
+ * - Big metallic logo centered top
+ * - Three rows as before
+ * - Copy consistent with your earlier spec
+ */
+export default function Home(){
   return (
-    <div className="container">
-      <img
-        src="/qc-logo.png"
-        alt="QueCab AdbS"
-        className="centered-logo"
-        style={{ maxWidth: 360, height: "auto", display: "block", margin: "0 auto 18px" }}
-      />
-
-      <div className="row-card">
-        <h2>Request Access</h2>
-        <p className="subtle">Brokers &amp; Shippers only.</p>
-        <div className="row-actions">
-          <Link className="btn primary" to="/join">Go to /join</Link>
-        </div>
+    <main style={{padding:"16px"}}>
+      {/* Big centered logo */}
+      <div className="center" style={{margin:"10px 0 18px"}}>
+        <img
+          src="/qc-logo.png"
+          alt="QueCab AdbS"
+          style={{ maxWidth: 260, height: "auto", display:"block" }}
+        />
       </div>
 
-      <div className="row-card">
-        <h2>Already Authorized? Log In</h2>
-        <p className="subtle">Use your business email and access code.</p>
-        <div className="row-actions">
-          <Link className="btn primary" to="/login">Go to /login</Link>
-        </div>
-      </div>
+      <section className="card">
+        <h2 className="h2">Request Access</h2>
+        <p className="lead">Brokers &amp; Shippers only.</p>
+        <Link to="/join" className="btn">Go to /join</Link>
+      </section>
 
-      <div className="row-card">
-        <h2>About</h2>
-        <p className="subtle">QueCab AdbS — Truck-Driver confirmation built for busy docks.</p>
-      </div>
-    </div>
+      <section className="card">
+        <h2 className="h2">Already Authorized? Log In</h2>
+        <p className="lead">Use your business email and access code.</p>
+        <Link to="/login" className="btn">Go to /login</Link>
+      </section>
+
+      <section className="card">
+        <h2 className="h2">About</h2>
+        <p className="lead">
+          QueCab AdbS — Truck-Driver confirmation built for busy docks.
+        </p>
+      </section>
+
+      <footer>© 2025 QueCab AdbS</footer>
+    </main>
   );
 }
