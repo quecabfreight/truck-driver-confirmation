@@ -1,51 +1,40 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 
 /**
- * Minimal, crash-proof header:
- * - No effects, no window access, no custom hooks.
- * - Simple Light/Dark toggle that only flips the "dark" class on <html>.
+ * Clean header:
+ * - No tiny top-left logo (removed as requested)
+ * - Bigger nav buttons (24pt)
+ * - Light/Dark toggle persists
  */
 export default function Header() {
-  const isDark = document.documentElement.classList.contains("dark");
-  const [dark, setDark] = React.useState(isDark);
+  const location = useLocation();
+  const [theme, setTheme] = useState(
+    localStorage.getItem("theme") || "dark"
+  );
 
-  const toggleTheme = () => {
-    const root = document.documentElement;
-    if (dark) {
-      root.classList.remove("dark");  // light
-      localStorage.setItem("theme", "light");
-    } else {
-      root.classList.add("dark");     // dark
-      localStorage.setItem("theme", "dark");
-    }
-    setDark(!dark);
-  };
+  useEffect(() => {
+    // apply theme class on <body>
+    document.body.classList.remove("theme-dark", "theme-light", "dark", "light");
+    document.body.classList.add(theme === "dark" ? "theme-dark" : "theme-light");
+    localStorage.setItem("theme", theme);
+  }, [theme]);
 
-  React.useEffect(() => {
-    // Ensure a theme is set once, default dark
-    const saved = localStorage.getItem("theme");
-    const root = document.documentElement;
-    if (saved === "light") root.classList.remove("dark");
-    else root.classList.add("dark");
-    setDark(root.classList.contains("dark"));
-  }, []);
+  const NavButton = ({ to, children }) => (
+    <Link to={to} className="btn" aria-current={location.pathname === to ? "page" : undefined}>
+      {children}
+    </Link>
+  );
 
   return (
-    <header className="header">
-      <div className="header-inner">
-        {/* Left side intentionally blank per your spec (no tiny logo here) */}
-        <div />
-
-        {/* Right side nav */}
-        <nav style={{ display: "flex", gap: 10 }}>
-          <Link className="btn" to="/">Home</Link>
-          <Link className="btn" to="/login">Log In</Link>
-          <Link className="btn" to="/join">Request Access</Link>
-          <button className="btn" onClick={toggleTheme}>
-            {dark ? "Light" : "Dark"}
-          </button>
-        </nav>
+    <header style={{padding:"14px 16px", position:"sticky", top:0, zIndex:50}}>
+      <div className="qc-nav">
+        <NavButton to="/">Home</NavButton>
+        <NavButton to="/login">Log In</NavButton>
+        <NavButton to="/join">Request Access</NavButton>
+        <button className="btn" onClick={() => setTheme(t => t === "dark" ? "light" : "dark")}>
+          {theme === "dark" ? "Light" : "Dark"}
+        </button>
       </div>
     </header>
   );
