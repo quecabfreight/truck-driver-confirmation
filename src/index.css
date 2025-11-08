@@ -1,128 +1,130 @@
-/* -------- Global scale (busy-dock friendly) -------- */
+/* GLOBAL BASE — readable everywhere, desktop & mobile */
 :root{
-  --base-font: 18px;        /* desktop default */
-  --base-font-mobile: 16px; /* phones */
-  --card-bg-dark:#0f172a;   /* slate-900ish */
-  --card-bg-light:#f1f5f9;  /* slate-100ish */
-  --text-dark:#e5e7eb;
-  --text-light:#0b1220;
-  --border:#334155;
-  --focus:#94a3b8;
+  --font-base-desktop: 20px;        /* body text size on desktop */
+  --font-base-mobile: 18px;         /* body text size on phones */
+  --font-lg: 24px;                  /* labels, nav, buttons */
+  --font-xl: 32px;                  /* subheads */
+  --font-xxl: 42px;                 /* big section titles (≈32pt) */
+  --radius: 14px;
+  --card-bg-dark: #0f141a;
+  --card-bg-light: #f5f7fa;
+  --card-border: rgba(255,255,255,.12);
 }
 
-html, body, #root {
-  height: 100%;
-}
-
-html { font-size: var(--base-font); }
-@media (max-width: 680px){
-  html { font-size: var(--base-font-mobile); }
-}
-
-body {
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+/* Base scaling */
+html, body {
   margin: 0;
+  padding: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji";
+  font-size: var(--font-base-desktop);
+  line-height: 1.35;
 }
 
-/* ---- Theme wrappers (support both styles used in this project) ---- */
-body.theme-dark, body.dark, [data-theme="dark"] body, [data-theme="dark"] {
-  color: var(--text-dark);
-  background: #0b1220; /* app background */
-}
-body.theme-light, body.light, [data-theme="light"] body, [data-theme="light"] {
-  color: var(--text-light);
-  background: #ffffff;
+/* Mobile base */
+@media (max-width: 768px){
+  html, body { font-size: var(--font-base-mobile); }
 }
 
-/* --------- Headings & lead text ---------- */
-h1, .h1 { font-size: 40px; font-weight: 800; margin: 0 0 8px; }
-h2, .h2 { font-size: 32px; font-weight: 800; margin: 0 0 8px; }
-.lead     { font-size: 24px; }
+/* DARK/LIGHT backgrounds (assumes body gets data-theme="dark" or "light"
+   — also works if the class 'dark' or 'light' is set instead) */
+body.dark, [data-theme="dark"] { background:#0b0f13; color:#e9eef5; }
+body.light, [data-theme="light"] { background:#ffffff; color:#13161a; }
 
-/* --------- Buttons (header + forms) --------- */
-button, .btn {
-  font-size: 24px;
+/* Cards/Panels */
+.card, .panel, .qc-card {
+  background: var(--card-bg-dark);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+body.light .card, body.light .panel, body.light .qc-card,
+[data-theme="light"] .card, [data-theme="light"] .panel, [data-theme="light"] .qc-card{
+  background: var(--card-bg-light);
+  border-color: rgba(0,0,0,.12);
+}
+
+/* Headings (bigger, busy-dock friendly) */
+h1 { font-size: var(--font-xxl); font-weight: 800; margin: 0 0 14px; }
+h2 { font-size: var(--font-xl);  font-weight: 800; margin: 0 0 12px; }
+h3 { font-size: var(--font-lg);  font-weight: 700; margin: 0 0 10px; }
+
+/* Labels / small captions inside cards */
+label, .caption, .hint { font-size: var(--font-lg); }
+
+/* NAV + Buttons: big and tappable */
+nav a, .nav a, .nav button, .nav .btn, header a, header button {
+  font-size: var(--font-lg);
   font-weight: 700;
-  padding: 14px 18px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: transparent;
+}
+button, .btn {
+  font-size: var(--font-lg);
+  font-weight: 800;
+  min-height: 56px;
+  padding: 12px 18px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.18);
+  background: #1b2530;
+  color: #e9eef5;
   cursor: pointer;
 }
-button:focus, .btn:focus {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
-}
-body.theme-dark .btn, body.dark .btn, [data-theme="dark"] .btn {
-  color: var(--text-dark);
-  background: #111827;
-  border-color: #3b4456;
-}
-body.theme-light .btn, body.light .btn, [data-theme="light"] .btn {
-  color: var(--text-light);
-  background: #e2e8f0;
-  border-color: #cbd5e1;
+button:focus-visible, .btn:focus-visible { outline: 3px solid #6aa6ff; outline-offset: 2px; }
+
+body.light button, body.light .btn,
+[data-theme="light"] button, [data-theme="light"] .btn{
+  background:#0f141a; color:#fff; border-color: rgba(0,0,0,.18);
 }
 
-/* ---- Header nav buttons specifically ---- */
-.qc-nav { display:flex; gap:12px; align-items:center; }
-.qc-nav .btn { font-size: 24px; }
-
-/* --------- Cards / panels ---------- */
-.card {
-  border-radius: 16px;
-  border: 1px solid var(--border);
-  padding: 18px;
-  max-width: 740px;
-  margin: 18px auto;
-  box-shadow: 0 6px 18px rgba(0,0,0,.25);
-}
-body.theme-dark .card, body.dark .card, [data-theme="dark"] .card { background: var(--card-bg-dark); }
-body.theme-light .card, body.light .card, [data-theme="light"] .card { background: var(--card-bg-light); }
-
-/* --------- Inputs (ALL pages) ---------- */
+/* FORMS — inputs white in DARK, inverted in LIGHT; large, clear borders */
 input, select, textarea {
-  font-size: 20px;
-  min-height: 54px;
-  padding: 14px 14px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
+  font-size: var(--font-lg);
+  min-height: 56px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.25);
   width: 100%;
   box-sizing: border-box;
 }
 
-/* Make inputs WHITE inside on dark theme for visibility */
-body.theme-dark input, body.theme-dark select, body.theme-dark textarea,
+/* Dark theme: white fields with dark text (easy to see) */
 body.dark input, body.dark select, body.dark textarea,
-[data-theme="dark"] input, [data-theme="dark"] select, [data-theme="dark"] textarea {
+[data-theme="dark"] input, [data-theme="dark"] select, [data-theme="dark"] textarea{
   background: #ffffff;
-  color: #111827;
-  border-color: #475569;
+  color: #111;
+  border-color: rgba(255,255,255,.28);
 }
 
-/* Invert on light theme (dark interior so it truly flips) */
-body.theme-light input, body.theme-light select, body.theme-light textarea,
+/* Light theme: invert — dark fields with white text */
 body.light input, body.light select, body.light textarea,
-[data-theme="light"] input, [data-theme="light"] select, [data-theme="light"] textarea {
-  background: #0f172a;
-  color: #e5e7eb;
-  border-color: #334155;
+[data-theme="light"] input, [data-theme="light"] select, [data-theme="light"] textarea{
+  background: #0f141a;
+  color: #fff;
+  border-color: rgba(0,0,0,.25);
 }
 
 /* Placeholder readability */
-::placeholder { opacity: 0.9; }
+::placeholder { opacity: .75; }
 
-/* Y/N toggle buttons on Verify page – make tappable */
-.yesno { display:flex; gap:12px; }
-.yesno .btn { min-width: 120px; text-align:center; }
+/* YES/NO pill buttons on verify screen (stay big) */
+.qc-yn { display:inline-flex; gap:12px; }
+.qc-yn .btn { min-width: 110px; }
 
-/* PIN input on verify gate */
-.pin-input {
+/* PIN input — centered, spaced digits */
+.qc-pin {
   letter-spacing: 6px;
-  font-size: 26px;
   text-align: center;
-  width: 260px;
+  font-size: 28px;
 }
+
+/* Footer text slightly larger than default */
+footer { font-size: var(--font-lg); opacity:.85; }
+
+/* Utility classes if you need them anywhere */
+.text-xl  { font-size: var(--font-xl);  font-weight: 800; }
+.text-lg  { font-size: var(--font-lg);  }
+.text-xxl { font-size: var(--font-xxl); font-weight: 800; }
+
+/* Make link-like buttons in header look consistent */
+header .nav-btn { font-size: var(--font-lg); font-weight: 800; }
 
 /* Center helpers */
 .center { display:flex; align-items:center; justify-content:center; }
