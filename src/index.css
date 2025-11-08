@@ -1,139 +1,131 @@
-/* ==== theme tokens (unchanged) ==== */
+/* -------- Global scale (busy-dock friendly) -------- */
 :root{
-  --bg:#0f1115;--panel:#161a22;--panel-border:#2a3140;
-  --text:#e6e9ee;--muted:#cbd2e2;--link:#9ec1ff;
-  --btn-bg:#212634;--btn-fg:#ffffff;--input-bg:#121722;--input-fg:#e6e9ee;
-  --header-bg:#0d0f14;
-  --header-contrast-badge: color-mix(in oklab, var(--text) 6%, transparent);
-  --header-contrast-ring:  color-mix(in oklab, var(--text) 12%, transparent);
-  --ok:#2ecc71;--warn:#ff5757;--shadow:0 10px 30px rgba(0,0,0,.35);--table-rule:#2a3140;
-}
-html:not(.dark){
-  --bg:#ffffff;--panel:#f7f8fb;--panel-border:#d8dfec;
-  --text:#0f1115;--muted:#273049;--link:#1d5fff;
-  --btn-bg:#0f1115;--btn-fg:#ffffff;--input-bg:#ffffff;--input-fg:#0f1115;
-  --header-bg:#ffffff;
-  --header-contrast-badge: color-mix(in oklab, #000 6%, transparent);
-  --header-contrast-ring:  color-mix(in oklab, #000 12%, transparent);
-  --shadow:0 10px 30px rgba(0,0,0,.10);--table-rule: var(--panel-border);
+  --base-font: 18px;        /* desktop default */
+  --base-font-mobile: 16px; /* phones */
+  --card-bg-dark:#0f172a;   /* slate-900ish */
+  --card-bg-light:#f1f5f9;  /* slate-100ish */
+  --text-dark:#e5e7eb;
+  --text-light:#0b1220;
+  --border:#334155;
+  --focus:#94a3b8;
 }
 
-/* ==== base sizing ==== */
-*{box-sizing:border-box}
-html,body,#root{height:100%}
-body{
-  margin:0;
-  font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;
-  font-size: clamp(20px, 0.7vw + 16px, 22px);
-  line-height:1.45;
-  background:var(--bg); color:var(--text);
-}
-.container{width:100%;max-width:1200px;padding:clamp(20px,2.2vw,30px);margin:0 auto}
-
-/* ==== header (left empty per your request) ==== */
-.header{position:sticky;top:0;z-index:50;background:var(--header-bg);border-bottom:1px solid var(--panel-border)}
-.header-inner{display:flex;align-items:center;justify-content:space-between;gap:18px;
-  padding:clamp(14px,1.6vw,20px) clamp(18px,2.2vw,26px)}
-.theme-toggle{
-  display:inline-flex;align-items:center;gap:10px;min-height:50px;padding:12px 18px;
-  border:1px solid var(--panel-border);border-radius:999px;background:var(--panel);color:var(--text);
-  cursor:pointer;font-weight:800;font-size:clamp(18px, .45vw + 15px, 20px)
-}
-.theme-toggle .toggle-sep{opacity:.6}
-
-/* ==== links and helper text ==== */
-a{color:var(--link);text-decoration:none} a:hover{opacity:.85}
-
-/* helper lines = 24pt (~32px) desktop, scale for mobile */
-.subtle{
-  color:var(--muted);
-  font-weight:600;
-  font-size: clamp(18px, 1.6vw + 10px, 32px);
-  letter-spacing:.1px;
+html, body, #root {
+  height: 100%;
 }
 
-/* ==== cards / rows ==== */
-.row-card{
-  margin:clamp(14px,1.6vw,20px) 0;padding:clamp(20px,2.4vw,32px);
-  border:1px solid var(--panel-border);background:var(--panel);border-radius:18px;box-shadow:var(--shadow)
-}
-.card{
-  width:100%;max-width:clamp(800px,68vw,1000px);margin:0 auto;
-  padding:clamp(20px,2.4vw,32px);border-radius:18px;border:1px solid var(--panel-border);
-  background:var(--panel);box-shadow:var(--shadow)
+html { font-size: var(--base-font); }
+@media (max-width: 680px){
+  html { font-size: var(--base-font-mobile); }
 }
 
-/* TITLES — unify size across Home (.row-card h2) + Login/Join (.card h2) */
-.row-card h2,
-.card h2{
-  margin:0 0 10px 0;
-  font-weight:800;
-  font-size: clamp(26px, 2.8vw + 14px, 42px); /* ≈32pt on desktop */
+body {
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+  margin: 0;
 }
 
-/* actions strip */
-.row-actions{display:flex;flex-wrap:wrap;gap:14px}
-
-/* centered logo on top of pages using it */
-.centered-logo{display:block;margin:0 auto clamp(14px,1.2vw,18px);max-width:clamp(260px, 24vw, 360px);height:auto}
-
-/* ==== controls ==== */
-/* button labels target up to ~42px desktop, scale down on mobile */
-.btn{
-  display:inline-flex;align-items:center;justify-content:center;gap:10px;
-  min-height: clamp(62px, 3vw + 28px, 78px);
-  padding: clamp(14px, 1.2vw, 18px) clamp(18px, 1.8vw, 30px);
-  border-radius:14px;border:1px solid var(--panel-border);
-  background:var(--btn-bg);color:var(--btn-fg);cursor:pointer;font-weight:800;
-  font-size: clamp(20px, 2vw + 12px, 42px);
+/* ---- Theme wrappers (support both styles used in this project) ---- */
+body.theme-dark, body.dark, [data-theme="dark"] body, [data-theme="dark"] {
+  color: var(--text-dark);
+  background: #0b1220; /* app background */
 }
-.btn.ok{background: color-mix(in oklab, var(--ok) 22%, var(--btn-bg)); border-color: color-mix(in oklab, var(--ok) 40%, var(--panel-border))}
-.btn.warn{background: color-mix(in oklab, var(--warn) 22%, var(--btn-bg)); border-color: color-mix(in oklab, var(--warn) 40%, var(--panel-border))}
-
-/* big but sane inputs */
-.input,.select{
-  width:100%;min-height:clamp(60px, 2.4vw + 28px, 76px);
-  padding:clamp(14px,1.2vw,18px);
-  border-radius:14px;border:1px solid var(--panel-border);
-  background:var(--input-bg);color:var(--input-fg);
-  font-size: clamp(18px, 0.9vw + 14px, 24px);
-}
-.input::placeholder{color:var(--muted)}
-.form{display:grid;gap:clamp(14px,1.4vw,20px)}
-.form-label{
-  font-weight:800;margin-bottom:6px;
-  font-size: clamp(18px, 0.9vw + 14px, 24px);
+body.theme-light, body.light, [data-theme="light"] body, [data-theme="light"] {
+  color: var(--text-light);
+  background: #ffffff;
 }
 
-/* yes/no controls on verify */
-.yesno{display:grid;grid-template-columns:1fr 1fr;gap:clamp(12px,1.4vw,18px)}
+/* --------- Headings & lead text ---------- */
+h1, .h1 { font-size: 40px; font-weight: 800; margin: 0 0 8px; }
+h2, .h2 { font-size: 32px; font-weight: 800; margin: 0 0 8px; }
+.lead     { font-size: 24px; }
 
-/* small tag pills if used */
-.tag{
-  display:inline-block;padding:10px 14px;border-radius:12px;
-  background: color-mix(in oklab, var(--text) 6%, transparent);
-  border:1px solid var(--panel-border);color:var(--text);
-  font-size: clamp(14px, .7vw + 10px, 20px);
+/* --------- Buttons (header + forms) --------- */
+button, .btn {
+  font-size: 24px;
+  font-weight: 700;
+  padding: 14px 18px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: transparent;
+  cursor: pointer;
+}
+button:focus, .btn:focus {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+body.theme-dark .btn, body.dark .btn, [data-theme="dark"] .btn {
+  color: var(--text-dark);
+  background: #111827;
+  border-color: #3b4456;
+}
+body.theme-light .btn, body.light .btn, [data-theme="light"] .btn {
+  color: var(--text-light);
+  background: #e2e8f0;
+  border-color: #cbd5e1;
 }
 
-/* footer */
-.footer{
-  border-top:1px solid var(--panel-border);
-  padding:clamp(20px,2.2vw,26px);
-  margin-top:clamp(24px,2.6vw,32px);
-  text-align:center;color: color-mix(in oklab, var(--text) 80%, transparent);
-  font-size: clamp(18px, 0.7vw + 14px, 22px);
-  background:transparent;
+/* ---- Header nav buttons specifically ---- */
+.qc-nav { display:flex; gap:12px; align-items:center; }
+.qc-nav .btn { font-size: 24px; }
+
+/* --------- Cards / panels ---------- */
+.card {
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  padding: 18px;
+  max-width: 740px;
+  margin: 18px auto;
+  box-shadow: 0 6px 18px rgba(0,0,0,.25);
+}
+body.theme-dark .card, body.dark .card, [data-theme="dark"] .card { background: var(--card-bg-dark); }
+body.theme-light .card, body.light .card, [data-theme="light"] .card { background: var(--card-bg-light); }
+
+/* --------- Inputs (ALL pages) ---------- */
+input, select, textarea {
+  font-size: 20px;
+  min-height: 54px;
+  padding: 14px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  width: 100%;
+  box-sizing: border-box;
 }
 
-/* pin */
-.pin-wrap{width:100%;max-width:clamp(460px,44vw,580px);margin:0 auto}
-.pin-input{
-  width:clamp(260px,24vw,380px);margin:12px auto 10px;letter-spacing:clamp(6px,.6vw,10px);
-  text-align:center;font-size:clamp(28px,2.6vw+6px,38px);font-weight:800;display:block
+/* Make inputs WHITE inside on dark theme for visibility */
+body.theme-dark input, body.theme-dark select, body.theme-dark textarea,
+body.dark input, body.dark select, body.dark textarea,
+[data-theme="dark"] input, [data-theme="dark"] select, [data-theme="dark"] textarea {
+  background: #ffffff;
+  color: #111827;
+  border-color: #475569;
 }
-.pin-meta{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px}
 
-/* effects & table */
-.flash-overlay{position:fixed;inset:0;background:rgba(255,0,0,.75);pointer-events:none;animation:flash .4s ease-out forwards;z-index:9999}
-@keyframes flash{0%{opac
+/* Invert on light theme (dark interior so it truly flips) */
+body.theme-light input, body.theme-light select, body.theme-light textarea,
+body.light input, body.light select, body.light textarea,
+[data-theme="light"] input, [data-theme="light"] select, [data-theme="light"] textarea {
+  background: #0f172a;
+  color: #e5e7eb;
+  border-color: #334155;
+}
+
+/* Placeholder readability */
+::placeholder { opacity: 0.9; }
+
+/* Y/N toggle buttons on Verify page – make tappable */
+.yesno { display:flex; gap:12px; }
+.yesno .btn { min-width: 120px; text-align:center; }
+
+/* PIN input on verify gate */
+.pin-input {
+  letter-spacing: 6px;
+  font-size: 26px;
+  text-align: center;
+  width: 260px;
+}
+
+/* Center helpers */
+.center { display:flex; align-items:center; justify-content:center; }
+
+/* Footer */
+footer { text-align:center; opacity:.8; padding: 24px 0 36px; font-size: 18px; }
