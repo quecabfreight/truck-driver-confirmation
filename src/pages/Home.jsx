@@ -1,44 +1,40 @@
 import React from "react";
 import { Link } from "react-router-dom";
 
-/**
- * Home:
- * - Big metallic logo centered top
- * - Three rows as before
- * - Copy consistent with your earlier spec
- */
-export default function Home(){
+export default function Home() {
   return (
-    <main style={{padding:"16px"}}>
-      {/* Big centered logo */}
-      <div className="center" style={{margin:"10px 0 18px"}}>
-        <img
-          src="/qc-logo.png"
-          alt="QueCab AdbS"
-          style={{ maxWidth: 260, height: "auto", display:"block" }}
-        />
-      </div>
+    <main style={{ maxWidth: 980, margin: "40px auto 60px", padding: "0 16px" }}>
+      {/* Top-center logo (no distortion) */}
+      <img
+        src="/qc-logo.png"
+        alt="QueCab AdbS"
+        className="page-logo"
+        style={{ maxWidth: 260, height: "auto", display: "block", margin: "0 auto 18px" }}
+      />
 
-      <section className="card">
-        <h2 className="h2">Request Access</h2>
-        <p className="lead">Brokers &amp; Shippers only.</p>
-        <Link to="/join" className="btn">Go to /join</Link>
+      {/* Three rows */}
+      <section className="card" style={{ marginBottom: 18 }}>
+        <div className="card-title">Request Access</div>
+        <div className="small">Brokers &amp; Shippers only.</div>
+        <div style={{ marginTop: 12 }}>
+          <Link to="/join" className="btn">Go to /join</Link>
+        </div>
+      </section>
+
+      <section className="card" style={{ marginBottom: 18 }}>
+        <div className="card-title">Already Authorized? Log In</div>
+        <div className="card-subtitle">Use your business email and access code.</div>
+        <div style={{ marginTop: 12 }}>
+          <Link to="/login" className="btn">Go to /login</Link>
+        </div>
       </section>
 
       <section className="card">
-        <h2 className="h2">Already Authorized? Log In</h2>
-        <p className="lead">Use your business email and access code.</p>
-        <Link to="/login" className="btn">Go to /login</Link>
-      </section>
-
-      <section className="card">
-        <h2 className="h2">About</h2>
-        <p className="lead">
+        <div className="card-title">About</div>
+        <div className="about-text">
           QueCab AdbS — Truck-Driver confirmation built for busy docks.
-        </p>
+        </div>
       </section>
-
-      <footer>© 2025 QueCab AdbS</footer>
     </main>
   );
 }
