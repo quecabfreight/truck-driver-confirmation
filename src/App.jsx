@@ -1,30 +1,49 @@
-import React from "react";
-import { HashRouter, Routes, Route } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { HashRouter as Router, Routes, Route } from "react-router-dom";
+import Header from "./components/Header";
+import Footer from "./components/Footer";
+import Home from "./pages/Home";
+import Login from "./pages/Login";
+import Join from "./pages/Join";
+import VerifyDriver from "./pages/VerifyDriver";
+import SmartLink from "./pages/SmartLink";
+import DriverScreen from "./pages/DriverScreen";
+import "./index.css";
 
-import Header from "./components/Header.jsx";
-import Footer from "./components/Footer.jsx";
+function App() {
+  const [theme, setTheme] = useState("dark");
 
-import Home from "./pages/Home.jsx";
-import Login from "./pages/Login.jsx";
-import Join from "./pages/Join.jsx";
-import VerifyDriver from "./pages/VerifyDriver.jsx";
-import DriverScreen from "./pages/DriverScreen.jsx";
-import SmartLink from "./pages/SmartLink.jsx";
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme") || "dark";
+    setTheme(savedTheme);
+    document.documentElement.setAttribute("data-theme", savedTheme);
+  }, []);
 
-export default function App() {
+  const toggleTheme = () => {
+    const newTheme = theme === "dark" ? "light" : "dark";
+    setTheme(newTheme);
+    document.documentElement.setAttribute("data-theme", newTheme);
+    localStorage.setItem("theme", newTheme);
+  };
+
   return (
-    <HashRouter>
-      <Header />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/join" element={<Join />} />
-        <Route path="/verify/:token" element={<VerifyDriver />} />
-        <Route path="/s/:token" element={<DriverScreen />} />
-        <Route path="/smart" element={<SmartLink />} />
-        <Route path="*" element={<Home />} />
-      </Routes>
-      <Footer />
-    </HashRouter>
+    <Router>
+      <div className="app-container">
+        <Header theme={theme} toggleTheme={toggleTheme} />
+        <main className="main-content">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/join" element={<Join />} />
+            <Route path="/verify/:token" element={<VerifyDriver />} />
+            <Route path="/smart" element={<SmartLink />} />
+            <Route path="/s/:token" element={<DriverScreen />} />
+          </Routes>
+        </main>
+        <Footer />
+      </div>
+    </Router>
   );
 }
+
+export default App;
