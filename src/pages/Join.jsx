@@ -1,14 +1,24 @@
 import React, { useState } from "react";
 
+// Formatters
+const digits = (s = "") => s.replace(/\D/g, "");
+const formatEIN = (s = "") => {
+  const d = digits(s).slice(0, 9);
+  if (d.length <= 2) return d;
+  return d.slice(0, 2) + "-" + d.slice(2);
+};
+const formatPhoneUS = (s = "") => {
+  const d = digits(s).slice(0, 10);
+  if (d.length <= 3) return d;
+  if (d.length <= 6) return `${d.slice(0,3)}-${d.slice(3)}`;
+  return `${d.slice(0,3)}-${d.slice(3,6)}-${d.slice(6)}`;
+};
+
 export default function Join() {
   const [role, setRole] = useState("Broker");
   const [mcDigits, setMcDigits] = useState("");
-
-  const handleMcChange = (e) => {
-    // keep digits only
-    const digits = (e.target.value || "").replace(/\D/g, "");
-    setMcDigits(digits);
-  };
+  const [ein, setEin] = useState("");
+  const [bizPhone, setBizPhone] = useState("");
 
   return (
     <div className="page centered">
@@ -48,18 +58,31 @@ export default function Join() {
               className="input"
               inputMode="numeric"
               value={mcDigits}
-              onChange={handleMcChange}
+              onChange={(e) => setMcDigits(digits(e.target.value))}
+              placeholder=""
             />
           </div>
 
           <div>
             <label>EIN (optional)</label>
-            <input className="input" />
+            <input
+              className="input"
+              value={ein}
+              onChange={(e) => setEin(formatEIN(e.target.value))}
+              inputMode="numeric"
+              placeholder="12-3456789"
+            />
           </div>
 
           <div>
             <label>Business Phone</label>
-            <input className="input" placeholder="123-456-7890" />
+            <input
+              className="input"
+              value={bizPhone}
+              onChange={(e) => setBizPhone(formatPhoneUS(e.target.value))}
+              inputMode="tel"
+              placeholder="123-456-7890"
+            />
           </div>
 
           <button className="btn">Submit</button>
