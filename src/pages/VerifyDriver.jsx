@@ -2,17 +2,18 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import InAppBrowserBanner from "../components/InAppBrowserBanner";
 
-
 // ---- helpers (unchanged core) ----
-const decodeB64url = (s="") => {
+const decodeB64url = (s = "") => {
   try {
     const pad = (t) => t + "===".slice((t.length + 3) % 4);
     const norm = s.replace(/-/g, "+").replace(/_/g, "/");
     return JSON.parse(decodeURIComponent(escape(atob(pad(norm)))));
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 };
-const normPlate = (s="") => s.toUpperCase().replace(/[\s-]/g,"");
-const normDot = (s="") => s.replace(/\D/g,"");
+const normPlate = (s = "") => s.toUpperCase().replace(/[\s-]/g, "");
+const normDot = (s = "") => s.replace(/\D/g, "");
 
 function useQuery() {
   const { search } = useLocation();
@@ -21,7 +22,7 @@ function useQuery() {
 
 function YnButtons({ label, value, onChange }) {
   const yes = value === "Yes";
-  const no  = value === "No";
+  const no = value === "No";
   return (
     <div>
       <label style={{ display: "block", marginBottom: 8, fontWeight: 700 }}>
@@ -31,7 +32,11 @@ function YnButtons({ label, value, onChange }) {
         <button
           type="button"
           className="btn"
-          style={{ background: yes ? "#2aa865" : "var(--button-bg)", color: yes ? "#fff" : "var(--button-text)", minWidth: 64 }}
+          style={{
+            background: yes ? "#2aa865" : "var(--button-bg)",
+            color: yes ? "#fff" : "var(--button-text)",
+            minWidth: 64,
+          }}
           onClick={() => onChange("Yes")}
         >
           Y
@@ -39,7 +44,11 @@ function YnButtons({ label, value, onChange }) {
         <button
           type="button"
           className="btn"
-          style={{ background: no ? "#c62828" : "var(--button-bg)", color: no ? "#fff" : "var(--button-text)", minWidth: 64 }}
+          style={{
+            background: no ? "#c62828" : "var(--button-bg)",
+            color: no ? "#fff" : "var(--button-text)",
+            minWidth: 64,
+          }}
           onClick={() => onChange("No")}
         >
           N
@@ -56,9 +65,15 @@ function loadTesseract() {
     if (window.Tesseract) return resolve(window.Tesseract);
     if (tesseractLoading) {
       const check = setInterval(() => {
-        if (window.Tesseract) { clearInterval(check); resolve(window.Tesseract); }
+        if (window.Tesseract) {
+          clearInterval(check);
+          resolve(window.Tesseract);
+        }
       }, 100);
-      setTimeout(() => { clearInterval(check); if (!window.Tesseract) reject(new Error("Tesseract load timeout")); }, 15000);
+      setTimeout(() => {
+        clearInterval(check);
+        if (!window.Tesseract) reject(new Error("Tesseract load timeout"));
+      }, 15000);
       return;
     }
     tesseractLoading = true;
@@ -77,11 +92,11 @@ function pickBestPlate(text = "") {
   const candidates = cleaned.match(/[A-Z0-9]{5,8}/g) || [];
   if (!candidates.length) return "";
   // prefer ones containing both letters and digits, then longest
-  const scored = candidates.map(c => ({
+  const scored = candidates.map((c) => ({
     v: c,
-    score: (/[A-Z]/.test(c) && /\d/.test(c) ? 10 : 0) + c.length
+    score: (/[A-Z]/.test(c) && /\d/.test(c) ? 10 : 0) + c.length,
   }));
-  scored.sort((a,b)=>b.score-a.score);
+  scored.sort((a, b) => b.score - a.score);
   return scored[0].v || "";
 }
 
@@ -90,10 +105,13 @@ export default function VerifyDriver() {
   const q = useQuery();
 
   // Expected values (beta, obfuscated in link)
-  const expectedDot   = useMemo(() => (decodeB64url(q.get("vd"))?.d || ""), [q]);
-  const expectedPlate = useMemo(() => (decodeB64url(q.get("vp"))?.p || ""), [q]);
+  const expectedDot = useMemo(() => decodeB64url(q.get("vd"))?.d || "", [q]);
+  const expectedPlate = useMemo(() => decodeB64url(q.get("vp"))?.p || "", [q]);
   const tel = q.get("tel") || "";
-  const alertEmails = (q.get("em") || "").split(",").map(s=>s.trim()).filter(Boolean);
+  const alertEmails = (q.get("em") || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
 
   const [passedPin, setPassedPin] = useState(false);
   const [pin, setPin] = useState("");
@@ -118,7 +136,9 @@ export default function VerifyDriver() {
   };
 
   const dotOk = expectedDot ? normDot(dotInput) === normDot(expectedDot) : false;
-  const plateOk = expectedPlate ? normPlate(plateInput) === normPlate(expectedPlate) : false;
+  const plateOk = expectedPlate
+    ? normPlate(plateInput) === normPlate(expectedPlate)
+    : false;
   const allYes = dotOk && plateOk && ansCall === "Yes";
   const ready = dotInput && plateInput && ansCall;
 
@@ -130,7 +150,10 @@ export default function VerifyDriver() {
   }, [ready, allYes]);
 
   const handleSubmit = () => {
-    if (!ready) { alert("Please complete all three checks."); return; }
+    if (!ready) {
+      alert("Please complete all three checks.");
+      return;
+    }
     if (allYes) return; // banner renders below
 
     // tally failed attempts and auto-open email on 3rd+
@@ -145,9 +168,11 @@ export default function VerifyDriver() {
           `Phone call answered: ${ansCall}`,
           `Token: ${token}`,
           "",
-          "Triggered automatically on third failed verification attempt."
+          "Triggered automatically on third failed verification attempt.",
         ].join("\n");
-        const mailto = `mailto:${alertEmails.join(",")}?subject=AdbS%20Caution%20Alert&body=${encodeURIComponent(body)}`;
+        const mailto = `mailto:${alertEmails.join(
+          ","
+        )}?subject=AdbS%20Caution%20Alert&body=${encodeURIComponent(body)}`;
         window.location.href = mailto;
       }
       return next;
@@ -191,6 +216,7 @@ export default function VerifyDriver() {
 
   return (
     <div className="page centered">
+      <InAppBrowserBanner /> {/* shows only inside in-app browsers; hidden in Safari/Chrome */}
       <img src="/qc-logo.png" alt="QueCab AdbS" className="page-logo" />
       <audio ref={audioRef} src="/alert.mp3" preload="auto" />
 
@@ -202,7 +228,7 @@ export default function VerifyDriver() {
               className="input"
               placeholder="PIN"
               value={pin}
-              onChange={(e)=>setPin(e.target.value)}
+              onChange={(e) => setPin(e.target.value)}
               inputMode="numeric"
             />
             <button className="btn">Continue</button>
@@ -216,7 +242,10 @@ export default function VerifyDriver() {
           {tel && (
             <p style={{ marginBottom: 12 }}>
               <strong>Call Driver:</strong>{" "}
-              <a href={`tel:${tel}`} style={{ textDecoration: "none", fontWeight: 900 }}>
+              <a
+                href={`tel:${tel}`}
+                style={{ textDecoration: "none", fontWeight: 900 }}
+              >
                 {tel}
               </a>
             </p>
@@ -225,35 +254,51 @@ export default function VerifyDriver() {
           <div className="form">
             {/* USDOT entry with auto check */}
             <div>
-              <label>USDOT# (enter what’s on the truck)
-                {dotOk && <span style={{ color: "#2aa865", marginLeft: 10 }}>✅</span>}
-                {!dotOk && dotInput ? <span style={{ color: "#c62828", marginLeft: 10 }}>❌</span> : null}
+              <label>
+                USDOT# (enter what’s on the truck)
+                {dotOk && (
+                  <span style={{ color: "#2aa865", marginLeft: 10 }}>✅</span>
+                )}
+                {!dotOk && dotInput ? (
+                  <span style={{ color: "#c62828", marginLeft: 10 }}>❌</span>
+                ) : null}
               </label>
               <input
                 className="input"
                 value={dotInput}
-                onChange={(e)=>setDotInput(e.target.value)}
+                onChange={(e) => setDotInput(e.target.value)}
                 inputMode="numeric"
               />
             </div>
 
             {/* Plate entry with auto check + SCAN button */}
             <div>
-              <label>License Plate (enter what’s on the truck)
-                {plateOk && <span style={{ color: "#2aa865", marginLeft: 10 }}>✅</span>}
-                {!plateOk && plateInput ? <span style={{ color: "#c62828", marginLeft: 10 }}>❌</span> : null}
+              <label>
+                License Plate (enter what’s on the truck)
+                {plateOk && (
+                  <span style={{ color: "#2aa865", marginLeft: 10 }}>✅</span>
+                )}
+                {!plateOk && plateInput ? (
+                  <span style={{ color: "#c62828", marginLeft: 10 }}>❌</span>
+                ) : null}
               </label>
 
               <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
                 <input
                   className="input"
                   value={plateInput}
-                  onChange={(e)=>setPlateInput(e.target.value.toUpperCase())}
+                  onChange={(e) => setPlateInput(e.target.value.toUpperCase())}
                   inputMode="text"
                   autoCapitalize="characters"
                   style={{ flex: 1 }}
                 />
-                <button type="button" className="btn" onClick={startScan} disabled={ocrBusy} title="Scan plate with camera">
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={startScan}
+                  disabled={ocrBusy}
+                  title="Scan plate with camera"
+                >
                   {ocrBusy ? "Scanning…" : "Scan Plate"}
                 </button>
                 <input
@@ -268,10 +313,25 @@ export default function VerifyDriver() {
 
               {preview && (
                 <div style={{ marginTop: 8 }}>
-                  <img src={preview} alt="preview" style={{ maxWidth: "100%", borderRadius: 12, opacity: ocrBusy ? 0.6 : 1 }} />
+                  <img
+                    src={preview}
+                    alt="preview"
+                    style={{
+                      maxWidth: "100%",
+                      borderRadius: 12,
+                      opacity: ocrBusy ? 0.6 : 1,
+                    }}
+                  />
                 </div>
               )}
-              {ocrError && <p className="muted" style={{ color: "var(--danger)", marginTop: 8 }}>{ocrError}</p>}
+              {ocrError && (
+                <p
+                  className="muted"
+                  style={{ color: "var(--danger)", marginTop: 8 }}
+                >
+                  {ocrError}
+                </p>
+              )}
             </div>
 
             {/* Phone call Y/N */}
@@ -283,7 +343,9 @@ export default function VerifyDriver() {
           </div>
 
           <div style={{ marginTop: 16, display: "flex", gap: 12 }}>
-            <button className="btn" onClick={handleSubmit}>SUBMIT</button>
+            <button className="btn" onClick={handleSubmit}>
+              SUBMIT
+            </button>
           </div>
 
           {ready && (
