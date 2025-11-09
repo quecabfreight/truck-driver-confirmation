@@ -10,13 +10,10 @@ export default function Login() {
       <img src="/qc-logo.png" alt="QueCab AdbS" className="page-logo" />
       <div className="card">
         <h1>Log In</h1>
-        <p className="muted" style={{ marginBottom: 18 }}>
-          Use your business email and access code.
-        </p>
 
         <div className="form">
           <div>
-            <label>Business Email</label>
+            <label>Email</label>
             <input
               className="input"
               placeholder="you@company.com"
