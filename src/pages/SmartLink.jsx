@@ -2,23 +2,30 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { isBrokerOrShipper, LS_EMAIL } from "../utils/auth";
 
-const digits = (s="") => s.replace(/\D/g,"");
-const telDigits = (s="") => digits(s).slice(0,15);
-const formatPhoneUS = (s="") => {
-  const d = digits(s).slice(0,10);
+const digits = (s = "") => s.replace(/\D/g, "");
+const telDigits = (s = "") => digits(s).slice(0, 15);
+const formatPhoneUS = (s = "") => {
+  const d = digits(s).slice(0, 10);
   if (d.length <= 3) return d;
-  if (d.length <= 6) return `${d.slice(0,3)}-${d.slice(3)}`;
-  return `${d.slice(0,3)}-${d.slice(3,6)}-${d.slice(6)}`;
+  if (d.length <= 6) return `${d.slice(0, 3)}-${d.slice(3)}`;
+  return `${d.slice(0, 3)}-${d.slice(3, 6)}-${d.slice(6)}`;
 };
 const b64url = (obj) => {
   try {
     const json = JSON.stringify(obj);
     return btoa(unescape(encodeURIComponent(json)))
-      .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/,"");
-  } catch { return ""; }
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/g, "");
+  } catch {
+    return "";
+  }
 };
 function randomToken() {
-  return Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 10);
+  return (
+    Math.random().toString(36).slice(2, 10) +
+    Math.random().toString(36).slice(2, 10)
+  );
 }
 
 export default function SmartLink() {
@@ -39,33 +46,41 @@ export default function SmartLink() {
     dot: "",
     plate: "",
     phone: "",
-    dockEmails: "",
+    dockEmails: "", // <-- blank, no placeholder text
   });
 
   if (!allowed) return null;
 
-  const base = `${location.origin}${location.hash ? location.pathname + location.hash : location.pathname}`;
+  const base = `${location.origin}${
+    location.hash ? location.pathname + location.hash : location.pathname
+  }`;
 
   const generate = async () => {
     const t = randomToken();
     setToken(t);
 
     // Embed shipment data
-    const vd  = form.dot   ? b64url({ d: digits(form.dot) }) : "";
-    const vp  = form.plate ? b64url({ p: (form.plate || "").trim().toUpperCase().replace(/[\s-]/g,"") }) : "";
+    const vd = form.dot ? b64url({ d: digits(form.dot) }) : "";
+    const vp = form.plate
+      ? b64url({
+          p: (form.plate || "").trim().toUpperCase().replace(/[\s-]/g, ""),
+        })
+      : "";
     const tel = form.phone ? telDigits(form.phone) : "";
 
-    // ALERTS: default to logged-in broker/shipper email (no dock here)
+    // Alerts go to logged-in Broker/Shipper email (not dock)
     const brokerEmail = (localStorage.getItem(LS_EMAIL) || "").trim();
 
     const params = new URLSearchParams();
     if (tel) params.set("tel", tel);
-    if (vd)  params.set("vd", vd);
-    if (vp)  params.set("vp", vp);
+    if (vd) params.set("vd", vd);
+    if (vp) params.set("vp", vp);
     if (brokerEmail) params.set("em", brokerEmail);
 
     const du = `${base}#/s/${t}`;
-    const ku = `${base}#/verify/${t}${params.toString() ? `?${params.toString()}` : ""}`;
+    const ku = `${base}#/verify/${t}${
+      params.toString() ? `?${params.toString()}` : ""
+    }`;
 
     setDriverUrl(du);
     setDockUrl(ku);
@@ -76,15 +91,24 @@ export default function SmartLink() {
         `Driver (AdbS Truck-Driver Link): ${du}\nDock (AdbS Truck-Driver Verify Link): ${ku}`
       );
       setJustCopied(true);
-      setTimeout(()=>setJustCopied(false), 3000);
-    } catch { /* ignore */ }
+      setTimeout(() => setJustCopied(false), 3000);
+    } catch {
+      /* ignore */
+    }
   };
 
   // Email ONLY the dock verify link to dock staff
   const sendDockEmail = async () => {
     if (!dockUrl) return;
-    const to = (form.dockEmails || "").split(",").map(s=>s.trim()).filter(Boolean).join(",");
-    if (!to) { alert("Enter Dock Emails first."); return; }
+    const to = (form.dockEmails || "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .join(",");
+    if (!to) {
+      alert("Enter Dock Emails first.");
+      return;
+    }
 
     const lines = [
       "QueCab AdbS — Dock Verification Link",
@@ -92,13 +116,17 @@ export default function SmartLink() {
       `Dock (AdbS Truck-Driver Verify Link): ${dockUrl}`,
       "",
       `USDOT#: ${form.dot || "(not provided)"}`,
-      `Plate: ${form.plate || "(not provided)"}`
+      `Plate: ${form.plate || "(not provided)"}`,
     ];
     const emailBody = encodeURIComponent(lines.join("\n"));
     const mailto = `mailto:${to}?subject=AdbS%20Dock%20Verification&body=${emailBody}`;
 
     try {
-      if (navigator.share) await navigator.share({ title: "QueCab AdbS — Dock Verification", text: lines.join("\n") });
+      if (navigator.share)
+        await navigator.share({
+          title: "QueCab AdbS — Dock Verification",
+          text: lines.join("\n"),
+        });
       else window.location.href = mailto;
     } catch {
       window.location.href = mailto;
@@ -109,8 +137,13 @@ export default function SmartLink() {
   const textDriver = () => {
     if (!driverUrl) return;
     const d = telDigits(form.phone);
-    if (!d) { alert("Enter the driver’s phone number first."); return; }
-    const smsText = encodeURIComponent(`AdbS Truck-Driver Link:\n${driverUrl}`);
+    if (!d) {
+      alert("Enter the driver’s phone number first.");
+      return;
+    }
+    const smsText = encodeURIComponent(
+      `AdbS Truck-Driver Link:\n${driverUrl}`
+    );
     window.location.href = `sms:${d}?&body=${smsText}`;
   };
 
@@ -144,7 +177,9 @@ export default function SmartLink() {
             <input
               className="input"
               value={form.dot}
-              onChange={(e)=>setForm({...form, dot: digits(e.target.value).slice(0, 8)})}
+              onChange={(e) =>
+                setForm({ ...form, dot: digits(e.target.value).slice(0, 8) })
+              }
               inputMode="numeric"
             />
           </div>
@@ -153,7 +188,9 @@ export default function SmartLink() {
             <input
               className="input"
               value={form.plate}
-              onChange={(e)=>setForm({...form, plate: e.target.value.toUpperCase()})}
+              onChange={(e) =>
+                setForm({ ...form, plate: e.target.value.toUpperCase() })
+              }
             />
           </div>
           <div>
@@ -161,32 +198,48 @@ export default function SmartLink() {
             <input
               className="input"
               value={form.phone}
-              onChange={(e)=>setForm({...form, phone: formatPhoneUS(e.target.value)})}
+              onChange={(e) =>
+                setForm({ ...form, phone: formatPhoneUS(e.target.value) })
+              }
               inputMode="tel"
-              placeholder="123-456-7890"
             />
           </div>
-
           <div>
             <label>Dock Emails (comma-separated)</label>
             <input
               className="input"
               value={form.dockEmails}
-              onChange={(e)=>setForm({...form, dockEmails: e.target.value})}
-              placeholder="dock@example.com, checker@example.com"
+              onChange={(e) =>
+                setForm({ ...form, dockEmails: e.target.value })
+              }
+              autoComplete="off"
             />
           </div>
 
-          <button className="btn" onClick={generate}>Generate AdbS Truck-Driver Verify Link</button>
-          {justCopied && <p className="muted" style={{ marginTop: 8 }}>Links copied to clipboard.</p>}
+          <button className="btn" onClick={generate}>
+            Generate AdbS Truck-Driver Verify Link
+          </button>
+          {justCopied && (
+            <p className="muted" style={{ marginTop: 8 }}>
+              Links copied to clipboard.
+            </p>
+          )}
         </div>
 
         {token && (
-          <div style={{ display:"flex", gap:12, flexWrap:"wrap" }}>
-            <button className="btn" onClick={textDriver}>Text Driver</button>
-            <button className="btn" onClick={copyDriver}>Copy Driver Link</button>
-            <button className="btn" onClick={sendDockEmail}>Email Dock Verify Link</button>
-            <button className="btn" onClick={copyBoth}>Copy Both</button>
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            <button className="btn" onClick={textDriver}>
+              Text Driver
+            </button>
+            <button className="btn" onClick={copyDriver}>
+              Copy Driver Link
+            </button>
+            <button className="btn" onClick={sendDockEmail}>
+              Email Dock Verify Link
+            </button>
+            <button className="btn" onClick={copyBoth}>
+              Copy Both
+            </button>
           </div>
         )}
       </div>
