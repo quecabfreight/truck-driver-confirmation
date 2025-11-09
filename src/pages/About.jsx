@@ -14,7 +14,7 @@ export default function About() {
           <div>
             <h2 className="h2">What it is</h2>
             <p>
-              A secure, real-time verification system that confirms the <strong>Truck-Driver</strong> (truck and driver pair) before loading. 
+              A secure, real-time verification system that confirms the <strong>Truck-Driver</strong> (truck and driver pair) before loading.
               Designed for busy docks with large, easy-to-read screens.
             </p>
           </div>
@@ -22,7 +22,7 @@ export default function About() {
           <div>
             <h2 className="h2">Who it’s for</h2>
             <p>
-              Brokers &amp; Shippers helping dock staff confirm the proper trucks and drivers.
+              <strong>Brokers &amp; Shippers helping dock staff confirm the proper trucks and drivers.</strong>
             </p>
           </div>
 
@@ -30,21 +30,20 @@ export default function About() {
             <h2 className="h2">How it works</h2>
             <p>
               A Broker issues an <strong>AdbS Truck-Driver Verify Link</strong> for each shipment. 
-              The driver opens the driver link; dock staff open the dock link. 
+              The driver opens the <strong>AdbS Truck-Driver Link</strong>; dock staff open the dock link.
               At the dock, two questions confirm legitimacy:
               <br /><br />
-              • Does the USDOT# on the truck match? <br />
-              • Did the driver answer their phone when called? <br /><br />
+              • Does the USDOT# on the truck match?<br />
+              • Did the driver answer their phone when called?<br /><br />
               If both answers are “Yes,” the system displays <strong>Clear to Load</strong>. 
-              Otherwise, a professional <strong>Caution Alert – Do Not Load</strong> appears with a subtle red flash and alert tone.
+              Otherwise, a professional <strong>Caution Alert — Do Not Load</strong> appears with a subtle red flash and alert tone.
             </p>
           </div>
 
           <div>
-            <h2 className="h2">Privacy & Authenticity</h2>
+            <h2 className="h2">Privacy &amp; Authenticity</h2>
             <p>
-              The driver link conceals identifying data such as USDOT# and plate number. 
-              Verification happens only on the dock side, matching what’s entered against the broker or shipper’s record.
+              Verification happens on the dock side, matching what’s entered against the broker or shipper’s record.
             </p>
           </div>
         </div>
