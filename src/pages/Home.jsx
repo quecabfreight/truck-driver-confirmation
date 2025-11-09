@@ -9,7 +9,7 @@ function isAuthed() {
   const remembered = localStorage.getItem(LS_REMEMBER) === "true";
   const email = (localStorage.getItem(LS_EMAIL) || "").trim();
   const code = (localStorage.getItem(LS_CODE) || "").trim();
-  return remembered && email && code;
+  return remembered && !!email && !!code;
 }
 
 export default function Home() {
@@ -17,7 +17,6 @@ export default function Home() {
 
   useEffect(() => {
     setAllowed(isAuthed());
-    // also update if user toggles remember or edits fields in this tab
     const onStorage = () => setAllowed(isAuthed());
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
