@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { isBrokerOrShipper } from "../utils/auth";
+import { isBrokerOrShipper, LS_EMAIL } from "../utils/auth";
 
 const digits = (s="") => s.replace(/\D/g,"");
 const telDigits = (s="") => digits(s).slice(0,15);
@@ -40,7 +40,6 @@ export default function SmartLink() {
     plate: "",
     phone: "",
     dockEmails: "",
-    alertEmails: "", // Broker/Shipper alerts only
   });
 
   if (!allowed) return null;
@@ -51,18 +50,19 @@ export default function SmartLink() {
     const t = randomToken();
     setToken(t);
 
-    const vd = form.dot ? b64url({ d: digits(form.dot) }) : "";
-    const vp = form.plate ? b64url({ p: (form.plate || "").trim().toUpperCase().replace(/[\s-]/g,"") }) : "";
+    // Embed shipment data
+    const vd  = form.dot   ? b64url({ d: digits(form.dot) }) : "";
+    const vp  = form.plate ? b64url({ p: (form.plate || "").trim().toUpperCase().replace(/[\s-]/g,"") }) : "";
     const tel = form.phone ? telDigits(form.phone) : "";
 
-    // ALERT RECIPIENTS: broker/shipper only (NOT dock)
-    const alertList = (form.alertEmails || "").split(",").map(s=>s.trim()).filter(Boolean).join(",");
+    // ALERTS: default to logged-in broker/shipper email (no dock here)
+    const brokerEmail = (localStorage.getItem(LS_EMAIL) || "").trim();
 
     const params = new URLSearchParams();
     if (tel) params.set("tel", tel);
     if (vd)  params.set("vd", vd);
     if (vp)  params.set("vp", vp);
-    if (alertList) params.set("em", alertList); // used by Verify page for CAUTION alerts only
+    if (brokerEmail) params.set("em", brokerEmail);
 
     const du = `${base}#/s/${t}`;
     const ku = `${base}#/verify/${t}${params.toString() ? `?${params.toString()}` : ""}`;
@@ -70,7 +70,7 @@ export default function SmartLink() {
     setDriverUrl(du);
     setDockUrl(ku);
 
-    // Auto-copy both (for broker convenience only)
+    // Auto-copy both for broker convenience
     try {
       await navigator.clipboard.writeText(
         `Driver (AdbS Truck-Driver Link): ${du}\nDock (AdbS Truck-Driver Verify Link): ${ku}`
@@ -80,7 +80,7 @@ export default function SmartLink() {
     } catch { /* ignore */ }
   };
 
-  // Email ONLY the dock link to dock staff
+  // Email ONLY the dock verify link to dock staff
   const sendDockEmail = async () => {
     if (!dockUrl) return;
     const to = (form.dockEmails || "").split(",").map(s=>s.trim()).filter(Boolean).join(",");
@@ -136,7 +136,7 @@ export default function SmartLink() {
     <div className="page centered">
       <img src="/qc-logo.png" alt="QueCab AdbS" className="page-logo" />
       <div className="card">
-        <h1>Check In Link</h1>
+        <h1>Generate AdbS Truck-Driver Verification Link</h1>
 
         <div className="form" style={{ marginBottom: 12 }}>
           <div>
@@ -174,16 +174,6 @@ export default function SmartLink() {
               value={form.dockEmails}
               onChange={(e)=>setForm({...form, dockEmails: e.target.value})}
               placeholder="dock@example.com, checker@example.com"
-            />
-          </div>
-
-          <div>
-            <label>Alert Emails — Broker/Shipper only (comma-separated)</label>
-            <input
-              className="input"
-              value={form.alertEmails}
-              onChange={(e)=>setForm({...form, alertEmails: e.target.value})}
-              placeholder="you@company.com, dispatch@company.com"
             />
           </div>
 
