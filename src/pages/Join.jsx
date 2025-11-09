@@ -2,6 +2,13 @@ import React, { useState } from "react";
 
 export default function Join() {
   const [role, setRole] = useState("Broker");
+  const [mcDigits, setMcDigits] = useState("");
+
+  const handleMcChange = (e) => {
+    // keep digits only
+    const digits = (e.target.value || "").replace(/\D/g, "");
+    setMcDigits(digits);
+  };
 
   return (
     <div className="page centered">
@@ -15,12 +22,12 @@ export default function Join() {
         <div className="form">
           <div>
             <label>Legal Name or (Company Name)</label>
-            <input className="input" placeholder="Company Inc." />
+            <input className="input" />
           </div>
 
           <div>
             <label>Contact Name</label>
-            <input className="input" placeholder="Full name" />
+            <input className="input" />
           </div>
 
           <div>
@@ -36,13 +43,18 @@ export default function Join() {
           </div>
 
           <div>
-            <label>MC (tag + digits only) — Just prefix with MC</label>
-            <input className="input" placeholder="MC 123456" />
+            <label>MC#</label>
+            <input
+              className="input"
+              inputMode="numeric"
+              value={mcDigits}
+              onChange={handleMcChange}
+            />
           </div>
 
           <div>
             <label>EIN (optional)</label>
-            <input className="input" placeholder="12-3456789" />
+            <input className="input" />
           </div>
 
           <div>
