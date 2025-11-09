@@ -1,18 +1,44 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+
+const LS_EMAIL = "adbs_login_email";
+const LS_CODE = "adbs_login_code";
+const LS_REMEMBER = "adbs_login_remember";
+
+function isAuthed() {
+  const remembered = localStorage.getItem(LS_REMEMBER) === "true";
+  const email = (localStorage.getItem(LS_EMAIL) || "").trim();
+  const code = (localStorage.getItem(LS_CODE) || "").trim();
+  return remembered && email && code;
+}
 
 function randomToken() {
   return Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 10);
 }
 
 export default function SmartLink() {
+  const navigate = useNavigate();
+  const [allowed, setAllowed] = useState(false);
+
+  // Soft gate: if not "remembered" with values, send to /login
+  useEffect(() => {
+    if (isAuthed()) {
+      setAllowed(true);
+    } else {
+      navigate("/login", { replace: true });
+    }
+  }, [navigate]);
+
   const [token, setToken] = useState("");
   const [form, setForm] = useState({ dot: "", plate: "", phone: "" });
 
   const gen = () => setToken(randomToken());
 
-  const driverUrl = token ? `${location.origin}${location.hash ? location.pathname + location.hash : location.pathname}#/s/${token}` : "";
-  const dockUrl   = token ? `${location.origin}${location.hash ? location.pathname + location.hash : location.pathname}#/verify/${token}` : "";
+  if (!allowed) return null; // no flicker
+
+  const base = `${location.origin}${location.hash ? location.pathname + location.hash : location.pathname}`;
+  const driverUrl = token ? `${base}#/s/${token}` : "";
+  const dockUrl   = token ? `${base}#/verify/${token}` : "";
 
   const copyBoth = async () => {
     const message = [
@@ -31,24 +57,17 @@ export default function SmartLink() {
   };
 
   const sendAll = async () => {
-    // Try native share first
     const text = `AdbS Links\n\nDriver: ${driverUrl}\nDock: ${dockUrl}`;
     try {
       if (navigator.share) {
         await navigator.share({ title: "QueCab AdbS", text, url: driverUrl });
         return;
       }
-    } catch {
-      /* ignore and fall back below */
-    }
-    // Fallback: open email, then (optionally) sms
+    } catch { /* fall through */ }
     const mailto = `mailto:?subject=AdbS%20Links&body=${encodeURIComponent(text)}`;
     window.location.href = mailto;
-
-    // If driver phone provided, try sms link too (best-effort)
     if (form.phone) {
       const smsBody = encodeURIComponent(text);
-      // sms: support is device-dependent; no harm if it’s ignored on desktop
       setTimeout(() => {
         window.location.href = `sms:${form.phone}?&body=${smsBody}`;
       }, 500);
