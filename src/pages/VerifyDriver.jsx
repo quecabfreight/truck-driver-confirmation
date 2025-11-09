@@ -1,30 +1,63 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 
+function YnButtons({ label, value, onChange, showCheck=false }) {
+  const yes = value === "Yes";
+  const no  = value === "No";
+  return (
+    <div>
+      <label style={{ display: "block", marginBottom: 8, fontWeight: 700 }}>
+        {label}
+        {showCheck && yes && <span style={{ color: "#2aa865", marginLeft: 10 }}>✅</span>}
+        {showCheck && no  && <span style={{ color: "#c62828", marginLeft: 10 }}>❌</span>}
+      </label>
+      <div style={{ display: "flex", gap: 12 }}>
+        <button
+          type="button"
+          className="btn"
+          style={{ background: yes ? "#2aa865" : "var(--button-bg)", color: yes ? "#fff" : "var(--button-text)" }}
+          onClick={() => onChange("Yes")}
+        >
+          Y
+        </button>
+        <button
+          type="button"
+          className="btn"
+          style={{ background: no ? "#c62828" : "var(--button-bg)", color: no ? "#fff" : "var(--button-text)" }}
+          onClick={() => onChange("No")}
+        >
+          N
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function VerifyDriver() {
   const { token } = useParams();
   const [passedPin, setPassedPin] = useState(false);
   const [pin, setPin] = useState("");
+
   const [usdMatch, setUsdMatch] = useState("");
+  const [plateMatch, setPlateMatch] = useState("");
   const [ansCall, setAnsCall] = useState("");
+
   const audioRef = useRef(null);
 
-  // keep existing behavior idea: PIN gate first
   const submitPin = (e) => {
     e.preventDefault();
-    // demo: accept any 4+ chars; real logic unchanged elsewhere
     if ((pin || "").trim().length >= 4) setPassedPin(true);
   };
 
-  const bothYes = usdMatch === "Yes" && ansCall === "Yes";
-  const showResult = usdMatch && ansCall;
+  const allYes = usdMatch === "Yes" && plateMatch === "Yes" && ansCall === "Yes";
+  const showResult = usdMatch && plateMatch && ansCall;
 
   useEffect(() => {
-    if (showResult && !bothYes && audioRef.current) {
+    if (showResult && !allYes && audioRef.current) {
       audioRef.current.currentTime = 0;
       audioRef.current.play().catch(() => {});
     }
-  }, [showResult, bothYes]);
+  }, [showResult, allYes]);
 
   return (
     <div className="page centered">
@@ -50,31 +83,48 @@ export default function VerifyDriver() {
           <p className="muted" style={{ marginBottom: 12 }}>Token: {token}</p>
 
           <div className="form">
-            <div>
-              <label>USDOT matches?</label>
-              <select className="input select" value={usdMatch} onChange={(e)=>setUsdMatch(e.target.value)}>
-                <option value="">Select…</option>
-                <option>Yes</option>
-                <option>No</option>
-              </select>
-            </div>
+            <YnButtons
+              label="Does the USDOT# on the truck match?"
+              value={usdMatch}
+              onChange={setUsdMatch}
+              showCheck
+            />
+            <YnButtons
+              label="Does the license plate match?"
+              value={plateMatch}
+              onChange={setPlateMatch}
+              showCheck
+            />
+            <YnButtons
+              label="Did the driver answer their phone when called?"
+              value={ansCall}
+              onChange={setAnsCall}
+            />
+          </div>
 
-            <div>
-              <label>Driver answered call?</label>
-              <select className="input select" value={ansCall} onChange={(e)=>setAnsCall(e.target.value)}>
-                <option value="">Select…</option>
-                <option>Yes</option>
-                <option>No</option>
-              </select>
-            </div>
+          <div style={{ marginTop: 16, display: "flex", gap: 12 }}>
+            <button
+              className="btn"
+              onClick={() => {
+                // submit after the phone call to driver
+                if (!showResult) {
+                  // force result visibility only if all answered
+                  if (!usdMatch || !plateMatch || !ansCall) {
+                    alert("Please answer all three questions.");
+                  }
+                }
+              }}
+            >
+              SUBMIT
+            </button>
           </div>
 
           {showResult && (
             <div
-              className={`banner ${bothYes ? "success" : "danger flash-danger"}`}
+              className={`banner ${allYes ? "success" : "danger flash-danger"}`}
               style={{ marginTop: 16 }}
             >
-              {bothYes ? "✅ CLEAR TO LOAD" : "🚫 CAUTION ALERT — DO NOT LOAD"}
+              {allYes ? "✅ CLEAR TO LOAD" : "🚫 CAUTION ALERT — DO NOT LOAD"}
             </div>
           )}
         </div>
