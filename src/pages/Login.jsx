@@ -1,23 +1,21 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { LS_EMAIL, LS_CODE, LS_REMEMBER, LS_ROLE, getRoleFromCode } from "../utils/auth";
 
-const LS_EMAIL = "adbs_login_email";
-const LS_CODE = "adbs_login_code";
-const LS_REMEMBER = "adbs_login_remember";
-
-// auto-format codes like QC-BRK-51164
+// auto-format codes like QC-BRK-51164 (keeps your hyphens behavior)
 function formatAccessCode(raw) {
-  const cleaned = (raw || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
-  const m = cleaned.match(/^([A-Z]*)(\d*)$/);
-  if (!m) return cleaned;
-  const letters = m[1] || "", digits = m[2] || "";
-  if (letters.length >= 5) {
-    const p1 = letters.slice(0,2), p2 = letters.slice(2,5), rest = letters.slice(5);
-    return p1 + (letters.length>2?("-"+p2):"") + rest + (digits?("-"+digits):"");
+  const cleaned = (raw || "").toUpperCase().replace(/[^A-Z0-9-]/g, "");
+  // if user types without hyphens, try to insert after QC and BRK/SHP
+  if (!cleaned.includes("-") && cleaned.length >= 5) {
+    const m = cleaned.match(/^(QC)?([A-Z]{3})?(\d.*)$/);
+    if (m) {
+      const qc = m[1] ? "QC" : cleaned.startsWith("QC") ? "QC" : "";
+      const seg = m[2] || "";
+      const rest = m[3] || "";
+      if (qc && (seg === "BRK" || seg === "SHP")) return `${qc}-${seg}-${rest}`;
+    }
   }
-  if (letters.length <= 2) return letters + (letters.length===2 && digits?("-"+digits):digits);
-  const p1 = letters.slice(0,2), p2 = letters.slice(2);
-  return p1 + "-" + p2 + (digits?("-"+digits):"");
+  return cleaned;
 }
 
 export default function Login() {
@@ -39,18 +37,17 @@ export default function Login() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // minimal guard: need something in both fields
-    if (!email.trim() || !code.trim()) {
-      alert("Enter Email and Access Code.");
-      return;
-    }
-    // force remember so /smart becomes available immediately
+    if (!email.trim() || !code.trim()) { alert("Enter Email and Access Code."); return; }
+
+    const role = getRoleFromCode(code);
+    if (!role) { alert("Access Code invalid for role. Use a QC-BRK-… or QC-SHP-… code."); return; }
+
     localStorage.setItem(LS_EMAIL, email.trim());
     localStorage.setItem(LS_CODE, code.trim());
     localStorage.setItem(LS_REMEMBER, "true");
-    setRemember(true);
-    // go straight to Check In
-    navigate("/smart");
+    localStorage.setItem(LS_ROLE, role);
+
+    navigate("/smart"); // brokers/shippers land on the tool
   };
 
   const toggleRemember = (checked) => {
@@ -58,6 +55,7 @@ export default function Login() {
     if (!checked) {
       localStorage.removeItem(LS_EMAIL);
       localStorage.removeItem(LS_CODE);
+      localStorage.removeItem(LS_ROLE);
       localStorage.setItem(LS_REMEMBER, "false");
     } else {
       localStorage.setItem(LS_EMAIL, email.trim());
@@ -74,35 +72,17 @@ export default function Login() {
         <form className="form" onSubmit={handleSubmit}>
           <div>
             <label>Email</label>
-            <input
-              className="input"
-              value={email}
-              onChange={(e)=>setEmail(e.target.value)}
-              autoCapitalize="none"
-              autoCorrect="off"
-              inputMode="email"
-            />
+            <input className="input" value={email} onChange={(e)=>setEmail(e.target.value)}
+                   autoCapitalize="none" autoCorrect="off" inputMode="email" />
           </div>
           <div>
             <label>Access Code</label>
-            <input
-              className="input"
-              placeholder="Enter access code"
-              value={code}
-              onChange={onCodeChange}
-              autoCapitalize="characters"
-              autoCorrect="off"
-              inputMode="text"
-            />
+            <input className="input" placeholder="Enter access code"
+                   value={code} onChange={onCodeChange} autoCapitalize="characters" autoCorrect="off" />
           </div>
           <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-            <input
-              id="remember"
-              type="checkbox"
-              checked={remember}
-              onChange={(e)=>toggleRemember(e.target.checked)}
-              style={{ width:24, height:24 }}
-            />
+            <input id="remember" type="checkbox" checked={remember}
+                   onChange={(e)=>toggleRemember(e.target.checked)} style={{ width:24, height:24 }} />
             <label htmlFor="remember">Remember this device</label>
           </div>
           <button className="btn" type="submit">Continue</button>
