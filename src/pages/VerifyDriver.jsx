@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
+import InAppBrowserBanner from "../components/InAppBrowserBanner";
+
 
 // ---- helpers (unchanged core) ----
 const decodeB64url = (s="") => {
