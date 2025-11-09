@@ -1,84 +1,57 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const LS_EMAIL = "adbs_login_email";
 const LS_CODE = "adbs_login_code";
 const LS_REMEMBER = "adbs_login_remember";
 
-/**
- * Auto-format access codes like "QC-BRK-51164".
- * Rules:
- * - Uppercase everything.
- * - Strip non-alphanumerics during typing.
- * - If the code starts with 5+ letters, format as: AA-AAA-##### (QC-BRK-51164 style).
- * - Otherwise, just insert hyphens between letter groups and the digit group when possible.
- */
+// auto-format codes like QC-BRK-51164
 function formatAccessCode(raw) {
   const cleaned = (raw || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
-
-  // Split leading letters and trailing digits
-  const match = cleaned.match(/^([A-Z]*)(\d*)$/);
-  if (!match) return cleaned;
-
-  const letters = match[1] || "";
-  const digits = match[2] || "";
-
-  // If we have 5+ letters up front, use AA-AAA-##### mask
+  const m = cleaned.match(/^([A-Z]*)(\d*)$/);
+  if (!m) return cleaned;
+  const letters = m[1] || "", digits = m[2] || "";
   if (letters.length >= 5) {
-    const part1 = letters.slice(0, 2);
-    const part2 = letters.slice(2, 5);
-    const restLetters = letters.slice(5); // unlikely, but append without extra hyphens
-
-    let out = part1;
-    if (letters.length > 2) out += "-" + part2;
-    if (restLetters) out += restLetters; // append any extra letters directly
-
-    if (digits.length > 0) out += "-" + digits;
-    return out;
+    const p1 = letters.slice(0,2), p2 = letters.slice(2,5), rest = letters.slice(5);
+    return p1 + (letters.length>2?("-"+p2):"") + rest + (digits?("-"+digits):"");
   }
-
-  // If <5 letters, be graceful:
-  // Add a hyphen after first 2 letters if we have more letters or any digits following.
-  if (letters.length <= 2) {
-    let out = letters;
-    if (letters.length === 2 && (digits.length > 0)) out += "-";
-    return out + digits;
-  }
-
-  // 3–4 letters: split 2 / remaining, then digits
-  const part1 = letters.slice(0, 2);
-  const part2 = letters.slice(2);
-  let out = part1 + "-" + part2;
-  if (digits.length > 0) out += "-" + digits;
-  return out;
+  if (letters.length <= 2) return letters + (letters.length===2 && digits?("-"+digits):digits);
+  const p1 = letters.slice(0,2), p2 = letters.slice(2);
+  return p1 + "-" + p2 + (digits?("-"+digits):"");
 }
 
 export default function Login() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [remember, setRemember] = useState(true);
 
-  // Load saved values on first load
   useEffect(() => {
-    const savedRemember = localStorage.getItem(LS_REMEMBER);
-    const isRemembered = savedRemember === "true";
-    setRemember(savedRemember === null ? true : isRemembered);
-
-    if (isRemembered) {
-      const savedEmail = localStorage.getItem(LS_EMAIL) || "";
-      const savedCode = localStorage.getItem(LS_CODE) || "";
-      setEmail(savedEmail);
-      setCode(savedCode);
+    const r = localStorage.getItem(LS_REMEMBER) === "true";
+    setRemember(localStorage.getItem(LS_REMEMBER) === null ? true : r);
+    if (r) {
+      setEmail(localStorage.getItem(LS_EMAIL) || "");
+      setCode(localStorage.getItem(LS_CODE) || "");
     }
   }, []);
 
-  // Save as you type (only if remember = true)
-  useEffect(() => {
-    if (remember) {
-      localStorage.setItem(LS_EMAIL, email || "");
-      localStorage.setItem(LS_CODE, code || "");
-      localStorage.setItem(LS_REMEMBER, "true");
+  const onCodeChange = (e) => setCode(formatAccessCode(e.target.value));
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    // minimal guard: need something in both fields
+    if (!email.trim() || !code.trim()) {
+      alert("Enter Email and Access Code.");
+      return;
     }
-  }, [email, code, remember]);
+    // force remember so /smart becomes available immediately
+    localStorage.setItem(LS_EMAIL, email.trim());
+    localStorage.setItem(LS_CODE, code.trim());
+    localStorage.setItem(LS_REMEMBER, "true");
+    setRemember(true);
+    // go straight to Check In
+    navigate("/smart");
+  };
 
   const toggleRemember = (checked) => {
     setRemember(checked);
@@ -87,25 +60,10 @@ export default function Login() {
       localStorage.removeItem(LS_CODE);
       localStorage.setItem(LS_REMEMBER, "false");
     } else {
-      localStorage.setItem(LS_EMAIL, email || "");
-      localStorage.setItem(LS_CODE, code || "");
+      localStorage.setItem(LS_EMAIL, email.trim());
+      localStorage.setItem(LS_CODE, code.trim());
       localStorage.setItem(LS_REMEMBER, "true");
     }
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (remember) {
-      localStorage.setItem(LS_EMAIL, email || "");
-      localStorage.setItem(LS_CODE, code || "");
-      localStorage.setItem(LS_REMEMBER, "true");
-    }
-    // Phase 1: stay on page; routing will come after backend wires in.
-  };
-
-  const onCodeChange = (e) => {
-    const next = formatAccessCode(e.target.value);
-    setCode(next);
   };
 
   return (
@@ -113,20 +71,18 @@ export default function Login() {
       <img src="/qc-logo.png" alt="QueCab AdbS" className="page-logo" />
       <div className="card">
         <h1>Log In</h1>
-
         <form className="form" onSubmit={handleSubmit}>
           <div>
             <label>Email</label>
             <input
               className="input"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e)=>setEmail(e.target.value)}
               autoCapitalize="none"
               autoCorrect="off"
               inputMode="email"
             />
           </div>
-
           <div>
             <label>Access Code</label>
             <input
@@ -139,18 +95,16 @@ export default function Login() {
               inputMode="text"
             />
           </div>
-
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:12 }}>
             <input
               id="remember"
               type="checkbox"
               checked={remember}
-              onChange={(e) => toggleRemember(e.target.checked)}
-              style={{ width: 24, height: 24 }}
+              onChange={(e)=>toggleRemember(e.target.checked)}
+              style={{ width:24, height:24 }}
             />
             <label htmlFor="remember">Remember this device</label>
           </div>
-
           <button className="btn" type="submit">Continue</button>
         </form>
       </div>
