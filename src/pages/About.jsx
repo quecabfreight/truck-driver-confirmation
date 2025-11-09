@@ -15,8 +15,7 @@ export default function About() {
             <h2 className="h2">What it is</h2>
             <p>
               A secure, real-time verification system that confirms the <strong>Truck-Driver</strong> 
-              (truck and driver pair) before loading. Designed for busy docks with large, 
-              easy-to-read screens.
+              (truck and driver pair) before loading. Designed for docks of any size.
             </p>
           </div>
 
@@ -30,9 +29,9 @@ export default function About() {
           <div>
             <h2 className="h2">How it works</h2>
             <p>
-              A Broker issues an <strong>AdbS Truck-Driver Verify Link</strong> for each shipment. 
-              The driver opens the <strong>AdbS Truck-Driver Link</strong>; dock staff open the dock link. 
-              At the dock, three questions confirm legitimacy:
+              Broker or Shipper issues an <strong>AdbS Truck-Driver Verify Link</strong> for each shipment. 
+              The driver opens the <strong>AdbS Truck-Driver Link</strong>; dock staff confirms link qualifier 
+              questions for legitimacy:
               <br /><br />
               • Does the USDOT# on the truck match?<br />
               • Does the license plate match?<br />
