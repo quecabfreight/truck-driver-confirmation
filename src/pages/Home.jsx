@@ -1,25 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-
-const LS_EMAIL = "adbs_login_email";
-const LS_CODE = "adbs_login_code";
-const LS_REMEMBER = "adbs_login_remember";
-
-function isAuthed() {
-  const remembered = localStorage.getItem(LS_REMEMBER) === "true";
-  const email = (localStorage.getItem(LS_EMAIL) || "").trim();
-  const code = (localStorage.getItem(LS_CODE) || "").trim();
-  return remembered && !!email && !!code;
-}
+import { isBrokerOrShipper } from "../utils/auth";
 
 export default function Home() {
   const [allowed, setAllowed] = useState(false);
 
   useEffect(() => {
-    setAllowed(isAuthed());
-    const onStorage = () => setAllowed(isAuthed());
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
+    const update = () => setAllowed(isBrokerOrShipper());
+    update();
+    window.addEventListener("storage", update);
+    return () => window.removeEventListener("storage", update);
   }, []);
 
   return (
