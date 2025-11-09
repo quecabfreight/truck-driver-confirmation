@@ -14,7 +14,7 @@ export default function Join() {
 
         <div className="form">
           <div>
-            <label>Legal Name</label>
+            <label>Legal Name or (Company Name)</label>
             <input className="input" placeholder="Company Inc." />
           </div>
 
@@ -25,14 +25,18 @@ export default function Join() {
 
           <div>
             <label>Role</label>
-            <select className="input select" value={role} onChange={(e)=>setRole(e.target.value)}>
+            <select
+              className="input select"
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+            >
               <option>Broker</option>
               <option>Shipper</option>
             </select>
           </div>
 
           <div>
-            <label>MC (tag + digits only)</label>
+            <label>MC (tag + digits only) — Just prefix with MC</label>
             <input className="input" placeholder="MC 123456" />
           </div>
 
