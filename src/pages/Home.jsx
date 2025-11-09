@@ -13,7 +13,7 @@ export default function Home() {
       <div className="tile-row">
         <Link to="/join" className="tile">Request Access</Link>
         <Link to="/login" className="tile">Already Authorized? Log In</Link>
-        <div className="tile">About (placeholder)</div>
+        <div className="tile">About</div>
       </div>
     </div>
   );
