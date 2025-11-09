@@ -1,26 +1,49 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+
+const LS_EMAIL = "adbs_login_email";
+const LS_CODE = "adbs_login_code";
+const LS_REMEMBER = "adbs_login_remember";
+
+const digits = (s = "") => s.replace(/\D/g, "");
+const formatPhoneUS = (s = "") => {
+  const d = digits(s).slice(0, 10);
+  if (d.length <= 3) return d;
+  if (d.length <= 6) return `${d.slice(0,3)}-${d.slice(3)}`;
+  return `${d.slice(0,3)}-${d.slice(3,6)}-${d.slice(6)}`;
+};
+const telDigits = (s = "") => digits(s).slice(0, 15);
+
+function isAuthed() {
+  const remembered = localStorage.getItem(LS_REMEMBER) === "true";
+  const email = (localStorage.getItem(LS_EMAIL) || "").trim();
+  const code = (localStorage.getItem(LS_CODE) || "").trim();
+  return remembered && email && code;
+}
 
 function randomToken() {
   return Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 10);
 }
 
-function normalizePhone(raw="") {
-  const digits = raw.replace(/\D/g, "").slice(0, 15);
-  if (digits.length === 10) return `${digits.slice(0,3)}-${digits.slice(3,6)}-${digits.slice(6)}`;
-  return digits;
-}
-
 export default function SmartLink() {
+  const navigate = useNavigate();
+  const [allowed, setAllowed] = useState(false);
+
+  useEffect(() => {
+    if (isAuthed()) setAllowed(true);
+    else navigate("/login", { replace: true });
+  }, [navigate]);
+
   const [token, setToken] = useState("");
   const [form, setForm] = useState({ dot: "", plate: "", phone: "", emails: "" });
 
   const gen = () => setToken(randomToken());
 
+  if (!allowed) return null;
+
   const base = `${location.origin}${location.hash ? location.pathname + location.hash : location.pathname}`;
   const driverUrl = token ? `${base}#/s/${token}` : "";
-  // Driver phone goes ONLY to the dock link (not to the driver link)
-  const telParam = form.phone ? `?tel=${encodeURIComponent(normalizePhone(form.phone))}` : "";
+  const telParam = form.phone ? `?tel=${encodeURIComponent(telDigits(form.phone))}` : "";
   const dockUrl   = token ? `${base}#/verify/${token}${telParam}` : "";
 
   const copyBoth = async () => {
@@ -34,17 +57,12 @@ export default function SmartLink() {
       `USDOT#: ${form.dot || "(not provided)"}`,
       `Plate: ${form.plate || "(not provided)"}`
     ].join("\n");
-    try {
-      await navigator.clipboard.writeText(message);
-      alert("Links + details copied.");
-    } catch {
-      alert("Copy failed. You can still use Email/SMS.");
-    }
+    try { await navigator.clipboard.writeText(message); alert("Links + details copied."); }
+    catch { alert("Copy failed. You can still use Email/SMS."); }
   };
 
   const sendAll = async () => {
     if (!token) return;
-    const cleanPhone = normalizePhone(form.phone);
     const bodyLines = [
       "QueCab AdbS — Shipment Links",
       "",
@@ -52,13 +70,12 @@ export default function SmartLink() {
       `Dock (AdbS Truck-Driver Verify Link): ${dockUrl}`,
       "",
       `USDOT#: ${form.dot || "(not provided)"}`,
-      `Plate: ${form.plate || "(not provided)"}`,
+      `Plate: ${form.plate || "(not provided)"}`
     ];
     const emailBody = encodeURIComponent(bodyLines.join("\n"));
     const mailtoTo = (form.emails || "").split(",").map(s=>s.trim()).filter(Boolean).join(",");
     const mailto = `mailto:${mailtoTo}?subject=AdbS%20Shipment%20Links&body=${emailBody}`;
 
-    // Try native share first (mobile)
     try {
       if (navigator.share) {
         await navigator.share({ title: "QueCab AdbS — Shipment Links", text: bodyLines.join("\n") });
@@ -69,13 +86,10 @@ export default function SmartLink() {
       window.location.href = mailto;
     }
 
-    // If driver phone provided, open SMS with the DRIVER link only
-    if (cleanPhone) {
+    const d = telDigits(form.phone);
+    if (d) {
       const smsText = encodeURIComponent(`AdbS Truck-Driver Link:\n${driverUrl}`);
-      setTimeout(() => {
-        // Device-dependent; harmless on desktop
-        window.location.href = `sms:${cleanPhone}?&body=${smsText}`;
-      }, 600);
+      setTimeout(() => { window.location.href = `sms:${d}?&body=${smsText}`; }, 600);
     }
   };
 
@@ -94,9 +108,9 @@ export default function SmartLink() {
             <input
               className="input"
               value={form.dot}
-              onChange={(e)=>setForm({...form, dot:e.target.value.replace(/\D/g,"")})}
-              placeholder=""
+              onChange={(e)=>setForm({...form, dot: digits(e.target.value).slice(0, 8)})}
               inputMode="numeric"
+              placeholder=""
             />
           </div>
           <div>
@@ -104,7 +118,7 @@ export default function SmartLink() {
             <input
               className="input"
               value={form.plate}
-              onChange={(e)=>setForm({...form, plate:e.target.value.trim().toUpperCase()})}
+              onChange={(e)=>setForm({...form, plate: e.target.value.toUpperCase()})}
               placeholder=""
             />
           </div>
@@ -113,9 +127,9 @@ export default function SmartLink() {
             <input
               className="input"
               value={form.phone}
-              onChange={(e)=>setForm({...form, phone:e.target.value})}
-              placeholder="123-456-7890"
+              onChange={(e)=>setForm({...form, phone: formatPhoneUS(e.target.value)})}
               inputMode="tel"
+              placeholder="123-456-7890"
             />
           </div>
           <div>
@@ -123,7 +137,7 @@ export default function SmartLink() {
             <input
               className="input"
               value={form.emails}
-              onChange={(e)=>setForm({...form, emails:e.target.value})}
+              onChange={(e)=>setForm({...form, emails: e.target.value})}
               placeholder="dock@example.com, checker@example.com"
             />
           </div>
@@ -143,10 +157,6 @@ export default function SmartLink() {
               <button className="btn" onClick={copyBoth}>Copy Both</button>
               <button className="btn" onClick={sendAll}>Send Links</button>
             </div>
-
-            <p className="muted" style={{ marginTop: 10 }}>
-              Driver gets the driver link by SMS; recipients get both links by email. USDOT &amp; Plate are in the email body only.
-            </p>
           </div>
         )}
       </div>
