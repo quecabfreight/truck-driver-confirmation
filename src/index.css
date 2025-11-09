@@ -2,10 +2,7 @@
    QUECAB ADBS — GLOBAL THEME
    ========================= */
 
-/* Light is readable. Dark is default. Inputs are ALWAYS opposite of the page. */
-
 :root {
-  /* LIGHT */
   --bg: #ffffff;
   --text: #0b0b0b;
   --card: #f2f2f2;
@@ -25,7 +22,6 @@
 }
 
 [data-theme="dark"] {
-  /* DARK */
   --bg: #0d0f13;
   --text: #f6f7f9;
   --card: #161a20;
@@ -60,7 +56,8 @@ html, body {
    ========================= */
 .header {
   background: var(--card);
-  border-bottom: 2px solid var(--button-bg);
+  /* removed the bottom border line you circled */
+  border-bottom: none;
 }
 .nav {
   max-width: 1100px;
@@ -73,13 +70,15 @@ html, body {
   flex-wrap: wrap;
 }
 .nav-link {
-  text-decoration: none;
+  text-decoration: none;          /* not underlined */
   color: var(--text);
-  font-weight: 800;
-  font-size: 24px; /* NAV = 24pt bold */
-  padding-bottom: 2px;
+  font-weight: 900;
+  font-size: 24px;                /* big */
+  padding-bottom: 0;              /* no underline/border */
 }
-.nav-link.active { border-bottom: 3px solid var(--button-bg); }
+/* kill active underline */
+.nav-link.active { border: none; }
+
 .theme-toggle {
   margin-left: 8px;
   font-size: 24px;
@@ -92,17 +91,14 @@ html, body {
   cursor: pointer;
 }
 
+/* Force white nav text in dark mode for punch */
+[data-theme="dark"] .nav-link { color: #ffffff; }
+
 /* =========================
    LAYOUT / CARDS
    ========================= */
-.page {
-  max-width: 1100px;
-  margin: 0 auto;
-}
-.centered {
-  max-width: 820px;
-  margin: 0 auto;
-}
+.page { max-width: 1100px; margin: 0 auto; }
+.centered { max-width: 820px; margin: 0 auto; }
 .card {
   background: var(--card);
   border: 1px solid rgba(0,0,0,0.1);
@@ -115,7 +111,7 @@ html, body {
    ========================= */
 h1, .h1 { font-size: 2rem; font-weight: 900; margin: 0 0 16px; }   /* ≈ 48pt */
 h2, .h2 { font-size: 1.6rem; font-weight: 800; margin: 0 0 14px; } /* ≈ 38pt */
-p, label, input, select, textarea, button { font-size: 24px; }      /* 24pt */
+p, label, input, select, textarea, button { font-size: 24px; }
 
 .muted { color: var(--muted); }
 
@@ -133,33 +129,25 @@ p, label, input, select, textarea, button { font-size: 24px; }      /* 24pt */
 /* =========================
    FORMS — BIG, HIGH-CONTRAST
    ========================= */
-.form {
-  display: grid;
-  gap: 16px;
-}
-label {
-  font-weight: 700;
-  display: block;
-  margin-bottom: 6px;
-}
+.form { display: grid; gap: 16px; }
+label { font-weight: 700; display: block; margin-bottom: 6px; }
 .input, .select, .textarea {
   width: 100%;
-  min-height: 58px;                   /* ≥ 54px */
+  min-height: 58px;
   padding: 12px 16px;
   border-radius: 12px;
   border: 2px solid var(--input-border);
-  background: var(--input-bg);        /* opposite of page */
+  background: var(--input-bg);  /* opposite of page */
   color: var(--input-text);
   outline: none;
 }
 .textarea { min-height: 120px; resize: vertical; }
-.input::placeholder, .textarea::placeholder {
-  color: rgba(255,255,255,0.85);      /* works for dark inputs */
-}
+
+/* placeholder contrast tuned for both themes */
+.input::placeholder, .textarea::placeholder { color: rgba(255,255,255,0.85); }
 [data-theme="dark"] .input::placeholder,
-[data-theme="dark"] .textarea::placeholder {
-  color: #5a5f67;                     /* darker placeholder on white */
-}
+[data-theme="dark"] .textarea::placeholder { color: #5a5f67; }
+
 .input:focus, .select:focus, .textarea:focus {
   border-color: var(--focus);
   box-shadow: 0 0 0 4px rgba(58,122,254,0.25);
@@ -190,6 +178,8 @@ label {
   background: var(--card);
   border: 1px solid rgba(0,0,0,0.08);
   font-weight: 900;
+  text-decoration: none;        /* no underline on tiles */
+  color: var(--text);           /* white in dark mode automatically */
 }
 
 /* Verify states */
@@ -211,4 +201,4 @@ label {
 .flash-danger { animation: adbFlash 800ms ease-in-out 1; }
 
 /* Footer */
-footer { text-align: center; padding: 20px 0 28px; opacity: 0.75; }
+footer { text-align: center; padding: 20px 0 28px; opacity: 0.85; }
