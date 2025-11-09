@@ -61,7 +61,7 @@ export default function SmartLink() {
     setDriverUrl(du);
     setDockUrl(ku);
 
-    // Auto-copy both
+    // Auto-copy both to help the broker
     try {
       await navigator.clipboard.writeText(
         `Driver (AdbS Truck-Driver Link): ${du}\nDock (AdbS Truck-Driver Verify Link): ${ku}`
@@ -71,7 +71,7 @@ export default function SmartLink() {
     } catch { /* ignore */ }
   };
 
-  const sendAll = async () => {
+  const sendLinksEmail = async () => {
     if (!token) return;
     const lines = [
       "QueCab AdbS — Shipment Links",
@@ -92,12 +92,34 @@ export default function SmartLink() {
     } catch {
       window.location.href = mailto;
     }
+  };
 
+  const textDriver = () => {
+    if (!token) return;
     const d = telDigits(form.phone);
-    if (d) {
-      const smsText = encodeURIComponent(`AdbS Truck-Driver Link:\n${driverUrl}`);
-      setTimeout(() => { window.location.href = `sms:${d}?&body=${smsText}`; }, 600);
-    }
+    if (!d) { alert("Enter the driver’s phone number first."); return; }
+    const smsText = encodeURIComponent(`AdbS Truck-Driver Link:\n${driverUrl}`);
+    // Open the default SMS composer on phones. Desktop may ignore this (that’s fine).
+    const uri = `sms:${d}?&body=${smsText}`;
+    window.location.href = uri;
+  };
+
+  const copyDriver = async () => {
+    if (!driverUrl) return;
+    try {
+      await navigator.clipboard.writeText(driverUrl);
+      alert("Driver link copied.");
+    } catch { /* ignore */ }
+  };
+
+  const copyBoth = async () => {
+    if (!driverUrl || !dockUrl) return;
+    try {
+      await navigator.clipboard.writeText(
+        `Driver (AdbS Truck-Driver Link): ${driverUrl}\nDock (AdbS Truck-Driver Verify Link): ${dockUrl}`
+      );
+      alert("Both links copied.");
+    } catch { /* ignore */ }
   };
 
   return (
@@ -135,15 +157,12 @@ export default function SmartLink() {
           {justCopied && <p className="muted" style={{ marginTop: 8 }}>Links copied to clipboard.</p>}
         </div>
 
-        {/* No raw token/URLs, no open buttons. Broker actions only: */}
         {token && (
           <div style={{ display:"flex", gap:12, flexWrap:"wrap" }}>
-            <button className="btn" onClick={sendAll}>Send Links</button>
-            <button className="btn" onClick={()=>{
-              navigator.clipboard.writeText(
-                `Driver (AdbS Truck-Driver Link): ${driverUrl}\nDock (AdbS Truck-Driver Verify Link): ${dockUrl}`
-              ).catch(()=>{});
-            }}>Copy Again</button>
+            <button className="btn" onClick={textDriver}>Text Driver</button>
+            <button className="btn" onClick={copyDriver}>Copy Driver Link</button>
+            <button className="btn" onClick={sendLinksEmail}>Send Links (Email)</button>
+            <button className="btn" onClick={copyBoth}>Copy Both</button>
           </div>
         )}
       </div>
