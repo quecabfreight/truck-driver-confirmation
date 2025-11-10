@@ -6,50 +6,26 @@ export default function About() {
       <img src="/qc-logo.png" alt="QueCab AdbS" className="page-logo" />
       <div className="card">
         <h1>About QueCab AdbS</h1>
-        <p className="muted" style={{ marginBottom: 16 }}>
-          AdbS = Anti-Double Brokering System
+        <p style={{ marginTop: 8 }}>
+          Designed for docks of any size. Big text, clean screens, no gimmicks.
         </p>
 
-        <div style={{ display: "grid", gap: 14 }}>
-          <div>
-            <h2 className="h2">What it is</h2>
-            <p>
-              A secure, real-time verification system that confirms the <strong>Truck-Driver</strong> 
-              (truck and driver pair) before loading. Designed for docks of any size.
-            </p>
-          </div>
+        <h2 className="h2">What it is</h2>
+        <p>Brokers &amp; Shippers helping dock staff confirm the proper trucks and drivers.</p>
 
-          <div>
-            <h2 className="h2">Who it’s for</h2>
-            <p>
-              <strong>Brokers &amp; Shippers helping dock staff confirm the proper trucks and drivers.</strong>
-            </p>
-          </div>
+        <h2 className="h2">How it works</h2>
+        <ol>
+          <li>Broker/Shipper generates one AdbS Truck-Driver Verification Link per shipment.</li>
+          <li>Driver receives the <strong>AdbS Truck-Driver Link</strong> by text and taps it.</li>
+          <li>Dock receives the <strong>AdbS Truck-Driver Verify Link</strong> by email, types what they see (USDOT# and Plate), calls the driver, then submits.</li>
+        </ol>
+        <p>Phone question: dock taps Y if the driver answered their call; N if not.</p>
 
-          <div>
-            <h2 className="h2">How it works</h2>
-            <p>
-              Broker or Shipper issues an <strong>AdbS Truck-Driver Verify Link</strong> for each shipment. 
-              The driver opens the <strong>AdbS Truck-Driver Link</strong>; dock staff confirms link qualifier 
-              questions for legitimacy:
-              <br /><br />
-              • Does the USDOT# on the truck match?<br />
-              • Does the license plate match?<br />
-              • Did the driver answer their phone when called?<br /><br />
-              If all answers are “Yes,” the system displays <strong>Clear to Load</strong>. 
-              Otherwise, a professional <strong>Caution Alert — Do Not Load</strong> appears with a subtle red flash 
-              and alert tone.
-            </p>
-          </div>
-
-          <div>
-            <h2 className="h2">Privacy &amp; Authenticity</h2>
-            <p>
-              Verification happens on the dock side, matching what’s entered against the broker 
-              or shipper’s record.
-            </p>
-          </div>
-        </div>
+        <h2 className="h2">Results</h2>
+        <ul>
+          <li>All three checks “Yes” → <strong>CLEAR TO LOAD</strong>.</li>
+          <li>Any “No” → <strong>CAUTION ALERT — DO NOT LOAD</strong> (subtle red flash + alert tone). Alerts go to the Broker/Shipper only.</li>
+        </ul>
       </div>
     </div>
   );
