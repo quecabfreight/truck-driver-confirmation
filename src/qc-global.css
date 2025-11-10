@@ -1,0 +1,164 @@
+/* /src/qc-global.css — 45pt desktop, centered footer, tall inputs */
+
+/* Reset & base */
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html, body, #root { height: 100%; margin: 0; }
+
+body {
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: #0b0b0c;
+  color: #f3f4f6;
+}
+
+/* Scale tokens */
+:root{
+  --fz: 18px;           /* mobile/base */
+  --lh: 1.35;
+  --ctrl-h: 60px;
+  --pad-x: 20px;
+  --panel-bg: rgba(17,17,19,0.6);
+  --panel-br: rgba(255,255,255,0.10);
+  --logo-w: 220px;
+}
+
+/* Desktop & large tablet: 45pt ≈ 60px */
+@media (min-width: 1024px){
+  :root{
+    --fz: 60px;         /* ~45pt */
+    --lh: 1.25;
+    --ctrl-h: 72px;
+    --pad-x: 26px;
+  }
+}
+
+/* Typography — FORCE everywhere */
+body,
+p,
+li,
+a,
+label,
+input,
+select,
+textarea,
+button,
+small,
+.nav,
+footer,
+table,
+th,
+td {
+  font-size: var(--fz) !important;
+  line-height: var(--lh) !important;
+}
+
+/* Headings */
+h1{ font-size: calc(var(--fz) * 1.15) !important; margin: .6em 0 .35em; font-weight: 800; }
+h2{ font-size: calc(var(--fz) * 1.05) !important; margin: .55em 0 .30em; font-weight: 800; }
+h3{ font-size: var(--fz) !important;              margin: .50em 0 .30em; font-weight: 700; }
+
+/* Forms — huge & readable */
+input[type="text"],
+input[type="tel"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="search"],
+select,
+textarea,
+button {
+  min-height: var(--ctrl-h) !important;
+  padding: 0 var(--pad-x) !important;
+  border-radius: 14px !important;
+  border: 1px solid var(--panel-br) !important;
+  background: var(--panel-bg) !important;
+  color: #f9fafb !important;
+  outline: none !important;
+  width: 100%;
+}
+
+/* Big placeholders too */
+::placeholder{
+  color: #c7c9d1 !important;
+  opacity: 1 !important;
+  font-size: var(--fz) !important;
+  line-height: var(--lh) !important;
+}
+
+/* Labels match size */
+label{
+  display: inline-block;
+  font-weight: 800;
+  margin: 10px 0 6px;
+}
+
+/* Primary button look */
+button.primary,
+.btn.primary,
+button[type="submit"]{
+  border-color: rgba(255,255,255,0.18) !important;
+  background: linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.03)) !important;
+  font-weight: 800;
+  cursor: pointer;
+}
+button.primary:hover,
+.btn.primary:hover,
+button[type="submit"]:hover{ filter: brightness(1.08); }
+
+/* Pills/badges same height as inputs */
+.badge, .tag, .pill{
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--ctrl-h) !important;
+  padding: 0 calc(var(--pad-x) - 2px) !important;
+  border-radius: 999px !important;
+  border: 1px solid var(--panel-br) !important;
+  background: var(--panel-bg) !important;
+  font-weight: 800 !important;
+}
+
+/* Panels */
+.panel, .card, .surface {
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-br);
+  border-radius: 20px;
+  padding: 22px;
+  backdrop-filter: blur(8px);
+}
+
+/* Logo */
+#qc-logo, .qc-logo{
+  display: block;
+  margin: 24px auto;
+  width: var(--logo-w);
+  max-width: 90vw;
+}
+#qc-logo img, .qc-logo img{ width: 100%; height: auto; display: block; }
+
+/* Links */
+a{ color: #cbd5ff; text-decoration: none; }
+a:hover{ text-decoration: underline; }
+
+/* Footer — centered */
+.site-footer{
+  margin-top: 40px;
+  padding: 24px 12px;
+  border-top: 1px solid var(--panel-br);
+  color: #cbd5e1;
+  text-align: center !important;
+  font-weight: 700;
+}
+
+/* Caution alert flash (verify mismatch) */
+@keyframes qcFlashRed {
+  0%,100% { background-color: rgba(255,0,0,0.25); }
+  50%     { background-color: rgba(255,0,0,0.60); }
+}
+.qc-alert-flash{
+  animation: qcFlashRed 900ms ease-in-out 1;
+  border-color: rgba(255,0,0,0.55) !important;
+}
