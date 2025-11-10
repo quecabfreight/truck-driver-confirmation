@@ -1,7 +1,13 @@
+// /src/main.jsx — FULL OVERWRITE
 import React from "react";
-import { createRoot } from "react-dom/client";
-import App from "./App";
-import "./styles.css"; // global styles (big type, contrast, etc.)
+import ReactDOM from "react-dom/client";
+import App from "./App.jsx";
 
-const root = createRoot(document.getElementById("root"));
-root.render(<App />);
+// ⬇️ FORCE import of the new global stylesheet (cache-busted filename)
+import "./qc-global.css";
+
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
