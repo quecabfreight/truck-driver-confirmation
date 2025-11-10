@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { isAuthed, isBrokerOrShipper } from "../utils/auth";
+import { isAuthed, isBrokerOrShipper, getRole } from "../utils/auth";
 
 function Header({ theme, toggleTheme }) {
   const location = useLocation();
   const is = (p) => (location.pathname === p ? "active" : "");
-
   const [allowed, setAllowed] = useState(false);
+  const [role, setRole] = useState("");
 
   useEffect(() => {
-    const update = () => setAllowed(isBrokerOrShipper());
+    const update = () => { setAllowed(isBrokerOrShipper()); setRole(getRole()); };
     update();
     window.addEventListener("storage", update);
     return () => window.removeEventListener("storage", update);
@@ -22,15 +22,11 @@ function Header({ theme, toggleTheme }) {
         <Link to="/login" className={`nav-link ${is("/login")}`}>{isAuthed() ? "Switch User" : "Log In"}</Link>
         <Link to="/join" className={`nav-link ${is("/join")}`}>Request Access</Link>
         <Link to="/about" className={`nav-link ${is("/about")}`}>About</Link>
-        {allowed && (
-          <Link to="/smart" className={`nav-link ${is("/smart")}`}>Check In Link</Link>
-        )}
-        <button onClick={toggleTheme} className="theme-toggle">
-          {theme === "dark" ? "☀️ Light" : "🌙 Dark"}
-        </button>
+        {allowed && <Link to="/smart" className={`nav-link ${is("/smart")}`}>Check In Link</Link>}
+        <span className="role-pill">{role || "GUEST"}</span>
+        <button onClick={toggleTheme} className="theme-toggle">{theme === "dark" ? "☀️ Light" : "🌙 Dark"}</button>
       </nav>
     </header>
   );
 }
-
 export default Header;
