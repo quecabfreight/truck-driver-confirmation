@@ -1,4 +1,4 @@
-/* ===== QueCab AdbS — Dock-friendly XL scale (visuals only) ===== */
+/* ===== QueCab AdbS — XL desktop/tablet type (logic untouched) ===== */
 
 :root{
   --bg:#0e0f12;
@@ -16,7 +16,7 @@
   --warn:#f1c40f;
   --link:#7ab3ff;
 
-  /* inputs are white in Dark Mode */
+  /* white inputs in Dark Mode */
   --input-bg-dark:#ffffff;
   --input-text-dark:#111111;
 
@@ -38,31 +38,38 @@
   --link:#0a66ff;
 }
 
-/* ===== Base type scale (XL) ===== */
+/* ===== Base (mobile-safe) ===== */
 html, body, #root{height:100%;}
 body{
   margin:0;
   background:var(--bg);
   color:var(--text);
   font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Noto Sans";
-  /* XL base — ~26px on desktop */
-  font-size:26px;
+  font-size:22px;           /* phone-friendly base */
   line-height:1.35;
 }
 
+/* ===== XL boost for larger screens ONLY ===== */
+@media (min-width: 768px){
+  body{ font-size:28px; }   /* ≈ 24–26 pt feel */
+}
+@media (min-width: 1100px){
+  body{ font-size:30px; }   /* big dock monitors */
+}
+
 /* Headings */
-h1{font-size:2.25rem; /* ~58–60px effective on our base */ font-weight:900; margin:0 0 12px;}
+h1{font-size:2.2rem; font-weight:900; margin:0 0 14px;} /* large card titles */
 h2, .h2{font-size:1.7rem; font-weight:900; margin:18px 0 10px;}
 
 /* ===== Layout ===== */
 .page.centered{
-  /* keep content narrow so text stays huge */
-  max-width:860px;
+  max-width:880px;          /* keep width controlled so text stays huge */
   margin:0 auto;
   padding:28px 20px 40px;
 }
 .page-logo{display:block; margin:0 auto 18px; max-width:260px; height:auto;}
 
+/* ===== Header / Nav ===== */
 .header .nav{
   position:sticky; top:0; z-index:100;
   display:flex; gap:22px; align-items:center;
@@ -74,36 +81,46 @@ h2, .h2{font-size:1.7rem; font-weight:900; margin:18px 0 10px;}
   text-decoration:none;
   color:var(--text);
   font-weight:900;
-  font-size:1.1rem;   /* ~28–29px */
+  font-size:1.15rem;        /* ~24–26 pt on desktop */
 }
 .nav-link:hover{text-decoration:underline;}
 .role-pill{
   margin-left:auto;
-  padding:6px 12px;
+  padding:8px 14px;
   border-radius:999px;
   border:2px solid var(--divider);
   font-weight:900;
-  font-size:1rem; /* ~26px */
+  font-size:1.05rem;        /* matches nav */
 }
-.theme-toggle{margin-left:10px; font-weight:900; padding:10px 14px;}
+.theme-toggle{
+  margin-left:10px;
+  font-weight:900;
+  padding:10px 14px;
+  font-size:1.05rem;
+}
 
 /* ===== Cards, forms, controls ===== */
 .card{
   background:var(--card-bg);
   border:1px solid var(--divider);
   border-radius:20px;
-  padding:20px;
+  padding:22px;
 }
 
-.form{display:grid; gap:16px;}
-label{font-weight:800; display:block; margin-bottom:6px;}
+.form{display:grid; gap:18px;}
+label{
+  font-weight:900;
+  display:block;
+  margin-bottom:8px;
+  font-size:1.05rem;        /* ~24–26 pt */
+}
 
 .input{
   width:100%;
-  min-height:60px;
+  min-height:64px;
   border-radius:14px;
-  padding:14px 16px;
-  font-size:1rem; /* follows body scale */
+  padding:16px 18px;
+  font-size:1.05rem;        /* input text big */
   border:2px solid var(--divider);
   background:var(--input-bg-dark);
   color:var(--input-text-dark);
@@ -113,23 +130,23 @@ label{font-weight:800; display:block; margin-bottom:6px;}
   background:var(--input-bg-light);
   color:var(--input-text-light);
 }
-.input::placeholder{color:#7f8a99; opacity:1;}
+.input::placeholder{color:#6f7a8a; opacity:1; font-size:1.05rem;}
 
 .btn{
   display:inline-block;
-  min-height:60px;
-  padding:14px 18px;
+  min-height:64px;
+  padding:16px 20px;
   border-radius:16px;
   border:2px solid var(--button-border);
   background:var(--button-bg);
   color:var(--button-text);
   font-weight:900;
-  font-size:1rem;
+  font-size:1.05rem;        /* button text big */
   cursor:pointer;
 }
 .btn[disabled]{opacity:.45; cursor:not-allowed;}
 
-.tile-row{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px;}
+.tile-row{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:18px;}
 .tile{
   background:var(--card-bg);
   border:1px solid var(--divider);
@@ -149,10 +166,10 @@ label{font-weight:800; display:block; margin-bottom:6px;}
 .flash-danger{animation:flash 1s ease-in-out 1;}
 @keyframes flash{
   0%{box-shadow:0 0 0 0 rgba(216,58,58,.65);}
-  100%{box-shadow:0 0 0 26px rgba(216,58,58,0);}
+  100%{box-shadow:0 0 0 28px rgba(216,58,58,0);}
 }
 
-/* Links, muted text */
+/* Links & muted */
 a{color:var(--link);}
 .muted{color:var(--muted);}
 
@@ -162,8 +179,8 @@ a{color:var(--link);}
   outline-offset:2px;
 }
 
-/* ===== Mobile tune (keeps it large, not ridiculous) ===== */
+/* Phone-specific: keep scale sensible */
 @media (max-width: 480px){
-  body{font-size:24px;}
+  body{font-size:22px;}
   .page-logo{max-width:240px;}
 }
