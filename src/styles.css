@@ -1,117 +1,129 @@
-/* ====== QueCab AdbS – Global Styles (safe overwrite) ====== */
-:root{
-  --bg: #0f1318;
-  --panel: rgba(255,255,255,.04);
-  --panel-2: rgba(255,255,255,.06);
-  --edge: rgba(255,255,255,.14);
-  --edge-soft: rgba(255,255,255,.10);
-  --text: #e9eef5;
-  --muted: #9aa4b2;
-  --accent: #44b0ff;
+:root {
+  --bg: #0e0f12;
+  --text: #f5f7fa;
+  --muted: #cdd3dd;
+  --card-bg: #16181d;
+  --divider: #2a2f38;
+
+  --button-bg: #20242b;
+  --button-text: #fff;
+  --button-border: #353c46;
+
+  --success: #2aa865;
+  --danger: #d83a3a;
+  --warn: #f1c40f;
+  --link: #7ab3ff;
+
+  --input-bg-dark: #ffffff;   /* White inputs in Dark */
+  --input-text-dark: #111111; /* Dark text inside */
+  --input-bg-light: #ffffff;  /* Light mode input */
+  --input-text-light: #111111;
 }
 
-html, body, #root { height: 100%; }
-html[data-theme="light"]{
-  --bg:#f6f7fa; --text:#0e1216; --muted:#5b6471;
-  --panel: rgba(0,0,0,.05); --panel-2: rgba(0,0,0,.06);
-  --edge: rgba(0,0,0,.12); --edge-soft: rgba(0,0,0,.09);
-}
-*{ box-sizing: border-box; }
+[data-theme="light"] {
+  --bg: #ffffff;
+  --text: #0f1216;
+  --muted: #445163;
+  --card-bg: #f5f7fa;
+  --divider: #d8dee9;
 
-body{
-  margin:0;
+  --button-bg: #0f1216;
+  --button-text: #ffffff;
+  --button-border: #0f1216;
+
+  --link: #0a66ff;
+}
+
+/* Base */
+html, body, #root {
+  height: 100%;
+  margin: 0;
   background: var(--bg);
   color: var(--text);
   font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji", "Segoe UI Symbol";
-  /* ↑ bigger base everywhere */
-  font-size: 18px;
-  line-height: 1.35;
 }
 
-h1,h2,h3{ margin: 0 0 10px 0; font-weight: 900; }
-h1{ font-size: 38px; }
-h2{ font-size: 28px; }
-h3{ font-size: 22px; }
-p{ margin: 8px 0; color: var(--text); }
-small, .muted{ color: var(--muted); }
+body { font-size: 24px; line-height: 1.35; }            /* ≈ 24 pt */
+h1 { font-size: 2.1rem; font-weight: 800; margin: 0 0 12px; }  /* ≈ 32–34 pt */
+.h2, h2 { font-size: 1.6rem; font-weight: 800; margin: 18px 0 10px; }
 
-a{ color: inherit; }
+.page.centered { max-width: 980px; margin: 0 auto; padding: 24px; }
+.page-logo { display:block; margin: 0 auto 16px; max-width: 260px; height:auto; }
 
-/* ====== Layout ====== */
-.topbar .navlink.active{ }
-.app-main{ padding: 26px 16px; }
-.centered{ max-width: 1280px; margin: 0 auto; }
+.header, .footer { border-top: 0; }
+.header .nav {
+  display:flex; gap: 18px; align-items:center; padding: 16px 24px;
+  border-bottom: 1px solid var(--divider); position: sticky; top:0; z-index: 100;
+  background: var(--bg);
+}
+.nav-link { font-weight: 800; text-decoration: none; color: var(--text); }
+.nav-link:hover { text-decoration: underline; }
+.nav .role-pill {
+  margin-left: auto; padding: 6px 10px; border-radius: 999px; font-weight: 800;
+  border: 2px solid var(--divider);
+}
+.theme-toggle { margin-left: 8px; font-weight:800; padding: 8px 12px; }
 
-/* ====== Cards ====== */
-.card, .verify-card, .glass{
-  background: linear-gradient(180deg, var(--panel-2), var(--panel));
-  border: 1px solid var(--edge-soft);
-  border-radius: 16px;
-  box-shadow: 0 18px 60px rgba(0,0,0,.35);
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--divider);
+  border-radius: 18px;
   padding: 18px;
 }
 
-/* ====== Inputs / Buttons – Bigger & Clear ====== */
-input, select, textarea{
+.form { display: grid; gap: 14px; }
+.input {
   width: 100%;
-  background: rgba(0,0,0,.18);
-  color: var(--text);
-  border: 1px solid var(--edge);
+  min-height: 54px;
   border-radius: 12px;
-  padding: 14px 14px;
-  height: 54px;
+  padding: 12px 14px;
+  font-size: 1rem;
+  border: 2px solid var(--divider);
+  background: var(--input-bg-dark);
+  color: var(--input-text-dark);
   outline: none;
-  font-size: 18px;
 }
-input::placeholder{ color: var(--muted); }
+[data-theme="light"] .input {
+  background: var(--input-bg-light);
+  color: var(--input-text-light);
+}
+.input::placeholder { color: #7f8a99; opacity: 1; }
 
-.btn{
-  display: inline-flex;
-  align-items: center; justify-content: center;
-  gap: 8px;
-  background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
-  color: var(--text);
-  border: 1px solid var(--edge);
-  border-radius: 12px;
-  padding: 12px 16px;
-  font-weight: 900;
+.btn {
+  font-weight: 800; padding: 12px 16px; border-radius: 14px;
+  border: 2px solid var(--button-border);
+  background: var(--button-bg); color: var(--button-text);
   cursor: pointer;
-  user-select: none;
-  min-height: 48px;
 }
-.btn.big{ padding: 14px 18px; font-size: 18px; }
-.btn.active{ box-shadow: 0 8px 24px rgba(0,0,0,.35); border-color: var(--edge); }
-.btn.red{ border-color: rgba(201,28,28,.55); }
-.btn:disabled{ opacity:.5; cursor: not-allowed; }
+.btn[disabled] { opacity: .45; cursor: not-allowed; }
 
-/* Y/N buttons on verify – larger, easy to hit */
-.verify-yn .btn{
-  width: 54px; height: 48px; font-size: 20px;
+.tile-row { display:grid; grid-template-columns: repeat(auto-fit, minmax(240px,1fr)); gap: 14px; }
+.tile {
+  background: var(--card-bg); border:1px solid var(--divider); border-radius:18px;
+  text-align:center; padding: 18px; font-weight:800; color: var(--text); text-decoration:none;
 }
 
-/* ====== Verify page layout ====== */
-.page.verify-page{
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 20px 10px 40px;
+a { color: var(--link); }
+.muted { color: var(--muted); }
+
+.banner { padding: 14px; border-radius: 12px; font-weight: 900; }
+.banner.success { background: rgba(42,168,101,.12); border: 2px solid rgba(42,168,101,.6); }
+.banner.danger  { background: rgba(216,58,58,.12);  border: 2px solid rgba(216,58,58,.6); }
+
+.flash-danger { animation: flash 1.0s ease-in-out 1; }
+@keyframes flash {
+  0% { box-shadow: 0 0 0 0 rgba(216,58,58,0.65); }
+  100% { box-shadow: 0 0 0 24px rgba(216,58,58,0); }
 }
 
-/* Make verify card comfortably wide on desktops */
-.verify-card{
-  width: clamp(380px, 74vw, 1100px);
-  margin: 0 auto;
+/* focus rings big + visible */
+.input:focus, .btn:focus, .tile:focus, .nav-link:focus {
+  outline: 3px solid var(--link);
+  outline-offset: 2px;
 }
 
-/* PIN card is narrower (we set an extra class in JSX) */
-.verify-card.pin{
-  width: 420px;
-}
-
-/* Hero logo size */
-.hero__logo{ width: 280px; display:block; margin: 0 auto 12px; }
-@media (max-width:768px){
-  body{ font-size: 16px; }
-  h1{ font-size: 30px; }
-  h2{ font-size: 24px; }
-  .hero__logo{ width: 180px; }
+/* mobile fit */
+@media (max-width: 480px) {
+  body { font-size: 22px; }
+  .page-logo { max-width: 220px; }
 }
