@@ -10,10 +10,10 @@ export default function Footer() {
         padding: "24px 0",
         textAlign: "center",
         opacity: 0.9,
-        fontSize: "1.25rem",
+        fontSize: "1.05rem", // ~24–26 pt with our base
       }}
     >
-      <div>© QueCab AdbS 2025 • <strong>BETA</strong> • Build <code>{BUILD_ID}</code></div>
+      <div>© QueCab AdbS™ 2025 • <strong>BETA</strong> • Build <code>{BUILD_ID}</code></div>
     </footer>
   );
 }
