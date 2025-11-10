@@ -1,19 +1,10 @@
+// /src/components/Footer.jsx — FULL OVERWRITE
 import React from "react";
-import { BUILD_ID } from "../config/build";
 
 export default function Footer() {
   return (
-    <footer
-      className="footer"
-      style={{
-        marginTop: 40,
-        padding: "24px 0",
-        textAlign: "center",
-        opacity: 0.9,
-        fontSize: "1.05rem", // ~24–26 pt with our base
-      }}
-    >
-      <div>© QueCab AdbS™ 2025 • <strong>BETA</strong> • Build <code>{BUILD_ID}</code></div>
+    <footer className="site-footer">
+      © QueCab AdbS™ 2025 • BETA • Build 2025.11.09-β1
     </footer>
   );
 }
