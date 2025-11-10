@@ -46,7 +46,7 @@ export default function SmartLink() {
     dot: "",
     plate: "",
     phone: "",
-    dockEmails: "", // <-- blank, no placeholder text
+    dockEmails: "", // stays blank (no placeholder)
   });
 
   if (!allowed) return null;
@@ -165,6 +165,12 @@ export default function SmartLink() {
     } catch {}
   };
 
+  // Button guards
+  const canTextDriver = Boolean(token && form.phone && driverUrl);
+  const canEmailDock = Boolean(token && form.dockEmails && dockUrl);
+  const canCopyDriver = Boolean(token && driverUrl);
+  const canCopyBoth = Boolean(token && driverUrl && dockUrl);
+
   return (
     <div className="page centered">
       <img src="/qc-logo.png" alt="QueCab AdbS" className="page-logo" />
@@ -228,16 +234,16 @@ export default function SmartLink() {
 
         {token && (
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-            <button className="btn" onClick={textDriver}>
+            <button className="btn" onClick={textDriver} disabled={!canTextDriver}>
               Text Driver
             </button>
-            <button className="btn" onClick={copyDriver}>
+            <button className="btn" onClick={copyDriver} disabled={!canCopyDriver}>
               Copy Driver Link
             </button>
-            <button className="btn" onClick={sendDockEmail}>
+            <button className="btn" onClick={sendDockEmail} disabled={!canEmailDock}>
               Email Dock Verify Link
             </button>
-            <button className="btn" onClick={copyBoth}>
+            <button className="btn" onClick={copyBoth} disabled={!canCopyBoth}>
               Copy Both
             </button>
           </div>
