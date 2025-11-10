@@ -1,6 +1,6 @@
-/* /src/index.css — FULL OVERWRITE (11/10/2025)
-   Goal: XL/XXL readable desktop sizing; tall inputs; centered footer.
-   Mobile stays normal; desktop/tablet get big.
+/* /src/index.css — FULL OVERWRITE (45pt desktop)
+   Desktop/tablet = ~60px (~45pt) base text.
+   Mobile stays normal. Fields are tall and readable.
 */
 
 /* Reset & base */
@@ -20,27 +20,29 @@ body {
 
 /* Scale tokens */
 :root{
-  /* Mobile/base scale */
-  --fz: 18px;
-  --lh: 1.4;
+  /* Mobile/base scale (unchanged) */
+  --fz: 18px;            /* ~13.5pt mobile */
+  --lh: 1.35;
 
-  /* Big screen overrides applied below */
-  --ctrl-h: 60px;      /* min input/button height */
-  --pad-x: 20px;       /* horizontal padding for controls */
+  /* Controls */
+  --ctrl-h: 60px;
+  --pad-x: 20px;
 
+  /* Surfaces */
   --panel-bg: rgba(17,17,19,0.6);
   --panel-br: rgba(255,255,255,0.10);
 
-  --logo-w: 220px;     /* required project width */
+  /* Logo */
+  --logo-w: 220px;
 }
 
-/* Desktop & large tablet = BIG */
+/* Desktop & large tablet: 45pt ≈ 60px */
 @media (min-width: 1024px){
   :root{
-    --fz: 28px;        /* makes text large across app */
-    --lh: 1.35;
-    --ctrl-h: 64px;    /* taller controls */
-    --pad-x: 22px;
+    --fz: 60px;          /* BASE = ~45pt */
+    --lh: 1.25;          /* tighter for giant text */
+    --ctrl-h: 72px;      /* taller inputs/buttons for parity */
+    --pad-x: 26px;
   }
 }
 
@@ -54,7 +56,7 @@ input,
 select,
 textarea,
 button,
-.small,
+small,
 .nav,
 footer,
 table,
@@ -64,12 +66,12 @@ td {
   line-height: var(--lh) !important;
 }
 
-/* Headings — large but not cartoonish */
-h1{ font-size: calc(var(--fz) * 1.35) !important; margin: .6em 0 .35em; font-weight: 800; }
-h2{ font-size: calc(var(--fz) * 1.20) !important; margin: .55em 0 .30em; font-weight: 800; }
-h3{ font-size: calc(var(--fz) * 1.10) !important; margin: .50em 0 .30em; font-weight: 700; }
+/* Headings (scale off the giant base) */
+h1{ font-size: calc(var(--fz) * 1.15) !important; margin: .6em 0 .35em; font-weight: 800; }
+h2{ font-size: calc(var(--fz) * 1.05) !important; margin: .55em 0 .30em; font-weight: 800; }
+h3{ font-size: var(--fz) !important;              margin: .50em 0 .30em; font-weight: 700; }
 
-/* Form controls — tall, readable, consistent */
+/* Forms — huge & readable */
 input[type="text"],
 input[type="tel"],
 input[type="email"],
@@ -87,10 +89,9 @@ button {
   color: #f9fafb !important;
   outline: none !important;
   width: 100%;
-  box-shadow: none;
 }
 
-/* Make placeholders large too */
+/* Big placeholders too */
 ::placeholder{
   color: #c7c9d1 !important;
   opacity: 1 !important;
@@ -98,14 +99,14 @@ button {
   line-height: var(--lh) !important;
 }
 
-/* Labels must match size */
+/* Labels match size */
 label{
   display: inline-block;
   font-weight: 800;
   margin: 10px 0 6px;
 }
 
-/* Primary action look */
+/* Primary button look */
 button.primary,
 .btn.primary,
 button[type="submit"]{
@@ -118,7 +119,7 @@ button.primary:hover,
 .btn.primary:hover,
 button[type="submit"]:hover{ filter: brightness(1.08); }
 
-/* Pills/badges sized like controls */
+/* Pills/badges same height as inputs */
 .badge, .tag, .pill{
   display: inline-flex;
   align-items: center;
@@ -139,7 +140,7 @@ button[type="submit"]:hover{ filter: brightness(1.08); }
   backdrop-filter: blur(8px);
 }
 
-/* Logo rules — fixed project width */
+/* Logo */
 #qc-logo, .qc-logo{
   display: block;
   margin: 24px auto;
@@ -152,13 +153,13 @@ button[type="submit"]:hover{ filter: brightness(1.08); }
 a{ color: #cbd5ff; text-decoration: none; }
 a:hover{ text-decoration: underline; }
 
-/* Footer — centered across all pages */
+/* Footer — centered */
 .site-footer{
   margin-top: 40px;
   padding: 24px 12px;
   border-top: 1px solid var(--panel-br);
   color: #cbd5e1;
-  text-align: center !important;   /* <— centered as requested */
+  text-align: center !important;
   font-weight: 700;
 }
 
