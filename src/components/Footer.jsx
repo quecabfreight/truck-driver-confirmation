@@ -4,7 +4,7 @@ import React from "react";
 export default function Footer() {
   return (
     <footer className="site-footer">
-      © QueCab AdbS™ 2025 • BETA • Build 2025.11.10-β2
+      © QueCab AdbS™ 2025 • BETA • Build 2025.11.10-β3
     </footer>
   );
 }
