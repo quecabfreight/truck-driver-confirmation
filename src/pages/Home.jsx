@@ -1,27 +1,31 @@
-import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { isBrokerOrShipper } from "../utils/auth";
+// /src/pages/Home.jsx — FULL OVERWRITE
+import React from "react";
 
 export default function Home() {
-  const [allowed, setAllowed] = useState(false);
-
-  useEffect(() => {
-    const update = () => setAllowed(isBrokerOrShipper());
-    update();
-    window.addEventListener("storage", update);
-    return () => window.removeEventListener("storage", update);
-  }, []);
-
   return (
-    <div className="page centered">
-      <img src="/qc-logo.png" alt="QueCab AdbS" className="page-logo" />
+    <div className="qc-page">
+      {/* Logo (keeps your 220px width rule) */}
+      <div className="qc-logo" id="qc-logo">
+        <img src="/qc-logo.png" alt="QueCab AdbS logo" />
+      </div>
+
+      {/* Title */}
       <h1>QueCab AdbS — Truck-Driver Confirmation</h1>
 
-      <div className="tile-row" style={{ marginTop: 24 }}>
-        <Link to="/join" className="tile">Request Access</Link>
-        <Link to="/login" className="tile">Already Authorized? Log In</Link>
-        <Link to="/about" className="tile">About</Link>
-        {allowed && <Link to="/smart" className="tile">Check In Link</Link>}
+      {/* Home action links (styled as big pills by .home-links in qc-global.css) */}
+      <div className="home-links">
+        <a href="#/join" aria-label="Request Access">
+          Request Access
+        </a>
+        <a href="#/login" aria-label="Already Authorized? Log In">
+          Already Authorized? Log In
+        </a>
+        <a href="#/about" aria-label="About QueCab AdbS">
+          About
+        </a>
+        <a href="#/checkin" aria-label="Check In Link">
+          Check In Link
+        </a>
       </div>
     </div>
   );
