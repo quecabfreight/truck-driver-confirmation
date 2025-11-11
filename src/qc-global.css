@@ -1,80 +1,73 @@
-/* /src/qc-global.css — SAFE REWRITE (keep logo size, re-center, preserve Light/Dark, do NOT break buttons/links) */
+/* /src/qc-global.css — HARDENED: 45pt desktop everywhere, no layout breakage */
 
-/* Reset & base */
+/* ---------- Base + theme tokens (preserves your sun/moon toggle) ---------- */
 *,
 *::before,
 *::after { box-sizing: border-box; }
 
 html, body, #root { height: 100%; margin: 0; }
 
-/* ---- THEME-TOKENS (does NOT remove your toggle) ----
-   We respect whichever element your app toggles: html or body.
-   If none is present, dark-like defaults still apply. */
 :root{
+  /* Mobile/base */
+  --fz: 18px;           /* body font size */
+  --lh: 1.35;           /* line-height */
+  --ctrl-h: 72px;       /* tall inputs/buttons */
+  --pad-x: 26px;        /* control horizontal padding */
+
   --bg: #0b0b0c;
   --fg: #f3f4f6;
-
-  /* 45pt (~60px) desktop base; mobile normal */
-  --fz: 18px;
-  --lh: 1.35;
-
-  --ctrl-h: 72px;   /* tall inputs/buttons for readability */
-  --pad-x: 26px;
-
   --panel-bg: rgba(17,17,19,0.6);
   --panel-br: rgba(255,255,255,0.10);
 
-  --logo-w: 220px;  /* project standard */
+  --logo-w: 220px;      /* project standard */
 }
 
-/* Light theme (do NOT remove your sun/moon; this only reacts to what your toggle sets) */
-html[data-theme="light"],
-body[data-theme="light"]{
+/* Light/Dark – we just read your data-theme attribute */
+html[data-theme="light"], body[data-theme="light"]{
   --bg: #f7f7fb;
   --fg: #0b0b0c;
   --panel-bg: rgba(255,255,255,0.75);
   --panel-br: rgba(0,0,0,0.10);
 }
-
-/* Dark theme */
-html[data-theme="dark"],
-body[data-theme="dark"]{
+html[data-theme="dark"], body[data-theme="dark"]{
   --bg: #0b0b0c;
   --fg: #f3f4f6;
   --panel-bg: rgba(17,17,19,0.6);
   --panel-br: rgba(255,255,255,0.10);
 }
 
-body {
+/* Desktop/tablet: 45pt ≈ 60px everywhere */
+@media (min-width: 1024px){
+  :root{
+    --fz: 60px;
+    --lh: 1.25;
+    --ctrl-h: 80px;
+    --pad-x: 28px;
+  }
+}
+
+body{
   background: var(--bg);
   color: var(--fg);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
 
-/* Desktop & large tablet: scale up to ~45pt */
-@media (min-width: 1024px){
-  :root{
-    --fz: 60px;   /* ~45pt */
-    --lh: 1.25;
-  }
-}
-
-/* Typography — big but layout-safe (no global text-align changes) */
-body,
-p, li, a, label,
-input, select, textarea, button,
-small, footer, table, th, td {
+  /* Force the base size at body… */
   font-size: var(--fz) !important;
   line-height: var(--lh) !important;
 }
 
-/* Headings (slightly larger than body) */
-h1{ font-size: calc(var(--fz) * 1.15) !important; margin: .6em 0 .35em; font-weight: 800; }
-h2{ font-size: calc(var(--fz) * 1.05) !important; margin: .55em 0 .30em; font-weight: 800; }
-h3{ font-size: var(--fz) !important;              margin: .50em 0 .30em; font-weight: 700; }
+/* …and make everything inherit it (this is the hammer) */
+body *{
+  font-size: inherit !important;
+  line-height: inherit !important;
+}
 
-/* Forms — tall & readable; DO NOT force width so we don’t break your layouts */
+/* ---------- Global UI elements ---------- */
+h1{ font-size: calc(var(--fz)*1.15) !important; font-weight: 800; margin: .6em 0 .35em; }
+h2{ font-size: calc(var(--fz)*1.05) !important; font-weight: 800; margin: .55em 0 .30em; }
+h3{ font-size: var(--fz) !important;             font-weight: 700; margin: .50em 0 .30em; }
+
 input[type="text"],
 input[type="tel"],
 input[type="email"],
@@ -83,7 +76,7 @@ input[type="number"],
 input[type="search"],
 select,
 textarea,
-button {
+button{
   min-height: var(--ctrl-h) !important;
   padding: 0 var(--pad-x) !important;
   border-radius: 14px !important;
@@ -91,367 +84,53 @@ button {
   background: var(--panel-bg) !important;
   color: var(--fg) !important;
   outline: none !important;
-  /* width: 100%;  — REMOVED to avoid shifting/centering issues */
-  pointer-events: auto;    /* ensure clickable */
-  user-select: auto;
 }
 
-/* Big placeholders too */
+label{
+  display:inline-block;
+  font-weight: 800 !important;
+  margin: 10px 0 6px !important;
+}
+
 ::placeholder{
   color: color-mix(in oklab, var(--fg) 55%, transparent) !important;
   opacity: 1 !important;
-  font-size: var(--fz) !important;
-  line-height: var(--lh) !important;
 }
 
-/* Labels */
-label{
-  display: inline-block;
-  font-weight: 800;
-  margin: 10px 0 6px;
-}
-
-/* Primary action */
-button.primary,
-.btn.primary,
-button[type="submit"]{
-  border-color: color-mix(in oklab, var(--fg) 18%, transparent) !important;
-  background: linear-gradient(180deg, color-mix(in oklab, var(--fg) 9%, transparent), color-mix(in oklab, var(--fg) 3%, transparent)) !important;
-  font-weight: 800;
-  cursor: pointer;
-}
-button.primary:hover,
-.btn.primary:hover,
-button[type="submit"]:hover{ filter: brightness(1.08); }
-
-/* Pills/badges */
-.badge, .tag, .pill{
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--ctrl-h) !important;
-  padding: 0 calc(var(--pad-x) - 2px) !important;
-  border-radius: 999px !important;
-  border: 1px solid var(--panel-br) !important;
+/* Panels / cards */
+.panel, .card, .surface{
   background: var(--panel-bg) !important;
-  font-weight: 800 !important;
-}
-
-/* Panels */
-.panel, .card, .surface {
-  background: var(--panel-bg);
-  border: 1px solid var(--panel-br);
-  border-radius: 20px;
-  padding: 22px;
+  border: 1px solid var(--panel-br) !important;
+  border-radius: 22px !important;
+  padding: 26px 24px 28px !important;
   backdrop-filter: blur(8px);
+  box-shadow: 0 18px 45px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.08);
 }
 
-/* Logo (keep your good size, centered; doesn’t force surrounding layout) */
-#qc-logo, .qc-logo{
-  display: block;
-  margin: 24px auto;
-  width: var(--logo-w);
-  max-width: 90vw;
+/* Center main column on every page */
+:is(.qc-page, .page, main, #root > div){
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 20px;
+  padding-right: 20px;
 }
-#qc-logo img, .qc-logo img{ width: 100%; height: auto; display: block; }
 
-/* Links */
-a{ color: #6b7cff; text-decoration: none; }
-a:hover{ text-decoration: underline; }
+/* Logo (keeps your 220px) */
+#qc-logo, .qc-logo{ display:block; margin:24px auto; width: var(--logo-w); max-width: 90vw; }
+#qc-logo img, .qc-logo img{ width:100%; height:auto; display:block; }
 
-/* Footer — centered only (won’t affect page layout) */
+/* Footer centered */
 .site-footer{
   margin-top: 40px;
   padding: 24px 12px;
   border-top: 1px solid var(--panel-br);
   color: color-mix(in oklab, var(--fg) 85%, transparent);
   text-align: center !important;
-  font-weight: 700;
+  font-weight: 700 !important;
 }
 
-/* Caution alert flash (verify mismatch) */
-@keyframes qcFlashRed {
-  0%,100% { background-color: rgba(255,0,0,0.25); }
-  50%     { background-color: rgba(255,0,0,0.60); }
-}
-.qc-alert-flash{
-  animation: qcFlashRed 900ms ease-in-out 1;
-  border-color: rgba(255,0,0,0.55) !important;
-}
-/* === Center the main column across pages (safe) === */
-/* Works if your top container uses any of these common class names.
-   If your pages already use .page or .container, this will catch them too. */
-:is(.qc-page, .page, .container, .content, main, #app-root) {
-  /* keep internal alignment (labels/fields stay left) */
-  max-width: 1200px;      /* roomy but not stretched */
-  margin-left: auto;
-  margin-right: auto;
-  padding-left: 20px;
-  padding-right: 20px;
-}
-
-/* If a page is just a stack of blocks, center the stack itself */
-.qc-center-block,
-:is(.qc-page, .page, .content) > .panel,
-:is(.qc-page, .page, .content) > .card {
-  margin-left: auto;
-  margin-right: auto;
-}
-
-/* Optional: if a page has nothing wrapping it, center direct children safely */
-#root > :is(section, div, main):first-child {
-  margin-left: auto;
-  margin-right: auto;
-  max-width: 1200px;
-  padding-left: 20px;
-  padding-right: 20px;
-}
-/* ===== NAV / TABS: look like tabs, not blue hyperlinks ===== */
-
-/* Target common header/nav containers and tab classes without touching body content links */
-header nav a,
-.nav a,
-.tabs a,
-.tab a,
-.tab,
-.nav .link,
-header .link {
-  text-decoration: none !important;
-  color: inherit !important;              /* use theme text color */
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  min-height: var(--ctrl-h);
-  padding: 0 calc(var(--pad-x) - 4px);
-  border-radius: 14px;
-  border: 1px solid var(--panel-br);
-  background: var(--panel-bg);
-  font-weight: 800;
-  vertical-align: middle;
-}
-
-/* Hover/active/focus — subtle, professional */
-header nav a:hover,
-.nav a:hover,
-.tabs a:hover,
-.tab a:hover,
-.tab:hover,
-.nav .link:hover {
-  filter: brightness(1.08);
-}
-
-header nav a:active,
-.nav a:active,
-.tabs a:active,
-.tab a:active,
-.nav .link:active {
-  transform: translateY(1px);
-}
-
-/* If your router sets an .active class, make it look selected */
-header nav a.active,
-.nav a.active,
-.tabs a.active,
-.tab a.active,
-.nav .link.active {
-  border-color: color-mix(in oklab, var(--fg) 22%, transparent);
-  box-shadow: inset 0 0 0 2px color-mix(in oklab, var(--fg) 10%, transparent);
-}
-
-/* Keyboard accessibility without the ugly blue outline */
-header nav a:focus-visible,
-.nav a:focus-visible,
-.tabs a:focus-visible,
-.tab a:focus-visible,
-.nav .link:focus-visible {
-  outline: 3px solid color-mix(in oklab, var(--fg) 45%, transparent);
-  outline-offset: 2px;
-  text-decoration: none !important;
-}
-
-/* Keep normal in-body links looking like links (underline on hover) */
-.prose a:hover,
-.content a:hover,
-main a:hover {
-  text-decoration: underline;
-}
-/* ===== HOME ACTIONS (buttons, not blue links) ===== */
-.home-links{
-  display: flex;
-  flex-direction: column;     /* one per line */
-  align-items: center;        /* centered stack */
-  gap: 18px;
-  margin-top: 18px;
-}
-
-.home-links a{
-  text-decoration: none !important;
-  color: inherit !important;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: var(--ctrl-h);
-  padding: 0 calc(var(--pad-x) + 8px);
-  border-radius: 14px;
-  border: 1px solid var(--panel-br);
-  background: var(--panel-bg);
-  font-weight: 800;
-}
-
-.home-links a:hover{ filter: brightness(1.08); }
-.home-links a:active{ transform: translateY(1px); }
-
-/* keep “real” content links elsewhere behaving like links */
-/* ===== Make Home look like the other pages ===== */
-.home-panel{
-  max-width: 900px;
-  margin: 0 auto;
-  text-align: center;             /* center title & buttons */
-  padding-top: 18px;
-  padding-bottom: 22px;
-}
-
-/* Keep the Home title crisp and centered */
-.home-panel h1{
-  margin-top: 0;
-  margin-bottom: 12px;
-  text-align: center;
-  font-weight: 800;
-}
-
-/* (Already added earlier) .home-links styles will render big pill buttons */
-
-/* ===== Fix the odd “BROKER” label in the header =====
-   We don't know your exact markup there, so we catch common cases:
-   - a dedicated .role/.badge/.tag class
-   - plain <b> or <strong> used as a label
-   This leaves normal content links alone.
-*/
-header .role,
-.nav .role,
-header .badge,
-.nav .badge,
-header .tag,
-.nav .tag,
-header nav b,
-header nav strong{
-  text-decoration: none !important;
-  color: inherit !important;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: var(--ctrl-h);
-  padding: 0 16px;
-  margin-left: 10px;
-  border-radius: 999px;
-  border: 1px solid var(--panel-br);
-  background: var(--panel-bg);
-  font-weight: 800;
-}
-
-/* Hover feedback for the label if it’s clickable */
-header nav b:hover,
-header nav strong:hover,
-header .role:hover,
-.nav .role:hover{ filter: brightness(1.06); }
-/* ===== Home hero polish (glassy, premium, matches other pages) ===== */
-.home-hero{
-  max-width: 980px;
-  margin: 0 auto;
-  text-align: center;
-  padding: 26px 24px 28px;
-  background:
-    linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02)),
-    var(--panel-bg);
-  border: 1px solid var(--panel-br);
-  border-radius: 22px;
-  box-shadow:
-    0 18px 45px rgba(0,0,0,0.45),
-    inset 0 1px 0 rgba(255,255,255,0.08);
-  backdrop-filter: blur(8px);
-}
-
-.home-hero h1{
-  margin: 0 0 8px 0;
-  font-weight: 800;
-  text-align: center;
-}
-
-.home-sub{
-  margin: 0 auto 18px;
-  max-width: 860px;
-  opacity: 0.92;
-  font-weight: 600;
-  text-align: center;
-}
-
-/* ===== Home action pills (stacked, centered) ===== */
-.home-links{
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 18px;
-  margin-top: 10px;
-}
-
-.home-links a{
-  text-decoration: none !important;
-  color: inherit !important;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: var(--ctrl-h);
-  padding: 0 calc(var(--pad-x) + 8px);
-  border-radius: 14px;
-  border: 1px solid var(--panel-br);
-  background: var(--panel-bg);
-  font-weight: 800;
-  box-shadow: 0 10px 26px rgba(0,0,0,0.35);
-}
-.home-links a:hover{ filter: brightness(1.08); }
-.home-links a:active{ transform: translateY(1px); }
-
-/* ===== Header nav tabs: ensure pill look (no blue underlines) ===== */
-header nav a,
-.nav a{
-  text-decoration: none !important;
-  color: inherit !important;
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  min-height: var(--ctrl-h);
-  padding: 0 calc(var(--pad-x) - 4px);
-  border-radius: 14px;
-  border: 1px solid var(--panel-br);
-  background: var(--panel-bg);
-  font-weight: 800;
-  vertical-align: middle;
-}
-header nav a:hover,
-.nav a:hover{ filter: brightness(1.08); }
-header nav a:active,
-.nav a:active{ transform: translateY(1px); }
-
-/* If router sets an 'active' class, make it look selected */
-header nav a.active,
-.nav a.active{
-  border-color: color-mix(in oklab, var(--fg) 22%, transparent);
-  box-shadow: inset 0 0 0 2px color-mix(in oklab, var(--fg) 10%, transparent);
-}
-
-/* ===== BROKER badge — add className="role-badge" in your header markup ===== */
-.role-badge{
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: var(--ctrl-h);
-  padding: 0 16px;
-  margin-left: 10px;
-  border-radius: 999px;
-  border: 1px solid var(--panel-br);
-  background: var(--panel-bg);
-  font-weight: 800;
-}
-/* ===== Header layout (centered, safe with giant fonts) ===== */
+/* ---------- Header (pills + BROKER + toggle) ---------- */
 .qc-header{
   display: grid;
   grid-template-rows: auto auto;
@@ -459,27 +138,16 @@ header nav a.active,
   gap: 10px;
   padding: 8px 12px;
 }
-
-/* Nav row — pills, centered, wraps without breaking layout */
 .qc-nav{
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  justify-content: center;
-  align-items: center;
+  display:flex; flex-wrap:wrap; gap:12px; justify-content:center; align-items:center;
 }
-
 .qc-nav a{
-  text-decoration: none !important;
-  color: inherit !important;
-  display: inline-flex;
-  align-items: center;
+  text-decoration:none !important; color:inherit !important;
+  display:inline-flex; align-items:center;
   min-height: var(--ctrl-h);
   padding: 0 calc(var(--pad-x) - 4px);
-  border-radius: 14px;
-  border: 1px solid var(--panel-br);
-  background: var(--panel-bg);
-  font-weight: 800;
+  border-radius:14px; border:1px solid var(--panel-br); background: var(--panel-bg);
+  font-weight:800;
 }
 .qc-nav a:hover{ filter: brightness(1.08); }
 .qc-nav a:active{ transform: translateY(1px); }
@@ -488,61 +156,30 @@ header nav a.active,
   box-shadow: inset 0 0 0 2px color-mix(in oklab, var(--fg) 10%, transparent);
 }
 
-/* Tools row: BROKER pill + sun/moon toggle */
-.qc-header-tools{
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-  align-items: center;
-}
+.qc-header-tools{ display:flex; gap:12px; justify-content:center; align-items:center; }
 
 .role-badge{
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: var(--ctrl-h);
-  padding: 0 16px;
-  border-radius: 999px;
-  border: 1px solid var(--panel-br);
-  background: var(--panel-bg);
-  font-weight: 800;
+  display:inline-flex; align-items:center; justify-content:center;
+  min-height: var(--ctrl-h); padding: 0 16px;
+  border-radius:999px; border:1px solid var(--panel-br); background: var(--panel-bg);
+  font-weight:800;
 }
 
-/* Theme toggle button (keeps your icons) */
 .theme-toggle{
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: var(--ctrl-h);
-  padding: 0 16px;
-  border-radius: 14px;
-  border: 1px solid var(--panel-br);
-  background: var(--panel-bg);
-  font-weight: 800;
-  cursor: pointer;
+  display:inline-flex; align-items:center; justify-content:center;
+  min-height: var(--ctrl-h); padding: 0 16px;
+  border-radius:14px; border:1px solid var(--panel-br); background: var(--panel-bg);
+  font-weight:800; cursor:pointer;
 }
-.theme-toggle .theme-label{ margin-left: 10px; font-weight: 800; }
-/* ===== Force XL sizing inside Home + Check-In panels ===== */
-.home-hero,
-.home-hero * ,
-.checkin-panel,
-.checkin-panel * {
-  font-size: var(--fz) !important;
-  line-height: var(--lh) !important;
+.theme-toggle .theme-label{ margin-left:10px; font-weight:800; }
+
+/* ---------- Home + Check-In specific (ensure XL inside) ---------- */
+.home-hero, .checkin-panel{ max-width: 980px; margin: 0 auto; }
+.home-hero, .home-hero * , .checkin-panel, .checkin-panel * {
+  font-size: inherit !important;   /* inherit the 45pt base */
+  line-height: inherit !important;
 }
 
-/* Headings within those panels a touch larger */
-.home-hero h1,
-.checkin-panel h1 {
-  font-size: calc(var(--fz) * 1.15) !important;
-  line-height: var(--lh) !important;
-  font-weight: 800 !important;
-}
-
-/* Ensure form controls inside Check-In keep tall height */
-.checkin-panel input,
-.checkin-panel select,
-.checkin-panel textarea,
-.checkin-panel button {
-  min-height: var(--ctrl-h) !important;
-}
+/* Caution alert flash (kept) */
+@keyframes qcFlashRed { 0%,100%{background-color:rgba(255,0,0,0.25);} 50%{background-color:rgba(255,0,0,0.60);} }
+.qc-alert-flash{ animation: qcFlashRed 900ms ease-in-out 1; border-color: rgba(255,0,0,0.55) !important; }
