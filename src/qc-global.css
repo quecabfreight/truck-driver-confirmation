@@ -286,3 +286,10 @@ html[data-theme="light"] .theme-toggle-single .knob{
 }
 .home-links a:hover{ filter: brightness(1.08); }
 .home-links a:active{ transform: translateY(1px); }
+/* === TURN OFF ALL SQUARE PANELS SITEWIDE (reversible) === */
+.panel, .card, .surface{
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
