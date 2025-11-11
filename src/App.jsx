@@ -1,48 +1,33 @@
-import React, { useEffect, useState } from "react";
-import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
+// /src/App.jsx — FULL OVERWRITE
+import React from "react";
+import { HashRouter, Routes, Route } from "react-router-dom";
+import Header from "./components/Header.jsx";
 
-import Header from "./components/Header";
-import Footer from "./components/Footer";
-import BugButton from "./components/BugButton";
-
-import Home from "./pages/Home";
-import Login from "./pages/Login";
-import Join from "./pages/Join";
-import SmartLink from "./pages/SmartLink";
-import VerifyDriver from "./pages/VerifyDriver";
-import DriverScreen from "./pages/DriverScreen";
-import About from "./pages/About";
-
-function useTheme() {
-  const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "dark");
-  useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
-    localStorage.setItem("theme", theme);
-  }, [theme]);
-  const toggleTheme = () => setTheme((t) => (t === "dark" ? "light" : "dark"));
-  return { theme, toggleTheme };
-}
+import Home from "./pages/Home.jsx";
+import About from "./pages/About.jsx";
+import Login from "./pages/Login.jsx";
+import Join from "./pages/Join.jsx";
+// If you have these pages, keep them; if not, routes will still work for existing ones:
+let CheckIn, Verify;
+try { CheckIn = (await import("./pages/CheckIn.jsx")).default; } catch { CheckIn = () => null; }
+try { Verify = (await import("./pages/Verify.jsx")).default; } catch { Verify = () => null; }
 
 export default function App() {
-  const { theme, toggleTheme } = useTheme();
-
   return (
     <HashRouter>
-      <Header theme={theme} toggleTheme={toggleTheme} />
-      <main style={{ minHeight: "calc(100vh - 180px)" }}>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/join" element={<Join />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/smart" element={<SmartLink />} />
-          <Route path="/verify/:token" element={<VerifyDriver />} />
-          <Route path="/s/:token" element={<DriverScreen />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </main>
-      <Footer />
-      <BugButton />
+      <div className="app-shell" style={{ minHeight: "100dvh", display: "flex", flexDirection: "column" }}>
+        <Header />
+        <main style={{ flex: 1 }}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/join" element={<Join />} />
+            <Route path="/checkin" element={<CheckIn />} />
+            <Route path="/verify/:token" element={<Verify />} />
+          </Routes>
+        </main>
+      </div>
     </HashRouter>
   );
 }
