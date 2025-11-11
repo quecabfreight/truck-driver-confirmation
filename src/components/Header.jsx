@@ -1,4 +1,4 @@
-// /src/components/Header.jsx — CLEAN, NON-BREAKING HEADER
+// /src/components/Header.jsx — HEADER with colored Sun & Moon toggle
 import React, { useEffect, useState } from "react";
 
 function setTheme(next) {
@@ -13,11 +13,12 @@ export default function Header() {
   const [theme, setThemeState] = useState(getTheme());
   useEffect(() => { setTheme(theme); }, [theme]);
 
-  const toggleTheme = () => setThemeState(t => (t === "dark" ? "light" : "dark"));
+  const setDark  = () => setThemeState("dark");
+  const setLight = () => setThemeState("light");
 
   return (
     <header className="qc-header" role="banner">
-      {/* Row 1: nav tabs (centered, wrap on small screens) */}
+      {/* Row 1: nav tabs */}
       <nav className="qc-nav" aria-label="Primary">
         <a href="#/" className="active">Home</a>
         <a href="#/join">Request Access</a>
@@ -26,30 +27,36 @@ export default function Header() {
         <a href="#/checkin">Check In</a>
       </nav>
 
-      {/* Row 2: role pill + theme toggle */}
+      {/* Row 2: role pill + COLORED theme toggle */}
       <div className="qc-header-tools">
         <span className="role-badge">BROKER</span>
 
-        {/* DO NOT REMOVE sun & moon */}
-        <button
-          type="button"
-          aria-label="Toggle theme"
-          onClick={toggleTheme}
-          className="btn theme-toggle"
-        >
-          {theme === "dark" ? (
-            // Sun icon
-            <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true">
-              <path fill="currentColor" d="M6.76 4.84l-1.8-1.79l1.41-1.41l1.79 1.8zM1 13h3v-2H1zm9-9h2V1h-2zm8.66 1.64l1.79-1.8l1.41 1.41l-1.8 1.79zM17.24 19.16l1.79 1.8l-1.41 1.41l-1.8-1.79zM20 13h3v-2h-3zM11 23h2v-3h-2zM4.22 18.36l-1.8 1.79l1.41 1.41l1.79-1.8zM12 6a6 6 0 1 1 0 12a6 6 0 0 1 0-12z"/>
-            </svg>
-          ) : (
-            // Moon icon
-            <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true">
-              <path fill="currentColor" d="M12.99 2.04a9 9 0 1 0 9 9a7.5 7.5 0 0 1-9-9z"/>
-            </svg>
-          )}
-          <span className="theme-label">{theme === "dark" ? "Light" : "Dark"}</span>
-        </button>
+        {/* Colored two-segment toggle — shows BOTH icons */}
+        <div className="theme-toggle" role="group" aria-label="Theme">
+          <button
+            type="button"
+            className={`theme-seg ${theme === "dark" ? "is-active" : ""}`}
+            onClick={setDark}
+            aria-pressed={theme === "dark"}
+            aria-label="Dark theme"
+            title="Dark"
+          >
+            <span className="icon-moon" aria-hidden="true">🌙</span>
+            <span className="theme-text">Dark</span>
+          </button>
+
+          <button
+            type="button"
+            className={`theme-seg ${theme === "light" ? "is-active" : ""}`}
+            onClick={setLight}
+            aria-pressed={theme === "light"}
+            aria-label="Light theme"
+            title="Light"
+          >
+            <span className="icon-sun" aria-hidden="true">🌞</span>
+            <span className="theme-text">Light</span>
+          </button>
+        </div>
       </div>
     </header>
   );
