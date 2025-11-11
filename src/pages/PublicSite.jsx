@@ -1,21 +1,28 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
-/**
- * QueCab AdbS — Public Website
- * - Pure CSS metallic look (no outside images)
- * - Hero + How It Works + Feature cards + Social proof + CTA + Footer
- * - Big, legible type; dock-friendly contrast
- * - Buttons wire into your existing /join and /login app pages
- */
 export default function PublicSite() {
   const [mode, setMode] = useState("dark");
-
   useEffect(() => { document.title = "QueCab AdbS — Secure Your Load"; }, []);
 
   return (
     <div id="qc-site" data-mode={mode}>
       <style>{`
+        /* ===== HARD OVERRIDES so this page ignores any parent clamp ===== */
+        #qc-site{
+          /* break out of any centered/narrow parent width */
+          position: relative;
+          width: 100vw;
+          margin-left: calc(50% - 50vw);
+          margin-right: calc(50% - 50vw);
+
+          /* ensure nothing upstream sets a tiny font or box sizing */
+          font-size: 16px;
+          box-sizing: border-box;
+          isolation: isolate; /* keep our z-index/backdrop effects local */
+        }
+        #qc-site *, #qc-site *::before, #qc-site *::after { box-sizing: inherit; }
+
         :root{
           --ink:#0e0f12;
           --panel:rgba(10,12,14,.65);
@@ -39,8 +46,6 @@ export default function PublicSite() {
           overflow-x:hidden;
           font-family: "Segoe UI", Roboto, system-ui, -apple-system, Arial, sans-serif;
         }
-
-        /* very subtle noise texture via CSS only */
         #qc-site::before{
           content:"";
           position:fixed; inset:0;
@@ -52,28 +57,26 @@ export default function PublicSite() {
           pointer-events:none; opacity:.35;
         }
 
-        .wrap{ max-width:1200px; margin:0 auto; padding:28px 20px 80px; }
+        .wrap{
+          max-width:1280px !important;   /* <= force wide */
+          width:min(1280px, 96vw);
+          margin:0 auto;
+          padding:28px 20px 80px;
+        }
 
         header{
           display:flex; align-items:center; justify-content:space-between; gap:16px;
           padding:6px 0 24px;
         }
-        .brand{
-          display:flex; align-items:center; gap:14px; font-weight:900; letter-spacing:.4px;
-        }
+        .brand{ display:flex; align-items:center; gap:14px; font-weight:900; letter-spacing:.4px; }
         .badge{
           width:58px; height:58px; border-radius:14px;
           background:
             radial-gradient(circle at 30% 30%, #7d8792, #3c4249 40%, #1b1e22 72%),
             linear-gradient(160deg, #9aa2aa, #464b52 45%, #1c2024);
-          box-shadow:
-            inset 0 1px 0 rgba(255,255,255,.25),
-            0 10px 32px rgba(0,0,0,.35);
+          box-shadow: inset 0 1px 0 rgba(255,255,255,.25), 0 10px 32px rgba(0,0,0,.35);
         }
-        .brand h1{
-          margin:0; font-size:clamp(28px,4vw,42px); line-height:1.05;
-          text-shadow:0 0 24px rgba(0,255,162,.25);
-        }
+        .brand h1{ margin:0; font-size:clamp(28px,4vw,42px); line-height:1.05; text-shadow:0 0 24px rgba(0,255,162,.25); }
         .brand small{ display:block; color:var(--muted); font-weight:700; letter-spacing:.12em; margin-top:2px; }
 
         nav a{
@@ -82,10 +85,7 @@ export default function PublicSite() {
           border:1px solid transparent;
         }
         nav a:hover{ border-color:var(--panel-lite); background:rgba(255,255,255,.04); }
-        .mode{
-          cursor:pointer; margin-left:10px; padding:8px 12px; border-radius:10px;
-          border:1px solid var(--panel-lite); background:rgba(255,255,255,.03);
-        }
+        .mode{ cursor:pointer; margin-left:10px; padding:8px 12px; border-radius:10px; border:1px solid var(--panel-lite); background:rgba(255,255,255,.03); }
 
         .hero{
           position:relative; border-radius:22px; overflow:hidden;
@@ -101,37 +101,17 @@ export default function PublicSite() {
             radial-gradient(700px 300px at 95% 0%, rgba(0,255,162,.15), transparent 60%);
           pointer-events:none;
         }
-        .hero h2{
-          font-size: clamp(42px, 7vw, 86px);
-          margin: 0 0 12px;
-          line-height: .98;
-        }
+        .hero h2{ font-size: clamp(42px, 7vw, 86px); margin:0 0 12px; line-height:.98; }
         .hero p{ font-size: clamp(18px, 2.2vw, 24px); max-width: 900px; color:#f2f6fa; }
 
-        .cta{
-          display:flex; gap:16px; margin-top:22px; flex-wrap:wrap;
-        }
-        .btn{
-          border:0; cursor:pointer; font-weight:900; letter-spacing:.02em;
-          text-transform:uppercase; border-radius:14px; padding:16px 22px;
-          transition:transform .15s ease, box-shadow .15s ease, filter .15s ease;
-        }
-        .btn-primary{
-          background:linear-gradient(180deg, var(--glow), var(--glow-2));
-          color:#052017;
-          box-shadow:0 12px 40px rgba(0,255,162,.35);
-        }
+        .cta{ display:flex; gap:16px; margin-top:22px; flex-wrap:wrap; }
+        .btn{ border:0; cursor:pointer; font-weight:900; letter-spacing:.02em; text-transform:uppercase; border-radius:14px; padding:16px 22px; transition:transform .15s ease, box-shadow .15s ease, filter .15s ease; }
+        .btn-primary{ background:linear-gradient(180deg, var(--glow), var(--glow-2)); color:#052017; box-shadow:0 12px 40px rgba(0,255,162,.35); }
         .btn-primary:hover{ transform:translateY(-1px) scale(1.02); box-shadow:0 16px 50px rgba(0,255,162,.45); }
-        .btn-ghost{
-          background:rgba(255,255,255,.06); color:var(--text);
-          border:1px solid rgba(255,255,255,.18);
-        }
+        .btn-ghost{ background:rgba(255,255,255,.06); color:var(--text); border:1px solid rgba(255,255,255,.18); }
         .btn-ghost:hover{ filter:brightness(1.15); }
 
-        .grid{
-          display:grid; gap:22px; margin-top:32px;
-          grid-template-columns:repeat(12, 1fr);
-        }
+        .grid{ display:grid; gap:22px; margin-top:32px; grid-template-columns:repeat(12, 1fr); }
 
         .card{
           grid-column: span 12;
@@ -148,24 +128,16 @@ export default function PublicSite() {
           .card--half  { grid-column: span 6; }
         }
 
-        .kpis{
-          display:flex; gap:16px; flex-wrap:wrap; margin-top:10px;
-        }
-        .kpi{
-          border:1px solid rgba(255,255,255,.12); border-radius:14px;
-          background:rgba(255,255,255,.04); padding:12px 14px; min-width:170px;
-        }
+        .kpis{ display:flex; gap:16px; flex-wrap:wrap; margin-top:10px; }
+        .kpi{ border:1px solid rgba(255,255,255,.12); border-radius:14px; background:rgba(255,255,255,.04); padding:12px 14px; min-width:170px; }
         .kpi b{ font-size:22px; display:block; }
         .kpi small{ color:var(--muted); font-weight:700; }
 
-        .footer{
-          margin-top:60px; text-align:center; color:var(--muted);
-        }
+        .footer{ margin-top:60px; text-align:center; color:var(--muted); }
         .footer a{ color:var(--text); text-decoration:none; border-bottom:1px dashed rgba(255,255,255,.25); }
       `}</style>
 
       <div className="wrap">
-        {/* Header */}
         <header>
           <div className="brand">
             <div className="badge" aria-hidden="true" />
@@ -185,7 +157,6 @@ export default function PublicSite() {
           </nav>
         </header>
 
-        {/* HERO */}
         <section className="hero">
           <h2>Verify before you load.<br/>Stop double-brokering cold.</h2>
           <p>
@@ -205,7 +176,6 @@ export default function PublicSite() {
           </div>
         </section>
 
-        {/* HOW IT WORKS */}
         <section id="how" style={{marginTop:34}}>
           <div className="grid">
             <div className="card card--third">
@@ -223,7 +193,6 @@ export default function PublicSite() {
           </div>
         </section>
 
-        {/* WHY / FEATURES */}
         <section id="why" style={{marginTop:12}}>
           <div className="grid">
             <div className="card card--half">
@@ -251,7 +220,6 @@ export default function PublicSite() {
           </div>
         </section>
 
-        {/* CTA */}
         <section style={{marginTop:12}}>
           <div className="card" style={{textAlign:"center"}}>
             <h3 style={{fontSize:"clamp(26px,3.5vw,40px)"}}>Ready to make “Verify before you load” your default?</h3>
@@ -262,7 +230,6 @@ export default function PublicSite() {
           </div>
         </section>
 
-        {/* FOOTER */}
         <div className="footer">
           © {new Date().getFullYear()} QueCab AdbS™ — Secure Your Load · <a href="#how">How it works</a>
         </div>
