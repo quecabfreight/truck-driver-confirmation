@@ -1,26 +1,41 @@
-// /src/pages/Home.jsx — FULL OVERWRITE (adds .home-hero class)
+// /src/pages/Home.jsx — INLINE XL STYLES (no CSS dependency)
 import React from "react";
+
+const XL = {
+  base:  { fontSize: "60px", lineHeight: 1.25, color: "inherit" },
+  h1:    { fontSize: "69px", lineHeight: 1.2, fontWeight: 800, margin: "0 0 12px", textAlign: "center" },
+  sub:   { fontSize: "60px", lineHeight: 1.25, fontWeight: 600, margin: "0 auto 18px", maxWidth: "860px", textAlign: "center" },
+  btn:   {
+    fontSize: "60px", lineHeight: 1.25, fontWeight: 800,
+    minHeight: "80px", padding: "0 28px",
+    textDecoration: "none", color: "inherit",
+    display: "inline-flex", alignItems: "center", justifyContent: "center",
+    borderRadius: "14px", border: "1px solid rgba(255,255,255,0.10)",
+    background: "rgba(17,17,19,0.6)",
+  },
+  stack: { display: "flex", flexDirection: "column", alignItems: "center", gap: "18px" },
+  panel: { maxWidth: "900px", margin: "0 auto", textAlign: "center" },
+  logo:  { display: "block", width: "220px", maxWidth: "90vw", margin: "24px auto" }
+};
 
 export default function Home() {
   return (
-    <div className="qc-page">
-      <div className="qc-logo" id="qc-logo">
-        <img src="/qc-logo.png" alt="QueCab AdbS logo" />
+    <div style={XL.base}>
+      <div style={XL.logo}>
+        <img src="/qc-logo.png" alt="QueCab AdbS logo" style={{ width: "100%", height: "auto", display: "block" }} />
       </div>
 
-      <section className="panel home-hero" style={{ maxWidth: 900, margin: "0 auto", textAlign: "center" }}>
-        <h1 style={{ marginTop: 0, fontWeight: 800 }}>
-          QueCab AdbS — Truck-Driver Confirmation
-        </h1>
-        <p style={{ margin: "0 auto 18px", maxWidth: 820, fontWeight: 600 }}>
+      <section style={XL.panel}>
+        <h1 style={XL.h1}>QueCab AdbS — Truck-Driver Confirmation</h1>
+        <p style={XL.sub}>
           Secure your load — verify before you load. Instantly confirm USDOT#, carrier, and driver identity.
         </p>
 
-        <div className="home-links" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 18 }}>
-          <a href="#/join">Request Access</a>
-          <a href="#/login">Already Authorized? Log In</a>
-          <a href="#/about">About</a>
-          <a href="#/checkin">Check In Link</a>
+        <div style={XL.stack}>
+          <a href="#/join"  style={XL.btn}>Request Access</a>
+          <a href="#/login" style={XL.btn}>Already Authorized? Log In</a>
+          <a href="#/about" style={XL.btn}>About</a>
+          <a href="#/checkin" style={XL.btn}>Check In Link</a>
         </div>
       </section>
     </div>
