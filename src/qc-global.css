@@ -224,3 +224,65 @@ html[data-theme="dark"] .icon-moon { color: #93c5fd; }         /* blue-ish moon 
 
 html[data-theme="light"] .icon-sun  { color: #facc15; }        /* warm yellow sun */
 html[data-theme="light"] .icon-moon { color: #3b82f6; }        /* blue moon */
+/* ===== Single Sun/Moon toggle (one switch, sliding knob) ===== */
+.theme-toggle-single{
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 18px;
+  min-height: var(--ctrl-h);
+  border-radius: 18px;
+  border: 1px solid var(--panel-br);
+  background: var(--panel-bg);
+  font-weight: 800;
+  cursor: pointer;
+  text-decoration: none !important;
+  color: inherit !important;
+}
+.theme-toggle-single .icon{ font-size: 1.1em; line-height: 1; }
+.theme-toggle-single .sun{ color: #facc15; filter: drop-shadow(0 0 2px rgba(255,200,0,.6)); }
+.theme-toggle-single .moon{ color: #60a5fa; }
+
+.theme-toggle-single .knob{
+  position: absolute;
+  left: 48px;          /* start under the sun */
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: calc(var(--ctrl-h) - 18px);
+  border-radius: 14px;
+  background: color-mix(in oklab, var(--fg) 12%, transparent);
+  box-shadow: inset 0 0 0 2px color-mix(in oklab, var(--fg) 18%, transparent);
+  transition: transform 180ms ease;
+}
+/* When in LIGHT mode, slide knob toward the moon (to the right) */
+html[data-theme="light"] .theme-toggle-single .knob{
+  transform: translate(56px, -50%);  /* slide right */
+}
+.theme-toggle-single .theme-text{ margin-left: 8px; font-weight: 800; }
+
+/* ===== Home panel links — force pills, not blue underlined links ===== */
+.home-links{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  margin-top: 10px;
+}
+.home-links a{
+  text-decoration: none !important;
+  color: inherit !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--ctrl-h);
+  padding: 0 calc(var(--pad-x) + 8px);
+  border-radius: 14px;
+  border: 1px solid var(--panel-br);
+  background: var(--panel-bg);
+  font-weight: 800;
+  box-shadow: 0 10px 26px rgba(0,0,0,0.35);
+}
+.home-links a:hover{ filter: brightness(1.08); }
+.home-links a:active{ transform: translateY(1px); }
