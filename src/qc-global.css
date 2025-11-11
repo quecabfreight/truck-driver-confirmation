@@ -522,3 +522,27 @@ header nav a.active,
   cursor: pointer;
 }
 .theme-toggle .theme-label{ margin-left: 10px; font-weight: 800; }
+/* ===== Force XL sizing inside Home + Check-In panels ===== */
+.home-hero,
+.home-hero * ,
+.checkin-panel,
+.checkin-panel * {
+  font-size: var(--fz) !important;
+  line-height: var(--lh) !important;
+}
+
+/* Headings within those panels a touch larger */
+.home-hero h1,
+.checkin-panel h1 {
+  font-size: calc(var(--fz) * 1.15) !important;
+  line-height: var(--lh) !important;
+  font-weight: 800 !important;
+}
+
+/* Ensure form controls inside Check-In keep tall height */
+.checkin-panel input,
+.checkin-panel select,
+.checkin-panel textarea,
+.checkin-panel button {
+  min-height: var(--ctrl-h) !important;
+}
