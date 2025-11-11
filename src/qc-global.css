@@ -274,3 +274,30 @@ header nav a:focus-visible,
 main a:hover {
   text-decoration: underline;
 }
+/* ===== HOME ACTIONS (buttons, not blue links) ===== */
+.home-links{
+  display: flex;
+  flex-direction: column;     /* one per line */
+  align-items: center;        /* centered stack */
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.home-links a{
+  text-decoration: none !important;
+  color: inherit !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--ctrl-h);
+  padding: 0 calc(var(--pad-x) + 8px);
+  border-radius: 14px;
+  border: 1px solid var(--panel-br);
+  background: var(--panel-bg);
+  font-weight: 800;
+}
+
+.home-links a:hover{ filter: brightness(1.08); }
+.home-links a:active{ transform: translateY(1px); }
+
+/* keep “real” content links elsewhere behaving like links */
