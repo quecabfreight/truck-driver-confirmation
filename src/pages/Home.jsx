@@ -1,32 +1,34 @@
-// /src/pages/Home.jsx — FULL OVERWRITE
+// /src/pages/Home.jsx — FULL OVERWRITE (match other pages' look)
 import React from "react";
 
 export default function Home() {
   return (
     <div className="qc-page">
-      {/* Logo (keeps your 220px width rule) */}
+      {/* Logo (keeps 220px rule) */}
       <div className="qc-logo" id="qc-logo">
         <img src="/qc-logo.png" alt="QueCab AdbS logo" />
       </div>
 
-      {/* Title */}
-      <h1>QueCab AdbS — Truck-Driver Confirmation</h1>
+      {/* Hero panel to match other pages' card/glass look */}
+      <section className="panel home-panel">
+        <h1>QueCab AdbS — Truck-Driver Confirmation</h1>
 
-      {/* Home action links (styled as big pills by .home-links in qc-global.css) */}
-      <div className="home-links">
-        <a href="#/join" aria-label="Request Access">
-          Request Access
-        </a>
-        <a href="#/login" aria-label="Already Authorized? Log In">
-          Already Authorized? Log In
-        </a>
-        <a href="#/about" aria-label="About QueCab AdbS">
-          About
-        </a>
-        <a href="#/checkin" aria-label="Check In Link">
-          Check In Link
-        </a>
-      </div>
+        {/* Big, centered action links */}
+        <div className="home-links">
+          <a href="#/join" aria-label="Request Access">
+            Request Access
+          </a>
+          <a href="#/login" aria-label="Already Authorized? Log In">
+            Already Authorized? Log In
+          </a>
+          <a href="#/about" aria-label="About QueCab AdbS">
+            About
+          </a>
+          <a href="#/checkin" aria-label="Check In Link">
+            Check In Link
+          </a>
+        </div>
+      </section>
     </div>
   );
 }
