@@ -1,4 +1,4 @@
-/* /src/qc-global.css — 45pt desktop, centered footer, tall inputs */
+/* /src/qc-global.css — SAFE REWRITE (keep logo size, re-center, preserve Light/Dark, do NOT break buttons/links) */
 
 /* Reset & base */
 *,
@@ -7,61 +7,74 @@
 
 html, body, #root { height: 100%; margin: 0; }
 
-body {
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background: #0b0b0c;
-  color: #f3f4f6;
-}
-
-/* Scale tokens */
+/* ---- THEME-TOKENS (does NOT remove your toggle) ----
+   We respect whichever element your app toggles: html or body.
+   If none is present, dark-like defaults still apply. */
 :root{
-  --fz: 18px;           /* mobile/base */
+  --bg: #0b0b0c;
+  --fg: #f3f4f6;
+
+  /* 45pt (~60px) desktop base; mobile normal */
+  --fz: 18px;
   --lh: 1.35;
-  --ctrl-h: 60px;
-  --pad-x: 20px;
+
+  --ctrl-h: 72px;   /* tall inputs/buttons for readability */
+  --pad-x: 26px;
+
   --panel-bg: rgba(17,17,19,0.6);
   --panel-br: rgba(255,255,255,0.10);
-  --logo-w: 220px;
+
+  --logo-w: 220px;  /* project standard */
 }
 
-/* Desktop & large tablet: 45pt ≈ 60px */
+/* Light theme (do NOT remove your sun/moon; this only reacts to what your toggle sets) */
+html[data-theme="light"],
+body[data-theme="light"]{
+  --bg: #f7f7fb;
+  --fg: #0b0b0c;
+  --panel-bg: rgba(255,255,255,0.75);
+  --panel-br: rgba(0,0,0,0.10);
+}
+
+/* Dark theme */
+html[data-theme="dark"],
+body[data-theme="dark"]{
+  --bg: #0b0b0c;
+  --fg: #f3f4f6;
+  --panel-bg: rgba(17,17,19,0.6);
+  --panel-br: rgba(255,255,255,0.10);
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Desktop & large tablet: scale up to ~45pt */
 @media (min-width: 1024px){
   :root{
-    --fz: 60px;         /* ~45pt */
+    --fz: 60px;   /* ~45pt */
     --lh: 1.25;
-    --ctrl-h: 72px;
-    --pad-x: 26px;
   }
 }
 
-/* Typography — FORCE everywhere */
+/* Typography — big but layout-safe (no global text-align changes) */
 body,
-p,
-li,
-a,
-label,
-input,
-select,
-textarea,
-button,
-small,
-.nav,
-footer,
-table,
-th,
-td {
+p, li, a, label,
+input, select, textarea, button,
+small, footer, table, th, td {
   font-size: var(--fz) !important;
   line-height: var(--lh) !important;
 }
 
-/* Headings */
+/* Headings (slightly larger than body) */
 h1{ font-size: calc(var(--fz) * 1.15) !important; margin: .6em 0 .35em; font-weight: 800; }
 h2{ font-size: calc(var(--fz) * 1.05) !important; margin: .55em 0 .30em; font-weight: 800; }
 h3{ font-size: var(--fz) !important;              margin: .50em 0 .30em; font-weight: 700; }
 
-/* Forms — huge & readable */
+/* Forms — tall & readable; DO NOT force width so we don’t break your layouts */
 input[type="text"],
 input[type="tel"],
 input[type="email"],
@@ -76,32 +89,34 @@ button {
   border-radius: 14px !important;
   border: 1px solid var(--panel-br) !important;
   background: var(--panel-bg) !important;
-  color: #f9fafb !important;
+  color: var(--fg) !important;
   outline: none !important;
-  width: 100%;
+  /* width: 100%;  — REMOVED to avoid shifting/centering issues */
+  pointer-events: auto;    /* ensure clickable */
+  user-select: auto;
 }
 
 /* Big placeholders too */
 ::placeholder{
-  color: #c7c9d1 !important;
+  color: color-mix(in oklab, var(--fg) 55%, transparent) !important;
   opacity: 1 !important;
   font-size: var(--fz) !important;
   line-height: var(--lh) !important;
 }
 
-/* Labels match size */
+/* Labels */
 label{
   display: inline-block;
   font-weight: 800;
   margin: 10px 0 6px;
 }
 
-/* Primary button look */
+/* Primary action */
 button.primary,
 .btn.primary,
 button[type="submit"]{
-  border-color: rgba(255,255,255,0.18) !important;
-  background: linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.03)) !important;
+  border-color: color-mix(in oklab, var(--fg) 18%, transparent) !important;
+  background: linear-gradient(180deg, color-mix(in oklab, var(--fg) 9%, transparent), color-mix(in oklab, var(--fg) 3%, transparent)) !important;
   font-weight: 800;
   cursor: pointer;
 }
@@ -109,7 +124,7 @@ button.primary:hover,
 .btn.primary:hover,
 button[type="submit"]:hover{ filter: brightness(1.08); }
 
-/* Pills/badges same height as inputs */
+/* Pills/badges */
 .badge, .tag, .pill{
   display: inline-flex;
   align-items: center;
@@ -130,7 +145,7 @@ button[type="submit"]:hover{ filter: brightness(1.08); }
   backdrop-filter: blur(8px);
 }
 
-/* Logo */
+/* Logo (keep your good size, centered; doesn’t force surrounding layout) */
 #qc-logo, .qc-logo{
   display: block;
   margin: 24px auto;
@@ -140,15 +155,15 @@ button[type="submit"]:hover{ filter: brightness(1.08); }
 #qc-logo img, .qc-logo img{ width: 100%; height: auto; display: block; }
 
 /* Links */
-a{ color: #cbd5ff; text-decoration: none; }
+a{ color: #6b7cff; text-decoration: none; }
 a:hover{ text-decoration: underline; }
 
-/* Footer — centered */
+/* Footer — centered only (won’t affect page layout) */
 .site-footer{
   margin-top: 40px;
   padding: 24px 12px;
   border-top: 1px solid var(--panel-br);
-  color: #cbd5e1;
+  color: color-mix(in oklab, var(--fg) 85%, transparent);
   text-align: center !important;
   font-weight: 700;
 }
