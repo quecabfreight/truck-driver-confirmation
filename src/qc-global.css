@@ -429,3 +429,88 @@ form:first-of-type button{
   border-radius: var(--qc-br); border: var(--qc-border);
   background: var(--qc-surface); color: inherit;
 }
+/* ===== HARD FIX PACK — LOGO + HOME + CHECK-IN ===== */
+
+/* 0) One logo size everywhere (any image using your logo file or alt text) */
+:root { --qc-logo-w: 320px; } /* change this number to taste */
+img[src*="qc-logo"],
+img[alt*="QueCab"]{
+  width: var(--qc-logo-w) !important;
+  max-width: 90vw !important;
+  height: auto !important;
+  display: block !important;
+  margin: 24px auto !important;
+}
+
+/* Shared big sizes */
+:root{
+  --qc-fz: 60px;          /* ≈ 45pt */
+  --qc-lh: 1.25;
+  --qc-ctrl-h: 80px;
+  --qc-pad-x: 28px;
+  --qc-br: 14px;
+  --qc-brd: 1px solid rgba(255,255,255,0.10);
+  --qc-surface: rgba(17,17,19,0.60);
+}
+
+/* 1) HOME: turn the center links into buttons (no blue, no underline) */
+.home-links{ display:flex !important; flex-direction:column !important; align-items:center !important; gap:18px !important; }
+
+/* If your Home doesn’t have .home-links, fall back to the first .panel links */
+.panel:first-of-type a[href^="#/"],
+.home-links a{
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  min-height: var(--qc-ctrl-h) !important;
+  padding: 0 var(--qc-pad-x) !important;
+  font-size: var(--qc-fz) !important;
+  line-height: var(--qc-lh) !important;
+  font-weight: 800 !important;
+  text-decoration: none !important;
+  color: inherit !important;
+  border-radius: var(--qc-br) !important;
+  border: var(--qc-brd) !important;
+  background: var(--qc-surface) !important;
+  box-shadow: 0 10px 26px rgba(0,0,0,0.35) !important;
+}
+.home-links a:hover, .panel:first-of-type a[href^="#/"]:hover{ filter:brightness(1.08); }
+.home-links a:active, .panel:first-of-type a[href^="#/"]:active{ transform: translateY(1px); }
+
+/* 2) CHECK-IN: make labels, inputs, and the big button billboard-sized */
+/* Works if the page uses .checkin-panel */
+.checkin-panel h1{ font-size: calc(var(--qc-fz)*1.15) !important; line-height:1.2 !important; font-weight:800 !important; text-align:center !important; }
+.checkin-panel label{ display:inline-block !important; margin:12px 0 6px !important; font-weight:800 !important; font-size: var(--qc-fz) !important; }
+.checkin-panel input, .checkin-panel select, .checkin-panel textarea, .checkin-panel button{
+  width:100% !important;
+  min-height: var(--qc-ctrl-h) !important;
+  padding: 0 var(--qc-pad-x) !important;
+  font-size: var(--qc-fz) !important;
+  line-height: var(--qc-lh) !important;
+  border-radius: var(--qc-br) !important;
+  border: var(--qc-brd) !important;
+  background: var(--qc-surface) !important;
+  color: inherit !important;
+  font-weight: 800 !important;
+}
+
+/* Fallback if the class isn't present: style the FIRST form on the page (this will hit Check-In) */
+main form:first-of-type label{ display:inline-block !important; margin:12px 0 6px !important; font-weight:800 !important; font-size: var(--qc-fz) !important; }
+main form:first-of-type input,
+main form:first-of-type select,
+main form:first-of-type textarea,
+main form:first-of-type button{
+  width:100% !important;
+  min-height: var(--qc-ctrl-h) !important;
+  padding: 0 var(--qc-pad-x) !important;
+  font-size: var(--qc-fz) !important;
+  line-height: var(--qc-lh) !important;
+  border-radius: var(--qc-br) !important;
+  border: var(--qc-brd) !important;
+  background: var(--qc-surface) !important;
+  color: inherit !important;
+  font-weight: 800 !important;
+}
+
+/* 3) Optional: remove the gray square cards sitewide (you hated the boxes) */
+.panel, .card, .surface{ background: transparent !important; border:none !important; box-shadow:none !important; }
