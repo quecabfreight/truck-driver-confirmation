@@ -451,3 +451,74 @@ header nav a.active,
   background: var(--panel-bg);
   font-weight: 800;
 }
+/* ===== Header layout (centered, safe with giant fonts) ===== */
+.qc-header{
+  display: grid;
+  grid-template-rows: auto auto;
+  justify-content: center;
+  gap: 10px;
+  padding: 8px 12px;
+}
+
+/* Nav row — pills, centered, wraps without breaking layout */
+.qc-nav{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+}
+
+.qc-nav a{
+  text-decoration: none !important;
+  color: inherit !important;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--ctrl-h);
+  padding: 0 calc(var(--pad-x) - 4px);
+  border-radius: 14px;
+  border: 1px solid var(--panel-br);
+  background: var(--panel-bg);
+  font-weight: 800;
+}
+.qc-nav a:hover{ filter: brightness(1.08); }
+.qc-nav a:active{ transform: translateY(1px); }
+.qc-nav a.active{
+  border-color: color-mix(in oklab, var(--fg) 22%, transparent);
+  box-shadow: inset 0 0 0 2px color-mix(in oklab, var(--fg) 10%, transparent);
+}
+
+/* Tools row: BROKER pill + sun/moon toggle */
+.qc-header-tools{
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+}
+
+.role-badge{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--ctrl-h);
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid var(--panel-br);
+  background: var(--panel-bg);
+  font-weight: 800;
+}
+
+/* Theme toggle button (keeps your icons) */
+.theme-toggle{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--ctrl-h);
+  padding: 0 16px;
+  border-radius: 14px;
+  border: 1px solid var(--panel-br);
+  background: var(--panel-bg);
+  font-weight: 800;
+  cursor: pointer;
+}
+.theme-toggle .theme-label{ margin-left: 10px; font-weight: 800; }
