@@ -1,4 +1,4 @@
-// /src/components/Header.jsx — HEADER with colored Sun & Moon toggle
+// /src/components/Header.jsx — Single toggle (sun+moon), BROKER pill, centered nav
 import React, { useEffect, useState } from "react";
 
 function setTheme(next) {
@@ -13,8 +13,7 @@ export default function Header() {
   const [theme, setThemeState] = useState(getTheme());
   useEffect(() => { setTheme(theme); }, [theme]);
 
-  const setDark  = () => setThemeState("dark");
-  const setLight = () => setThemeState("light");
+  const toggleTheme = () => setThemeState(t => (t === "dark" ? "light" : "dark"));
 
   return (
     <header className="qc-header" role="banner">
@@ -27,36 +26,22 @@ export default function Header() {
         <a href="#/checkin">Check In</a>
       </nav>
 
-      {/* Row 2: role pill + COLORED theme toggle */}
+      {/* Row 2: BROKER pill + SINGLE colored toggle */}
       <div className="qc-header-tools">
         <span className="role-badge">BROKER</span>
 
-        {/* Colored two-segment toggle — shows BOTH icons */}
-        <div className="theme-toggle" role="group" aria-label="Theme">
-          <button
-            type="button"
-            className={`theme-seg ${theme === "dark" ? "is-active" : ""}`}
-            onClick={setDark}
-            aria-pressed={theme === "dark"}
-            aria-label="Dark theme"
-            title="Dark"
-          >
-            <span className="icon-moon" aria-hidden="true">🌙</span>
-            <span className="theme-text">Dark</span>
-          </button>
-
-          <button
-            type="button"
-            className={`theme-seg ${theme === "light" ? "is-active" : ""}`}
-            onClick={setLight}
-            aria-pressed={theme === "light"}
-            aria-label="Light theme"
-            title="Light"
-          >
-            <span className="icon-sun" aria-hidden="true">🌞</span>
-            <span className="theme-text">Light</span>
-          </button>
-        </div>
+        <button
+          type="button"
+          className="theme-toggle-single"
+          onClick={toggleTheme}
+          aria-pressed={theme === "light"}
+          aria-label="Toggle theme"
+        >
+          <span className="icon sun" aria-hidden="true">🌞</span>
+          <span className="knob" />
+          <span className="icon moon" aria-hidden="true">🌙</span>
+          <span className="theme-text">{theme === "dark" ? "Dark" : "Light"}</span>
+        </button>
       </div>
     </header>
   );
