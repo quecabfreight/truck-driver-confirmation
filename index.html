@@ -15,7 +15,23 @@
     />
   </head>
   <body>
+    <!-- React app mount point -->
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+
+    <!-- Temporary build marker for deployment test -->
+    <div style="
+      position: fixed;
+      right: 8px;
+      bottom: 8px;
+      background: #ffeb3b;
+      color: #111;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font: 700 14px/1.2 system-ui;
+      z-index: 999999;
+    ">
+      BUILD-MARKER: Q-TEST-01
+    </div>
   </body>
 </html>
