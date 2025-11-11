@@ -183,3 +183,44 @@ label{
 /* Caution alert flash (kept) */
 @keyframes qcFlashRed { 0%,100%{background-color:rgba(255,0,0,0.25);} 50%{background-color:rgba(255,0,0,0.60);} }
 .qc-alert-flash{ animation: qcFlashRed 900ms ease-in-out 1; border-color: rgba(255,0,0,0.55) !important; }
+/* ===== Colored Sun & Moon toggle (two-segment) ===== */
+.theme-toggle{
+  display: inline-flex;
+  gap: 8px;
+  padding: 6px;
+  border-radius: 16px;
+  border: 1px solid var(--panel-br);
+  background: var(--panel-bg);
+  align-items: center;
+}
+
+.theme-seg{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: calc(var(--ctrl-h) - 16px);
+  padding: 0 18px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: transparent;
+  font-weight: 800;
+  cursor: pointer;
+  text-decoration: none !important;
+  color: inherit !important;
+}
+
+.theme-seg .icon-sun{ font-size: 1.1em; line-height: 1; filter: saturate(1.2); }
+.theme-seg .icon-moon{ font-size: 1.1em; line-height: 1; }
+
+.theme-seg.is-active{
+  border-color: color-mix(in oklab, var(--fg) 22%, transparent);
+  box-shadow: inset 0 0 0 2px color-mix(in oklab, var(--fg) 10%, transparent);
+}
+
+/* Make the icons clearly colored on both themes */
+html[data-theme="dark"] .icon-sun  { filter: drop-shadow(0 0 2px rgba(255,200,0,.6)); }
+html[data-theme="dark"] .icon-moon { color: #93c5fd; }         /* blue-ish moon */
+
+html[data-theme="light"] .icon-sun  { color: #facc15; }        /* warm yellow sun */
+html[data-theme="light"] .icon-moon { color: #3b82f6; }        /* blue moon */
