@@ -1,4 +1,4 @@
-// /src/pages/CheckIn.jsx — FULL OVERWRITE
+// /src/pages/CheckIn.jsx — FULL OVERWRITE (adds .checkin-panel class)
 import React, { useState } from "react";
 
 export default function CheckIn() {
@@ -8,8 +8,10 @@ export default function CheckIn() {
 
   const handleGenerate = (e) => {
     e.preventDefault();
-    // Placeholder only: you already said back-end wiring comes later.
-    alert("Verify Link generator is placeholder-only in this build.\n(USDOT: " + dot + ", Plate: " + plate + ", Phone: " + phone + ")");
+    alert(
+      "Verify Link generator is placeholder-only in this build.\n" +
+      "(USDOT: " + dot + ", Plate: " + plate + ", Phone: " + phone + ")"
+    );
   };
 
   return (
@@ -18,7 +20,7 @@ export default function CheckIn() {
         <img src="/qc-logo.png" alt="QueCab AdbS logo" />
       </div>
 
-      <section className="panel" style={{ maxWidth: 720, margin: "0 auto" }}>
+      <section className="panel checkin-panel" style={{ maxWidth: 720, margin: "0 auto" }}>
         <h1 style={{ marginTop: 0, textAlign: "center", fontWeight: 800 }}>
           Generate AdbS Truck-Driver Verification Link
         </h1>
