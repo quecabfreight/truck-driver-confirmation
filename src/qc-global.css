@@ -301,3 +301,55 @@ main a:hover {
 .home-links a:active{ transform: translateY(1px); }
 
 /* keep “real” content links elsewhere behaving like links */
+/* ===== Make Home look like the other pages ===== */
+.home-panel{
+  max-width: 900px;
+  margin: 0 auto;
+  text-align: center;             /* center title & buttons */
+  padding-top: 18px;
+  padding-bottom: 22px;
+}
+
+/* Keep the Home title crisp and centered */
+.home-panel h1{
+  margin-top: 0;
+  margin-bottom: 12px;
+  text-align: center;
+  font-weight: 800;
+}
+
+/* (Already added earlier) .home-links styles will render big pill buttons */
+
+/* ===== Fix the odd “BROKER” label in the header =====
+   We don't know your exact markup there, so we catch common cases:
+   - a dedicated .role/.badge/.tag class
+   - plain <b> or <strong> used as a label
+   This leaves normal content links alone.
+*/
+header .role,
+.nav .role,
+header .badge,
+.nav .badge,
+header .tag,
+.nav .tag,
+header nav b,
+header nav strong{
+  text-decoration: none !important;
+  color: inherit !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--ctrl-h);
+  padding: 0 16px;
+  margin-left: 10px;
+  border-radius: 999px;
+  border: 1px solid var(--panel-br);
+  background: var(--panel-bg);
+  font-weight: 800;
+}
+
+/* Hover feedback for the label if it’s clickable */
+header nav b:hover,
+header nav strong:hover,
+header .role:hover,
+.nav .role:hover{ filter: brightness(1.06); }
