@@ -338,3 +338,94 @@ html[data-theme="light"] .theme-toggle-single .knob{
 .home-links { display: flex; flex-direction: column; align-items: center; gap: 18px; }
 .home-links a:hover { filter: brightness(1.08); }
 .home-links a:active { transform: translateY(1px); }
+/* ===== POLISH PACK v1 — bring Home + Check-In up to the About scale ===== */
+
+/* Big type everywhere (keeps your theme colors) */
+:root{
+  --qc-fz: 60px;         /* ≈ 45pt */
+  --qc-lh: 1.25;
+  --qc-ctrl-h: 80px;
+  --qc-pad: 28px;
+  --qc-br: 14px;
+  --qc-border: 1px solid rgba(255,255,255,0.10);
+  --qc-surface: rgba(17,17,19,0.60);
+}
+
+/* Make headings match About */
+h1{ font-size: calc(var(--qc-fz) * 1.15) !important; line-height: 1.2 !important; font-weight: 800 !important; }
+
+/* HOME: turn the four links into big pill buttons (and kill blue underlines) */
+.home-links{
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 18px !important;
+  margin-top: 10px !important;
+}
+.home-links a{
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: var(--qc-ctrl-h) !important;
+  padding: 0 var(--qc-pad) !important;
+  font-size: var(--qc-fz) !important;
+  font-weight: 800 !important;
+  text-decoration: none !important;
+  color: inherit !important;
+  border-radius: var(--qc-br) !important;
+  border: var(--qc-border) !important;
+  background: var(--qc-surface) !important;
+  box-shadow: 0 10px 26px rgba(0,0,0,0.35) !important;
+}
+.home-links a:hover{ filter: brightness(1.08); }
+.home-links a:active{ transform: translateY(1px); }
+
+/* If some builds don’t have .home-links, fall back to first link stack inside the first panel */
+.panel:first-of-type a[href^="#/"]{
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: var(--qc-ctrl-h); padding: 0 var(--qc-pad);
+  font-size: var(--qc-fz); font-weight: 800;
+  text-decoration: none; color: inherit;
+  border-radius: var(--qc-br); border: var(--qc-border);
+  background: var(--qc-surface);
+}
+
+/* CHECK-IN: make labels/inputs/buttons billboard-big like About */
+.checkin-panel h1{ font-size: calc(var(--qc-fz) * 1.15) !important; line-height: 1.2 !important; font-weight: 800 !important; }
+.checkin-panel label{ display:inline-block; margin:12px 0 6px; font-weight:800; font-size: var(--qc-fz); }
+.checkin-panel input,
+.checkin-panel select,
+.checkin-panel textarea{
+  width: 100%;
+  min-height: var(--qc-ctrl-h) !important;
+  padding: 0 var(--qc-pad) !important;
+  font-size: var(--qc-fz) !important;
+  line-height: var(--qc-lh) !important;
+  border-radius: var(--qc-br) !important;
+  border: var(--qc-border) !important;
+  background: var(--qc-surface) !important;
+  color: inherit !important;
+}
+.checkin-panel button{
+  min-height: var(--qc-ctrl-h) !important;
+  padding: 0 var(--qc-pad) !important;
+  font-size: var(--qc-fz) !important;
+  font-weight: 800 !important;
+  border-radius: var(--qc-br) !important;
+  border: var(--qc-border) !important;
+  background: var(--qc-surface) !important;
+  color: inherit !important;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+
+/* Fallback if your build doesn’t have .checkin-panel yet: apply to the first form on the page */
+form:first-of-type label{ display:inline-block; margin:12px 0 6px; font-weight:800; font-size: var(--qc-fz); }
+form:first-of-type input,
+form:first-of-type select,
+form:first-of-type textarea,
+form:first-of-type button{
+  min-height: var(--qc-ctrl-h); padding: 0 var(--qc-pad);
+  font-size: var(--qc-fz); line-height: var(--qc-lh);
+  border-radius: var(--qc-br); border: var(--qc-border);
+  background: var(--qc-surface); color: inherit;
+}
