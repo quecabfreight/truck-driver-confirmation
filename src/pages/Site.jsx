@@ -1,0 +1,198 @@
+// /src/pages/Site.jsx
+import React from "react";
+
+export default function Site() {
+  const css = `
+  :root{
+    --bg:#0b0f12;
+    --panel:#12171b;
+    --card:#161c22;
+    --text:#eaf1f6;
+    --muted:#a9b5bf;
+    --accent:#1fe28c;
+    --line:#2a333b;
+    --glow: 0 20px 60px rgba(31,226,140,0.25);
+  }
+  .site-wrap{max-width:1200px;margin:0 auto;padding:24px}
+  .site-top{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:10px 14px;border:1px solid var(--line);border-radius:14px;
+    background:rgba(18,23,27,.7);backdrop-filter: blur(6px);
+  }
+  .site-brand{display:flex;align-items:center;gap:12px}
+  .site-logo{
+    width:56px;height:56px;object-fit:contain;filter:drop-shadow(0 6px 18px rgba(0,0,0,.6));
+  }
+  .t1{font-weight:700;letter-spacing:.4px}
+  .site-nav{display:flex;gap:14px;flex-wrap:wrap}
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;
+    padding:10px 16px;border:1px solid var(--line);border-radius:12px;
+    background:linear-gradient(180deg,#171e25 0%,#12171b 100%);cursor:pointer;
+    color:var(--text); text-decoration:none;
+  }
+  .btn:hover{border-color:#3b4650}
+  .btn.primary{
+    background:linear-gradient(180deg,#1fe28c,#0ec971);
+    color:#072015;font-weight:700;border:none;box-shadow:var(--glow);
+  }
+  .btn.ghost{background:transparent}
+  .hero{
+    display:grid;grid-template-columns:1.1fr .9fr;gap:28px;margin:28px 0 36px;
+    align-items:stretch;
+  }
+  .panel{
+    border:1px solid var(--line);border-radius:18px;overflow:hidden;
+    background:radial-gradient(1200px 600px at -10% -10%, rgba(31,226,140,.06), transparent 45%),
+               linear-gradient(180deg,#151b20 0%, #0f1418 60%, #0e1317 100%);
+  }
+  .p-in{padding:28px}
+  .kicker{color:var(--muted);font-size:14px;letter-spacing:.14em}
+  .h1{font-size:44px;line-height:1.05;margin:10px 0 14px}
+  .lead{color:#cfe3ef;max-width:36ch}
+  .cta-row{display:flex;gap:12px;margin-top:16px;flex-wrap:wrap}
+  .phone{
+    height:100%;display:flex;align-items:center;justify-content:center;position:relative;
+    background:
+      radial-gradient(80% 50% at 80% 20%, rgba(31,226,140,.10), transparent 60%),
+      radial-gradient(70% 40% at 0% 100%, rgba(80,100,255,.08), transparent 60%),
+      linear-gradient(180deg,#0f1418,#0d1115);
+  }
+  .device{
+    width:min(340px,90%);aspect-ratio:9/19;border-radius:28px;
+    padding:18px;background:linear-gradient(180deg,#0b0f13,#161b21);
+    border:1px solid #2c343d;box-shadow:0 20px 40px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.02);
+  }
+  .screen{height:100%;border-radius:20px;padding:18px;background:#0a0e12;border:1px solid #242b33}
+  .chip{font-size:13px;color:var(--muted);border:1px solid #2a333b;border-radius:12px;padding:8px 10px;margin-bottom:10px;display:inline-block}
+  .ok{background:#0c2218;border:1px solid #104f34;color:#b9ffd9;border-radius:12px;padding:10px 12px;margin:8px 0;display:inline-flex;gap:8px;align-items:center}
+  .ok b{color:#1fe28c}
+  .ghostline{height:10px;border-radius:6px;background:#141a1f;border:1px solid #25303a;margin:8px 0}
+  .mid{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin:0 0 36px;}
+  .truck{
+    border:1px solid var(--line);border-radius:18px;overflow:hidden;
+    background:linear-gradient(180deg,#0f1418 0%,#0c1014 100%);
+    min-height:280px;position:relative;
+  }
+  .truck:after{
+    content:"";position:absolute;inset:0;
+    background:radial-gradient(60% 50% at 30% 65%, rgba(31,226,140,.12), transparent 60%);
+    mix-blend-mode:screen;pointer-events:none;
+  }
+  .right .p-in{padding:32px}
+  .h2{font-size:34px;margin:0 0 10px}
+  .muted{color:var(--muted)}
+  .feat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .card{
+    border:1px solid var(--line);border-radius:16px;background:linear-gradient(180deg,#141a20,#10161b);
+    padding:18px
+  }
+  .ic{width:36px;height:36px;border-radius:10px;background:#0f1b15;border:1px solid #174b33;
+    display:flex;align-items:center;justify-content:center;margin-bottom:10px;color:#1fe28c;font-weight:900}
+  .foot{border-top:1px solid var(--line);margin-top:30px;padding:18px;text-align:center;color:var(--muted);font-size:14px}
+
+  @media (max-width:1000px){
+    .hero{grid-template-columns:1fr}
+    .mid{grid-template-columns:1fr}
+    .feat-row{grid-template-columns:1fr}
+    .h1{font-size:36px}
+  }`;
+
+  return (
+    <div style={{
+      minHeight:"100vh",
+      background:"linear-gradient(140deg,#0b0f12 0%,#0e1419 40%,#0b0f12 100%)",
+      color:"var(--text)"
+    }}>
+      <style>{css}</style>
+      <div className="site-wrap">
+        {/* TOP BAR */}
+        <div className="site-top">
+          <div className="site-brand">
+            <img className="site-logo" src="/qc-logo.png" alt="QueCab AdbS"/>
+            <div className="t1">QueCab AdbS — Secure Your Load</div>
+          </div>
+          <div className="site-nav">
+            <a className="btn" href="/#/join">Request Access</a>
+            <a className="btn" href="/#/login">Log In</a>
+            <a className="btn primary" href="/#/checkin">Check-In Link</a>
+          </div>
+        </div>
+
+        {/* HERO */}
+        <div className="hero">
+          <div className="panel p-in">
+            <div className="kicker">HOW IT WORKS</div>
+            <div className="h1">1 Link —<br/>3 Checks —<br/>0 Nonsense</div>
+            <div className="lead">
+              Verify USDOT#, Plate, and live driver contact <b>before</b> loading.
+              Built for docks of any size: big text, clean screens, no training.
+            </div>
+            <div className="cta-row">
+              <a className="btn primary" href="/#/join">Request Demo</a>
+              <a className="btn" href="/#/about">Why QueCab</a>
+            </div>
+          </div>
+
+          <div className="phone panel">
+            <div className="device">
+              <div className="screen">
+                <span className="chip">Verification</span>
+                <div className="ok">✅ <b>USDOT# Match</b></div>
+                <div className="ok">✅ <b>Driver Answered Call</b></div>
+                <div className="ok">✅ <b>Plate Match</b></div>
+                <div className="ghostline"></div>
+                <div className="ghostline" style={{width:"70%"}}></div>
+                <div className="cta-row" style={{marginTop:14}}>
+                  <a className="btn primary" href="/#/checkin">CLEAR TO LOAD</a>
+                  <a className="btn ghost" href="/#/checkin">Do Not Load</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* MID */}
+        <div className="mid">
+          <div className="truck panel"></div>
+          <div className="right panel">
+            <div className="p-in">
+              <div className="h2">Built for docks of any size.</div>
+              <p className="muted">Big text. Clear screens. No training required.</p>
+              <p className="muted">If it doesn't match, it doesn't move.</p>
+              <div className="cta-row">
+                <a className="btn" href="/#/join">Request Access</a>
+                <a className="btn ghost" href="/#/login">Broker Log In</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* FEATURES */}
+        <div className="feat-row">
+          <div className="card">
+            <div className="ic">🛡️</div>
+            <h3>Prevent Fraud</h3>
+            <p>Stops unauthorized carriers before loading.</p>
+          </div>
+          <div className="card">
+            <div className="ic">📞</div>
+            <h3>Live Verification</h3>
+            <p>Ensures the driver's reachable and legitimate.</p>
+          </div>
+          <div className="card">
+            <div className="ic">⚡</div>
+            <h3>Instant Setup</h3>
+            <p>No hardware. No downloads. Use the link you already have.</p>
+          </div>
+        </div>
+
+        <div className="foot">
+          © {new Date().getFullYear()} QueCab AdbS — All rights reserved.
+          &nbsp;•&nbsp;<a href="/#/about" className="muted">About</a>
+          &nbsp;•&nbsp;<a href="/#/login" className="muted">Log In</a>
+        </div>
+      </div>
+    </div>
+  );
+}
