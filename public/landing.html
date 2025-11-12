@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>QueCab AdbS — Secure Your Load</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root { --neon:#00ffcc; --ink:#0b0b0b; --bg:#0d0d0d; --muted:#b8b8b8; }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto;color:#eaeaea;background:#0b0b0b}
+    .wrap{display:flex;flex-direction:column;min-height:100svh}
+    header{padding:96px 24px;background:radial-gradient(1200px 600px at 20% -10%,#1a1a1a 0%,#0b0b0b 55%,#060606 100%)}
+    .hero{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1.1fr 0.9fr;gap:36px;align-items:center}
+    .badge{display:inline-flex;gap:8px;align-items:center;font-weight:600;color:var(--neon);background:#051b16;border:1px solid #0a3e33;padding:6px 12px;border-radius:999px}
+    .logo{width:140px;opacity:.95;margin:12px 0 8px}
+    h1{font-size:44px;line-height:1.1;margin:10px 0 14px}
+    p.lead{color:var(--muted);font-size:18px;max-width:560px}
+    .cta{display:flex;gap:14px;margin-top:22px;flex-wrap:wrap}
+    .btn{appearance:none;border:0;border-radius:10px;padding:14px 24px;font-weight:700;text-decoration:none;cursor:pointer}
+    .btn-primary{background:var(--neon);color:#0b0b0b}
+    .btn-primary:hover{filter:brightness(0.95)}
+    .btn-ghost{background:#101010;color:#eaeaea;border:1px solid #222}
+    .panel{background:#0e0e0e;border:1px solid #1b1b1b;border-radius:16px;padding:18px}
+    .phone{width:100%;max-width:360px;border-radius:18px;box-shadow:0 12px 40px rgba(0,255,204,.12);display:block}
+    .grid{max-width:1100px;margin:56px auto;padding:0 24px;display:grid;gap:26px;grid-template-columns:repeat(3,minmax(0,1fr))}
+    .card{background:#0f0f0f;border:1px solid #1d1d1d;border-radius:14px;padding:20px}
+    .card h3{margin:0 0 8px;color:var(--neon);font-size:18px}
+    .card p{margin:0;color:#bdbdbd}
+    footer{margin-top:auto;background:#050505;color:#8a8a8a;text-align:center;padding:22px}
+    footer a{color:var(--neon);text-decoration:none}
+    @media (max-width:900px){
+      .hero{grid-template-columns:1fr}
+      .grid{grid-template-columns:1fr}
+      h1{font-size:36px}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="hero">
+        <div>
+          <span class="badge">QueCab AdbS • AiB™</span>
+          <img class="logo" src="qc-logo.png" alt="QueCab AdbS logo"/>
+          <h1>Secure your load — <br/>before you load.</h1>
+          <p class="lead">
+            One link confirms USDOT#, plate, and live driver contact. Built for docks of any size. 
+            If it doesn’t match, it doesn’t move. No training. No nonsense.
+          </p>
+          <div class="cta">
+            <a class="btn btn-primary" href="/#/join">Request Demo</a>
+            <a class="btn btn-ghost" href="/#/login">Broker Log In</a>
+          </div>
+          <div class="panel" style="margin-top:18px">
+            <strong>How it works:</strong> <span style="opacity:.85">1 Link • 3 Checks • 0 Nonsense</span>
+          </div>
+        </div>
+        <div>
+          <img class="phone" alt="Verification screen" 
+               src="https://images.unsplash.com/photo-1556040220-4096d5223783?q=80&w=1200&auto=format&fit=crop"/>
+        </div>
+      </div>
+    </header>
+
+    <main class="grid">
+      <div class="card">
+        <h3>Prevent Fraud</h3>
+        <p>Stops unauthorized carriers before loading — verify in seconds.</p>
+      </div>
+      <div class="card">
+        <h3>Live Verification</h3>
+        <p>Confirms driver is reachable and legitimate — no guesswork.</p>
+      </div>
+      <div class="card">
+        <h3>Instant Setup</h3>
+        <p>No hardware. No app downloads. Works on any dock screen.</p>
+      </div>
+    </main>
+
+    <footer>
+      © 2025 QueCab AdbS™ • <a href="/#/site">About</a> • <a href="/#/login">Log In</a>
+    </footer>
+  </div>
+</body>
+</html>
