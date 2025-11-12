@@ -1,183 +1,167 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>QueCab AdbS — Secure Your Load</title>
-  <meta name="description" content="Verify USDOT#, plate, and driver contact before any freight is loaded. Stop double-brokering cold." />
-  <link rel="icon" href="/qc-logo.png" />
-  <style>
-    /* ====== RESET (local only) ====== */
-    *,*::before,*::after{box-sizing:border-box}
-    html,body{height:100%}
-    body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:#e9eef3;background:#0e1013}
-
-    /* ====== THEME ====== */
-    .bg{
-      min-height:100dvh;
-      background:
-        radial-gradient(1200px 600px at 15% -10%, rgba(255,255,255,.22) 0%, rgba(255,255,255,0) 60%),
-        radial-gradient(900px 420px at 95% 0%, rgba(0,255,162,.18) 0%, rgba(0,255,162,0) 55%),
-        linear-gradient(135deg,#2b2e32 0%,#17191d 55%,#0e1013 100%);
-      background-attachment:fixed;
-      overflow-x:hidden;
-      isolation:isolate;
-    }
-    .wrap{width:min(1280px,96vw);margin:0 auto;padding:28px 20px 80px}
-
-    /* ====== HEADER ====== */
-    header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:6px 0 20px}
-    .brand{display:flex;align-items:center;gap:14px}
-    .badge{
-      width:56px;height:56px;border-radius:14px;flex:0 0 56px;
-      background:
-        radial-gradient(40% 40% at 30% 30%,#7d8792,#3c4249 45%,#1b1e22 80%),
-        linear-gradient(160deg,#9aa2aa,#464b52 45%,#1c2024);
-      box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 10px 32px rgba(0,0,0,.35);
-    }
-    .brand h1{margin:0;font-size:clamp(28px,4vw,42px);line-height:1.05}
-    .brand small{display:block;color:#a8b3bf;font-weight:700;letter-spacing:.12em;margin-top:2px}
-    nav a{
-      color:#e9eef3;text-decoration:none;font-weight:700;border:1px solid rgba(255,255,255,.18);
-      background:rgba(255,255,255,.04);padding:10px 12px;border-radius:10px;margin-left:6px;display:inline-block
-    }
-    nav a:hover{background:rgba(255,255,255,.08)}
-
-    /* ====== HERO ====== */
-    .hero{
-      position:relative;border-radius:22px;overflow:hidden;
-      border:1px solid rgba(255,255,255,.1);
-      background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));
-      box-shadow:0 30px 90px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.12);
-      padding:clamp(28px,6vw,56px)
-    }
-    .hero::after{
-      content:"";position:absolute;inset:0;pointer-events:none;
-      background:
-        radial-gradient(500px 220px at 20% -5%, rgba(255,255,255,.22), transparent 60%),
-        radial-gradient(700px 300px at 95% 0%, rgba(0,255,162,.15), transparent 60%);
-    }
-    .hero h2{margin:0 0 12px;font-size:clamp(42px,7vw,86px);line-height:.98;text-wrap:balance}
-    .hero p{font-size:clamp(18px,2.2vw,24px);max-width:900px;margin:0}
-    .cta{display:flex;gap:14px;flex-wrap:wrap;margin-top:22px}
-    .btn{border:0;cursor:pointer;font-weight:900;letter-spacing:.02em;text-transform:uppercase;border-radius:14px;padding:16px 22px;transition:.15s ease;display:inline-block}
-    .btn-primary{background:linear-gradient(180deg,#00ffa2,#39ffd3);color:#052017;box-shadow:0 12px 40px rgba(0,255,162,.35)}
-    .btn-primary:hover{transform:translateY(-1px) scale(1.02);box-shadow:0 16px 56px rgba(0,255,162,.45)}
-    .btn-ghost{background:rgba(255,255,255,.06);color:#e9eef3;border:1px solid rgba(255,255,255,.18)}
-    .kpis{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}
-    .kpi{border:1px solid rgba(255,255,255,.12);border-radius:12px;background:rgba(255,255,255,.04);padding:10px 12px;min-width:170px}
-    .kpi b{font-size:22px;display:block}
-    .kpi small{color:#a8b3bf;font-weight:700}
-
-    /* ====== GRID SECTIONS ====== */
-    .grid{display:grid;gap:22px;margin-top:32px;grid-template-columns:repeat(12,1fr)}
-    .card{
-      grid-column:span 12;
-      background:rgba(10,12,14,.65);border:1px solid rgba(255,255,255,.1);
-      border-radius:18px;padding:26px;box-shadow:0 20px 60px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.1)
-    }
-    .card h3{margin:0 0 8px;font-size:clamp(22px,3vw,32px);color:#0cf6a0}
-    .card p{margin:0;font-size:clamp(16px,1.8vw,19px)}
-    @media (min-width:800px){
-      .third{grid-column:span 4}
-      .half{grid-column:span 6}
-    }
-
-    /* ====== FOOTER ====== */
-    footer{margin-top:56px;text-align:center;color:#a8b3bf}
-    footer a{color:#e9eef3;text-decoration:none;border-bottom:1px dashed rgba(255,255,255,.25)}
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>QueCab AdbS — Secure Your Load</title>
+<meta name="description" content="Verify the truck. Load the right freight. One link confirms USDOT#, plate, and live driver contact—built for docks of any size." />
+<style>
+:root{
+  --bg:#0b0c0f;--panel:#12141a;--panel2:#161922;--text:#e8eef9;--muted:#a9b3c6;
+  --accent:#2ee4a6;--warn:#ff5b5b;--border:#262a35;--shadow:0 10px 30px rgba(0,0,0,.45)
+}
+*{box-sizing:border-box}html,body{height:100%}body{margin:0;color:var(--text);background:var(--bg);
+  font:16px/1.6 system-ui,-apple-system,Segoe UI,Roboto,Inter,sans-serif}
+a{color:var(--text);text-decoration:none}.container{width:min(1200px,92%);margin-inline:auto}
+.section{padding:72px 0}.section__title{font-size:34px;margin:0 0 24px}
+.btn{display:inline-flex;align-items:center;justify-content:center;padding:10px 14px;border-radius:10px;
+  border:1px solid var(--border);font-weight:700;transition:.15s all ease}
+.btn--ghost{background:transparent}.btn--secondary{background:var(--panel2)}
+.btn--primary{background:var(--accent);color:#08130f;border-color:#1fc791}.btn--lg{padding:14px 18px;font-size:18px}
+.btn--block{width:100%}.link{color:var(--accent)}.link:hover{text-decoration:underline}
+.nav{position:sticky;top:0;z-index:50;background:rgba(11,12,15,.75);backdrop-filter:blur(8px) saturate(140%);
+  border-bottom:1px solid var(--border)}
+.nav__inner{display:flex;align-items:center;justify-content:space-between;height:64px}
+.brand{display:flex;gap:10px;align-items:center;font-weight:800}
+.brand__logo{width:28px;height:28px;border-radius:6px;background:#2b2f3a;display:grid;place-items:center;
+  font-weight:900;color:var(--accent)}
+.nav__links{display:flex;gap:16px;align-items:center}.nav__link{opacity:.9}.nav__link:hover{opacity:1}
+.hero{position:relative;padding:120px 0 80px;border-bottom:1px solid var(--border)}
+.hero__bg{position:absolute;inset:0;z-index:-1;
+  background:
+    radial-gradient(1000px 400px at 70% 30%, rgba(46,228,166,.10), transparent 60%),
+    radial-gradient(900px 600px at 20% 100%, rgba(46,228,166,.08), transparent 60%),
+    linear-gradient(135deg,#0e1015 0%,#12141a 40%,#0e1015 100%);
+}
+.hero__content{max-width:780px}.hero__badge{display:inline-block;background:var(--panel);padding:6px 10px;
+  border-radius:999px;border:1px solid var(--border);font-size:12px;letter-spacing:.5px}
+.hero__title{margin:14px 0 12px;font-size:44px;line-height:1.15}.accent{color:var(--accent)}
+.hero__lead{color:var(--muted);max-width:700px}.hero__cta{display:flex;flex-wrap:wrap;gap:12px;margin:18px 0 8px}
+.hero__pillars{display:flex;flex-wrap:wrap;gap:10px;color:var(--muted);padding:0;margin:14px 0 0;list-style:none}
+.hero__pillars li{background:var(--panel);border:1px solid var(--border);padding:8px 10px;border-radius:10px}
+.card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--border);
+  border-radius:16px;padding:18px;box-shadow:var(--shadow)}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:10px}
+.step__num{width:32px;height:32px;border:1px solid var(--border);border-radius:8px;display:grid;place-items:center;
+  background:var(--panel2);font-weight:800;color:var(--accent);margin-bottom:8px}
+.callout{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+.callout__pill{border:1px solid var(--border);padding:10px 12px;border-radius:12px}
+.callout__pill.ok{background:rgba(46,228,166,.1);border-color:#1fc791}
+.callout__pill.warn{background:rgba(255,91,91,.08);border-color:#ff7b7b;color:#ffd0d0}
+.pricing{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:6px}
+.price__amount{font-size:26px;margin:2px 0 10px}.price__amount span{font-size:36px}
+.price__list{list-style:none;padding:0;margin:0 0 14px;color:var(--muted)}.price{position:relative}
+.price--best{border-color:#1fc791;box-shadow:0 0 0 2px #1fc79122, var(--shadow)}
+.price__badge{position:absolute;top:-12px;right:12px;background:var(--accent);color:#08130f;border-radius:999px;
+  padding:6px 10px;font-size:12px;font-weight:800}
+.faq{border:1px solid var(--border);border-radius:12px;padding:10px 14px;background:var(--panel);margin:10px 0}
+.faq>summary{font-weight:700;cursor:pointer}.faq[open]{box-shadow:var(--shadow)}
+.footer{border-top:1px solid var(--border);background:var(--panel)}
+.footer__inner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px 0}
+.footer__brand{display:flex;gap:12px;align-items:center}.footer__logo{width:34px;height:34px;border-radius:6px;background:#2b2f3a;display:grid;place-items:center;color:var(--accent);font-weight:900}
+.footer__name{font-weight:800}.footer__tagline{color:var(--muted);font-size:14px}
+.footer__links{display:flex;gap:14px;flex-wrap:wrap}.footer__links a{color:var(--muted)}.footer__links a:hover{color:var(--text)}
+.footer__legal{color:var(--muted);font-size:13px;text-align:center;padding:10px 0;border-top:1px solid var(--border)}
+@media(max-width:900px){.nav__links{display:none}.hero{padding:100px 0 60px}.hero__title{font-size:34px}
+  .grid3,.steps,.pricing{grid-template-columns:1fr}.footer__inner{flex-direction:column;align-items:flex-start}}
+</style>
 </head>
 <body>
-  <div class="bg">
-    <div class="wrap">
+<header class="nav">
+  <div class="container nav__inner">
+    <a class="brand" href="#top"><span class="brand__logo">QC</span><span>QueCab AdbS</span></a>
+    <nav class="nav__links">
+      <a href="#how" class="nav__link">How it works</a>
+      <a href="#why" class="nav__link">Why us</a>
+      <a href="#pricing" class="nav__link">Pricing</a>
+      <a href="#faq" class="nav__link">FAQ</a>
+      <a href="/login#/join" class="btn btn--ghost">Request Access</a>
+      <a href="/login#/login" class="btn btn--primary">Log In</a>
+    </nav>
+  </div>
+</header>
 
-      <header>
-        <div class="brand">
-          <div class="badge" aria-hidden="true"></div>
-          <div>
-            <h1>QueCab AdbS</h1>
-            <small>SECURE YOUR LOAD</small>
-          </div>
-        </div>
-        <nav>
-          <a href="/#/join">Request Access</a>
-          <a href="/#/login">Log In</a>
-        </nav>
-      </header>
+<section class="hero" id="top">
+  <div class="hero__bg"></div>
+  <div class="container hero__content">
+    <div class="hero__badge">BROKER • SHIPPER • DOCK</div>
+    <h1 class="hero__title">Verify before you load.<br><span class="accent">Stop double-brokering cold.</span></h1>
+    <p class="hero__lead">
+      One link confirms <strong>USDOT#</strong>, <strong>plate</strong>, and a <strong>live driver call</strong> — so your dock team sees a clean, simple CLEAR TO LOAD or DO NOT LOAD.
+    </p>
+    <div class="hero__cta">
+      <a class="btn btn--primary btn--lg" href="/login#/join">Request Demo / Join</a>
+      <a class="btn btn--secondary btn--lg" href="/login#/checkin">Generate Verify Link</a>
+    </div>
+    <ul class="hero__pillars">
+      <li><strong>1 Link</strong> — Driver ➜ Dock</li>
+      <li><strong>3 Checks</strong> — USDOT# • Plate • Live call</li>
+      <li><strong>0 Nonsense</strong> — No training required</li>
+    </ul>
+  </div>
+</section>
 
-      <section class="hero">
-        <h2>Verify before you load.<br/>Stop double-brokering cold.</h2>
-        <p>
-          QueCab AdbS™ confirms <strong>USDOT#</strong>, <strong>Plate</strong>, and live driver contact
-          before any freight is loaded. Built for docks of any size — big text, clean screens, no gimmicks —
-          so your team knows exactly when to <strong>CLEAR TO LOAD</strong> or
-          <strong style="color:#ff5555"> DO NOT LOAD</strong>.
-        </p>
-        <div class="cta">
-          <a class="btn btn-primary" href="/#/join">Request Demo</a>
-          <a class="btn btn-ghost" href="/#/login">Broker Log In</a>
-        </div>
-        <div class="kpis">
-          <div class="kpi"><b>1 Link</b><small>Driver ➜ Dock</small></div>
-          <div class="kpi"><b>3 Checks</b><small>USDOT • Plate • Live call</small></div>
-          <div class="kpi"><b>0 Nonsense</b><small>No training required</small></div>
-        </div>
-      </section>
-
-      <section class="grid">
-        <article class="card third">
-          <h3>① Broker creates Verify Link</h3>
-          <p>One link per shipment. Share via text or email — done in seconds.</p>
-        </article>
-        <article class="card third">
-          <h3>② Driver taps + shows IDs</h3>
-          <p>Dock compares USDOT# + Plate on screen with what they see at the truck.</p>
-        </article>
-        <article class="card third">
-          <h3>③ Dock calls the driver</h3>
-          <p>If the driver answers and the data matches, it’s <b>CLEAR TO LOAD</b>. Any mismatch triggers a caution alert.</p>
-        </article>
-      </section>
-
-      <section class="grid">
-        <article class="card half">
-          <h3>Built for real docks</h3>
-          <p>Large typography, ultra-high contrast, and ruthless simplicity. No training required.</p>
-        </article>
-        <article class="card half">
-          <h3>Anti-fraud by design</h3>
-          <p>Real-time checks and a single source of truth prevent identity swaps and load hijacks.</p>
-        </article>
-        <article class="card third">
-          <h3>Instant setup</h3>
-          <p>No hardware. No IT ticket. Create links and ship.</p>
-        </article>
-        <article class="card third">
-          <h3>Clear audit trail</h3>
-          <p>Every verification writes a record for ops, claims, and compliance.</p>
-        </article>
-        <article class="card third">
-          <h3>Light/Dark proof</h3>
-          <p>Works indoors, outdoors, and in cabs without blasting eyes at night.</p>
-        </article>
-      </section>
-
-      <section class="grid">
-        <article class="card" style="text-align:center">
-          <h3 style="font-size:clamp(26px,3.5vw,40px)">Ready to make “Verify before you load” your default?</h3>
-          <div class="cta" style="justify-content:center;margin-top:12px">
-            <a class="btn btn-primary" href="/#/join">Request Access</a>
-            <a class="btn btn-ghost" href="/#/login">Broker Log In</a>
-          </div>
-        </article>
-      </section>
-
-      <footer>
-        © <span id="y"></span> QueCab AdbS™ — Secure Your Load
-      </footer>
+<section class="section" id="how">
+  <div class="container">
+    <h2 class="section__title">How it works</h2>
+    <div class="steps">
+      <div class="card"><div class="step__num">1</div><h3>Broker/shipper creates a link</h3><p>Generate an AdbS Truck-Driver Verify Link per shipment.</p><a href="/login#/checkin" class="link">Create a link →</a></div>
+      <div class="card"><div class="step__num">2</div><h3>Driver taps the link</h3><p>They share <strong>USDOT#</strong> and <strong>plate</strong> from their phone.</p></div>
+      <div class="card"><div class="step__num">3</div><h3>Dock verifies in seconds</h3><p>Dock calls driver, enters what they see, submits — gets a clear result.</p></div>
+    </div>
+    <div class="callout">
+      <div class="callout__pill ok">All 3 checks “Yes” → <strong>CLEAR TO LOAD</strong></div>
+      <div class="callout__pill warn">Any “No” → <strong>CAUTION ALERT — DO NOT LOAD</strong></div>
     </div>
   </div>
-  <script>document.getElementById("y").textContent=new Date().getFullYear();</script>
+</section>
+
+<section class="section" id="why">
+  <div class="container">
+    <h2 class="section__title">Why brokers & shippers pick QueCab</h2>
+    <div class="grid3">
+      <div class="card"><h3>Designed for docks</h3><p>Big text, clean screens, no gimmicks. Works in harsh lighting.</p></div>
+      <div class="card"><h3>One link, one flow</h3><p>Driver & dock share the same verify link. Less confusion, faster turn.</p></div>
+      <div class="card"><h3>Actionable result</h3><p>An unmissable signal: <strong>CLEAR TO LOAD</strong> or <strong>DO NOT LOAD</strong>.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="pricing">
+  <div class="container">
+    <h2 class="section__title">Straight-forward pricing</h2>
+    <div class="pricing">
+      <div class="card"><h3>Starter</h3><p class="price__amount">$<span>99</span>/mo</p>
+        <ul class="price__list"><li>Up to 100 verify links</li><li>Email support</li><li>Basic reporting</li></ul>
+        <a href="/login#/join" class="btn btn--secondary btn--block">Get Started</a></div>
+      <div class="card price--best"><div class="price__badge">Most Popular</div><h3>Pro</h3><p class="price__amount">$<span>249</span>/mo</p>
+        <ul class="price__list"><li>Up to 500 verify links</li><li>Priority support</li><li>Audit log & alerts</li></ul>
+        <a href="/login#/join" class="btn btn--primary btn--block">Start Pro</a></div>
+      <div class="card"><h3>Enterprise</h3><p class="price__amount">Let’s talk</p>
+        <ul class="price__list"><li>Unlimited verify links</li><li>SOC2-ready options</li><li>Custom integrations</li></ul>
+        <a href="/login#/join" class="btn btn--secondary btn--block">Talk to Sales</a></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="faq">
+  <div class="container">
+    <h2 class="section__title">FAQ</h2>
+    <details class="faq"><summary>Does the dock need training?</summary><p>No. Big-text, clean screens by design.</p></details>
+    <details class="faq"><summary>What if the driver doesn’t answer?</summary><p>That’s a failed check → <strong>DO NOT LOAD</strong> and alert.</p></details>
+    <details class="faq"><summary>Where do I manage my account?</summary><p>Use <a href="/login#/login">Log In</a>. Need access? <a href="/login#/join">Request Access</a>.</p></details>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container footer__inner">
+    <div class="footer__brand"><div class="footer__logo">QC</div><div><div class="footer__name">QueCab AdbS™</div><div class="footer__tagline">Secure Your Load</div></div></div>
+    <nav class="footer__links"><a href="/login#/about">About</a><a href="#how">How it works</a><a href="#pricing">Pricing</a><a href="/login#/login">Log In</a></nav>
+    <div class="footer__cta"><a class="btn btn--primary" href="/login#/join">Request Access</a></div>
+  </div>
+  <div class="footer__legal">© <span id="y"></span> QueCab AdbS. All rights reserved.</div>
+</footer>
+<script>document.getElementById('y').textContent=new Date().getFullYear()</script>
 </body>
 </html>
