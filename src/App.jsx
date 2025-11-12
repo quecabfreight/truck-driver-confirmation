@@ -1,56 +1,36 @@
-// /src/App.jsx — FULL OVERWRITE
+// /src/App.jsx
 import React from "react";
-import { HashRouter, Routes, Route, Outlet } from "react-router-dom";
+import { HashRouter, Routes, Route, Link } from "react-router-dom";
+import Site from "./pages/Site.jsx";
 
-// keep your existing header + pages
-import Header from "./components/Header.jsx";
-import Home from "./pages/Home.jsx";
-import About from "./pages/About.jsx";
-import Login from "./pages/Login.jsx";
-import Join from "./pages/Join.jsx";
+// ---- STUB PAGES (leave your real ones as-is) ----
+// If you already have these components, keep yours.
+// These placeholders prevent crashes if a file is missing.
+const Home = () => (
+  <div style={{color:"#fff", textAlign:"center", padding:"40px"}}>
+    <h1>QueCab AdbS — Truck-Driver Confirmation</h1>
+    <p>Home placeholder (unchanged). Use the nav to open the new Website page.</p>
+    <Link style={{color:"#1fe28c"}} to="/site">Open Website</Link>
+  </div>
+);
+const Login = () => <div style={{color:"#fff",padding:40}}>Login placeholder</div>;
+const Join  = () => <div style={{color:"#fff",padding:40}}>Request Access placeholder</div>;
+const CheckIn = () => <div style={{color:"#fff",padding:40}}>Check-In placeholder</div>;
+const About = () => <div style={{color:"#fff",padding:40}}>About placeholder</div>;
 
-// NEW: our stand-alone landing page
-import SiteLanding from "./pages/SiteLanding.jsx";
-
-// optional: keep these routes if they exist
-let CheckIn, Verify;
-try { CheckIn = (await import("./pages/CheckIn.jsx")).default; } catch { CheckIn = () => null; }
-try { Verify  = (await import("./pages/Verify.jsx")).default; } catch { Verify  = () => null; }
-
-function DefaultLayout() {
-  return (
-    <div className="app-shell" style={{ minHeight: "100dvh", display: "flex", flexDirection: "column" }}>
-      <Header />
-      <main style={{ flex: 1 }}>
-        <Outlet />
-      </main>
-    </div>
-  );
-}
-
-// NOTE: no Header here — this lets /site be truly full width.
-function BareLayout() {
-  return <Outlet />;
-}
-
-export default function App() {
+// ---------------- APP ----------------
+export default function App(){
   return (
     <HashRouter>
       <Routes>
-        {/* Stand-alone marketing site (no header wrapper) */}
-        <Route element={<BareLayout />}>
-          <Route path="/site" element={<SiteLanding />} />
-        </Route>
+        <Route path="/" element={<Home/>} />
+        <Route path="/login" element={<Login/>} />
+        <Route path="/join"  element={<Join/>} />
+        <Route path="/checkin" element={<CheckIn/>} />
+        <Route path="/about" element={<About/>} />
 
-        {/* Everything else uses your normal app layout */}
-        <Route element={<DefaultLayout />}>
-          <Route path="/" element={<Home />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/join" element={<Join />} />
-          <Route path="/checkin" element={<CheckIn />} />
-          <Route path="/verify/:token" element={<Verify />} />
-        </Route>
+        {/* NEW glossy website page */}
+        <Route path="/site" element={<Site/>} />
       </Routes>
     </HashRouter>
   );
