@@ -5,7 +5,7 @@ body, html {
 }
 
 .homepage {
-  background-image: url("/site-background.png");
+  background-image: url("/qc-hero-landing.jpg");
   background-size: cover;
   background-position: center;
   height: 100vh;
