@@ -3,48 +3,39 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>QueCab</title>
+  <title>QueCab Ads - Instant Verification</title>
   <style>
     body {
       margin: 0;
       font-family: Arial, sans-serif;
-      background: url('./qc-hero-landing.jpg') center center / cover no-repeat, #999;
+      background-image: url('qc-hero-landing.jpg');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
       color: white;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
     }
 
     nav {
       background-color: #444;
+      overflow: hidden;
       display: flex;
       justify-content: flex-end;
-      padding: 15px 25px;
-      font-weight: bold;
+      padding: 10px 20px;
     }
 
     nav a {
       color: white;
       text-decoration: none;
-      margin-left: 25px;
+      margin-left: 20px;
+      font-weight: bold;
     }
 
     nav a:hover {
       text-decoration: underline;
     }
 
-    .hero-text {
-      flex: 1;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .hero-text div {
-      background-color: rgba(0, 0, 0, 0.7);
-      padding: 25px 40px;
-      border-radius: 10px;
-      font-size: 2rem;
+    .content {
+      height: 100vh;
     }
   </style>
 </head>
@@ -56,8 +47,7 @@
     <a href="#">Check In</a>
     <a href="#">About</a>
   </nav>
-  <div class="hero-text">
-    <div>1 Link · 3 Checks · Instant Verification</div>
-  </div>
+
+  <div class="content"></div>
 </body>
 </html>
