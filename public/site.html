@@ -3,67 +3,61 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>QueCab Ads</title>
+  <title>QueCab</title>
   <style>
     body {
       margin: 0;
       font-family: Arial, sans-serif;
+      background: url('./qc-hero-landing.jpg') center center / cover no-repeat, #999;
+      color: white;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
 
     nav {
-      background-color: #555;
-      padding: 15px;
+      background-color: #444;
       display: flex;
       justify-content: flex-end;
+      padding: 15px 25px;
+      font-weight: bold;
     }
 
     nav a {
       color: white;
-      margin-left: 20px;
       text-decoration: none;
-      font-weight: bold;
+      margin-left: 25px;
     }
 
-    .hero {
-      height: 100vh;
-      background: url('./qc-hero-landing.jpg') center center / cover no-repeat, #999; /* fallback color */
+    nav a:hover {
+      text-decoration: underline;
+    }
+
+    .hero-text {
+      flex: 1;
       display: flex;
-      align-items: center;
       justify-content: center;
-      color: white;
-      text-align: center;
+      align-items: center;
     }
 
-    .hero h1 {
-      font-size: 3em;
-      background-color: rgba(0, 0, 0, 0.6);
-      padding: 20px;
+    .hero-text div {
+      background-color: rgba(0, 0, 0, 0.7);
+      padding: 25px 40px;
       border-radius: 10px;
-    }
-
-    footer {
-      background-color: #333;
-      color: #ccc;
-      text-align: center;
-      padding: 10px;
+      font-size: 2rem;
     }
   </style>
 </head>
 <body>
   <nav>
-    <a href="site.html">Home</a>
-    <a href="request.html">Request Access</a>
-    <a href="login.html">Login</a>
-    <a href="checkin.html">Check In</a>
-    <a href="about.html">About</a>
+    <a href="#">Home</a>
+    <a href="#">Request Access</a>
+    <a href="#">Login</a>
+    <a href="#">Check In</a>
+    <a href="#">About</a>
   </nav>
-
-  <div class="hero">
-    <h1>1 Link · 3 Checks · Instant Verification</h1>
+  <div class="hero-text">
+    <div>1 Link · 3 Checks · Instant Verification</div>
   </div>
-
-  <footer>
-    &copy; 2025 QueCab Ads. All rights reserved.
-  </footer>
 </body>
 </html>
