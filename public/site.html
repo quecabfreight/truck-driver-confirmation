@@ -8,7 +8,6 @@
     body {
       margin: 0;
       font-family: Arial, sans-serif;
-      background-color: #ffffff;
     }
 
     nav {
@@ -27,10 +26,7 @@
 
     .hero {
       height: 100vh;
-      background-image: url('qc-hero-landing.jpg');
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
+      background: url('./qc-hero-landing.jpg') center center / cover no-repeat, #999; /* fallback color */
       display: flex;
       align-items: center;
       justify-content: center;
