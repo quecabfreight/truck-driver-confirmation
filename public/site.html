@@ -2,46 +2,72 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>QueCab Ads</title>
   <style>
     body {
       margin: 0;
       font-family: Arial, sans-serif;
-      background-image: url("qc-hero-landing.jpg");
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-      height: 100vh;
-      color: white;
+      background-color: #ffffff;
     }
 
     nav {
-      background-color: rgba(0, 0, 0, 0.7);
-      padding: 1em 2em;
+      background-color: #555;
+      padding: 15px;
       display: flex;
       justify-content: flex-end;
-      gap: 2em;
     }
 
     nav a {
       color: white;
+      margin-left: 20px;
       text-decoration: none;
       font-weight: bold;
     }
 
-    nav a:hover {
-      text-decoration: underline;
+    .hero {
+      height: 100vh;
+      background-image: url('qc-hero-landing.jpg');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      text-align: center;
+    }
+
+    .hero h1 {
+      font-size: 3em;
+      background-color: rgba(0, 0, 0, 0.6);
+      padding: 20px;
+      border-radius: 10px;
+    }
+
+    footer {
+      background-color: #333;
+      color: #ccc;
+      text-align: center;
+      padding: 10px;
     }
   </style>
 </head>
 <body>
   <nav>
-    <a href="/site.html">Home</a>
-    <a href="/request-access.html">Request Access</a>
-    <a href="/login.html">Login</a>
-    <a href="/checkin.html">Check In</a>
-    <a href="/about.html">About</a>
+    <a href="site.html">Home</a>
+    <a href="request.html">Request Access</a>
+    <a href="login.html">Login</a>
+    <a href="checkin.html">Check In</a>
+    <a href="about.html">About</a>
   </nav>
+
+  <div class="hero">
+    <h1>1 Link · 3 Checks · Instant Verification</h1>
+  </div>
+
+  <footer>
+    &copy; 2025 QueCab Ads. All rights reserved.
+  </footer>
 </body>
 </html>
