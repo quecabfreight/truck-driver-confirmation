@@ -2,52 +2,81 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>QueCab Ads - Instant Verification</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QueCab Ads</title>
   <style>
-    body {
+    * {
       margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
       font-family: Arial, sans-serif;
-      background-image: url('qc-hero-landing.jpg');
+      background: url('qc-hero-landing.jpg') no-repeat center center fixed;
       background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
+      height: 100vh;
       color: white;
     }
 
-    nav {
+    header {
       background-color: #444;
-      overflow: hidden;
+      padding: 12px 20px;
       display: flex;
-      justify-content: flex-end;
-      padding: 10px 20px;
+      justify-content: space-between;
+      align-items: center;
+      position: fixed;
+      top: 0;
+      width: 100%;
+      z-index: 10;
     }
 
-    nav a {
+    .nav-links a {
       color: white;
       text-decoration: none;
       margin-left: 20px;
       font-weight: bold;
     }
 
-    nav a:hover {
+    .nav-links a:hover {
       text-decoration: underline;
     }
 
-    .content {
-      height: 100vh;
+    .logo {
+      height: 40px;
+    }
+
+    .spacer {
+      height: 70px; /* to offset fixed header */
+    }
+
+    /* Optional: Add responsiveness */
+    @media screen and (max-width: 768px) {
+      .nav-links {
+        font-size: 14px;
+      }
+      .logo {
+        height: 30px;
+      }
     }
   </style>
 </head>
 <body>
-  <nav>
-    <a href="#">Home</a>
-    <a href="#">Request Access</a>
-    <a href="#">Login</a>
-    <a href="#">Check In</a>
-    <a href="#">About</a>
-  </nav>
 
-  <div class="content"></div>
+  <header>
+    <a href="site.html">
+      <img src="qclogo.png" alt="QueCab Ads Logo" class="logo" />
+    </a>
+    <nav class="nav-links">
+      <a href="site.html">Home</a>
+      <a href="request.html">Request Access</a>
+      <a href="login.html">Login</a>
+      <a href="checkin.html">Check In</a>
+      <a href="about.html">About</a>
+    </nav>
+  </header>
+
+  <div class="spacer"></div>
+
 </body>
 </html>
