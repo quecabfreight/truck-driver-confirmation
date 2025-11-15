@@ -3,80 +3,85 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>QueCab Ads</title>
+  <title>QueCab Adbs</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
     body {
+      margin: 0;
       font-family: Arial, sans-serif;
       background: url('qc-hero-landing.jpg') no-repeat center center fixed;
       background-size: cover;
-      height: 100vh;
       color: white;
     }
 
-    header {
-      background-color: #444;
-      padding: 12px 20px;
+    .navbar {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      position: fixed;
-      top: 0;
-      width: 100%;
-      z-index: 10;
+      background-color: #444;
+      padding: 10px 20px;
     }
 
-    .nav-links a {
+    .navbar .nav-links a {
       color: white;
       text-decoration: none;
       margin-left: 20px;
       font-weight: bold;
     }
 
-    .nav-links a:hover {
-      text-decoration: underline;
-    }
-
-    .logo {
+    .logo img {
       height: 40px;
     }
 
-    .spacer {
-      height: 70px; /* to offset fixed header */
+    .hero-text {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 90vh;
+      text-align: center;
     }
 
-    /* Optional: Add responsiveness */
-    @media screen and (max-width: 768px) {
-      .nav-links {
-        font-size: 14px;
+    .hero-text h1 {
+      background-color: rgba(0, 0, 0, 0.6);
+      padding: 20px;
+      border-radius: 8px;
+      font-size: 2rem;
+    }
+
+    @media (max-width: 768px) {
+      .hero-text h1 {
+        font-size: 1.5rem;
+        padding: 15px;
       }
-      .logo {
+
+      .navbar .nav-links a {
+        margin-left: 10px;
+        font-size: 0.9rem;
+      }
+
+      .logo img {
         height: 30px;
       }
     }
   </style>
 </head>
 <body>
-
-  <header>
-    <a href="site.html">
-      <img src="qclogo.png" alt="QueCab Ads Logo" class="logo" />
-    </a>
-    <nav class="nav-links">
+  <div class="navbar">
+    <div class="logo">
+      <a href="site.html">
+        <img src="qc-logo.png" alt="QueCab Logo" />
+      </a>
+    </div>
+    <div class="nav-links">
       <a href="site.html">Home</a>
-      <a href="request.html">Request Access</a>
+      <a href="request-access.html">Request Access</a>
       <a href="login.html">Login</a>
-      <a href="checkin.html">Check In</a>
+      <a href="check-in.html">Check In</a>
       <a href="about.html">About</a>
-    </nav>
-  </header>
+    </div>
+  </div>
 
-  <div class="spacer"></div>
-
+  <div class="hero-text">
+    <h1>1 LINK &nbsp;&middot;&nbsp; 3 CHECKS &nbsp;&middot;&nbsp; INSTANT VERIFICATION</h1>
+  </div>
 </body>
 </html>
