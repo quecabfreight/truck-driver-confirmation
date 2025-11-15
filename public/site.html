@@ -5,11 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>QueCab Adbs</title>
   <style>
-    body {
+    * {
       margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
       font-family: Arial, sans-serif;
-      background: url('qc-hero-landing.jpg') no-repeat center center fixed;
-      background-size: cover;
+      background: url('qc-hero-landing.jpg') no-repeat center center;
+      background-size: contain;
+      background-color: black;
+      height: 100vh;
       color: white;
     }
 
@@ -17,11 +24,15 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background-color: #444;
       padding: 10px 20px;
+      background-color: transparent;
+      position: absolute;
+      width: 100%;
+      top: 0;
+      left: 0;
     }
 
-    .navbar .nav-links a {
+    .nav-links a {
       color: white;
       text-decoration: none;
       margin-left: 20px;
@@ -33,31 +44,28 @@
     }
 
     .hero-text {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 90vh;
       text-align: center;
+      margin-top: 40vh;
     }
 
     .hero-text h1 {
       font-size: 2.5rem;
       font-weight: bold;
-      margin: 0;
+      color: white;
     }
 
     @media (max-width: 768px) {
-      .hero-text h1 {
-        font-size: 1.5rem;
+      .logo img {
+        height: 40px;
       }
 
-      .navbar .nav-links a {
+      .nav-links a {
         margin-left: 10px;
         font-size: 0.9rem;
       }
 
-      .logo img {
-        height: 40px;
+      .hero-text h1 {
+        font-size: 1.5rem;
       }
     }
   </style>
@@ -79,7 +87,7 @@
   </div>
 
   <div class="hero-text">
-    <h1>1 LINK · 3 CHECKS · INSTANT VERIFICATION</h1>
+    <h1>1 LINK &nbsp;·&nbsp; 3 CHECKS &nbsp;·&nbsp; INSTANT VERIFICATION</h1>
   </div>
 </body>
 </html>
