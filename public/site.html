@@ -3,20 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>QueCab Adbs</title>
+  <title>QueCab Ads</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
     body {
+      margin: 0;
       font-family: Arial, sans-serif;
-      background: url('qc-hero-landing.jpg') no-repeat center center;
-      background-size: contain;
-      background-color: black;
-      height: 100vh;
+      background: url('qc-hero-landing.jpg') no-repeat center center fixed;
+      background-size: cover;
       color: white;
     }
 
@@ -24,12 +17,10 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 10px 20px;
-      background-color: transparent;
-      position: absolute;
-      width: 100%;
-      top: 0;
-      left: 0;
+      padding: 20px;
+      background: transparent;
+      position: relative;
+      z-index: 10;
     }
 
     .nav-links a {
@@ -43,29 +34,14 @@
       height: 60px;
     }
 
-    .hero-text {
-      text-align: center;
-      margin-top: 40vh;
-    }
-
-    .hero-text h1 {
-      font-size: 2.5rem;
-      font-weight: bold;
-      color: white;
-    }
-
     @media (max-width: 768px) {
       .logo img {
         height: 40px;
       }
 
       .nav-links a {
-        margin-left: 10px;
+        margin-left: 12px;
         font-size: 0.9rem;
-      }
-
-      .hero-text h1 {
-        font-size: 1.5rem;
       }
     }
   </style>
@@ -84,10 +60,6 @@
       <a href="check-in.html">Check In</a>
       <a href="about.html">About</a>
     </div>
-  </div>
-
-  <div class="hero-text">
-    <h1>1 LINK &nbsp;·&nbsp; 3 CHECKS &nbsp;·&nbsp; INSTANT VERIFICATION</h1>
   </div>
 </body>
 </html>
