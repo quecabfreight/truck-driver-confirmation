@@ -14,7 +14,7 @@
       background-size: cover;
     }
     header {
-      background-color: rgba(0, 0, 0, 0.8);
+      background-color: rgba(0, 0, 0, 0.7);
       padding: 1rem 2rem;
       display: flex;
       justify-content: space-between;
@@ -27,12 +27,13 @@
       font-weight: bold;
     }
     main {
-      padding: 4rem 2rem;
+      padding: 3rem 2rem;
       text-align: center;
       background-color: rgba(0, 0, 0, 0.6);
       max-width: 800px;
-      margin: auto;
+      margin: 4rem auto;
       border-radius: 12px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
     }
     h1 {
       font-size: 2rem;
@@ -54,11 +55,14 @@
     .result .fail {
       color: #ff4c4c;
     }
+    .logo-link img {
+      height: 40px;
+    }
   </style>
 </head>
 <body>
   <header>
-    <img src="/qc-logo.png" alt="QueCab Logo" height="40" />
+    <a href="/site.html" class="logo-link"><img src="/qc-logo.png" alt="QueCab Logo" /></a>
     <nav>
       <a href="/site.html">Home</a>
       <a href="/join.html">Request Access</a>
@@ -67,8 +71,9 @@
       <a href="/how-it-works.html">How It Works</a>
     </nav>
   </header>
+
   <main>
-    <h1>3 Questions. 1 Link. Instant Clearance.</h1>
+    <h1>🚛 3 Questions. 1 Link. Instant Clearance.</h1>
     <p><strong>No apps. No downloads. Just answers.</strong></p>
     <p>QueCab AdbS is the only software that empowers Brokers and Shippers to instantly verify trucks and drivers at the dock — anywhere, anytime.</p>
 
