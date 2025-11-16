@@ -93,3 +93,20 @@ header a {
 header a:hover {
   color: #ccc;
 }
+header a,
+nav a,
+nav ul li a {
+  font-family: 'Arial Black', Gadget, sans-serif !important;
+  font-weight: bold !important;
+  color: white !important;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.75) !important;
+  text-decoration: none !important;
+  padding: 0 1rem !important;
+  transition: color 0.3s ease !important;
+}
+
+header a:hover,
+nav a:hover,
+nav ul li a:hover {
+  color: #ccc !important;
+}
