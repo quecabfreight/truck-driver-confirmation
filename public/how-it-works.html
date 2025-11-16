@@ -18,38 +18,36 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: none;
     }
-    nav a {
+    header img {
+      height: 40px;
+    }
+    header a {
       color: white;
       margin-left: 1.5rem;
       text-decoration: none;
       font-weight: bold;
     }
-    .logo-link img {
-      height: 40px;
-    }
     main {
-      background-color: rgba(0, 0, 0, 0.6);
-      padding: 3rem 2rem;
-      max-width: 800px;
-      margin: 5rem auto;
+      padding: 5rem 2rem;
       text-align: center;
-      border-radius: 12px;
+      max-width: 900px;
+      margin: auto;
     }
     h1 {
-      font-size: 2rem;
+      font-size: 2.5rem;
       margin-bottom: 1rem;
+      text-shadow: 2px 2px 4px #000;
+    }
+    p, .question, .result {
+      font-size: 1.2rem;
+      text-shadow: 1px 1px 2px #000;
     }
     .question {
-      background-color: rgba(255, 255, 255, 0.1);
-      padding: 1rem;
       margin: 1rem 0;
-      border-radius: 8px;
     }
     .result {
       margin-top: 2rem;
-      font-size: 1.1rem;
     }
     .result .success {
       color: #00ff99;
@@ -61,7 +59,9 @@
 </head>
 <body>
   <header>
-    <a href="/site.html" class="logo-link"><img src="/qc-logo.png" alt="QueCab Logo" /></a>
+    <a href="/site.html">
+      <img src="/qc-logo.png" alt="QueCab Logo" />
+    </a>
     <nav>
       <a href="/site.html">Home</a>
       <a href="/join.html">Request Access</a>
@@ -70,7 +70,6 @@
       <a href="/how-it-works.html">How It Works</a>
     </nav>
   </header>
-
   <main>
     <h1>🚛 3 Questions. 1 Link. Instant Clearance.</h1>
     <p><strong>No apps. No downloads. Just answers.</strong></p>
