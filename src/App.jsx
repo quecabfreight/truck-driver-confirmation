@@ -1,13 +1,12 @@
-import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Login from "./Login"; // ✅ this path must match your file location
+import Login from "./Login"; // <- Your Login component file
 
 function App() {
   return (
     <Router>
       <Routes>
         <Route path="/login" element={<Login />} />
-        {/* Add other routes here later */}
+        {/* You can add more routes here */}
       </Routes>
     </Router>
   );
