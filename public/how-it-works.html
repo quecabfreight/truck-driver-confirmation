@@ -3,69 +3,87 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>How It Works - QueCab Adbs</title>
+  <title>How It Works — QueCab AdbS</title>
   <style>
     body {
       margin: 0;
       font-family: Arial, sans-serif;
-      background: #111;
-      color: #fff;
+      background-color: #0e0f12;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       padding: 40px 20px;
     }
 
     h1 {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
       text-align: center;
-      margin-bottom: 40px;
-      font-size: 2.5em;
     }
 
-    .step {
-      margin: 40px auto;
-      max-width: 800px;
-      background: #1c1c1c;
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 0 12px rgba(0,0,0,0.4);
-    }
-
-    .step h2 {
-      color: #00bcd4;
-      font-size: 1.5em;
+    h2 {
+      font-size: 1.5rem;
+      margin-top: 40px;
       margin-bottom: 10px;
     }
 
-    .step p {
+    p {
+      font-size: 1.1rem;
+      max-width: 800px;
+      text-align: center;
       line-height: 1.6;
-      font-size: 1.1em;
+      margin-bottom: 30px;
     }
 
-    @media (max-width: 600px) {
+    ul {
+      list-style: none;
+      padding: 0;
+      max-width: 700px;
+    }
+
+    ul li {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      margin: 10px 0;
+      padding: 15px 20px;
+      border-radius: 6px;
+      font-size: 1rem;
+    }
+
+    .result {
+      font-weight: bold;
+      margin-top: 20px;
+      font-size: 1.2rem;
+    }
+
+    @media (max-width: 768px) {
       h1 {
-        font-size: 1.8em;
+        font-size: 2rem;
       }
 
-      .step {
-        padding: 20px;
+      p, ul li {
+        font-size: 1rem;
       }
     }
   </style>
 </head>
 <body>
-  <h1>How It Works</h1>
+  <h1>🚛 3 Questions. 1 Link. Instant Clearance.</h1>
+  <p><strong>No apps. No downloads. Just answers.</strong><br />
+    QueCab AdbS is the only software that empowers Brokers and Shippers to instantly verify trucks and drivers at the dock — anywhere, anytime.
+  </p>
 
-  <div class="step">
-    <h2>Step 1: Send One Link</h2>
-    <p>You provide your customer, carrier, or partner with a single secure link — no apps to download, no account to create.</p>
-  </div>
+  <h2>The 3 Questions:</h2>
+  <ul>
+    <li>What’s the USDOT# on the truck?</li>
+    <li>What’s the license plate number?</li>
+    <li>Did the driver answer their registered phone?</li>
+  </ul>
 
-  <div class="step">
-    <h2>Step 2: Complete Three Quick Checks</h2>
-    <p>The recipient confirms their identity, verifies their location, and uploads the required documents. It takes under 2 minutes.</p>
-  </div>
-
-  <div class="step">
-    <h2>Step 3: Instant Verification</h2>
-    <p>Once submitted, our system instantly checks, timestamps, and stores the data — giving you peace of mind and a clear audit trail.</p>
+  <div class="result">
+    ✅ Correct = Cleared to Load<br />
+    ❌ Mismatch = Alert Sent. Load Blocked.
   </div>
 </body>
 </html>
