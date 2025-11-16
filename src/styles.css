@@ -110,3 +110,13 @@ nav a:hover,
 nav ul li a:hover {
   color: #ccc !important;
 }
+nav a,
+header a,
+nav ul li a {
+  font-family: 'Arial Black', Gadget, sans-serif !important;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7) !important;
+  color: white !important;
+  font-weight: bold !important;
+  text-decoration: none !important;
+  font-size: 1rem !important;
+}
