@@ -3,143 +3,84 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>How It Works — QueCab AdbS</title>
+  <title>How It Works - QueCab AdbS</title>
+  <link rel="stylesheet" href="/styles.css" />
   <style>
     body {
       margin: 0;
       font-family: Arial, sans-serif;
-      background-color: #0e0f12;
       color: white;
+      background: url("/qc-howitworks-bg.jpg") no-repeat center center fixed;
+      background-size: cover;
     }
-
-    .navbar {
+    header {
+      background-color: rgba(0, 0, 0, 0.8);
+      padding: 1rem 2rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background-color: rgba(0, 0, 0, 0.8);
-      padding: 10px 30px;
     }
-
-    .navbar img {
-      height: 50px;
-    }
-
-    .nav-links {
-      display: flex;
-      gap: 25px;
-    }
-
-    .nav-links a {
+    nav a {
       color: white;
+      margin-left: 1.5rem;
       text-decoration: none;
       font-weight: bold;
-      font-size: 0.95rem;
     }
-
-    .nav-links a:hover {
-      text-decoration: underline;
-    }
-
-    .content {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 50px 20px;
+    main {
+      padding: 4rem 2rem;
       text-align: center;
-    }
-
-    .content h1 {
-      font-size: 2.8rem;
-      margin-bottom: 10px;
-    }
-
-    .content p {
-      font-size: 1.2rem;
+      background-color: rgba(0, 0, 0, 0.7);
       max-width: 800px;
-      line-height: 1.6;
-      margin-bottom: 40px;
+      margin: auto;
+      border-radius: 12px;
     }
-
-    .questions {
-      max-width: 600px;
-      margin: 0 auto;
-      text-align: left;
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
     }
-
-    .questions h2 {
-      font-size: 1.6rem;
-      margin-bottom: 20px;
-      text-align: center;
+    .question {
+      background-color: rgba(255, 255, 255, 0.1);
+      padding: 1rem;
+      margin: 1rem 0;
+      border-radius: 8px;
     }
-
-    .questions ul {
-      list-style: none;
-      padding: 0;
-    }
-
-    .questions li {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      padding: 15px 20px;
-      margin: 10px 0;
-      border-radius: 6px;
+    .result {
+      margin-top: 2rem;
       font-size: 1.1rem;
     }
-
-    .result {
-      margin-top: 30px;
-      font-size: 1.2rem;
-      font-weight: bold;
-      text-align: center;
+    .result .success {
+      color: #00ff99;
     }
-
-    @media (max-width: 768px) {
-      .content h1 {
-        font-size: 2rem;
-      }
-
-      .nav-links {
-        flex-wrap: wrap;
-        justify-content: center;
-      }
-
-      .nav-links a {
-        margin: 5px 10px;
-      }
+    .result .fail {
+      color: #ff4c4c;
     }
   </style>
 </head>
 <body>
-  <div class="navbar">
-    <img src="qc-logo.png" alt="QueCab AdbS Logo" />
-    <div class="nav-links">
-      <a href="site.html">Home</a>
-      <a href="request-access.html">Request Access</a>
-      <a href="login.html">Login</a>
-      <a href="checkin.html">Check In</a>
-      <a href="how-it-works.html">How It Works</a>
-    </div>
-  </div>
-
-  <div class="content">
+  <header>
+    <img src="/qc-logo.png" alt="QueCab Logo" height="40" />
+    <nav>
+      <a href="/site.html">Home</a>
+      <a href="/join.html">Request Access</a>
+      <a href="/login.html">Login</a>
+      <a href="/checkin.html">Check In</a>
+      <a href="/how-it-works.html">How It Works</a>
+    </nav>
+  </header>
+  <main>
     <h1>🚛 3 Questions. 1 Link. Instant Clearance.</h1>
-    <p><strong>No apps. No downloads. Just answers.</strong><br />
-    QueCab AdbS is the only software that empowers Brokers and Shippers to instantly verify trucks and drivers at the dock — anywhere, anytime.
-    </p>
+    <p><strong>No apps. No downloads. Just answers.</strong></p>
+    <p>QueCab AdbS is the only software that empowers Brokers and Shippers to instantly verify trucks and drivers at the dock — anywhere, anytime.</p>
 
-    <div class="questions">
-      <h2>The 3 Questions:</h2>
-      <ul>
-        <li>What’s the USDOT# on the truck?</li>
-        <li>What’s the license plate number?</li>
-        <li>Did the driver answer their registered phone?</li>
-      </ul>
-    </div>
+    <h2>The 3 Questions:</h2>
+    <div class="question">✅ What’s the USDOT# on the truck?</div>
+    <div class="question">✅ What’s the license plate number?</div>
+    <div class="question">✅ Did the driver answer their registered phone?</div>
 
     <div class="result">
-      ✅ Correct = Cleared to Load<br />
-      ❌ Mismatch = Alert Sent. Load Blocked.
+      <p class="success">✔ Correct = Cleared to Load</p>
+      <p class="fail">✖ Mismatch = Alert Sent. Load Blocked.</p>
     </div>
-  </div>
+  </main>
 </body>
 </html>
