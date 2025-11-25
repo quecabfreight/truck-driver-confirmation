@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 export default function Home() {
   return (
     <div className="qc-shell qc-hero">
-      <div className="qc-hero-overlay" />
+      <div className="qc-hero-overlay"></div>
       <div className="qc-inner qc-hero-content">
         <div className="qc-hero-text">
           <h1 className="qc-heading">
@@ -14,9 +14,10 @@ export default function Home() {
             <br />
             <span className="qc-hero-line">INSTANT VERIFICATION.</span>
           </h1>
+
           <p className="qc-sub">
-            Secure your load — verify before you load. Instantly confirm the
-            Truck-Driver unit (truck + driver) against the broker or shipper’s
+            Secure your load - verify before you load. Instantly confirm the
+            Truck-Driver unit (truck + driver) against the broker or shipper's
             record right at the dock.
           </p>
 
