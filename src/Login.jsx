@@ -37,7 +37,7 @@ export default function Login() {
   }
 
   return (
-    <div className="qc-shell qc-form-shell login-bg">
+    <div className="qc-shell qc-form-shell">
       <div className="qc-inner qc-form-inner">
         <div className="qc-form-card">
           <h1 className="qc-heading qc-form-heading">Log In</h1>
@@ -49,7 +49,7 @@ export default function Login() {
 
           <form onSubmit={handleSubmit} className="qc-form">
             <div className="qc-form-grid">
-
+              {/* EMAIL */}
               <div className="qc-field">
                 <label className="qc-label">
                   Business Email<span className="qc-required">*</span>
@@ -64,6 +64,7 @@ export default function Login() {
                 />
               </div>
 
+              {/* ACCESS CODE */}
               <div className="qc-field">
                 <label className="qc-label">
                   Access Code<span className="qc-required">*</span>
@@ -78,6 +79,7 @@ export default function Login() {
                 />
               </div>
 
+              {/* REMEMBER DEVICE */}
               <div className="qc-field">
                 <label className="qc-label">&nbsp;</label>
                 <label className="qc-remember-row">
@@ -94,11 +96,11 @@ export default function Login() {
 
             {status && (
               <div
-                className={`qc-status ${
+                className={
                   status.type === "success"
-                    ? "qc-status-success"
-                    : "qc-status-error"
-                }`}
+                    ? "qc-status qc-status-success"
+                    : "qc-status qc-status-error"
+                }
               >
                 {status.message}
               </div>
