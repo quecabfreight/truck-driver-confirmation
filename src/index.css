@@ -290,7 +290,7 @@ body {
   gap: 6px;
 }
 
-/* ---------- Request Access form (JOIN) ---------- */
+/* ---------- Request Access / Login form card ---------- */
 
 .qc-form-shell {
   background: radial-gradient(1200px 700px at 10% -10%, #1e2744, #050711);
@@ -390,12 +390,6 @@ body {
   flex: 1;
 }
 
-.qc-help {
-  margin-top: 4px;
-  font-size: 12px;
-  color: #7f88a7;
-}
-
 /* Role radio row */
 .qc-radio-row {
   display: flex;
@@ -411,6 +405,19 @@ body {
 }
 
 .qc-radio input {
+  accent-color: #9ad0ff;
+}
+
+/* Remember device */
+.qc-remember-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #c7d0f0;
+}
+
+.qc-remember-row input {
   accent-color: #9ad0ff;
 }
 
@@ -500,140 +507,4 @@ body {
   .qc-hero-text {
     max-width: 100%;
   }
-}
-/* ------------------------------
-   FORM CARD (APPLIES TO LOGIN + JOIN)
----------------------------------- */
-
-.qc-form-shell {
-  display: flex;
-  justify-content: center;
-  padding: 60px 20px;
-}
-
-.qc-form-inner {
-  width: 100%;
-  max-width: 900px;
-}
-
-.qc-form-card {
-  background: rgba(255, 255, 255, 0.04);
-  padding: 40px;
-  border-radius: 18px;
-  box-shadow: 0 0 30px rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-/* ------------------------------
-   GRID
----------------------------------- */
-.qc-form-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 22px;
-}
-
-@media (max-width: 700px) {
-  .qc-form-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* ------------------------------
-   LABELS + INPUTS
----------------------------------- */
-.qc-label {
-  display: block;
-  font-size: 16px;
-  margin-bottom: 6px;
-  font-weight: 600;
-  color: #cfd7f5;
-}
-
-.qc-input {
-  width: 100%;
-  padding: 14px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: #fff;
-  font-size: 16px;
-}
-
-/* ------------------------------
-   RADIO BUTTONS
----------------------------------- */
-.qc-radio-row {
-  display: flex;
-  gap: 20px;
-  align-items: center;
-}
-
-.qc-radio {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 16px;
-  cursor: pointer;
-  color: #cfd7f5;
-}
-
-.qc-radio input {
-  accent-color: #9ad0ff;
-}
-
-/* ------------------------------
-   REMEMBER THIS DEVICE
----------------------------------- */
-.qc-remember-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #cfd7f5;
-  font-size: 16px;
-}
-
-.qc-remember-row input {
-  accent-color: #9ad0ff;
-}
-
-/* ------------------------------
-   STATUS BANNERS
----------------------------------- */
-.qc-status {
-  margin-top: 20px;
-  padding: 14px;
-  border-radius: 10px;
-  font-size: 15px;
-  text-align: center;
-}
-
-.qc-status-success {
-  background: rgba(0, 200, 0, 0.25);
-  border: 1px solid rgba(0, 255, 0, 0.5);
-}
-
-.qc-status-error {
-  background: rgba(200, 0, 0, 0.25);
-  border: 1px solid rgba(255, 0, 0, 0.5);
-}
-
-/* ------------------------------
-   FORM BUTTON
----------------------------------- */
-.qc-btn-wide {
-  width: 100%;
-  padding: 14px;
-  font-size: 17px;
-  border-radius: 10px;
-  margin-top: 10px;
-}
-
-/* OPTIONAL FAINT BACKGROUND LOGO FOR LOGIN PAGE */
-.login-bg {
-  background-image: url("/qc-logo.png");
-  background-repeat: no-repeat;
-  background-position: center 140px;
-  background-size: 380px;
-  opacity: 1;
 }
