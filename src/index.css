@@ -508,3 +508,12 @@ body {
     max-width: 100%;
   }
 }
+/* Special background for Login page: gradient + big logo behind the card */
+.qc-login-shell {
+  background:
+    radial-gradient(1200px 700px at 10% -10%, #1e2744, #050711),
+    url("/qc-logo.png");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 420px;
+}
