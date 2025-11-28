@@ -3,6 +3,7 @@ import { Routes, Route, Link, NavLink } from "react-router-dom";
 import Home from "./pages/Home";
 import HowItWorks from "./pages/HowItWorks";
 import Join from "./pages/Join";
+import Login from "./pages/Login";
 
 function Placeholder({ label }) {
   return (
@@ -64,11 +65,11 @@ export default function App() {
           {/* How It Works = dock lineup hero */}
           <Route path="/how-it-works" element={<HowItWorks />} />
 
-          {/* Real Request Access form */}
+          {/* Request Access form */}
           <Route path="/join" element={<Join />} />
 
-          {/* Login placeholder for now */}
-          <Route path="/login" element={<Placeholder label="Login" />} />
+          {/* Real Login screen */}
+          <Route path="/login" element={<Login />} />
 
           {/* Catch-all */}
           <Route path="*" element={<Placeholder label="Not Found" />} />
