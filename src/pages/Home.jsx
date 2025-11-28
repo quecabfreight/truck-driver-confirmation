@@ -1,27 +1,35 @@
 import React from "react";
+import { Link } from "react-router-dom";
 
-export default function HowItWorks() {
+export default function Home() {
   return (
-    <div className="qc-shell qc-hiw">
-      <div className="qc-hiw-overlay"></div>
-      <div className="qc-inner qc-hiw-content">
-        <h1 className="qc-heading">How QueCab AdbS Works</h1>
+    <div className="qc-shell qc-hero">
+      <div className="qc-hero-overlay"></div>
+      <div className="qc-inner qc-hero-content">
+        <div className="qc-hero-text">
+          <h1 className="qc-heading">
+            1 LINK.
+            <br />
+            3 CHECKS.
+            <br />
+            <span className="qc-hero-line">INSTANT VERIFICATION.</span>
+          </h1>
 
-        <p className="qc-sub">
-          3 Questions. 1 Link. Instant clearance. No apps. No downloads. Just
-          answers.
-        </p>
+          <p className="qc-sub">
+            Secure your load - verify before you load. Instantly confirm the
+            Truck-Driver unit (truck plus driver) against the broker or
+            shipper&apos;s record right at the dock.
+          </p>
 
-        <ul className="qc-hiw-list">
-          <li>What&apos;s the USDOT# on the truck?</li>
-          <li>What&apos;s the license plate number?</li>
-          <li>Did the driver answer their registered phone?</li>
-        </ul>
-
-        <p className="qc-sub qc-hiw-result">
-          &#10004; Correct = Cleared to Load &nbsp;&nbsp; &#10006; Mismatch =
-          Alert Sent. Load Blocked.
-        </p>
+          <div className="qc-hero-actions">
+            <Link to="/join" className="qc-btn-primary">
+              Request Access
+            </Link>
+            <Link to="/login" className="qc-btn-ghost">
+              Already Authorized? Log In
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   );
