@@ -4,6 +4,7 @@ import Home from "./pages/Home";
 import HowItWorks from "./pages/HowItWorks";
 import Join from "./pages/Join";
 import LoginScreen from "./pages/LoginScreen";
+import ControlCenter from "./pages/ControlCenter";
 
 function Placeholder({ label }) {
   return (
@@ -63,6 +64,7 @@ export default function App() {
           <Route path="/how-it-works" element={<HowItWorks />} />
           <Route path="/join" element={<Join />} />
           <Route path="/login" element={<LoginScreen />} />
+          <Route path="/control-center" element={<ControlCenter />} />
           <Route path="*" element={<Placeholder label="Not Found" />} />
         </Routes>
       </main>
