@@ -157,14 +157,12 @@ body {
   inset: 0;
   background: radial-gradient(
       circle at 10% 10%,
-      rgba(0, 0, 0, 0.78),
-      transparent 60%
+      rgba(0, 0, 0, 0.45),
+      transparent 68%
     ),
-    linear-gradient(120deg, rgba(5, 7, 17, 0.96), rgba(5, 7, 17, 0.25));
+    linear-gradient(120deg, rgba(5, 7, 17, 0.6), rgba(5, 7, 17, 0.08));
   z-index: 0;
 }
-
-
 .qc-hero-content {
   position: relative;
   z-index: 1;
