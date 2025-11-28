@@ -1,3 +1,462 @@
+/* Base reset */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background: radial-gradient(1400px 800px at 80% -10%, #232b4a, #050711);
+  color: #e9eef9;
+}
+
+/* App shell */
+.qc-app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.qc-main {
+  flex: 1;
+  display: flex;
+}
+
+/* Header */
+.qc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 32px;
+  border-bottom: 1px solid rgba(34, 44, 76, 0.9);
+  background: linear-gradient(180deg, #060814, #050711);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.qc-header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.qc-logo-wrap {
+  display: inline-flex;
+  align-items: center;
+}
+
+.qc-logo {
+  height: 64px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 30px rgba(0, 0, 0, 0.8));
+}
+
+.qc-title-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.qc-title-main {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+}
+
+.qc-title-sub {
+  font-size: 14px;
+  color: #9ea6c5;
+}
+
+/* Nav */
+.qc-nav {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.qc-nav-link {
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 600;
+  color: #c9d2f2;
+  padding: 8px 10px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+
+.qc-nav-link:hover {
+  border-color: rgba(154, 208, 255, 0.35);
+  background: rgba(10, 18, 40, 0.9);
+}
+
+.qc-nav-link-cta {
+  border-color: rgba(154, 208, 255, 0.6);
+  background: linear-gradient(180deg, #1a2745, #10172a);
+  box-shadow: 0 0 0 1px rgba(154, 208, 255, 0.4),
+    0 12px 30px rgba(0, 0, 0, 0.85);
+}
+
+/* Active NavLink */
+.qc-nav-link.active {
+  border-color: rgba(214, 30, 43, 0.75);
+  color: #ffffff;
+}
+
+/* Generic layout */
+.qc-shell {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+}
+
+.qc-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 32px 32px 40px;
+}
+
+.qc-heading {
+  font-size: 44px;
+  line-height: 1.05;
+  margin: 0 0 14px;
+}
+
+.qc-sub {
+  font-size: 18px;
+  color: #a0aac6;
+  margin: 0 0 18px;
+}
+
+/* HOME HERO (man + tablet image) */
+.qc-hero {
+  position: relative;
+  background-image: url("/qc-hero-landing.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* lighter overlay so the image shows clearly */
+.qc-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+      circle at 10% 10%,
+      rgba(0, 0, 0, 0.45),
+      transparent 68%
+    ),
+    linear-gradient(120deg, rgba(5, 7, 17, 0.6), rgba(5, 7, 17, 0.08));
+  z-index: 0;
+}
+
+.qc-hero-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  min-height: calc(100vh - 90px);
+}
+
+.qc-hero-text {
+  max-width: 520px;
+}
+
+.qc-hero-line {
+  color: #9ad0ff;
+  text-shadow: 0 0 28px rgba(154, 208, 255, 0.7);
+}
+
+/* Hero buttons */
+.qc-hero-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.qc-btn-primary,
+.qc-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 18px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 16px;
+  text-decoration: none;
+  cursor: pointer;
+  border: 1px solid #313a5b;
+}
+
+.qc-btn-primary {
+  background: linear-gradient(180deg, #1b2742, #111827);
+  color: #e9eef9;
+  box-shadow: 0 0 0 1px rgba(154, 208, 255, 0.2),
+    0 18px 40px rgba(0, 0, 0, 0.85);
+}
+
+.qc-btn-primary:hover {
+  filter: brightness(1.08);
+}
+
+.qc-btn-ghost {
+  background: rgba(7, 11, 26, 0.7);
+  color: #e9eef9;
+}
+
+/* HOW IT WORKS (dock lineup image) */
+.qc-hiw {
+  position: relative;
+  background-image: url("/bg-howitworks.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* overlay for How It Works */
+.qc-hiw-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(5, 7, 17, 0.65),
+    rgba(5, 7, 17, 0.4)
+  );
+  z-index: 0;
+}
+
+.qc-hiw-content {
+  position: relative;
+  z-index: 1;
+}
+
+.qc-hiw-list {
+  list-style: none;
+  margin: 10px 0 8px;
+  padding: 0;
+  font-size: 18px;
+}
+
+.qc-hiw-list li::before {
+  content: "▢ ";
+  color: #9ad0ff;
+}
+
+.qc-hiw-result {
+  font-weight: 600;
+}
+
+/* Footer */
+.qc-footer {
+  padding: 10px 32px 16px;
+  border-top: 1px solid rgba(34, 44, 76, 0.7);
+  font-size: 14px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: #8f98b8;
+  background: #050711;
+}
+
+.qc-footer a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.qc-footer a:hover {
+  text-decoration: underline;
+}
+
+.qc-footer-links {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ---------- Request Access / Login form card ---------- */
+
+.qc-form-shell {
+  background: radial-gradient(1200px 700px at 10% -10%, #1e2744, #050711);
+}
+
+.qc-form-inner {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: calc(100vh - 90px);
+}
+
+.qc-form-card {
+  width: 100%;
+  max-width: 880px;
+  background: radial-gradient(900px 500px at 0% 0%, #141927, #050814);
+  border-radius: 24px;
+  border: 1px solid rgba(92, 117, 173, 0.7);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.9);
+  padding: 26px 28px 30px;
+}
+
+.qc-form-heading {
+  font-size: 32px;
+  margin-bottom: 6px;
+}
+
+.qc-form-sub {
+  max-width: 720px;
+}
+
+.qc-form {
+  margin-top: 10px;
+}
+
+.qc-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px 22px;
+}
+
+.qc-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.qc-label {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #c7d0f0;
+}
+
+.qc-required {
+  color: #ff6363;
+  margin-left: 4px;
+}
+
+.qc-input {
+  padding: 11px 12px;
+  border-radius: 10px;
+  border: 1px solid #323b5a;
+  background: rgba(5, 8, 20, 0.96);
+  color: #e9eef9;
+  font-size: 15px;
+}
+
+.qc-input::placeholder {
+  color: #6f7996;
+}
+
+.qc-input:focus {
+  outline: none;
+  border-color: #9ad0ff;
+  box-shadow: 0 0 0 1px rgba(154, 208, 255, 0.5);
+}
+
+/* MC row */
+.qc-mc-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.qc-mc-tag {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #323b5a;
+  background: linear-gradient(180deg, #151b2c, #0c101c);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: #dce5ff;
+}
+
+.qc-input-mc {
+  flex: 1;
+}
+
+/* Role radio row */
+.qc-radio-row {
+  display: flex;
+  gap: 18px;
+}
+
+.qc-radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: #c7d0f0;
+}
+
+.qc-radio input {
+  accent-color: #9ad0ff;
+}
+
+/* Remember device */
+.qc-remember-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #c7d0f0;
+}
+
+.qc-remember-row input {
+  accent-color: #9ad0ff;
+}
+
+/* Status messages */
+.qc-status {
+  margin-top: 16px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-size: 14px;
+}
+
+.qc-status-success {
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.8);
+  color: #bbf7d0;
+}
+
+.qc-status-error {
+  background: rgba(248, 113, 113, 0.12);
+  border: 1px solid rgba(248, 113, 113, 0.85);
+  color: #fecaca;
+}
+
+/* Form actions */
+.qc-form-actions {
+  margin-top: 18px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.qc-btn-wide {
+  min-width: 220px;
+}
+
+/* Special background for Login page: gradient + (optional) logo */
+.qc-login-shell {
+  background: radial-gradient(1200px 700px at 10% -10%, #1e2744, #050711);
+}
+
 /* -------- AdbS Control Center dashboard -------- */
 
 .qc-dashboard-shell {
@@ -64,4 +523,50 @@
   border: 1px dashed rgba(120, 138, 188, 0.7);
   font-size: 14px;
   color: #9ea6c5;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .qc-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .qc-nav {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+
+  .qc-inner {
+    padding: 24px 18px 32px;
+  }
+
+  .qc-hero-content {
+    min-height: calc(100vh - 120px);
+  }
+
+  .qc-heading {
+    font-size: 34px;
+  }
+}
+
+@media (max-width: 600px) {
+  .qc-logo {
+    height: 52px;
+  }
+
+  .qc-heading {
+    font-size: 30px;
+  }
+
+  .qc-sub {
+    font-size: 16px;
+  }
+
+  .qc-hero-text {
+    max-width: 100%;
+  }
 }
