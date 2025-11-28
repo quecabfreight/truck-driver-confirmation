@@ -144,7 +144,7 @@ body {
   margin: 0 0 18px;
 }
 
-/* HERO (Home) */
+/* HOME HERO (man + tablet image) */
 .qc-hero {
   position: relative;
   background-image: url("/qc-hero-landing.jpg");
@@ -153,7 +153,7 @@ body {
   background-repeat: no-repeat;
 }
 
-/* LIGHTER overlay so the trucks + driver show through clearly */
+/* lighter overlay so the image shows clearly */
 .qc-hero-overlay {
   position: absolute;
   inset: 0;
@@ -221,7 +221,7 @@ body {
   color: #e9eef9;
 }
 
-/* HOW IT WORKS */
+/* HOW IT WORKS (dock lineup image) */
 .qc-hiw {
   position: relative;
   background-image: url("/bg-howitworks.jpg");
@@ -230,7 +230,7 @@ body {
   background-repeat: no-repeat;
 }
 
-/* LIGHTER overlay for How It Works as well */
+/* overlay for How It Works */
 .qc-hiw-overlay {
   position: absolute;
   inset: 0;
