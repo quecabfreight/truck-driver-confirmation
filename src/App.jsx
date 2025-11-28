@@ -3,7 +3,7 @@ import { Routes, Route, Link, NavLink } from "react-router-dom";
 import Home from "./pages/Home";
 import HowItWorks from "./pages/HowItWorks";
 import Join from "./pages/Join";
-import Login from "./pages/Login";
+import LoginScreen from "./pages/LoginScreen";
 
 function Placeholder({ label }) {
   return (
@@ -62,7 +62,7 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/how-it-works" element={<HowItWorks />} />
           <Route path="/join" element={<Join />} />
-          <Route path="/login" element={<Login />} />
+          <Route path="/login" element={<LoginScreen />} />
           <Route path="*" element={<Placeholder label="Not Found" />} />
         </Routes>
       </main>
