@@ -3,9 +3,10 @@ import React from "react";
 export default function HowItWorks() {
   return (
     <div className="qc-shell qc-hiw">
-      <div className="qc-hiw-overlay" />
+      <div className="qc-hiw-overlay"></div>
       <div className="qc-inner qc-hiw-content">
         <h1 className="qc-heading">How QueCab AdbS Works</h1>
+
         <p className="qc-sub">
           3 Questions. 1 Link. Instant clearance. No apps. No downloads. Just
           answers.
@@ -18,8 +19,8 @@ export default function HowItWorks() {
         </ul>
 
         <p className="qc-sub qc-hiw-result">
-          ✔ Correct = Cleared to Load &nbsp;&nbsp; ✖ Mismatch = Alert Sent. Load
-          Blocked.
+          &#10004; Correct = Cleared to Load &nbsp;&nbsp; &#10006; Mismatch =
+          Alert Sent. Load Blocked.
         </p>
       </div>
     </div>
