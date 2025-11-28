@@ -59,19 +59,10 @@ export default function App() {
 
       <main className="qc-main">
         <Routes>
-          {/* Home = man + tablet hero */}
           <Route path="/" element={<Home />} />
-
-          {/* How It Works = dock lineup hero */}
           <Route path="/how-it-works" element={<HowItWorks />} />
-
-          {/* Request Access form */}
           <Route path="/join" element={<Join />} />
-
-          {/* Real Login screen */}
           <Route path="/login" element={<Login />} />
-
-          {/* Catch-all */}
           <Route path="*" element={<Placeholder label="Not Found" />} />
         </Routes>
       </main>
