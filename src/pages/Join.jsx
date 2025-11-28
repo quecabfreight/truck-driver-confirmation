@@ -16,10 +16,28 @@ export default function Join() {
   function handleChange(e) {
     const { name, value } = e.target;
 
-    // Basic MC formatting: strip non-digits
+    // MC Number: digits only, no formatting yet
     if (name === "mcNumber") {
       const digitsOnly = value.replace(/\D/g, "");
       setForm((prev) => ({ ...prev, [name]: digitsOnly }));
+      return;
+    }
+
+    // Business Phone: auto-format as 123-456-7890
+    if (name === "phone") {
+      const digits = value.replace(/\D/g, "").slice(0, 10); // max 10 digits
+      let formatted = digits;
+
+      if (digits.length > 3 && digits.length <= 6) {
+        formatted = `${digits.slice(0, 3)}-${digits.slice(3)}`;
+      } else if (digits.length > 6) {
+        formatted = `${digits.slice(0, 3)}-${digits.slice(
+          3,
+          6
+        )}-${digits.slice(6)}`;
+      }
+
+      setForm((prev) => ({ ...prev, phone: formatted }));
       return;
     }
 
@@ -61,7 +79,8 @@ export default function Join() {
             <div className="qc-form-grid">
               <div className="qc-field">
                 <label className="qc-label">
-                  Legal Business Name<span className="qc-required">*</span>
+                  Legal Name / Legal Business Name
+                  <span className="qc-required">*</span>
                 </label>
                 <input
                   type="text"
@@ -69,7 +88,7 @@ export default function Join() {
                   value={form.legalName}
                   onChange={handleChange}
                   className="qc-input"
-                  placeholder="Full legal name on FMCSA / IRS records"
+                  placeholder="Your full legal name or your company’s legal name"
                 />
               </div>
 
@@ -137,9 +156,7 @@ export default function Join() {
               </div>
 
               <div className="qc-field">
-                <label className="qc-label">
-                  EIN (optional)
-                </label>
+                <label className="qc-label">EIN (optional)</label>
                 <input
                   type="text"
                   name="ein"
