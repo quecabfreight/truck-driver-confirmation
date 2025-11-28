@@ -2,6 +2,7 @@ import React from "react";
 import { Routes, Route, Link, NavLink } from "react-router-dom";
 import Home from "./pages/Home";
 import HowItWorks from "./pages/HowItWorks";
+import Join from "./pages/Join";
 
 function Placeholder({ label }) {
   return (
@@ -63,9 +64,11 @@ export default function App() {
           {/* How It Works = dock lineup hero */}
           <Route path="/how-it-works" element={<HowItWorks />} />
 
-          {/* Placeholders for now */}
+          {/* Real Request Access form */}
+          <Route path="/join" element={<Join />} />
+
+          {/* Login placeholder for now */}
           <Route path="/login" element={<Placeholder label="Login" />} />
-          <Route path="/join" element={<Placeholder label="Request Access" />} />
 
           {/* Catch-all */}
           <Route path="*" element={<Placeholder label="Not Found" />} />
