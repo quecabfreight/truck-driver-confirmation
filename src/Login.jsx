@@ -1,6 +1,9 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-export default function Login() {
+export default function LoginScreen() {
+  const navigate = useNavigate();
+
   const [form, setForm] = useState({
     email: "",
     accessCode: "",
@@ -29,15 +32,12 @@ export default function Login() {
       return;
     }
 
-    setStatus({
-      type: "success",
-      message:
-        "Demo only. In the live system this will verify your access code and open the AdbS Control Center.",
-    });
+    // Demo only: go straight to the AdbS Control Center shell
+    navigate("/control-center");
   }
 
   return (
-    <div className="qc-shell qc-form-shell">
+    <div className="qc-shell qc-form-shell qc-login-shell">
       <div className="qc-inner qc-form-inner">
         <div className="qc-form-card">
           <h1 className="qc-heading qc-form-heading">Log In</h1>
@@ -95,15 +95,7 @@ export default function Login() {
             </div>
 
             {status && (
-              <div
-                className={
-                  status.type === "success"
-                    ? "qc-status qc-status-success"
-                    : "qc-status qc-status-error"
-                }
-              >
-                {status.message}
-              </div>
+              <div className="qc-status qc-status-error">{status.message}</div>
             )}
 
             <div className="qc-form-actions">
