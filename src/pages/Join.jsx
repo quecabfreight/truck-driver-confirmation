@@ -16,16 +16,16 @@ export default function Join() {
   function handleChange(e) {
     const { name, value } = e.target;
 
-    // MC Number: digits only, no formatting yet
+    // MC Number: digits only
     if (name === "mcNumber") {
       const digitsOnly = value.replace(/\D/g, "");
       setForm((prev) => ({ ...prev, [name]: digitsOnly }));
       return;
     }
 
-    // Business Phone: auto-format as 123-456-7890
+    // Phone auto-format: 123-456-7890
     if (name === "phone") {
-      const digits = value.replace(/\D/g, "").slice(0, 10); // max 10 digits
+      const digits = value.replace(/\D/g, "").slice(0, 10);
       let formatted = digits;
 
       if (digits.length > 3 && digits.length <= 6) {
@@ -47,11 +47,10 @@ export default function Join() {
   function handleSubmit(e) {
     e.preventDefault();
 
-    // Simple front-end check: required fields
     if (!form.legalName || !form.contactName || !form.phone || !form.email) {
       setStatus({
         type: "error",
-        message: "Please fill in all required fields before submitting.",
+        message: "Please complete all required fields.",
       });
       return;
     }
@@ -59,10 +58,8 @@ export default function Join() {
     setStatus({
       type: "success",
       message:
-        "Request received. In this demo build, the form is not yet wired to the live AdbS Control Center.",
+        "Request received. In this demo build, this is not yet wired to the live AdbS Control Center.",
     });
-
-    // later: send to backend / email
   }
 
   return (
@@ -70,6 +67,7 @@ export default function Join() {
       <div className="qc-inner qc-form-inner">
         <div className="qc-form-card">
           <h1 className="qc-heading qc-form-heading">Request Access</h1>
+
           <p className="qc-sub qc-form-sub">
             For licensed brokers and shippers who want to deploy QueCab AdbS to
             verify Truck-Driver units in real time at the dock.
@@ -77,6 +75,7 @@ export default function Join() {
 
           <form onSubmit={handleSubmit} className="qc-form">
             <div className="qc-form-grid">
+              {/* LEGAL NAME */}
               <div className="qc-field">
                 <label className="qc-label">
                   Legal Name / Legal Business Name
@@ -88,10 +87,11 @@ export default function Join() {
                   value={form.legalName}
                   onChange={handleChange}
                   className="qc-input"
-                  placeholder="Your full legal name or your company’s legal name"
+                  placeholder="Full legal name or full business name"
                 />
               </div>
 
+              {/* CONTACT NAME */}
               <div className="qc-field">
                 <label className="qc-label">
                   Primary Contact Name<span className="qc-required">*</span>
@@ -106,6 +106,7 @@ export default function Join() {
                 />
               </div>
 
+              {/* ROLE */}
               <div className="qc-field">
                 <label className="qc-label">
                   Role<span className="qc-required">*</span>
@@ -134,6 +135,7 @@ export default function Join() {
                 </div>
               </div>
 
+              {/* MC NUMBER */}
               <div className="qc-field">
                 <label className="qc-label">
                   MC Number<span className="qc-required">*</span>
@@ -150,11 +152,9 @@ export default function Join() {
                     inputMode="numeric"
                   />
                 </div>
-                <div className="qc-help">
-                  Digits only. We&apos;ll handle formatting on our side.
-                </div>
               </div>
 
+              {/* EIN */}
               <div className="qc-field">
                 <label className="qc-label">EIN (optional)</label>
                 <input
@@ -167,6 +167,7 @@ export default function Join() {
                 />
               </div>
 
+              {/* PHONE */}
               <div className="qc-field">
                 <label className="qc-label">
                   Business Phone<span className="qc-required">*</span>
@@ -177,10 +178,11 @@ export default function Join() {
                   value={form.phone}
                   onChange={handleChange}
                   className="qc-input"
-                  placeholder="For urgent verification calls"
+                  placeholder="123-456-7890"
                 />
               </div>
 
+              {/* EMAIL */}
               <div className="qc-field">
                 <label className="qc-label">
                   Business Email<span className="qc-required">*</span>
@@ -191,11 +193,12 @@ export default function Join() {
                   value={form.email}
                   onChange={handleChange}
                   className="qc-input"
-                  placeholder="Where AdbS access details will be sent"
+                  placeholder="name@business.com"
                 />
               </div>
             </div>
 
+            {/* STATUS MESSAGE */}
             {status && (
               <div
                 className={
