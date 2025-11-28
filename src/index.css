@@ -111,7 +111,7 @@ body {
     0 12px 30px rgba(0, 0, 0, 0.85);
 }
 
-/* Active NavLink (NavLink adds .active automatically) */
+/* Active NavLink */
 .qc-nav-link.active {
   border-color: rgba(214, 30, 43, 0.75);
   color: #ffffff;
@@ -152,6 +152,8 @@ body {
   background-position: center;
   background-repeat: no-repeat;
 }
+
+/* LIGHTER overlay so the trucks + driver show through clearly */
 .qc-hero-overlay {
   position: absolute;
   inset: 0;
@@ -163,6 +165,7 @@ body {
     linear-gradient(120deg, rgba(5, 7, 17, 0.6), rgba(5, 7, 17, 0.08));
   z-index: 0;
 }
+
 .qc-hero-content {
   position: relative;
   z-index: 1;
@@ -227,13 +230,14 @@ body {
   background-repeat: no-repeat;
 }
 
+/* LIGHTER overlay for How It Works as well */
 .qc-hiw-overlay {
   position: absolute;
   inset: 0;
   background: linear-gradient(
     180deg,
-    rgba(5, 7, 17, 0.92),
-    rgba(5, 7, 17, 0.85)
+    rgba(5, 7, 17, 0.65),
+    rgba(5, 7, 17, 0.4)
   );
   z-index: 0;
 }
