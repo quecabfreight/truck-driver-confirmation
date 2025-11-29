@@ -1,46 +1,26 @@
 import React from "react";
-import { Routes, Route, Link, NavLink } from "react-router-dom";
-import Home from "./pages/Home";
-import HowItWorks from "./pages/HowItWorks";
-import Join from "./pages/Join";
-import LoginScreen from "./pages/LoginScreen";
-import ControlCenter from "./pages/ControlCenter";
+import { HashRouter, Routes, Route, NavLink } from "react-router-dom";
 
-function Placeholder({ label }) {
-  return (
-    <div className="qc-shell">
-      <div className="qc-inner">
-        <h1 className="qc-heading">{label}</h1>
-        <p className="qc-sub">
-          This screen will be wired in the next phase. For now, use the Home
-          and How It Works pages to present QueCab AdbS and Truck-Driver
-          Confirmation.
-        </p>
-        <Link to="/" className="qc-btn-primary">
-          ← Back to Home
-        </Link>
-      </div>
-    </div>
-  );
-}
+import Home from "./pages/Home.jsx";
+import HowItWorks from "./pages/HowItWorks.jsx";
+import Join from "./pages/Join.jsx";
+import LoginScreen from "./pages/LoginScreen.jsx";
+import ControlCenter from "./pages/ControlCenter.jsx";
+import VerifyDriver from "./pages/VerifyDriver.jsx";
+import Site from "./pages/Site.jsx";   // In case your public pages use it
 
-export default function App() {
+// Header stays exactly as your site currently displays it
+function Header() {
   return (
-    <div className="qc-app">
-      <header className="qc-header">
-        <div className="qc-header-left">
-          <Link to="/" className="qc-logo-wrap">
-            <img
-              src="/qc-logo.png"
-              alt="QueCab AdbS logo"
-              className="qc-logo"
-            />
-          </Link>
-          <div className="qc-title-block">
-            <div className="qc-title-main">QueCab AdbS</div>
-            <div className="qc-title-sub">Truck-Driver Confirmation</div>
+    <header className="qc-header">
+      <div className="qc-header-inner">
+        <NavLink to="/" className="qc-logo-link">
+          <img src="/qc-logo.png" alt="QueCab AdbS" className="qc-logo" />
+          <div className="qc-logo-text">
+            <div className="qc-logo-title">QueCab AdbS</div>
+            <div className="qc-logo-sub">Truck-Driver Confirmation</div>
           </div>
-        </div>
+        </NavLink>
 
         <nav className="qc-nav">
           <NavLink to="/" end className="qc-nav-link">
@@ -52,31 +32,43 @@ export default function App() {
           <NavLink to="/login" className="qc-nav-link">
             Log In
           </NavLink>
-          <NavLink to="/join" className="qc-nav-link qc-nav-link-cta">
+          <NavLink to="/join" className="qc-nav-btn">
             Request Access
           </NavLink>
         </nav>
-      </header>
+      </div>
+    </header>
+  );
+}
 
-      <main className="qc-main">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/how-it-works" element={<HowItWorks />} />
-          <Route path="/join" element={<Join />} />
-          <Route path="/login" element={<LoginScreen />} />
-          <Route path="/control-center" element={<ControlCenter />} />
-          <Route path="*" element={<Placeholder label="Not Found" />} />
-        </Routes>
-      </main>
+export default function App() {
+  return (
+    <HashRouter>
+      <Header />
 
-      <footer className="qc-footer">
-        <span>© {new Date().getFullYear()} QueCab Inc. — QueCab AdbS</span>
-        <span className="qc-footer-links">
-          <a href="#about">About</a>
-          <span>•</span>
-          <a href="#contact">Contact</a>
-        </span>
-      </footer>
-    </div>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/how-it-works" element={<HowItWorks />} />
+        <Route path="/login" element={<LoginScreen />} />
+        <Route path="/join" element={<Join />} />
+        <Route path="/control-center" element={<ControlCenter />} />
+
+        {/* 🔥 The important one — THIS wires the Truck-Driver Verify page */}
+        <Route path="/verify/:token" element={<VerifyDriver />} />
+
+        {/* Fallback */}
+        <Route
+          path="*"
+          element={
+            <div className="qc-shell qc-inner qc-notfound">
+              <h1 className="qc-heading">Not Found</h1>
+              <p className="qc-sub">
+                This page does not exist or is not yet wired.
+              </p>
+            </div>
+          }
+        />
+      </Routes>
+    </HashRouter>
   );
 }
