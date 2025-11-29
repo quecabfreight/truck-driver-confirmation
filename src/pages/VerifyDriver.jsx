@@ -20,6 +20,44 @@ export default function VerifyDriver() {
 
   const [status, setStatus] = useState(null);
 
+  // local “bigger text” styles just for this page
+  const styles = {
+    heading: {
+      fontSize: "2.4rem",
+      letterSpacing: "0.03em",
+    },
+    sub: {
+      fontSize: "1.1rem",
+      maxWidth: "980px",
+    },
+    token: {
+      fontFamily: "monospace",
+      fontSize: "0.9rem",
+      opacity: 0.85,
+    },
+    bigLabel: {
+      fontSize: "1.2rem",
+      fontWeight: 600,
+      letterSpacing: "0.02em",
+    },
+    input: {
+      fontSize: "1.1rem",
+      padding: "0.75rem 1rem",
+    },
+    radioQuestion: {
+      fontSize: "1.2rem",
+      fontWeight: 700,
+    },
+    radioOption: {
+      fontSize: "1.15rem",
+      fontWeight: 600,
+    },
+    statusText: {
+      fontSize: "1.15rem",
+      lineHeight: 1.5,
+    },
+  };
+
   function handleUnlock(e) {
     e.preventDefault();
 
@@ -92,13 +130,15 @@ export default function VerifyDriver() {
     <div className="qc-shell qc-dash">
       <div className="qc-inner">
         <header className="qc-dash-header">
-          <h1 className="qc-heading">Truck-Driver Verification</h1>
-          <p className="qc-sub">
+          <h1 className="qc-heading" style={styles.heading}>
+            Truck-Driver Verification
+          </h1>
+          <p className="qc-sub" style={styles.sub}>
             For authorized dock and check-in personnel only. Confirm the
             Truck-Driver unit (truck + driver) in real time before you open a
             door or touch a pallet.
           </p>
-          <p className="qc-note qc-mono">
+          <p className="qc-note qc-mono" style={styles.token}>
             Demo token: <span>{token || "N/A"}</span>
           </p>
         </header>
@@ -107,7 +147,7 @@ export default function VerifyDriver() {
           {/* LEFT – PIN + verification form */}
           <section className="qc-dash-card">
             <h2 className="qc-dash-title">Dock Access PIN</h2>
-            <p className="qc-dash-text">
+            <p className="qc-dash-text" style={{ fontSize: "1.05rem" }}>
               In the live system, every dock or check-in station will have its
               own PIN. Drivers never see this screen.
             </p>
@@ -115,13 +155,16 @@ export default function VerifyDriver() {
             {!pinUnlocked && (
               <form className="qc-form" onSubmit={handleUnlock}>
                 <div className="qc-field qc-field-row">
-                  <label className="qc-label">Enter Dock PIN</label>
+                  <label className="qc-label" style={styles.bigLabel}>
+                    Enter Dock PIN
+                  </label>
                   <input
                     type="password"
                     className="qc-input qc-input-pin"
                     value={pinInput}
                     onChange={(e) => setPinInput(e.target.value)}
                     placeholder="••••"
+                    style={styles.input}
                   />
                   <button type="submit" className="qc-btn-primary">
                     Unlock
@@ -135,7 +178,7 @@ export default function VerifyDriver() {
                 <div className="qc-divider" />
 
                 <h2 className="qc-dash-title">Verify the Truck-Driver</h2>
-                <p className="qc-dash-text">
+                <p className="qc-dash-text" style={{ fontSize: "1.05rem" }}>
                   Enter what you see on the truck, then answer the two checks
                   below. Both must be <strong>YES</strong> to clear the load.
                 </p>
@@ -143,36 +186,52 @@ export default function VerifyDriver() {
                 <form className="qc-form" onSubmit={handleSubmit}>
                   <div className="qc-form-grid-single">
                     <div className="qc-field">
-                      <label className="qc-label">
-                        USDOT# on Truck <span className="qc-required">*</span>
+                      <label
+                        className="qc-label"
+                        style={styles.bigLabel}
+                        htmlFor="usdotOnTruck"
+                      >
+                        USDOT# on Truck{" "}
+                        <span className="qc-required">*</span>
                       </label>
                       <input
+                        id="usdotOnTruck"
                         type="text"
                         name="usdotOnTruck"
                         className="qc-input"
                         value={form.usdotOnTruck}
                         onChange={handleChange}
                         placeholder="As painted on the truck door"
+                        style={styles.input}
                       />
                     </div>
 
                     <div className="qc-field">
-                      <label className="qc-label">
+                      <label
+                        className="qc-label"
+                        style={styles.bigLabel}
+                        htmlFor="plateOnTruck"
+                      >
                         License Plate on Truck{" "}
                         <span className="qc-required">*</span>
                       </label>
                       <input
+                        id="plateOnTruck"
                         type="text"
                         name="plateOnTruck"
                         className="qc-input"
                         value={form.plateOnTruck}
                         onChange={handleChange}
                         placeholder="Exact plate text"
+                        style={styles.input}
                       />
                     </div>
 
                     <div className="qc-field">
-                      <label className="qc-label">
+                      <label
+                        className="qc-label"
+                        style={styles.radioQuestion}
+                      >
                         DOES THE USDOT# ON THE TRUCK MATCH YOUR RECORD?
                       </label>
                       <div className="qc-radio-row">
@@ -184,7 +243,7 @@ export default function VerifyDriver() {
                             checked={form.usdotMatches === "yes"}
                             onChange={handleChange}
                           />
-                          <span>YES</span>
+                          <span style={styles.radioOption}>YES</span>
                         </label>
                         <label className="qc-radio">
                           <input
@@ -194,13 +253,16 @@ export default function VerifyDriver() {
                             checked={form.usdotMatches === "no"}
                             onChange={handleChange}
                           />
-                          <span>NO</span>
+                          <span style={styles.radioOption}>NO</span>
                         </label>
                       </div>
                     </div>
 
                     <div className="qc-field">
-                      <label className="qc-label">
+                      <label
+                        className="qc-label"
+                        style={styles.radioQuestion}
+                      >
                         DID THE DRIVER ANSWER THEIR REGISTERED PHONE?
                       </label>
                       <div className="qc-radio-row">
@@ -212,7 +274,7 @@ export default function VerifyDriver() {
                             checked={form.driverAnswered === "yes"}
                             onChange={handleChange}
                           />
-                          <span>YES</span>
+                          <span style={styles.radioOption}>YES</span>
                         </label>
                         <label className="qc-radio">
                           <input
@@ -222,7 +284,7 @@ export default function VerifyDriver() {
                             checked={form.driverAnswered === "no"}
                             onChange={handleChange}
                           />
-                          <span>NO</span>
+                          <span style={styles.radioOption}>NO</span>
                         </label>
                       </div>
                     </div>
@@ -238,12 +300,15 @@ export default function VerifyDriver() {
                           : "qc-status qc-status-error"
                       }
                     >
-                      {status.message}
+                      <span style={styles.statusText}>{status.message}</span>
                     </div>
                   )}
 
                   <div className="qc-form-actions">
-                    <button type="submit" className="qc-btn-primary qc-btn-wide">
+                    <button
+                      type="submit"
+                      className="qc-btn-primary qc-btn-wide"
+                    >
                       Submit Truck-Driver Check
                     </button>
                   </div>
@@ -255,7 +320,7 @@ export default function VerifyDriver() {
           {/* RIGHT – Instructions / checklist */}
           <section className="qc-dash-card">
             <h2 className="qc-dash-title">Dock Checklist</h2>
-            <ol className="qc-list">
+            <ol className="qc-list" style={{ fontSize: "1.05rem" }}>
               <li>Ask the driver to remain in the cab or waiting area.</li>
               <li>
                 Confirm you are on the correct AdbS verify screen for this load.
@@ -274,7 +339,7 @@ export default function VerifyDriver() {
               </li>
             </ol>
 
-            <p className="qc-note">
+            <p className="qc-note" style={{ fontSize: "0.95rem" }}>
               Demo only. In the live system, your answers here will feed back
               into the AdbS Control Center and the Truck-Driver checks panel.
             </p>
