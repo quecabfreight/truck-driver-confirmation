@@ -26,6 +26,9 @@ export default function ControlCenter() {
 
   const [status, setStatus] = useState(null);
 
+  // Demo-only list of "active" verify links
+  const [activeLinks, setActiveLinks] = useState([]);
+
   function handleChange(e) {
     const { name, type, checked, value } = e.target;
 
@@ -50,6 +53,7 @@ export default function ControlCenter() {
   function handleSubmit(e) {
     e.preventDefault();
 
+    // Basic required fields for this demo
     if (
       !form.loadRef ||
       !form.carrierName ||
@@ -82,11 +86,43 @@ export default function ControlCenter() {
       return;
     }
 
+    // Build a demo token + link URL (front-end only, not live)
+    const token = `DEMO-${Date.now().toString(36).toUpperCase()}`;
+    const base = window.location.origin;
+    const linkUrl = `${base}/#/verify/${token}`;
+
+    const newLink = {
+      id: token,
+      token,
+      linkUrl,
+      loadRef: form.loadRef,
+      carrierName: form.carrierName,
+      usdot: form.usdot,
+      plate: form.plate,
+      driverName: form.driverName,
+      driverPhone: form.driverPhone,
+      sendEmail: form.sendEmail,
+      sendText: form.sendText,
+      targetEmail: form.targetEmail,
+      windowStart: form.windowStart,
+      windowEnd: form.windowEnd,
+      createdAt: new Date().toISOString(),
+    };
+
+    // Most recent on top
+    setActiveLinks((prev) => [newLink, ...prev]);
+
     setStatus({
       type: "success",
       message:
-        "Demo only. In the live system this will generate a unique AdbS Truck-Driver Verify Link for this load and deliver it by the methods you chose.",
+        "Demo only. This would generate a unique AdbS Truck-Driver Verify Link for this load and deliver it by the methods you chose. The link is now shown in Active Verify Links.",
     });
+  }
+
+  function formatDateDisplay(value) {
+    if (!value) return "Not set";
+    // value from <input type='date'> is already YYYY-MM-DD; show as-is
+    return value;
   }
 
   return (
@@ -288,7 +324,7 @@ export default function ControlCenter() {
             </form>
           </section>
 
-          {/* MIDDLE – Active links */}
+          {/* MIDDLE – Active links (demo) */}
           <section className="qc-dash-card">
             <h2 className="qc-dash-title">Active Verify Links</h2>
             <p className="qc-dash-text">
@@ -296,10 +332,58 @@ export default function ControlCenter() {
               that are currently valid and waiting to be used at the dock.
             </p>
 
-            <div className="qc-dash-empty">
-              No active links in this demo. Once live, each entry will show load
-              reference, carrier, link status, and last activity.
-            </div>
+            {activeLinks.length === 0 ? (
+              <div className="qc-dash-empty">
+                No active links in this demo. Once live, each entry will show
+                load reference, carrier, link status, and last activity.
+              </div>
+            ) : (
+              <div className="qc-active-list">
+                {activeLinks.map((link) => (
+                  <div key={link.id} className="qc-active-item">
+                    <div className="qc-active-row">
+                      <strong>{link.loadRef}</strong> &mdash; {link.carrierName}
+                    </div>
+                    <div className="qc-active-row">
+                      <span>USDOT#: {link.usdot || "—"}</span>{" "}
+                      <span style={{ marginLeft: "1rem" }}>
+                        Plate: {link.plate || "—"}
+                      </span>
+                    </div>
+                    <div className="qc-active-row">
+                      Driver: {link.driverName || "Not specified"} | Phone:{" "}
+                      {link.driverPhone}
+                    </div>
+                    <div className="qc-active-row">
+                      Send via:{" "}
+                      {[
+                        link.sendEmail ? "Email" : null,
+                        link.sendText ? "Text" : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" & ") || "—"}
+                      {link.targetEmail && (
+                        <span style={{ marginLeft: "1rem" }}>
+                          To: {link.targetEmail}
+                        </span>
+                      )}
+                    </div>
+                    <div className="qc-active-row">
+                      Window: {formatDateDisplay(link.windowStart)} →{" "}
+                      {formatDateDisplay(link.windowEnd)}
+                    </div>
+                    <div className="qc-active-row qc-active-linkurl">
+                      Demo link:{" "}
+                      <span className="qc-mono">{link.linkUrl}</span>
+                      <span className="qc-note">
+                        {" "}
+                        (visual only, not live yet)
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </section>
 
           {/* RIGHT – Recent checks */}
