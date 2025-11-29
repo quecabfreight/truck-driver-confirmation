@@ -20,7 +20,10 @@ export default function VerifyDriver() {
 
   const [status, setStatus] = useState(null);
 
-  // Bigger, dock-friendly text just for THIS page
+  // DEMO ONLY – in live system this comes from Control Center
+  const demoDriverPhone = "123-456-7890";
+
+  // Dock-friendly font tweaks for this screen
   const styles = {
     heading: {
       fontSize: "2.6rem",
@@ -131,7 +134,7 @@ export default function VerifyDriver() {
       <div className="qc-inner">
         <header className="qc-dash-header">
           <h1 className="qc-heading" style={styles.heading}>
-            Truck-Driver Verification – DEMO
+            Truck-Driver Verification
           </h1>
           <p className="qc-sub" style={styles.sub}>
             For authorized dock and check-in personnel only. Confirm the
@@ -227,6 +230,22 @@ export default function VerifyDriver() {
                       />
                     </div>
 
+                    {/* DEMO CLICKABLE PHONE */}
+                    <div className="qc-field">
+                      <label className="qc-label" style={styles.bigLabel}>
+                        Driver Registered Phone (demo)
+                      </label>
+                      <p className="qc-note qc-mono">
+                        In the live system this will show the registered phone
+                        from the AdbS Control Center. For now:
+                      </p>
+                      <p className="qc-driver-phone">
+                        <a href={`tel:${demoDriverPhone.replace(/-/g, "")}`}>
+                          {demoDriverPhone}
+                        </a>
+                      </p>
+                    </div>
+
                     <div className="qc-field">
                       <label
                         className="qc-label"
@@ -276,7 +295,7 @@ export default function VerifyDriver() {
                           />
                           <span style={styles.radioOption}>YES</span>
                         </label>
-                        <label className="qc-radio">
+                      <label className="qc-radio">
                           <input
                             type="radio"
                             name="driverAnswered"
@@ -317,7 +336,7 @@ export default function VerifyDriver() {
             )}
           </section>
 
-          {/* RIGHT – Instructions / checklist */}
+          {/* RIGHT – Dock Checklist (can be removed later if you want) */}
           <section className="qc-dash-card">
             <h2 className="qc-dash-title">Dock Checklist</h2>
             <ol className="qc-list" style={{ fontSize: "1.05rem" }}>
@@ -330,8 +349,8 @@ export default function VerifyDriver() {
                 <strong>license plate</strong> exactly as seen on the truck.
               </li>
               <li>
-                Call the driver’s registered phone. If it doesn’t feel right,
-                mark <strong>NO</strong>.
+                Call the driver’s registered phone (tap the number above). If it
+                doesn’t feel right, mark <strong>NO</strong>.
               </li>
               <li>
                 Only when both questions are <strong>YES</strong> is the load{" "}
