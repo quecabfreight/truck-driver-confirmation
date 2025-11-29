@@ -20,14 +20,14 @@ export default function VerifyDriver() {
 
   const [status, setStatus] = useState(null);
 
-  // local “bigger text” styles just for this page
+  // Bigger, dock-friendly text just for THIS page
   const styles = {
     heading: {
-      fontSize: "2.4rem",
-      letterSpacing: "0.03em",
+      fontSize: "2.6rem",
+      letterSpacing: "0.04em",
     },
     sub: {
-      fontSize: "1.1rem",
+      fontSize: "1.15rem",
       maxWidth: "980px",
     },
     token: {
@@ -45,7 +45,7 @@ export default function VerifyDriver() {
       padding: "0.75rem 1rem",
     },
     radioQuestion: {
-      fontSize: "1.2rem",
+      fontSize: "1.25rem",
       fontWeight: 700,
     },
     radioOption: {
@@ -53,8 +53,8 @@ export default function VerifyDriver() {
       fontWeight: 600,
     },
     statusText: {
-      fontSize: "1.15rem",
-      lineHeight: 1.5,
+      fontSize: "1.2rem",
+      lineHeight: 1.6,
     },
   };
 
@@ -131,7 +131,7 @@ export default function VerifyDriver() {
       <div className="qc-inner">
         <header className="qc-dash-header">
           <h1 className="qc-heading" style={styles.heading}>
-            Truck-Driver Verification
+            Truck-Driver Verification – DEMO
           </h1>
           <p className="qc-sub" style={styles.sub}>
             For authorized dock and check-in personnel only. Confirm the
