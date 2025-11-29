@@ -243,11 +243,11 @@ export default function ControlCenter() {
                   />
                 </div>
 
-                {/* Validity window – start */}
+                {/* Validity window – start (date picker only) */}
                 <div className="qc-field">
                   <label className="qc-label">Link Start (optional)</label>
                   <input
-                    type="datetime-local"
+                    type="date"
                     name="windowStart"
                     className="qc-input"
                     value={form.windowStart}
@@ -255,11 +255,11 @@ export default function ControlCenter() {
                   />
                 </div>
 
-                {/* Validity window – end */}
+                {/* Validity window – end (date picker only) */}
                 <div className="qc-field">
                   <label className="qc-label">Link Expires (optional)</label>
                   <input
-                    type="datetime-local"
+                    type="date"
                     name="windowEnd"
                     className="qc-input"
                     value={form.windowEnd}
