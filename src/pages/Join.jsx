@@ -1,56 +1,54 @@
 import React, { useState } from "react";
 
+function formatPhone(value) {
+  const digits = value.replace(/\D/g, "").slice(0, 10);
+  const len = digits.length;
+
+  if (len <= 3) return digits;
+  if (len <= 6) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+  return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+}
+
 export default function Join() {
   const [form, setForm] = useState({
     legalName: "",
     contactName: "",
     role: "broker",
-    mcNumber: "",
     ein: "",
-    phone: "",
-    email: "",
+    businessEmail: "",
+    mcNumber: "",
+    businessPhone: "",
   });
 
   const [status, setStatus] = useState(null);
 
   function handleChange(e) {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
+    let nextValue = type === "checkbox" ? checked : value;
 
-    // MC Number: digits only
     if (name === "mcNumber") {
-      const digitsOnly = value.replace(/\D/g, "");
-      setForm((prev) => ({ ...prev, [name]: digitsOnly }));
-      return;
+      // Digits only for MC number
+      nextValue = nextValue.replace(/\D/g, "").slice(0, 10);
     }
 
-    // Phone auto-format: 123-456-7890
-    if (name === "phone") {
-      const digits = value.replace(/\D/g, "").slice(0, 10);
-      let formatted = digits;
-
-      if (digits.length > 3 && digits.length <= 6) {
-        formatted = `${digits.slice(0, 3)}-${digits.slice(3)}`;
-      } else if (digits.length > 6) {
-        formatted = `${digits.slice(0, 3)}-${digits.slice(
-          3,
-          6
-        )}-${digits.slice(6)}`;
-      }
-
-      setForm((prev) => ({ ...prev, phone: formatted }));
-      return;
+    if (name === "businessPhone") {
+      nextValue = formatPhone(nextValue);
     }
 
-    setForm((prev) => ({ ...prev, [name]: value }));
+    setForm((prev) => ({
+      ...prev,
+      [name]: nextValue,
+    }));
   }
 
   function handleSubmit(e) {
     e.preventDefault();
 
-    if (!form.legalName || !form.contactName || !form.phone || !form.email) {
+    if (!form.legalName || !form.contactName || !form.businessEmail || !form.mcNumber || !form.businessPhone) {
       setStatus({
         type: "error",
-        message: "Please complete all required fields.",
+        message:
+          "For this demo, please complete Legal Name, Contact Name, MC#, Business Email, and Business Phone.",
       });
       return;
     }
@@ -58,7 +56,7 @@ export default function Join() {
     setStatus({
       type: "success",
       message:
-        "Request received. In this demo build, this is not yet wired to the live AdbS Control Center.",
+        "Request received. In this demo build, the form is not yet wired to the live AdbS Control Center.",
     });
   }
 
@@ -67,15 +65,14 @@ export default function Join() {
       <div className="qc-inner qc-form-inner">
         <div className="qc-form-card">
           <h1 className="qc-heading qc-form-heading">Request Access</h1>
-
           <p className="qc-sub qc-form-sub">
             For licensed brokers and shippers who want to deploy QueCab AdbS to
             verify Truck-Driver units in real time at the dock.
           </p>
 
-          <form onSubmit={handleSubmit} className="qc-form">
+          <form className="qc-form" onSubmit={handleSubmit}>
             <div className="qc-form-grid">
-              {/* LEGAL NAME */}
+              {/* Legal name */}
               <div className="qc-field">
                 <label className="qc-label">
                   Legal Name / Legal Business Name
@@ -84,14 +81,14 @@ export default function Join() {
                 <input
                   type="text"
                   name="legalName"
+                  className="qc-input"
                   value={form.legalName}
                   onChange={handleChange}
-                  className="qc-input"
-                  placeholder="Full legal name or full business name"
+                  placeholder="Full legal name on FMCSA / IRS records"
                 />
               </div>
 
-              {/* CONTACT NAME */}
+              {/* Primary contact */}
               <div className="qc-field">
                 <label className="qc-label">
                   Primary Contact Name<span className="qc-required">*</span>
@@ -99,14 +96,14 @@ export default function Join() {
                 <input
                   type="text"
                   name="contactName"
+                  className="qc-input"
                   value={form.contactName}
                   onChange={handleChange}
-                  className="qc-input"
                   placeholder="Who will manage AdbS access?"
                 />
               </div>
 
-              {/* ROLE */}
+              {/* Role */}
               <div className="qc-field">
                 <label className="qc-label">
                   Role<span className="qc-required">*</span>
@@ -135,7 +132,35 @@ export default function Join() {
                 </div>
               </div>
 
-              {/* MC NUMBER */}
+              {/* EIN optional */}
+              <div className="qc-field">
+                <label className="qc-label">EIN (optional)</label>
+                <input
+                  type="text"
+                  name="ein"
+                  className="qc-input"
+                  value={form.ein}
+                  onChange={handleChange}
+                  placeholder="XX-XXXXXXX"
+                />
+              </div>
+
+              {/* Business email */}
+              <div className="qc-field">
+                <label className="qc-label">
+                  Business Email<span className="qc-required">*</span>
+                </label>
+                <input
+                  type="email"
+                  name="businessEmail"
+                  className="qc-input"
+                  value={form.businessEmail}
+                  onChange={handleChange}
+                  placeholder="Where AdbS access details will be sent"
+                />
+              </div>
+
+              {/* MC number */}
               <div className="qc-field">
                 <label className="qc-label">
                   MC Number<span className="qc-required">*</span>
@@ -145,60 +170,30 @@ export default function Join() {
                   <input
                     type="text"
                     name="mcNumber"
+                    className="qc-input qc-input-mc"
                     value={form.mcNumber}
                     onChange={handleChange}
-                    className="qc-input qc-input-mc"
-                    placeholder="123456"
-                    inputMode="numeric"
+                    placeholder="Digits only"
                   />
                 </div>
               </div>
 
-              {/* EIN */}
-              <div className="qc-field">
-                <label className="qc-label">EIN (optional)</label>
-                <input
-                  type="text"
-                  name="ein"
-                  value={form.ein}
-                  onChange={handleChange}
-                  className="qc-input"
-                  placeholder="XX-XXXXXXX"
-                />
-              </div>
-
-              {/* PHONE */}
+              {/* Business phone */}
               <div className="qc-field">
                 <label className="qc-label">
                   Business Phone<span className="qc-required">*</span>
                 </label>
                 <input
                   type="tel"
-                  name="phone"
-                  value={form.phone}
-                  onChange={handleChange}
+                  name="businessPhone"
                   className="qc-input"
+                  value={form.businessPhone}
+                  onChange={handleChange}
                   placeholder="123-456-7890"
-                />
-              </div>
-
-              {/* EMAIL */}
-              <div className="qc-field">
-                <label className="qc-label">
-                  Business Email<span className="qc-required">*</span>
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={form.email}
-                  onChange={handleChange}
-                  className="qc-input"
-                  placeholder="name@business.com"
                 />
               </div>
             </div>
 
-            {/* STATUS MESSAGE */}
             {status && (
               <div
                 className={
