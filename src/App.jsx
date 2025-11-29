@@ -1,5 +1,5 @@
 import React from "react";
-import { HashRouter, Routes, Route, NavLink } from "react-router-dom";
+import { Routes, Route, NavLink } from "react-router-dom";
 
 import Home from "./pages/Home.jsx";
 import HowItWorks from "./pages/HowItWorks.jsx";
@@ -7,9 +7,8 @@ import Join from "./pages/Join.jsx";
 import LoginScreen from "./pages/LoginScreen.jsx";
 import ControlCenter from "./pages/ControlCenter.jsx";
 import VerifyDriver from "./pages/VerifyDriver.jsx";
-import Site from "./pages/Site.jsx";   // In case your public pages use it
 
-// Header stays exactly as your site currently displays it
+// Top navigation / logo bar – same look you already have
 function Header() {
   return (
     <header className="qc-header">
@@ -41,9 +40,23 @@ function Header() {
   );
 }
 
-export default function App() {
+// Simple fallback screen if someone hits a bad URL
+function NotFound() {
   return (
-    <HashRouter>
+    <div className="qc-shell qc-inner qc-notfound">
+      <h1 className="qc-heading">Not Found</h1>
+      <p className="qc-sub">
+        This page does not exist or is not yet wired in this demo build.
+      </p>
+    </div>
+  );
+}
+
+export default function App() {
+  // NOTE: The router (HashRouter) is already set up in main.jsx.
+  // Here we ONLY define the routes and render the pages.
+  return (
+    <>
       <Header />
 
       <Routes>
@@ -53,22 +66,12 @@ export default function App() {
         <Route path="/join" element={<Join />} />
         <Route path="/control-center" element={<ControlCenter />} />
 
-        {/* 🔥 The important one — THIS wires the Truck-Driver Verify page */}
+        {/* 🔥 This wires the Truck-Driver Verify screen */}
         <Route path="/verify/:token" element={<VerifyDriver />} />
 
         {/* Fallback */}
-        <Route
-          path="*"
-          element={
-            <div className="qc-shell qc-inner qc-notfound">
-              <h1 className="qc-heading">Not Found</h1>
-              <p className="qc-sub">
-                This page does not exist or is not yet wired.
-              </p>
-            </div>
-          }
-        />
+        <Route path="*" element={<NotFound />} />
       </Routes>
-    </HashRouter>
+    </>
   );
 }
