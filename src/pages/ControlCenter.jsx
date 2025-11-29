@@ -1,5 +1,14 @@
 import React, { useState } from "react";
 
+function formatPhone(value) {
+  const digits = value.replace(/\D/g, "").slice(0, 10);
+  const len = digits.length;
+
+  if (len <= 3) return digits;
+  if (len <= 6) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+  return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+}
+
 export default function ControlCenter() {
   const [form, setForm] = useState({
     loadRef: "",
@@ -18,16 +27,28 @@ export default function ControlCenter() {
 
   function handleChange(e) {
     const { name, type, checked, value } = e.target;
+
+    let nextValue = type === "checkbox" ? checked : value;
+
+    // Auto-uppercase USDOT and plate (any alpha characters)
+    if (name === "usdot" || name === "plate") {
+      nextValue = nextValue.toUpperCase();
+    }
+
+    // Auto-format phone as 123-456-7890
+    if (name === "driverPhone") {
+      nextValue = formatPhone(nextValue);
+    }
+
     setForm((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: nextValue,
     }));
   }
 
   function handleSubmit(e) {
     e.preventDefault();
 
-    // simple front-end validation for demo
     if (
       !form.loadRef ||
       !form.carrierName ||
@@ -51,7 +72,6 @@ export default function ControlCenter() {
       return;
     }
 
-    // Demo only — no real link issuance yet
     setStatus({
       type: "success",
       message:
@@ -125,7 +145,7 @@ export default function ControlCenter() {
                     className="qc-input"
                     value={form.usdot}
                     onChange={handleChange}
-                    placeholder="Digits only — as expected on the truck door"
+                    placeholder="Digits or alphanumerics as shown on truck"
                   />
                 </div>
 
