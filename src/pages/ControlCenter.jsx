@@ -34,12 +34,10 @@ export default function ControlCenter() {
 
     let nextValue = type === "checkbox" ? checked : value;
 
-    // Auto-uppercase USDOT and plate (any alpha characters)
     if (name === "usdot" || name === "plate") {
       nextValue = nextValue.toUpperCase();
     }
 
-    // Auto-format phone as 123-456-7890
     if (name === "driverPhone") {
       nextValue = formatPhone(nextValue);
     }
@@ -53,7 +51,6 @@ export default function ControlCenter() {
   function handleSubmit(e) {
     e.preventDefault();
 
-    // Basic required fields for this demo
     if (
       !form.loadRef ||
       !form.carrierName ||
@@ -109,7 +106,7 @@ export default function ControlCenter() {
       createdAt: new Date().toISOString(),
     };
 
-    // Most recent on top
+    // Most recent at the top
     setActiveLinks((prev) => [newLink, ...prev]);
 
     setStatus({
@@ -121,14 +118,12 @@ export default function ControlCenter() {
 
   function formatDateDisplay(value) {
     if (!value) return "Not set";
-    // value from <input type='date'> is already YYYY-MM-DD; show as-is
-    return value;
+    return value; // YYYY-MM-DD from the date picker
   }
 
   return (
     <div className="qc-shell qc-dashboard-shell">
       <div className="qc-inner qc-dashboard-inner">
-        {/* Header */}
         <div className="qc-dash-header">
           <h1 className="qc-heading">AdbS Control Center</h1>
           <p className="qc-sub">
@@ -150,7 +145,6 @@ export default function ControlCenter() {
 
             <form className="qc-form" onSubmit={handleSubmit}>
               <div className="qc-form-grid">
-                {/* Load reference */}
                 <div className="qc-field">
                   <label className="qc-label">
                     Load Reference<span className="qc-required">*</span>
@@ -165,7 +159,6 @@ export default function ControlCenter() {
                   />
                 </div>
 
-                {/* Carrier / legal name */}
                 <div className="qc-field">
                   <label className="qc-label">
                     Carrier / Legal Name<span className="qc-required">*</span>
@@ -180,7 +173,6 @@ export default function ControlCenter() {
                   />
                 </div>
 
-                {/* USDOT */}
                 <div className="qc-field">
                   <label className="qc-label">
                     USDOT# on Truck<span className="qc-required">*</span>
@@ -195,7 +187,6 @@ export default function ControlCenter() {
                   />
                 </div>
 
-                {/* Plate */}
                 <div className="qc-field">
                   <label className="qc-label">
                     License Plate<span className="qc-required">*</span>
@@ -210,7 +201,6 @@ export default function ControlCenter() {
                   />
                 </div>
 
-                {/* Driver name (optional) */}
                 <div className="qc-field">
                   <label className="qc-label">Driver Name (optional)</label>
                   <input
@@ -223,7 +213,6 @@ export default function ControlCenter() {
                   />
                 </div>
 
-                {/* Driver phone */}
                 <div className="qc-field">
                   <label className="qc-label">
                     Driver Phone<span className="qc-required">*</span>
@@ -238,7 +227,6 @@ export default function ControlCenter() {
                   />
                 </div>
 
-                {/* Send via */}
                 <div className="qc-field">
                   <label className="qc-label">Send Link Via</label>
                   <div className="qc-radio-row">
@@ -263,7 +251,6 @@ export default function ControlCenter() {
                   </div>
                 </div>
 
-                {/* Send-to email */}
                 <div className="qc-field">
                   <label className="qc-label">
                     Send To Email
@@ -279,7 +266,6 @@ export default function ControlCenter() {
                   />
                 </div>
 
-                {/* Validity window – start (date picker only) */}
                 <div className="qc-field">
                   <label className="qc-label">Link Start (optional)</label>
                   <input
@@ -291,7 +277,6 @@ export default function ControlCenter() {
                   />
                 </div>
 
-                {/* Validity window – end (date picker only) */}
                 <div className="qc-field">
                   <label className="qc-label">Link Expires (optional)</label>
                   <input
@@ -345,7 +330,7 @@ export default function ControlCenter() {
                       <strong>{link.loadRef}</strong> &mdash; {link.carrierName}
                     </div>
                     <div className="qc-active-row">
-                      <span>USDOT#: {link.usdot || "—"}</span>{" "}
+                      <span>USDOT#: {link.usdot || "—"}</span>
                       <span style={{ marginLeft: "1rem" }}>
                         Plate: {link.plate || "—"}
                       </span>
