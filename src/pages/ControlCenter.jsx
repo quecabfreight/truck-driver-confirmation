@@ -19,6 +19,7 @@ export default function ControlCenter() {
     driverPhone: "",
     sendEmail: true,
     sendText: false,
+    targetEmail: "",
     windowStart: "",
     windowEnd: "",
   });
@@ -68,6 +69,15 @@ export default function ControlCenter() {
       setStatus({
         type: "error",
         message: "Choose at least one send method: email, text, or both.",
+      });
+      return;
+    }
+
+    if (form.sendEmail && !form.targetEmail) {
+      setStatus({
+        type: "error",
+        message:
+          "Add the email address where this AdbS Truck-Driver Verify Link should be sent.",
       });
       return;
     }
@@ -217,28 +227,43 @@ export default function ControlCenter() {
                   </div>
                 </div>
 
-                {/* Validity window */}
+                {/* Send-to email */}
+                <div className="qc-field">
+                  <label className="qc-label">
+                    Send To Email
+                    {form.sendEmail && <span className="qc-required">*</span>}
+                  </label>
+                  <input
+                    type="email"
+                    name="targetEmail"
+                    className="qc-input"
+                    value={form.targetEmail}
+                    onChange={handleChange}
+                    placeholder="Dock or dispatcher email for this load"
+                  />
+                </div>
+
+                {/* Validity window – start */}
                 <div className="qc-field">
                   <label className="qc-label">Link Start (optional)</label>
                   <input
-                    type="text"
+                    type="datetime-local"
                     name="windowStart"
                     className="qc-input"
                     value={form.windowStart}
                     onChange={handleChange}
-                    placeholder="e.g. 2025-11-30 08:00"
                   />
                 </div>
 
+                {/* Validity window – end */}
                 <div className="qc-field">
                   <label className="qc-label">Link Expires (optional)</label>
                   <input
-                    type="text"
+                    type="datetime-local"
                     name="windowEnd"
                     className="qc-input"
                     value={form.windowEnd}
                     onChange={handleChange}
-                    placeholder="e.g. 2025-12-01 23:59"
                   />
                 </div>
               </div>
