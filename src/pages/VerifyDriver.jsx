@@ -1,244 +1,285 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useLocation, useParams } from "react-router-dom";
-import InAppBrowserBanner from "../components/InAppBrowserBanner";
+import React, { useState } from "react";
+import { useParams } from "react-router-dom";
 
-// ---- helpers ----
-const decodeB64url = (s = "") => {
-  try {
-    const pad = (t) => t + "===".slice((t.length + 3) % 4);
-    const norm = s.replace(/-/g, "+").replace(/_/g, "/");
-    return JSON.parse(decodeURIComponent(escape(atob(pad(norm)))));
-  } catch { return null; }
-};
-const normPlate = (s = "") => s.toUpperCase().replace(/[\s-]/g, "");
-const normDot = (s = "") => s.replace(/\D/g, "");
-
-function useQuery() {
-  const { search } = useLocation();
-  return useMemo(() => new URLSearchParams(search), [search]);
-}
-
-function YnButtons({ label, value, onChange }) {
-  const yes = value === "Yes";
-  const no  = value === "No";
-  return (
-    <div>
-      <label style={{ display: "block", marginBottom: 8, fontWeight: 700 }}>{label}</label>
-      <div style={{ display: "flex", gap: 12 }}>
-        <button type="button" className="btn"
-          style={{ background: yes ? "#2aa865" : "var(--button-bg)", color: yes ? "#fff" : "var(--button-text)", minWidth: 64 }}
-          onClick={() => onChange("Yes")}
-        >Y</button>
-        <button type="button" className="btn"
-          style={{ background: no ? "#c62828" : "var(--button-bg)", color: no ? "#fff" : "var(--button-text)", minWidth: 64 }}
-          onClick={() => onChange("No")}
-        >N</button>
-      </div>
-    </div>
-  );
-}
-
-// ---- OCR loader (Scan Plate) ----
-let tesseractLoading = false;
-function loadTesseract() {
-  return new Promise((resolve, reject) => {
-    if (window.Tesseract) return resolve(window.Tesseract);
-    if (tesseractLoading) {
-      const check = setInterval(() => { if (window.Tesseract) { clearInterval(check); resolve(window.Tesseract); } }, 100);
-      setTimeout(() => { clearInterval(check); if (!window.Tesseract) reject(new Error("Tesseract load timeout")); }, 15000);
-      return;
-    }
-    tesseractLoading = true;
-    const s = document.createElement("script");
-    s.src = "https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js";
-    s.async = true;
-    s.onload = () => resolve(window.Tesseract);
-    s.onerror = () => reject(new Error("Failed to load Tesseract"));
-    document.head.appendChild(s);
-  });
-}
-function pickBestPlate(text = "") {
-  const cleaned = text.toUpperCase().replace(/[^A-Z0-9]/g, " ");
-  const candidates = cleaned.match(/[A-Z0-9]{5,8}/g) || [];
-  if (!candidates.length) return "";
-  const scored = candidates.map(c => ({ v: c, score: (/[A-Z]/.test(c) && /\d/.test(c) ? 10 : 0) + c.length }));
-  scored.sort((a,b)=>b.score-a.score);
-  return scored[0].v || "";
+function formatUpper(value) {
+  return value.toUpperCase();
 }
 
 export default function VerifyDriver() {
-  const { token } = useParams(); // kept for routing
-  const q = useQuery();
+  const { token } = useParams();
 
-  // Expected values (beta, obfuscated in link)
-  const expectedDot   = useMemo(() => decodeB64url(q.get("vd"))?.d || "", [q]);
-  const expectedPlate = useMemo(() => decodeB64url(q.get("vp"))?.p || "", [q]);
-  const tel = q.get("tel") || "";
-  const alertEmails = (q.get("em") || "").split(",").map(s=>s.trim()).filter(Boolean);
+  const [pinInput, setPinInput] = useState("");
+  const [pinUnlocked, setPinUnlocked] = useState(false);
 
-  // Inputs
-  const [dotInput, setDotInput] = useState("");
-  const [plateInput, setPlateInput] = useState("");
-  const [ansCall, setAnsCall] = useState("");
+  const [form, setForm] = useState({
+    usdotOnTruck: "",
+    plateOnTruck: "",
+    usdotMatches: "",
+    driverAnswered: "",
+  });
 
-  // Fail counter for auto email
-  const [failCount, setFailCount] = useState(0);
+  const [status, setStatus] = useState(null);
 
-  // Sound
-  const audioRef = useRef(null);
+  function handleUnlock(e) {
+    e.preventDefault();
 
-  // OCR
-  const fileInputRef = useRef(null);
-  const [ocrBusy, setOcrBusy] = useState(false);
-  const [ocrError, setOcrError] = useState("");
-  const [preview, setPreview] = useState("");
-
-  const dotOk = expectedDot ? normDot(dotInput) === normDot(expectedDot) : false;
-  const plateOk = expectedPlate ? normPlate(plateInput) === normPlate(expectedPlate) : false;
-  const allYes = dotOk && plateOk && ansCall === "Yes";
-  const ready = dotInput && plateInput && ansCall;
-
-  useEffect(() => {
-    if (ready && !allYes && audioRef.current) {
-      audioRef.current.currentTime = 0;
-      audioRef.current.play().catch(() => {});
+    // DEMO-ONLY PIN. In the live system this will be per dock / facility.
+    if (pinInput.trim() === "1234") {
+      setPinUnlocked(true);
+      setStatus(null);
+    } else {
+      setStatus({
+        type: "error",
+        message: "Invalid dock PIN in this demo. Try 1234.",
+      });
     }
-  }, [ready, allYes]);
+  }
 
-  const handleSubmit = () => {
-    if (!ready) { alert("Please complete all three checks."); return; }
-    if (allYes) return;
+  function handleChange(e) {
+    const { name, value } = e.target;
+    let nextValue = value;
 
-    setFailCount(prev => {
-      const next = prev + 1;
-      if (next >= 3 && alertEmails.length) {
-        const body = [
-          "CAUTION ALERT — DO NOT LOAD",
-          "",
-          `USDOT entered: ${normDot(dotInput)} (expected)`,
-          `Plate entered: ${normPlate(plateInput)} (expected)`,
-          `Phone call answered: ${ansCall}`,
-          `Token: ${token}`,
-          "",
-          "Triggered automatically on third failed verification attempt."
-        ].join("\n");
-        const mailto = `mailto:${alertEmails.join(",")}?subject=AdbS%20Caution%20Alert&body=${encodeURIComponent(body)}`;
-        window.location.href = mailto;
-      }
-      return next;
-    });
-  };
+    if (name === "usdotOnTruck" || name === "plateOnTruck") {
+      nextValue = formatUpper(nextValue);
+    }
 
-  // Scan Plate
-  const startScan = () => { setOcrError(""); if (fileInputRef.current) fileInputRef.current.click(); };
-  const onPickedImage = async (e) => {
-    const file = e.target.files?.[0]; if (!file) return;
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const dataUrl = String(reader.result || "");
-      setPreview(dataUrl); setOcrBusy(true); setOcrError("");
-      try {
-        const T = await loadTesseract();
-        const { data } = await T.recognize(dataUrl, "eng");
-        const best = pickBestPlate(data.text || "");
-        if (best) setPlateInput(best); else setOcrError("Couldn’t read plate. Type it in.");
-      } catch {
-        setOcrError("Camera/OCR unavailable here. Type it in.");
-      } finally {
-        setOcrBusy(false);
-        if (fileInputRef.current) fileInputRef.current.value = "";
-      }
-    };
-    reader.readAsDataURL(file);
-  };
+    setForm((prev) => ({
+      ...prev,
+      [name]: nextValue,
+    }));
+  }
+
+  function handleSubmit(e) {
+    e.preventDefault();
+
+    if (!form.usdotOnTruck || !form.plateOnTruck) {
+      setStatus({
+        type: "error",
+        message:
+          "Enter the USDOT# and license plate exactly as seen on the truck.",
+      });
+      return;
+    }
+
+    if (!form.usdotMatches || !form.driverAnswered) {
+      setStatus({
+        type: "error",
+        message:
+          "Answer both questions: Does the USDOT# match, and did the driver answer their registered phone?",
+      });
+      return;
+    }
+
+    const clearToLoad =
+      form.usdotMatches === "yes" && form.driverAnswered === "yes";
+
+    if (clearToLoad) {
+      setStatus({
+        type: "success",
+        message:
+          "CLEAR TO LOAD – USDOT# and plate match your record, and the driver answered their registered phone.",
+      });
+    } else {
+      setStatus({
+        type: "caution",
+        message:
+          "CAUTION ALERT – DO NOT LOAD. At least one check failed. Hold this load and follow your internal escalation steps.",
+      });
+    }
+  }
 
   return (
-    <div className="page centered">
-      <InAppBrowserBanner />
-      <img src="/qc-logo.png" alt="QueCab AdbS" className="page-logo" />
-      <audio ref={audioRef} src="/alert.mp3" preload="auto" />
-
-      <div className="card">
-        <h1>Truck-Driver Verification</h1>
-
-        {/* Dock-only clickable phone */}
-        {tel && (
-          <p style={{ marginBottom: 12 }}>
-            <strong>Call Driver:</strong>{" "}
-            <a href={`tel:${tel}`} style={{ textDecoration: "none", fontWeight: 900 }}>{tel}</a>
+    <div className="qc-shell qc-dash">
+      <div className="qc-inner">
+        <header className="qc-dash-header">
+          <h1 className="qc-heading">Truck-Driver Verification</h1>
+          <p className="qc-sub">
+            For authorized dock and check-in personnel only. Confirm the
+            Truck-Driver unit (truck + driver) in real time before you open a
+            door or touch a pallet.
           </p>
-        )}
+          <p className="qc-note qc-mono">
+            Demo token: <span>{token || "N/A"}</span>
+          </p>
+        </header>
 
-        <div className="form">
-          {/* USDOT entry with auto check */}
-          <div>
-            <label>
-              USDOT# (enter what’s on the truck)
-              {dotOk && <span style={{ color: "#2aa865", marginLeft: 10 }}>✅</span>}
-              {!dotOk && dotInput ? <span style={{ color: "#c62828", marginLeft: 10 }}>❌</span> : null}
-            </label>
-            <input
-              className="input"
-              value={dotInput}
-              onChange={(e)=>setDotInput(e.target.value)}
-              inputMode="numeric"
-            />
-          </div>
+        <div className="qc-dash-grid qc-dash-grid-2">
+          {/* LEFT – PIN + verification form */}
+          <section className="qc-dash-card">
+            <h2 className="qc-dash-title">Dock Access PIN</h2>
+            <p className="qc-dash-text">
+              In the live system, every dock or check-in station will have its
+              own PIN. Drivers never see this screen.
+            </p>
 
-          {/* Plate entry with auto check + SCAN */}
-          <div>
-            <label>
-              License Plate (enter what’s on the truck)
-              {plateOk && <span style={{ color: "#2aa865", marginLeft: 10 }}>✅</span>}
-              {!plateOk && plateInput ? <span style={{ color: "#c62828", marginLeft: 10 }}>❌</span> : null}
-            </label>
-            <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-              <input
-                className="input"
-                value={plateInput}
-                onChange={(e)=>setPlateInput(e.target.value.toUpperCase())}
-                inputMode="text"
-                autoCapitalize="characters"
-                style={{ flex: 1 }}
-              />
-              <button type="button" className="btn" onClick={startScan} disabled={ocrBusy} title="Scan plate with camera">
-                {ocrBusy ? "Scanning…" : "Scan Plate"}
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                onChange={onPickedImage}
-                style={{ display: "none" }}
-              />
-            </div>
-
-            {preview && (
-              <div style={{ marginTop: 8 }}>
-                <img src={preview} alt="preview" style={{ maxWidth: "100%", borderRadius: 12, opacity: ocrBusy ? 0.6 : 1 }} />
-              </div>
+            {!pinUnlocked && (
+              <form className="qc-form" onSubmit={handleUnlock}>
+                <div className="qc-field qc-field-row">
+                  <label className="qc-label">Enter Dock PIN</label>
+                  <input
+                    type="password"
+                    className="qc-input qc-input-pin"
+                    value={pinInput}
+                    onChange={(e) => setPinInput(e.target.value)}
+                    placeholder="••••"
+                  />
+                  <button type="submit" className="qc-btn-primary">
+                    Unlock
+                  </button>
+                </div>
+              </form>
             )}
-            {ocrError && <p className="muted" style={{ color: "var(--danger)", marginTop: 8 }}>{ocrError}</p>}
-          </div>
 
-          {/* Phone call Y/N */}
-          <YnButtons
-            label="Did the driver answer their phone when called?"
-            value={ansCall}
-            onChange={setAnsCall}
-          />
+            {pinUnlocked && (
+              <>
+                <div className="qc-divider" />
+
+                <h2 className="qc-dash-title">Verify the Truck-Driver</h2>
+                <p className="qc-dash-text">
+                  Enter what you see on the truck, then answer the two checks
+                  below. Both must be <strong>YES</strong> to clear the load.
+                </p>
+
+                <form className="qc-form" onSubmit={handleSubmit}>
+                  <div className="qc-form-grid-single">
+                    <div className="qc-field">
+                      <label className="qc-label">
+                        USDOT# on Truck <span className="qc-required">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="usdotOnTruck"
+                        className="qc-input"
+                        value={form.usdotOnTruck}
+                        onChange={handleChange}
+                        placeholder="As painted on the truck door"
+                      />
+                    </div>
+
+                    <div className="qc-field">
+                      <label className="qc-label">
+                        License Plate on Truck{" "}
+                        <span className="qc-required">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="plateOnTruck"
+                        className="qc-input"
+                        value={form.plateOnTruck}
+                        onChange={handleChange}
+                        placeholder="Exact plate text"
+                      />
+                    </div>
+
+                    <div className="qc-field">
+                      <label className="qc-label">
+                        DOES THE USDOT# ON THE TRUCK MATCH YOUR RECORD?
+                      </label>
+                      <div className="qc-radio-row">
+                        <label className="qc-radio">
+                          <input
+                            type="radio"
+                            name="usdotMatches"
+                            value="yes"
+                            checked={form.usdotMatches === "yes"}
+                            onChange={handleChange}
+                          />
+                          <span>YES</span>
+                        </label>
+                        <label className="qc-radio">
+                          <input
+                            type="radio"
+                            name="usdotMatches"
+                            value="no"
+                            checked={form.usdotMatches === "no"}
+                            onChange={handleChange}
+                          />
+                          <span>NO</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="qc-field">
+                      <label className="qc-label">
+                        DID THE DRIVER ANSWER THEIR REGISTERED PHONE?
+                      </label>
+                      <div className="qc-radio-row">
+                        <label className="qc-radio">
+                          <input
+                            type="radio"
+                            name="driverAnswered"
+                            value="yes"
+                            checked={form.driverAnswered === "yes"}
+                            onChange={handleChange}
+                          />
+                          <span>YES</span>
+                        </label>
+                        <label className="qc-radio">
+                          <input
+                            type="radio"
+                            name="driverAnswered"
+                            value="no"
+                            checked={form.driverAnswered === "no"}
+                            onChange={handleChange}
+                          />
+                          <span>NO</span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  {status && (
+                    <div
+                      className={
+                        status.type === "success"
+                          ? "qc-status qc-status-success"
+                          : status.type === "caution"
+                          ? "qc-status qc-status-caution"
+                          : "qc-status qc-status-error"
+                      }
+                    >
+                      {status.message}
+                    </div>
+                  )}
+
+                  <div className="qc-form-actions">
+                    <button type="submit" className="qc-btn-primary qc-btn-wide">
+                      Submit Truck-Driver Check
+                    </button>
+                  </div>
+                </form>
+              </>
+            )}
+          </section>
+
+          {/* RIGHT – Instructions / checklist */}
+          <section className="qc-dash-card">
+            <h2 className="qc-dash-title">Dock Checklist</h2>
+            <ol className="qc-list">
+              <li>Ask the driver to remain in the cab or waiting area.</li>
+              <li>
+                Confirm you are on the correct AdbS verify screen for this load.
+              </li>
+              <li>
+                Enter the <strong>USDOT#</strong> and{" "}
+                <strong>license plate</strong> exactly as seen on the truck.
+              </li>
+              <li>
+                Call the driver’s registered phone. If it doesn’t feel right,
+                mark <strong>NO</strong>.
+              </li>
+              <li>
+                Only when both questions are <strong>YES</strong> is the load{" "}
+                <strong>CLEAR TO LOAD</strong>.
+              </li>
+            </ol>
+
+            <p className="qc-note">
+              Demo only. In the live system, your answers here will feed back
+              into the AdbS Control Center and the Truck-Driver checks panel.
+            </p>
+          </section>
         </div>
-
-        <div style={{ marginTop: 16, display: "flex", gap: 12 }}>
-          <button className="btn" onClick={handleSubmit}>SUBMIT</button>
-        </div>
-
-        {ready && (
-          <div className={`banner ${allYes ? "success" : "danger flash-danger"}`} style={{ marginTop: 16 }}>
-            {allYes ? "✅ CLEAR TO LOAD" : "🚫 CAUTION ALERT — DO NOT LOAD"}
-          </div>
-        )}
       </div>
     </div>
   );
