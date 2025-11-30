@@ -16,84 +16,80 @@ export default function HowItWorks() {
           maxWidth: "1300px",
         }}
       >
-        {/* HERO SECTION – image + centered text */}
+        {/* HERO IMAGE AREA (EXACTLY LIKE BEFORE — NO PANELS, NO BOXES) */}
         <div
           style={{
             width: "100%",
-            minHeight: "420px",
-            borderRadius: "20px",
-            overflow: "hidden",
-            backgroundImage: "url('/bg-howitworks.jpg')",
-            backgroundRepeat: "no-repeat",
-            backgroundSize: "contain",
-            backgroundPosition: "center top",
-            backgroundColor: "#0b0f19", // behind transparent areas of PNG
             display: "flex",
             justifyContent: "center",
-            alignItems: "center",
-            padding: "40px 20px 30px 20px",
+            marginBottom: "20px",
           }}
         >
-          {/* TEXT BOX WITH BLACK FONT */}
-          <div
+          <img
+            src="/bg-howitworks.jpg"
+            alt="How It Works"
             style={{
-              maxWidth: "780px",
-              textAlign: "center",
-              backgroundColor: "rgba(255,255,255,0.9)",
-              padding: "20px 28px",
-              borderRadius: "14px",
+              width: "100%",
+              maxWidth: "900px",
+              height: "auto",
             }}
-          >
-            <h1
-              style={{
-                fontSize: "40px",
-                marginBottom: "8px",
-                color: "#000000",
-              }}
-            >
-              How QueCab AdbS Works
-            </h1>
-
-            <h2
-              style={{
-                fontSize: "22px",
-                marginBottom: "18px",
-                fontWeight: 600,
-                color: "#000000",
-              }}
-            >
-              1 LINK. 3 CHECKS. INSTANT VERIFICATION.
-            </h2>
-
-            <ul
-              style={{
-                listStyle: "none",
-                padding: 0,
-                margin: 0,
-                fontSize: "20px",
-                lineHeight: 1.6,
-                color: "#000000",
-              }}
-            >
-              <li>• What’s the USDOT# on the truck?</li>
-              <li>• What’s the license plate number?</li>
-              <li>• Did the driver answer their registered phone?</li>
-            </ul>
-
-            <p
-              style={{
-                marginTop: "18px",
-                fontSize: "18px",
-                lineHeight: 1.5,
-                color: "#000000",
-              }}
-            >
-              ✓ YES = Cleared to Load
-              <br />
-              ✖ NO = Caution Alert (Hold This Load)
-            </p>
-          </div>
+          />
         </div>
+
+        {/* TEXT — EXACT SAME POSITIONING, ONLY COLOR CHANGED TO BLACK */}
+        <h1
+          style={{
+            fontSize: "42px",
+            marginTop: "-380px",   // pulls text upward OVER THE IMAGE exactly like yours
+            marginBottom: "10px",
+            textAlign: "center",
+            color: "#000000",
+            fontWeight: "700",
+          }}
+        >
+          How QueCab AdbS Works
+        </h1>
+
+        <h2
+          style={{
+            fontSize: "24px",
+            textAlign: "center",
+            marginBottom: "20px",
+            color: "#000000",
+            fontWeight: "600",
+          }}
+        >
+          1 LINK. 3 CHECKS. INSTANT VERIFICATION.
+        </h2>
+
+        <ul
+          style={{
+            listStyle: "none",
+            padding: 0,
+            margin: "0 auto",
+            textAlign: "center",
+            fontSize: "20px",
+            lineHeight: 1.6,
+            color: "#000000",
+          }}
+        >
+          <li>• What’s the USDOT# on the truck?</li>
+          <li>• What’s the license plate number?</li>
+          <li>• Did the driver answer their registered phone?</li>
+        </ul>
+
+        <p
+          style={{
+            marginTop: "18px",
+            fontSize: "20px",
+            textAlign: "center",
+            color: "#000000",
+          }}
+        >
+          ✓ YES = Cleared to Load
+          <br />
+          ✖ NO = Caution Alert (Hold This Load)
+        </p>
       </div>
     </div>
   );
