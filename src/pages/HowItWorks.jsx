@@ -8,24 +8,32 @@ export default function HowItWorks() {
           width: "100%",
           maxWidth: "none",
 
-          // Show the FULL image, not a cropped top portion
+          // Use the correct hero image
           backgroundImage: "url(/bg-howitworks.jpg)",
-          backgroundSize: "cover",
+
+          // ✅ Show the whole image instead of zoom/crop
+          backgroundSize: "contain",
           backgroundPosition: "center top",
           backgroundRepeat: "no-repeat",
 
-          // 🔥 Make the banner tall enough to reveal the entire graphic
-          minHeight: "700px",   // ← THIS fixes the missing bottom half
+          // ✅ Reasonable height so it’s NOT huge
+          minHeight: "460px",
 
           display: "flex",
           alignItems: "flex-start",
-          paddingTop: "60px",
+          justifyContent: "flex-start",
+
+          // keep the content away from the left edge
+          paddingTop: "40px",
+          paddingLeft: "40px",
+          paddingRight: "40px",
         }}
       >
-        <div className="qc-hero-inner" style={{ paddingLeft: "40px" }}>
+        <div className="qc-hero-inner">
           <h1 className="qc-heading">How QueCab AdbS Works</h1>
           <p className="qc-sub">
-            3 Questions. 1 Link. Instant clearance. No apps. No downloads. Just answers.
+            3 Questions. 1 Link. Instant clearance. No apps. No downloads. Just
+            answers.
           </p>
 
           <div className="qc-how-steps">
@@ -33,7 +41,8 @@ export default function HowItWorks() {
             <p>☐ What&apos;s the license plate number?</p>
             <p>☐ Did the driver answer their registered phone?</p>
             <p>
-              ✓ Correct = Cleared to Load &nbsp;&nbsp; ✖ Mismatch = Alert Sent. Load Blocked.
+              ✓ Correct = Cleared to Load &nbsp;&nbsp; ✖ Mismatch = Alert Sent.
+              Load Blocked.
             </p>
           </div>
         </div>
