@@ -1,47 +1,39 @@
-// /src/components/Header.jsx — Single toggle (sun+moon), BROKER pill, centered nav
-import React, { useEffect, useState } from "react";
-
-function setTheme(next) {
-  document.documentElement.setAttribute("data-theme", next);
-  try { localStorage.setItem("qc-theme", next); } catch {}
-}
-function getTheme() {
-  try { return localStorage.getItem("qc-theme") || "dark"; } catch { return "dark"; }
-}
+import React from "react";
+import { Link, NavLink } from "react-router-dom";
+import "../styles/header.css"; // if you have header styles
 
 export default function Header() {
-  const [theme, setThemeState] = useState(getTheme());
-  useEffect(() => { setTheme(theme); }, [theme]);
-
-  const toggleTheme = () => setThemeState(t => (t === "dark" ? "light" : "dark"));
-
   return (
-    <header className="qc-header" role="banner">
-      {/* Row 1: nav tabs */}
-      <nav className="qc-nav" aria-label="Primary">
-        <a href="#/" className="active">Home</a>
-        <a href="#/join">Request Access</a>
-        <a href="#/login">Log In</a>
-        <a href="#/about">About</a>
-        <a href="#/checkin">Check In</a>
-      </nav>
+    <header className="qc-header">
+      <div className="qc-header-inner">
 
-      {/* Row 2: BROKER pill + SINGLE colored toggle */}
-      <div className="qc-header-tools">
-        <span className="role-badge">BROKER</span>
+        {/* LOGO — ALWAYS RETURNS TO HOME */}
+        <Link to="/" className="qc-logo-link">
+          <img
+            src="/qc-logo.png"
+            alt="QueCab AdbS"
+            className="qc-logo"
+          />
+        </Link>
 
-        <button
-          type="button"
-          className="theme-toggle-single"
-          onClick={toggleTheme}
-          aria-pressed={theme === "light"}
-          aria-label="Toggle theme"
-        >
-          <span className="icon sun" aria-hidden="true">🌞</span>
-          <span className="knob" />
-          <span className="icon moon" aria-hidden="true">🌙</span>
-          <span className="theme-text">{theme === "dark" ? "Dark" : "Light"}</span>
-        </button>
+        {/* NAV LINKS */}
+        <nav className="qc-nav">
+          <NavLink to="/" className="qc-nav-item">
+            Home
+          </NavLink>
+
+          <NavLink to="/how-it-works" className="qc-nav-item">
+            How It Works
+          </NavLink>
+
+          <NavLink to="/login" className="qc-nav-item">
+            Log In
+          </NavLink>
+
+          <NavLink to="/join" className="qc-nav-item">
+            Request Access
+          </NavLink>
+        </nav>
       </div>
     </header>
   );
