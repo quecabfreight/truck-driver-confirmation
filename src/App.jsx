@@ -1,4 +1,4 @@
-import { HashRouter as Router, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 
 import Layout from "./components/Layout.jsx";
 
@@ -10,32 +10,29 @@ import ControlCenter from "./pages/ControlCenter.jsx";
 
 export default function App() {
   return (
-    <Router>
-      <Layout>
-        <Routes>
-          {/* HOME */}
-          <Route path="/" element={<Home />} />
+    <Layout>
+      <Routes>
+        {/* HOME */}
+        <Route path="/" element={<Home />} />
 
-          {/* HOW IT WORKS – for now reuses Home
-              (later we can point this to a dedicated HowItWorks component) */}
-          <Route path="/how-it-works" element={<Home />} />
+        {/* HOW IT WORKS – for now reuses Home */}
+        <Route path="/how-it-works" element={<Home />} />
 
-          {/* REQUEST ACCESS */}
-          <Route path="/join" element={<Join />} />
+        {/* REQUEST ACCESS */}
+        <Route path="/join" element={<Join />} />
 
-          {/* LOGIN */}
-          <Route path="/login" element={<Login />} />
+        {/* LOGIN */}
+        <Route path="/login" element={<Login />} />
 
-          {/* AdbS CONTROL CENTER */}
-          <Route path="/control-center" element={<ControlCenter />} />
+        {/* AdbS CONTROL CENTER */}
+        <Route path="/control-center" element={<ControlCenter />} />
 
-          {/* TRUCK-DRIVER VERIFICATION */}
-          <Route path="/verify/:token" element={<VerifyDriver />} />
+        {/* TRUCK-DRIVER VERIFICATION */}
+        <Route path="/verify/:token" element={<VerifyDriver />} />
 
-          {/* FALLBACK */}
-          <Route path="*" element={<Home />} />
-        </Routes>
-      </Layout>
-    </Router>
+        {/* FALLBACK */}
+        <Route path="*" element={<Home />} />
+      </Routes>
+    </Layout>
   );
 }
