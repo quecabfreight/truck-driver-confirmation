@@ -1,109 +1,128 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-
-export default function LoginScreen() {
-  const navigate = useNavigate();
-
-  const [form, setForm] = useState({
-    email: "",
-    accessCode: "",
-    remember: true,
-  });
-
-  const [status, setStatus] = useState(null);
-
-  function handleChange(e) {
-    const { name, type, checked, value } = e.target;
-
-    setForm((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-  }
-
-  function handleSubmit(e) {
-    e.preventDefault();
-
-    if (!form.email || !form.accessCode) {
-      setStatus({
-        type: "error",
-        message: "Enter your business email and access code to continue.",
-      });
-      return;
-    }
-
-    // Demo only: go straight to the AdbS Control Center shell
-    navigate("/control-center");
-  }
-
+export default function Login() {
   return (
-    <div className="qc-shell qc-form-shell qc-login-shell">
-      <div className="qc-inner qc-form-inner">
-        <div className="qc-form-card">
-          <h1 className="qc-heading qc-form-heading">Log In</h1>
+    <div
+      style={{
+        width: "100%",
+        minHeight: "calc(100vh - 120px)",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
+      <div
+        style={{
+          background: "#020617",
+          padding: "40px",
+          borderRadius: "16px",
+          width: "460px",
+          border: "1px solid rgba(148,163,184,0.6)",
+        }}
+      >
+        {/* LOGO */}
+        <div
+          style={{
+            width: "100%",
+            display: "flex",
+            justifyContent: "center",
+            marginBottom: "30px",
+          }}
+        >
+          <img
+            src="/qc-logo.png"
+            alt="QueCab Logo"
+            style={{ width: "260px", height: "auto" }}
+          />
+        </div>
 
-          <p className="qc-sub qc-form-sub">
-            For authorized brokers and shippers with an active QueCab AdbS
-            subscription and access code.
-          </p>
+        {/* HEADING */}
+        <h1
+          style={{
+            fontSize: "32px",
+            marginBottom: "20px",
+            textAlign: "center",
+          }}
+        >
+          Log In
+        </h1>
 
-          <form onSubmit={handleSubmit} className="qc-form">
-            <div className="qc-form-grid">
-              {/* EMAIL */}
-              <div className="qc-field">
-                <label className="qc-label">
-                  Business Email<span className="qc-required">*</span>
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={form.email}
-                  onChange={handleChange}
-                  className="qc-input"
-                  placeholder="name@business.com"
-                />
-              </div>
+        {/* EMAIL */}
+        <div style={{ marginBottom: "20px" }}>
+          <label
+            style={{ fontSize: "18px", display: "block", marginBottom: "6px" }}
+          >
+            Business Email
+          </label>
+          <input
+            type="email"
+            style={{
+              width: "100%",
+              padding: "12px",
+              fontSize: "18px",
+              borderRadius: "10px",
+              border: "1px solid #64748b",
+              background: "#0f172a",
+              color: "white",
+            }}
+          />
+        </div>
 
-              {/* ACCESS CODE */}
-              <div className="qc-field">
-                <label className="qc-label">
-                  Access Code<span className="qc-required">*</span>
-                </label>
-                <input
-                  type="password"
-                  name="accessCode"
-                  value={form.accessCode}
-                  onChange={handleChange}
-                  className="qc-input"
-                  placeholder="Enter your AdbS access code"
-                />
-              </div>
+        {/* ACCESS CODE */}
+        <div style={{ marginBottom: "20px" }}>
+          <label
+            style={{ fontSize: "18px", display: "block", marginBottom: "6px" }}
+          >
+            Access Code
+          </label>
+          <input
+            type="text"
+            style={{
+              width: "100%",
+              padding: "12px",
+              fontSize: "18px",
+              borderRadius: "10px",
+              border: "1px solid #64748b",
+              background: "#0f172a",
+              color: "white",
+            }}
+          />
+        </div>
 
-              {/* REMEMBER DEVICE */}
-              <div className="qc-field">
-                <label className="qc-label">&nbsp;</label>
-                <label className="qc-remember-row">
-                  <input
-                    type="checkbox"
-                    name="remember"
-                    checked={form.remember}
-                    onChange={handleChange}
-                  />
-                  <span>Remember this device</span>
-                </label>
-              </div>
-            </div>
+        {/* REMEMBER DEVICE */}
+        <div style={{ marginBottom: "20px", fontSize: "16px" }}>
+          <label>
+            <input type="checkbox" style={{ marginRight: "8px" }} />
+            Remember this device
+          </label>
+        </div>
 
-            {status && (
-              <div className="qc-status qc-status-error">{status.message}</div>
-            )}
+        {/* SUBMIT BUTTON */}
+        <button
+          style={{
+            width: "100%",
+            padding: "12px",
+            fontSize: "20px",
+            borderRadius: "12px",
+            border: "none",
+            background: "linear-gradient(135deg, #0ea5e9, #22c55e, #0ea5e9)",
+            color: "#0b1120",
+            fontWeight: "700",
+            cursor: "pointer",
+          }}
+        >
+          Log In (Demo)
+        </button>
 
-            <div className="qc-form-actions">
-              <button type="submit" className="qc-btn-primary qc-btn-wide">
-                Log In
-              </button>
-            </div>
-          </form>
+        {/* DEMO FOOTER */}
+        <div
+          style={{
+            marginTop: "20px",
+            fontSize: "16px",
+            color: "#4ade80",
+            textAlign: "center",
+            opacity: 0.8,
+          }}
+        >
+          Demo Only – In production this opens AdbS Control Center
         </div>
       </div>
     </div>
