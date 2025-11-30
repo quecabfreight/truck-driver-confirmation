@@ -1,31 +1,30 @@
-import { HashRouter as Router, Routes, Route } from "react-router-dom";
+import React from "react";
+import { Routes, Route } from "react-router-dom";
+
 import Home from "./pages/Home.jsx";
-import Login from "./pages/Login.jsx";
+import HowItWorks from "./pages/HowItWorks.jsx";
 import Join from "./pages/Join.jsx";
+import Login from "./pages/Login.jsx";
+import ControlCenter from "./pages/ControlCenter.jsx";
 import VerifyDriver from "./pages/VerifyDriver.jsx";
-import Layout from "./components/Layout.jsx";
 
 export default function App() {
   return (
-    <Router>
-      <Layout>
-        <Routes>
-          {/* HOME */}
-          <Route path="/" element={<Home />} />
+    <Routes>
+      {/* PUBLIC PAGES */}
+      <Route path="/" element={<Home />} />
+      <Route path="/how-it-works" element={<HowItWorks />} />
+      <Route path="/join" element={<Join />} />
+      <Route path="/login" element={<Login />} />
 
-          {/* REQUEST ACCESS */}
-          <Route path="/join" element={<Join />} />
+      {/* DEMO CONTROL CENTER */}
+      <Route path="/control-center" element={<ControlCenter />} />
 
-          {/* LOGIN (BUSINESS EMAIL + ACCESS CODE) */}
-          <Route path="/login" element={<Login />} />
+      {/* TRUCK-DRIVER VERIFY LINK (DEMO) */}
+      <Route path="/verify/:token" element={<VerifyDriver />} />
 
-          {/* TRUCK-DRIVER VERIFY LINK */}
-          <Route path="/verify/:token" element={<VerifyDriver />} />
-
-          {/* CATCH-ALL → HOME */}
-          <Route path="*" element={<Home />} />
-        </Routes>
-      </Layout>
-    </Router>
+      {/* FALLBACK – SEND ANY RANDOM URL BACK HOME */}
+      <Route path="*" element={<Home />} />
+    </Routes>
   );
 }
