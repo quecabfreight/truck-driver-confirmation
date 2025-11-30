@@ -2,33 +2,33 @@ import { Link } from "react-router-dom";
 
 export default function Layout({ children }) {
   return (
-    <div className="app-shell" style={{ minHeight: "100vh", background: "#0b0f19" }}>
-      {/* HEADER / NAV */}
+    <div style={{ minHeight: "100vh", background: "#0b0f19", color: "white" }}>
+      {/* HEADER */}
       <header
         style={{
           width: "100%",
-          padding: "20px",
+          padding: "20px 40px",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          borderBottom: "1px solid rgba(255,255,255,0.1)",
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
+          background: "#0b0f19",
+          position: "sticky",
+          top: 0,
+          zIndex: 999,
         }}
       >
-        <Link to="/">
+        {/* LOGO (click → Home) */}
+        <Link to="/" style={{ display: "flex", alignItems: "center" }}>
           <img
             src="/qc-logo.png"
             alt="QueCab AdbS Logo"
-            style={{ height: "70px", width: "auto" }}
+            style={{ height: "68px", width: "auto" }}
           />
         </Link>
 
-        <nav
-          style={{
-            display: "flex",
-            gap: "20px",
-            fontSize: "20px",
-          }}
-        >
+        {/* PAGE LINKS */}
+        <nav style={{ display: "flex", gap: "32px", fontSize: "20px" }}>
           <Link style={{ color: "white" }} to="/">Home</Link>
           <Link style={{ color: "white" }} to="/how-it-works">How It Works</Link>
           <Link style={{ color: "white" }} to="/login">Log In</Link>
