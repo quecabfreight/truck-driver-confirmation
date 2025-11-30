@@ -1,4 +1,4 @@
-import { HashRouter as Router, Route, Switch } from "react-router-dom";
+import { HashRouter as Router, Routes, Route } from "react-router-dom";
 
 import Layout from "./components/Layout.jsx";
 
@@ -12,28 +12,29 @@ export default function App() {
   return (
     <Router>
       <Layout>
-        <Switch>
+        <Routes>
           {/* HOME */}
-          <Route exact path="/" component={Home} />
+          <Route path="/" element={<Home />} />
 
-          {/* HOW IT WORKS – for now reuses Home */}
-          <Route exact path="/how-it-works" component={Home} />
+          {/* HOW IT WORKS – for now reuses Home
+              (later we can point this to a dedicated HowItWorks component) */}
+          <Route path="/how-it-works" element={<Home />} />
 
           {/* REQUEST ACCESS */}
-          <Route exact path="/join" component={Join} />
+          <Route path="/join" element={<Join />} />
 
           {/* LOGIN */}
-          <Route exact path="/login" component={Login} />
+          <Route path="/login" element={<Login />} />
 
-          {/* CONTROL CENTER */}
-          <Route exact path="/control-center" component={ControlCenter} />
+          {/* AdbS CONTROL CENTER */}
+          <Route path="/control-center" element={<ControlCenter />} />
 
-          {/* VERIFY WITH TOKEN */}
-          <Route exact path="/verify/:token" component={VerifyDriver} />
+          {/* TRUCK-DRIVER VERIFICATION */}
+          <Route path="/verify/:token" element={<VerifyDriver />} />
 
           {/* FALLBACK */}
-          <Route component={Home} />
-        </Switch>
+          <Route path="*" element={<Home />} />
+        </Routes>
       </Layout>
     </Router>
   );
