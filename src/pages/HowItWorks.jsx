@@ -5,7 +5,7 @@ export default function HowItWorks() {
         width: "100%",
         minHeight: "calc(100vh - 120px)",
         padding: "40px 0",
-        background: "linear-gradient(180deg, #0b0f19 0%, #131e33 100%)",
+        background: "linear-gradient(180deg, #050814 0%, #0b0f19 40%, #131e33 100%)",
         display: "flex",
         justifyContent: "center",
       }}
@@ -14,73 +14,81 @@ export default function HowItWorks() {
         style={{
           width: "95%",
           maxWidth: "1300px",
-          background: "rgba(255,255,255,0.03)",
-          borderRadius: "18px",
-          padding: "40px",
-          border: "1px solid rgba(255,255,255,0.08)",
         }}
       >
-        {/* HERO IMAGE */}
+        {/* HERO SECTION – image + centered text */}
         <div
           style={{
             width: "100%",
-            borderRadius: "18px",
+            minHeight: "420px",
+            borderRadius: "20px",
             overflow: "hidden",
-            marginBottom: "30px",
+            backgroundImage: "url('/bg-howitworks.jpg')",
+            backgroundRepeat: "no-repeat",
+            backgroundSize: "contain",
+            backgroundPosition: "center top",
+            backgroundColor: "#0b0f19", // steel-blue behind PNG
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+            padding: "60px 40px 40px 40px",
           }}
         >
-          <img
-            src="/bg-howitworks.jpg"
-            alt="How It Works Hero"
+          <div
             style={{
-              width: "100%",
-              height: "auto",
-              display: "block",
+              textAlign: "center",
+              color: "white",
+              textShadow: "0 2px 6px rgba(0,0,0,0.8)",
+              maxWidth: "720px",
             }}
-          />
+          >
+            <h1
+              style={{
+                fontSize: "40px",
+                marginBottom: "8px",
+              }}
+            >
+              How QueCab AdbS Works
+            </h1>
+
+            <h2
+              style={{
+                fontSize: "22px",
+                marginBottom: "20px",
+                fontWeight: 600,
+              }}
+            >
+              1 LINK. 3 CHECKS. INSTANT VERIFICATION.
+            </h2>
+
+            <ul
+              style={{
+                listStyle: "none",
+                padding: 0,
+                margin: 0,
+                fontSize: "20px",
+                lineHeight: 1.6,
+              }}
+            >
+              <li>• What’s the USDOT# on the truck?</li>
+              <li>• What’s the license plate number?</li>
+              <li>• Did the driver answer their registered phone?</li>
+            </ul>
+
+            <p
+              style={{
+                marginTop: "18px",
+                fontSize: "18px",
+                lineHeight: 1.5,
+              }}
+            >
+              ✓ YES = Cleared to Load
+              <br />
+              ✖ NO = Caution Alert (Hold This Load)
+            </p>
+          </div>
         </div>
-
-        {/* TEXT CONTENT */}
-        <h1
-          style={{
-            fontSize: "42px",
-            marginBottom: "10px",
-            color: "white",
-          }}
-        >
-          How QueCab AdbS Works
-        </h1>
-
-        <h2
-          style={{
-            fontSize: "22px",
-            marginBottom: "20px",
-            color: "white",
-            opacity: 0.85,
-          }}
-        >
-          1 LINK. 3 CHECKS. INSTANT VERIFICATION.
-        </h2>
-
-        <ul style={{ fontSize: "20px", color: "white", lineHeight: 1.6 }}>
-          <li>• What’s the USDOT# on the truck?</li>
-          <li>• What’s the license plate number?</li>
-          <li>• Did the driver answer their registered phone?</li>
-        </ul>
-
-        <p
-          style={{
-            marginTop: "20px",
-            fontSize: "18px",
-            color: "white",
-            opacity: 0.85,
-            lineHeight: 1.5,
-          }}
-        >
-          ✓ YES = Cleared to Load  
-          <br />
-          ✖ NO = Caution Alert (Hold This Load)
-        </p>
       </div>
     </div>
   );
