@@ -20,10 +20,11 @@ export default function VerifyDriver() {
 
   const [status, setStatus] = useState(null);
 
-  // DEMO ONLY – in live system this comes from Control Center
+  // DEMO ONLY – live system will pull this from the Control Center
   const demoDriverPhone = "123-456-7890";
 
-  // Dock-friendly font tweaks for this screen
+  const canCall = form.usdotOnTruck.trim() !== "" && form.plateOnTruck.trim() !== "";
+
   const styles = {
     heading: {
       fontSize: "2.6rem",
@@ -58,6 +59,34 @@ export default function VerifyDriver() {
     statusText: {
       fontSize: "1.2rem",
       lineHeight: 1.6,
+    },
+    questionRow: {
+      display: "flex",
+      alignItems: "flex-start",
+      justifyContent: "space-between",
+      gap: "1.5rem",
+      flexWrap: "wrap",
+    },
+    questionTextCol: {
+      flex: "1 1 55%",
+      minWidth: "260px",
+    },
+    questionRightCol: {
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "flex-start",
+      gap: "0.4rem",
+      flexShrink: 0,
+    },
+    radioRowInline: {
+      display: "flex",
+      alignItems: "center",
+      gap: "1.25rem",
+    },
+    callLink: {
+      fontSize: "1.05rem",
+      fontWeight: 600,
+      textDecoration: "underline",
     },
   };
 
@@ -182,8 +211,9 @@ export default function VerifyDriver() {
 
                 <h2 className="qc-dash-title">Verify the Truck-Driver</h2>
                 <p className="qc-dash-text" style={{ fontSize: "1.05rem" }}>
-                  Enter what you see on the truck, then answer the two checks
-                  below. Both must be <strong>YES</strong> to clear the load.
+                  Step through in order: enter the truck markings, check the
+                  USDOT#, call the registered phone, then set the YES/NO answers
+                  on this screen.
                 </p>
 
                 <form className="qc-form" onSubmit={handleSubmit}>
@@ -230,81 +260,92 @@ export default function VerifyDriver() {
                       />
                     </div>
 
-                    {/* DEMO CLICKABLE PHONE */}
+                    {/* QUESTION 1 – USDOT MATCH, YES/NO INLINE */}
                     <div className="qc-field">
-                      <label className="qc-label" style={styles.bigLabel}>
-                        Driver Registered Phone (demo)
-                      </label>
-                      <p className="qc-note qc-mono">
-                        In the live system this will show the registered phone
-                        from the AdbS Control Center. For now:
-                      </p>
-                      <p className="qc-driver-phone">
-                        <a href={`tel:${demoDriverPhone.replace(/-/g, "")}`}>
-                          {demoDriverPhone}
-                        </a>
-                      </p>
-                    </div>
-
-                    <div className="qc-field">
-                      <label
-                        className="qc-label"
-                        style={styles.radioQuestion}
-                      >
-                        DOES THE USDOT# ON THE TRUCK MATCH YOUR RECORD?
-                      </label>
-                      <div className="qc-radio-row">
-                        <label className="qc-radio">
-                          <input
-                            type="radio"
-                            name="usdotMatches"
-                            value="yes"
-                            checked={form.usdotMatches === "yes"}
-                            onChange={handleChange}
-                          />
-                          <span style={styles.radioOption}>YES</span>
-                        </label>
-                        <label className="qc-radio">
-                          <input
-                            type="radio"
-                            name="usdotMatches"
-                            value="no"
-                            checked={form.usdotMatches === "no"}
-                            onChange={handleChange}
-                          />
-                          <span style={styles.radioOption}>NO</span>
-                        </label>
+                      <div style={styles.questionRow}>
+                        <div style={styles.questionTextCol}>
+                          <div
+                            className="qc-label"
+                            style={styles.radioQuestion}
+                          >
+                            DOES THE USDOT# ON THE TRUCK MATCH YOUR RECORD?
+                          </div>
+                        </div>
+                        <div style={styles.questionRightCol}>
+                          <div style={styles.radioRowInline}>
+                            <label className="qc-radio">
+                              <input
+                                type="radio"
+                                name="usdotMatches"
+                                value="yes"
+                                checked={form.usdotMatches === "yes"}
+                                onChange={handleChange}
+                              />
+                              <span style={styles.radioOption}>YES</span>
+                            </label>
+                            <label className="qc-radio">
+                              <input
+                                type="radio"
+                                name="usdotMatches"
+                                value="no"
+                                checked={form.usdotMatches === "no"}
+                                onChange={handleChange}
+                              />
+                              <span style={styles.radioOption}>NO</span>
+                            </label>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
+                    {/* QUESTION 2 – DRIVER ANSWERED + CALL LINK INLINE */}
                     <div className="qc-field">
-                      <label
-                        className="qc-label"
-                        style={styles.radioQuestion}
-                      >
-                        DID THE DRIVER ANSWER THEIR REGISTERED PHONE?
-                      </label>
-                      <div className="qc-radio-row">
-                        <label className="qc-radio">
-                          <input
-                            type="radio"
-                            name="driverAnswered"
-                            value="yes"
-                            checked={form.driverAnswered === "yes"}
-                            onChange={handleChange}
-                          />
-                          <span style={styles.radioOption}>YES</span>
-                        </label>
-                      <label className="qc-radio">
-                          <input
-                            type="radio"
-                            name="driverAnswered"
-                            value="no"
-                            checked={form.driverAnswered === "no"}
-                            onChange={handleChange}
-                          />
-                          <span style={styles.radioOption}>NO</span>
-                        </label>
+                      <div style={styles.questionRow}>
+                        <div style={styles.questionTextCol}>
+                          <div
+                            className="qc-label"
+                            style={styles.radioQuestion}
+                          >
+                            DID THE DRIVER ANSWER THEIR REGISTERED PHONE?
+                          </div>
+                        </div>
+                        <div style={styles.questionRightCol}>
+                          {canCall ? (
+                            <a
+                              href={`tel:${demoDriverPhone.replace(/-/g, "")}`}
+                              style={styles.callLink}
+                            >
+                              Call {demoDriverPhone}
+                            </a>
+                          ) : (
+                            <span className="qc-note">
+                              Enter the USDOT# and plate above to reveal the
+                              call button.
+                            </span>
+                          )}
+                          <div style={styles.radioRowInline}>
+                            <label className="qc-radio">
+                              <input
+                                type="radio"
+                                name="driverAnswered"
+                                value="yes"
+                                checked={form.driverAnswered === "yes"}
+                                onChange={handleChange}
+                              />
+                              <span style={styles.radioOption}>YES</span>
+                            </label>
+                            <label className="qc-radio">
+                              <input
+                                type="radio"
+                                name="driverAnswered"
+                                value="no"
+                                checked={form.driverAnswered === "no"}
+                                onChange={handleChange}
+                              />
+                              <span style={styles.radioOption}>NO</span>
+                            </label>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -336,7 +377,7 @@ export default function VerifyDriver() {
             )}
           </section>
 
-          {/* RIGHT – Dock Checklist (can be removed later if you want) */}
+          {/* RIGHT – Dock Checklist (can be simplified or removed later) */}
           <section className="qc-dash-card">
             <h2 className="qc-dash-title">Dock Checklist</h2>
             <ol className="qc-list" style={{ fontSize: "1.05rem" }}>
@@ -349,8 +390,8 @@ export default function VerifyDriver() {
                 <strong>license plate</strong> exactly as seen on the truck.
               </li>
               <li>
-                Call the driver’s registered phone (tap the number above). If it
-                doesn’t feel right, mark <strong>NO</strong>.
+                Use the <strong>Call</strong> button next to the second
+                question to reach the driver’s registered phone.
               </li>
               <li>
                 Only when both questions are <strong>YES</strong> is the load{" "}
