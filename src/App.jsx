@@ -1,30 +1,43 @@
-import React from "react";
-import { Routes, Route } from "react-router-dom";
+import { HashRouter as Router, Routes, Route } from "react-router-dom";
+
+import Layout from "./components/Layout.jsx";
 
 import Home from "./pages/Home.jsx";
-import HowItWorks from "./pages/HowItWorks.jsx";
 import Join from "./pages/Join.jsx";
 import Login from "./pages/Login.jsx";
-import ControlCenter from "./pages/ControlCenter.jsx";
 import VerifyDriver from "./pages/VerifyDriver.jsx";
+import ControlCenter from "./pages/ControlCenter.jsx";
 
 export default function App() {
   return (
-    <Routes>
-      {/* PUBLIC PAGES */}
-      <Route path="/" element={<Home />} />
-      <Route path="/how-it-works" element={<HowItWorks />} />
-      <Route path="/join" element={<Join />} />
-      <Route path="/login" element={<Login />} />
+    <Router>
+      <Layout>
+        <Routes>
+          {/* HOME */}
+          <Route path="/" element={<Home />} />
 
-      {/* DEMO CONTROL CENTER */}
-      <Route path="/control-center" element={<ControlCenter />} />
+          {/* HOW IT WORKS 
+              For now this uses Home.
+              Later, if we split out a HowItWorks page, 
+              we’ll update this route and add that file. */}
+          <Route path="/how-it-works" element={<Home />} />
 
-      {/* TRUCK-DRIVER VERIFY LINK (DEMO) */}
-      <Route path="/verify/:token" element={<VerifyDriver />} />
+          {/* REQUEST ACCESS */}
+          <Route path="/join" element={<Join />} />
 
-      {/* FALLBACK – SEND ANY RANDOM URL BACK HOME */}
-      <Route path="*" element={<Home />} />
-    </Routes>
+          {/* LOGIN */}
+          <Route path="/login" element={<Login />} />
+
+          {/* AdbS CONTROL CENTER */}
+          <Route path="/control-center" element={<ControlCenter />} />
+
+          {/* TRUCK-DRIVER VERIFICATION */}
+          <Route path="/verify/:token" element={<VerifyDriver />} />
+
+          {/* FALLBACK */}
+          <Route path="*" element={<Home />} />
+        </Routes>
+      </Layout>
+    </Router>
   );
 }
