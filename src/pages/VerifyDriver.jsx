@@ -165,7 +165,7 @@ export default function VerifyDriver() {
 
                 <div className="qc-field">
                   <label className="qc-label qc-label-row">
-                    <span>DID THE DRIVER ANSWER THEIR REGISTERED PHONE?</span>
+                    <span>DID THE DRIVER ANSWER THEIR REGISTERED PHONE? </span>
                     <a href={telHref} className="qc-call-btn">
                       Call Driver
                     </a>
