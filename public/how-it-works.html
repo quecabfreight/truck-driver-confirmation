@@ -5,29 +5,35 @@ export default function HowItWorks() {
     <div className="qc-shell">
       <div className="qc-inner">
 
-        {/* HERO SECTION WITH LOGO ONLY */}
+        {/* HERO SECTION — SHOW ONLY QC LOGO WITH SITE BACKGROUND COLOR */}
         <div
           className="howitworks-hero"
           style={{
             width: "100%",
             height: "420px",
+
+            // Your logo with transparent background
             backgroundImage: "url('/qc-logo.png')",
             backgroundSize: "contain",
             backgroundRepeat: "no-repeat",
             backgroundPosition: "center",
+
+            // Exact site background color
+            backgroundColor: "#050816",
+
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
           }}
-        >
-        </div>
+        ></div>
 
-        {/* MAIN TEXT CONTENT */}
+        {/* MAIN PAGE CONTENT */}
         <div style={{ padding: "40px 20px" }}>
           <h1 className="qc-heading">How QueCab AdbS Works</h1>
 
           <p className="qc-sub">
-            3 Questions. 1 Link. Instant clearance. No apps. No downloads. Just answers.
+            3 Questions. 1 Link. Instant clearance. No apps. No downloads.
+            Just answers.
           </p>
 
           <div style={{ marginTop: "30px" }}>
