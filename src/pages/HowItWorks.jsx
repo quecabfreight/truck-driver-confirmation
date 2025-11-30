@@ -27,26 +27,28 @@ export default function HowItWorks() {
             backgroundRepeat: "no-repeat",
             backgroundSize: "contain",
             backgroundPosition: "center top",
-            backgroundColor: "#0b0f19", // steel-blue behind PNG
+            backgroundColor: "#0b0f19", // behind transparent areas of PNG
             display: "flex",
-            flexDirection: "column",
             justifyContent: "center",
             alignItems: "center",
-            padding: "60px 40px 40px 40px",
+            padding: "40px 20px 30px 20px",
           }}
         >
+          {/* TEXT BOX WITH BLACK FONT */}
           <div
             style={{
+              maxWidth: "780px",
               textAlign: "center",
-              color: "white",
-              textShadow: "0 2px 6px rgba(0,0,0,0.8)",
-              maxWidth: "720px",
+              backgroundColor: "rgba(255,255,255,0.9)",
+              padding: "20px 28px",
+              borderRadius: "14px",
             }}
           >
             <h1
               style={{
                 fontSize: "40px",
                 marginBottom: "8px",
+                color: "#000000",
               }}
             >
               How QueCab AdbS Works
@@ -55,8 +57,9 @@ export default function HowItWorks() {
             <h2
               style={{
                 fontSize: "22px",
-                marginBottom: "20px",
+                marginBottom: "18px",
                 fontWeight: 600,
+                color: "#000000",
               }}
             >
               1 LINK. 3 CHECKS. INSTANT VERIFICATION.
@@ -69,6 +72,7 @@ export default function HowItWorks() {
                 margin: 0,
                 fontSize: "20px",
                 lineHeight: 1.6,
+                color: "#000000",
               }}
             >
               <li>• What’s the USDOT# on the truck?</li>
@@ -81,6 +85,7 @@ export default function HowItWorks() {
                 marginTop: "18px",
                 fontSize: "18px",
                 lineHeight: 1.5,
+                color: "#000000",
               }}
             >
               ✓ YES = Cleared to Load
