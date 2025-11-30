@@ -8,9 +8,6 @@ function formatUpper(value) {
 export default function VerifyDriver() {
   const { token } = useParams();
 
-  const [pinInput, setPinInput] = useState("");
-  const [pinUnlocked, setPinUnlocked] = useState(false);
-
   const [form, setForm] = useState({
     usdotOnTruck: "",
     plateOnTruck: "",
@@ -20,90 +17,8 @@ export default function VerifyDriver() {
 
   const [status, setStatus] = useState(null);
 
-  // DEMO ONLY – live system will pull this from the Control Center
-  const demoDriverPhone = "123-456-7890";
-
-  const canCall = form.usdotOnTruck.trim() !== "" && form.plateOnTruck.trim() !== "";
-
-  const styles = {
-    heading: {
-      fontSize: "2.6rem",
-      letterSpacing: "0.04em",
-    },
-    sub: {
-      fontSize: "1.15rem",
-      maxWidth: "980px",
-    },
-    token: {
-      fontFamily: "monospace",
-      fontSize: "0.9rem",
-      opacity: 0.85,
-    },
-    bigLabel: {
-      fontSize: "1.2rem",
-      fontWeight: 600,
-      letterSpacing: "0.02em",
-    },
-    input: {
-      fontSize: "1.1rem",
-      padding: "0.75rem 1rem",
-    },
-    radioQuestion: {
-      fontSize: "1.25rem",
-      fontWeight: 700,
-    },
-    radioOption: {
-      fontSize: "1.15rem",
-      fontWeight: 600,
-    },
-    statusText: {
-      fontSize: "1.2rem",
-      lineHeight: 1.6,
-    },
-    questionRow: {
-      display: "flex",
-      alignItems: "flex-start",
-      justifyContent: "space-between",
-      gap: "1.5rem",
-      flexWrap: "wrap",
-    },
-    questionTextCol: {
-      flex: "1 1 55%",
-      minWidth: "260px",
-    },
-    questionRightCol: {
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "flex-start",
-      gap: "0.4rem",
-      flexShrink: 0,
-    },
-    radioRowInline: {
-      display: "flex",
-      alignItems: "center",
-      gap: "1.25rem",
-    },
-    callLink: {
-      fontSize: "1.05rem",
-      fontWeight: 600,
-      textDecoration: "underline",
-    },
-  };
-
-  function handleUnlock(e) {
-    e.preventDefault();
-
-    // DEMO-ONLY PIN. In the live system this will be per dock / facility.
-    if (pinInput.trim() === "1234") {
-      setPinUnlocked(true);
-      setStatus(null);
-    } else {
-      setStatus({
-        type: "error",
-        message: "Invalid dock PIN in this demo. Try 1234.",
-      });
-    }
-  }
+  const DEMO_DRIVER_PHONE = "123-456-7890";
+  const telHref = "tel:" + DEMO_DRIVER_PHONE.replace(/[^0-9]/g, "");
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -162,225 +77,150 @@ export default function VerifyDriver() {
     <div className="qc-shell qc-dash">
       <div className="qc-inner">
         <header className="qc-dash-header">
-          <h1 className="qc-heading" style={styles.heading}>
-            Truck-Driver Verification
-          </h1>
-          <p className="qc-sub" style={styles.sub}>
+          <h1 className="qc-heading">Truck-Driver Verification</h1>
+          <p className="qc-sub">
             For authorized dock and check-in personnel only. Confirm the
             Truck-Driver unit (truck + driver) in real time before you open a
             door or touch a pallet.
           </p>
-          <p className="qc-note qc-mono" style={styles.token}>
+          <p className="qc-note qc-mono">
             Demo token: <span>{token || "N/A"}</span>
           </p>
         </header>
 
         <div className="qc-dash-grid qc-dash-grid-2">
-          {/* LEFT – PIN + verification form */}
+          {/* LEFT – main verification panel */}
           <section className="qc-dash-card">
             <h2 className="qc-dash-title">Dock Access PIN</h2>
-            <p className="qc-dash-text" style={{ fontSize: "1.05rem" }}>
+            <p className="qc-dash-text">
               In the live system, every dock or check-in station will have its
-              own PIN. Drivers never see this screen.
+              own internal PIN. Drivers never see this screen.
             </p>
 
-            {!pinUnlocked && (
-              <form className="qc-form" onSubmit={handleUnlock}>
-                <div className="qc-field qc-field-row">
-                  <label className="qc-label" style={styles.bigLabel}>
-                    Enter Dock PIN
+            <div className="qc-divider" />
+
+            <h2 className="qc-dash-title">Verify the Truck-Driver</h2>
+            <p className="qc-dash-text">
+              Enter what you see on the truck, then work straight down the two
+              questions. Both must be <strong>YES</strong> to clear the load.
+            </p>
+
+            <form className="qc-form" onSubmit={handleSubmit}>
+              <div className="qc-form-grid-single">
+                <div className="qc-field">
+                  <label className="qc-label">
+                    USDOT# on Truck <span className="qc-required">*</span>
                   </label>
                   <input
-                    type="password"
-                    className="qc-input qc-input-pin"
-                    value={pinInput}
-                    onChange={(e) => setPinInput(e.target.value)}
-                    placeholder="••••"
-                    style={styles.input}
+                    type="text"
+                    name="usdotOnTruck"
+                    className="qc-input"
+                    value={form.usdotOnTruck}
+                    onChange={handleChange}
+                    placeholder="As painted on the truck door"
                   />
-                  <button type="submit" className="qc-btn-primary">
-                    Unlock
-                  </button>
                 </div>
-              </form>
-            )}
 
-            {pinUnlocked && (
-              <>
-                <div className="qc-divider" />
+                <div className="qc-field">
+                  <label className="qc-label">
+                    License Plate on Truck <span className="qc-required">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="plateOnTruck"
+                    className="qc-input"
+                    value={form.plateOnTruck}
+                    onChange={handleChange}
+                    placeholder="Exact plate text"
+                  />
+                </div>
 
-                <h2 className="qc-dash-title">Verify the Truck-Driver</h2>
-                <p className="qc-dash-text" style={{ fontSize: "1.05rem" }}>
-                  Step through in order: enter the truck markings, check the
-                  USDOT#, call the registered phone, then set the YES/NO answers
-                  on this screen.
-                </p>
-
-                <form className="qc-form" onSubmit={handleSubmit}>
-                  <div className="qc-form-grid-single">
-                    <div className="qc-field">
-                      <label
-                        className="qc-label"
-                        style={styles.bigLabel}
-                        htmlFor="usdotOnTruck"
-                      >
-                        USDOT# on Truck{" "}
-                        <span className="qc-required">*</span>
-                      </label>
+                <div className="qc-field">
+                  <label className="qc-label">
+                    DOES THE USDOT# ON THE TRUCK MATCH YOUR RECORD?
+                  </label>
+                  <div className="qc-radio-row">
+                    <label className="qc-radio">
                       <input
-                        id="usdotOnTruck"
-                        type="text"
-                        name="usdotOnTruck"
-                        className="qc-input"
-                        value={form.usdotOnTruck}
+                        type="radio"
+                        name="usdotMatches"
+                        value="yes"
+                        checked={form.usdotMatches === "yes"}
                         onChange={handleChange}
-                        placeholder="As painted on the truck door"
-                        style={styles.input}
                       />
-                    </div>
-
-                    <div className="qc-field">
-                      <label
-                        className="qc-label"
-                        style={styles.bigLabel}
-                        htmlFor="plateOnTruck"
-                      >
-                        License Plate on Truck{" "}
-                        <span className="qc-required">*</span>
-                      </label>
+                      <span>YES</span>
+                    </label>
+                    <label className="qc-radio">
                       <input
-                        id="plateOnTruck"
-                        type="text"
-                        name="plateOnTruck"
-                        className="qc-input"
-                        value={form.plateOnTruck}
+                        type="radio"
+                        name="usdotMatches"
+                        value="no"
+                        checked={form.usdotMatches === "no"}
                         onChange={handleChange}
-                        placeholder="Exact plate text"
-                        style={styles.input}
                       />
-                    </div>
-
-                    {/* QUESTION 1 – USDOT MATCH, YES/NO INLINE */}
-                    <div className="qc-field">
-                      <div style={styles.questionRow}>
-                        <div style={styles.questionTextCol}>
-                          <div
-                            className="qc-label"
-                            style={styles.radioQuestion}
-                          >
-                            DOES THE USDOT# ON THE TRUCK MATCH YOUR RECORD?
-                          </div>
-                        </div>
-                        <div style={styles.questionRightCol}>
-                          <div style={styles.radioRowInline}>
-                            <label className="qc-radio">
-                              <input
-                                type="radio"
-                                name="usdotMatches"
-                                value="yes"
-                                checked={form.usdotMatches === "yes"}
-                                onChange={handleChange}
-                              />
-                              <span style={styles.radioOption}>YES</span>
-                            </label>
-                            <label className="qc-radio">
-                              <input
-                                type="radio"
-                                name="usdotMatches"
-                                value="no"
-                                checked={form.usdotMatches === "no"}
-                                onChange={handleChange}
-                              />
-                              <span style={styles.radioOption}>NO</span>
-                            </label>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* QUESTION 2 – DRIVER ANSWERED + CALL LINK INLINE */}
-                    <div className="qc-field">
-                      <div style={styles.questionRow}>
-                        <div style={styles.questionTextCol}>
-                          <div
-                            className="qc-label"
-                            style={styles.radioQuestion}
-                          >
-                            DID THE DRIVER ANSWER THEIR REGISTERED PHONE?
-                          </div>
-                        </div>
-                        <div style={styles.questionRightCol}>
-                          {canCall ? (
-                            <a
-                              href={`tel:${demoDriverPhone.replace(/-/g, "")}`}
-                              style={styles.callLink}
-                            >
-                              Call {demoDriverPhone}
-                            </a>
-                          ) : (
-                            <span className="qc-note">
-                              Enter the USDOT# and plate above to reveal the
-                              call button.
-                            </span>
-                          )}
-                          <div style={styles.radioRowInline}>
-                            <label className="qc-radio">
-                              <input
-                                type="radio"
-                                name="driverAnswered"
-                                value="yes"
-                                checked={form.driverAnswered === "yes"}
-                                onChange={handleChange}
-                              />
-                              <span style={styles.radioOption}>YES</span>
-                            </label>
-                            <label className="qc-radio">
-                              <input
-                                type="radio"
-                                name="driverAnswered"
-                                value="no"
-                                checked={form.driverAnswered === "no"}
-                                onChange={handleChange}
-                              />
-                              <span style={styles.radioOption}>NO</span>
-                            </label>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                      <span>NO</span>
+                    </label>
                   </div>
+                </div>
 
-                  {status && (
-                    <div
-                      className={
-                        status.type === "success"
-                          ? "qc-status qc-status-success"
-                          : status.type === "caution"
-                          ? "qc-status qc-status-caution"
-                          : "qc-status qc-status-error"
-                      }
-                    >
-                      <span style={styles.statusText}>{status.message}</span>
-                    </div>
-                  )}
-
-                  <div className="qc-form-actions">
-                    <button
-                      type="submit"
-                      className="qc-btn-primary qc-btn-wide"
-                    >
-                      Submit Truck-Driver Check
-                    </button>
+                <div className="qc-field">
+                  <label className="qc-label qc-label-row">
+                    <span>DID THE DRIVER ANSWER THEIR REGISTERED PHONE?</span>
+                    <a href={telHref} className="qc-call-btn">
+                      Call Driver
+                    </a>
+                  </label>
+                  <div className="qc-radio-row">
+                    <label className="qc-radio">
+                      <input
+                        type="radio"
+                        name="driverAnswered"
+                        value="yes"
+                        checked={form.driverAnswered === "yes"}
+                        onChange={handleChange}
+                      />
+                      <span>YES</span>
+                    </label>
+                    <label className="qc-radio">
+                      <input
+                        type="radio"
+                        name="driverAnswered"
+                        value="no"
+                        checked={form.driverAnswered === "no"}
+                        onChange={handleChange}
+                      />
+                      <span>NO</span>
+                    </label>
                   </div>
-                </form>
-              </>
-            )}
+                </div>
+              </div>
+
+              {status && (
+                <div
+                  className={
+                    status.type === "success"
+                      ? "qc-status qc-status-success"
+                      : status.type === "caution"
+                      ? "qc-status qc-status-caution"
+                      : "qc-status qc-status-error"
+                  }
+                >
+                  {status.message}
+                </div>
+              )}
+
+              <div className="qc-form-actions">
+                <button type="submit" className="qc-btn-primary qc-btn-wide">
+                  Submit Truck-Driver Check
+                </button>
+              </div>
+            </form>
           </section>
 
-          {/* RIGHT – Dock Checklist (can be simplified or removed later) */}
+          {/* RIGHT – dock checklist */}
           <section className="qc-dash-card">
             <h2 className="qc-dash-title">Dock Checklist</h2>
-            <ol className="qc-list" style={{ fontSize: "1.05rem" }}>
+            <ol className="qc-list">
               <li>Ask the driver to remain in the cab or waiting area.</li>
               <li>
                 Confirm you are on the correct AdbS verify screen for this load.
@@ -390,8 +230,9 @@ export default function VerifyDriver() {
                 <strong>license plate</strong> exactly as seen on the truck.
               </li>
               <li>
-                Use the <strong>Call</strong> button next to the second
-                question to reach the driver’s registered phone.
+                Use the <strong>Call Driver</strong> button to reach the
+                driver’s registered phone. If it doesn’t feel right, mark{" "}
+                <strong>NO</strong>.
               </li>
               <li>
                 Only when both questions are <strong>YES</strong> is the load{" "}
@@ -399,7 +240,7 @@ export default function VerifyDriver() {
               </li>
             </ol>
 
-            <p className="qc-note" style={{ fontSize: "0.95rem" }}>
+            <p className="qc-note">
               Demo only. In the live system, your answers here will feed back
               into the AdbS Control Center and the Truck-Driver checks panel.
             </p>
