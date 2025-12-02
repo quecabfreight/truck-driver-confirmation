@@ -4,10 +4,7 @@
 // these with real fetch() calls to Railway / Vercel APIs.
 
 export async function loginDemo({ email, accessCode }) {
-  // Super simple demo rule:
-  // - any non-empty email + code "DEMO123" = success
-  // - anything else = failure
-  await new Promise((resolve) => setTimeout(resolve, 500)); // fake network delay
+  await new Promise((resolve) => setTimeout(resolve, 300)); // fake network delay
 
   const normalizedCode = String(accessCode || "").trim().toUpperCase();
 
