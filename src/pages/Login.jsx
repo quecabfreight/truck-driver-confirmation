@@ -1,10 +1,45 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { loginDemo } from "../api/demoApi";
+
 export default function Login() {
-  const handleSubmit = (e) => {
+  const navigate = useNavigate();
+
+  const [email, setEmail] = useState("");
+  const [accessCode, setAccessCode] = useState("");
+  const [rememberDevice, setRememberDevice] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Demo behavior for now
-    alert(
-      "Demo only – in the live system this would open the QueCab AdbS Control Center."
-    );
+    if (loading) return;
+
+    setLoading(true);
+    setErrorMessage("");
+
+    try {
+      const result = await loginDemo({ email, accessCode });
+
+      if (result.ok) {
+        if (rememberDevice) {
+          localStorage.setItem(
+            "quecabads_demo_remember",
+            JSON.stringify({ email: email.trim() })
+          );
+        }
+
+        // Success – later this will be real Control Center auth
+        navigate("/control-center");
+      } else {
+        setErrorMessage(result.message || "Demo login failed.");
+      }
+    } catch (err) {
+      console.error(err);
+      setErrorMessage("Unexpected error during demo login.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -86,6 +121,8 @@ export default function Login() {
             <input
               type="email"
               required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               style={{
                 width: "100%",
                 padding: "12px",
@@ -112,6 +149,8 @@ export default function Login() {
             <input
               type="text"
               required
+              value={accessCode}
+              onChange={(e) => setAccessCode(e.target.value)}
               style={{
                 width: "100%",
                 padding: "12px",
@@ -132,7 +171,12 @@ export default function Login() {
             }}
           >
             <label>
-              <input type="checkbox" style={{ marginRight: "8px" }} />
+              <input
+                type="checkbox"
+                checked={rememberDevice}
+                onChange={(e) => setRememberDevice(e.target.checked)}
+                style={{ marginRight: "8px" }}
+              />
               Remember this device
             </label>
           </div>
@@ -140,26 +184,47 @@ export default function Login() {
           {/* BUTTON */}
           <button
             type="submit"
+            disabled={loading}
             style={{
               width: "100%",
               padding: "12px",
               fontSize: "20px",
               borderRadius: "12px",
               border: "none",
-              background: "linear-gradient(135deg, #0ea5e9, #22c55e, #0ea5e9)",
+              background: loading
+                ? "linear-gradient(135deg, #6b7280, #9ca3af)"
+                : "linear-gradient(135deg, #0ea5e9, #22c55e, #0ea5e9)",
               color: "#0b1120",
               fontWeight: 700,
-              cursor: "pointer",
+              cursor: loading ? "default" : "pointer",
             }}
           >
-            Log In (Demo)
+            {loading ? "Checking..." : "Log In (Demo – use DEMO123)"}
           </button>
         </form>
+
+        {/* ERROR BAR (if any) */}
+        {errorMessage && (
+          <div
+            style={{
+              marginTop: "16px",
+              fontSize: "15px",
+              padding: "10px 14px",
+              borderRadius: "10px",
+              background: "rgba(220, 38, 38, 0.16)",
+              border: "1px solid rgba(248, 113, 113, 0.9)",
+              color: "#fecaca",
+              textAlign: "center",
+            }}
+          >
+            {errorMessage}
+          </div>
+        )}
 
         {/* DEMO NOTICE BAR */}
         <div
           style={{
-            marginTop: "20px",
+            marginTop: "16px",
             fontSize: "16px",
             padding: "10px 14px",
             borderRadius: "10px",
