@@ -1,93 +1,137 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { LS_EMAIL, LS_CODE, LS_REMEMBER, LS_ROLE, getRoleFromCode } from "../utils/auth";
-
-// auto-format codes like QC-BRK-51164 (keeps your hyphens behavior)
-function formatAccessCode(raw) {
-  const cleaned = (raw || "").toUpperCase().replace(/[^A-Z0-9-]/g, "");
-  // if user types without hyphens, try to insert after QC and BRK/SHP
-  if (!cleaned.includes("-") && cleaned.length >= 5) {
-    const m = cleaned.match(/^(QC)?([A-Z]{3})?(\d.*)$/);
-    if (m) {
-      const qc = m[1] ? "QC" : cleaned.startsWith("QC") ? "QC" : "";
-      const seg = m[2] || "";
-      const rest = m[3] || "";
-      if (qc && (seg === "BRK" || seg === "SHP")) return `${qc}-${seg}-${rest}`;
-    }
-  }
-  return cleaned;
-}
-
 export default function Login() {
-  const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [code, setCode] = useState("");
-  const [remember, setRemember] = useState(true);
-
-  useEffect(() => {
-    const r = localStorage.getItem(LS_REMEMBER) === "true";
-    setRemember(localStorage.getItem(LS_REMEMBER) === null ? true : r);
-    if (r) {
-      setEmail(localStorage.getItem(LS_EMAIL) || "");
-      setCode(localStorage.getItem(LS_CODE) || "");
-    }
-  }, []);
-
-  const onCodeChange = (e) => setCode(formatAccessCode(e.target.value));
-
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!email.trim() || !code.trim()) { alert("Enter Email and Access Code."); return; }
-
-    const role = getRoleFromCode(code);
-    if (!role) { alert("Access Code invalid for role. Use a QC-BRK-… or QC-SHP-… code."); return; }
-
-    localStorage.setItem(LS_EMAIL, email.trim());
-    localStorage.setItem(LS_CODE, code.trim());
-    localStorage.setItem(LS_REMEMBER, "true");
-    localStorage.setItem(LS_ROLE, role);
-
-    navigate("/smart"); // brokers/shippers land on the tool
-  };
-
-  const toggleRemember = (checked) => {
-    setRemember(checked);
-    if (!checked) {
-      localStorage.removeItem(LS_EMAIL);
-      localStorage.removeItem(LS_CODE);
-      localStorage.removeItem(LS_ROLE);
-      localStorage.setItem(LS_REMEMBER, "false");
-    } else {
-      localStorage.setItem(LS_EMAIL, email.trim());
-      localStorage.setItem(LS_CODE, code.trim());
-      localStorage.setItem(LS_REMEMBER, "true");
-    }
+    // Demo behavior for now
+    alert(
+      "Demo only – in the live system this would open the QueCab AdbS Control Center."
+    );
   };
 
   return (
-    <div className="page centered">
-      <img src="/qc-logo.png" alt="QueCab AdbS" className="page-logo" />
-      <div className="card">
-        <h1>Log In</h1>
-        <form className="form" onSubmit={handleSubmit}>
-          <div>
-            <label>Email</label>
-            <input className="input" value={email} onChange={(e)=>setEmail(e.target.value)}
-                   autoCapitalize="none" autoCorrect="off" inputMode="email" />
+    <div
+      style={{
+        width: "100%",
+        minHeight: "calc(100vh - 120px)",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        padding: "40px 0",
+        background: "linear-gradient(180deg, #050814 0%, #0b0f19 40%, #131e33 100%)",
+      }}
+    >
+      <div
+        style={{
+          background: "#020617",
+          padding: "40px",
+          borderRadius: "18px",
+          width: "480px",
+          border: "1px solid rgba(148,163,184,0.6)",
+          boxShadow: "0 18px 45px rgba(0,0,0,0.65)",
+          color: "white",
+        }}
+      >
+        {/* LOGO */}
+        <div
+          style={{
+            width: "100%",
+            display: "flex",
+            justifyContent: "center",
+            marginBottom: "26px",
+          }}
+        >
+          <img
+            src="/qc-logo.png"
+            alt="QueCab AdbS Logo"
+            style={{
+              width: "260px",
+              height: "auto",
+            }}
+          />
+        </div>
+
+        {/* HEADING */}
+        <h1
+          style={{
+            fontSize: "32px",
+            marginBottom: "8px",
+            textAlign: "center",
+          }}
+        >
+          Log In
+        </h1>
+        <p
+          style={{
+            fontSize: "16px",
+            marginBottom: "24px",
+            textAlign: "center",
+            opacity: 0.8,
+          }}
+        >
+          For authorized brokers and shippers using QueCab AdbS.
+        </p>
+
+        {/* FORM */}
+        <form onSubmit={handleSubmit}>
+          {/* BUSINESS EMAIL */}
+          <div style={{ marginBottom: "20px" }}>
+            <label
+              style={{
+                fontSize: "18px",
+                display: "block",
+                marginBottom: "6px",
+              }}
+            >
+              Business Email
+            </label>
+            <input
+              type="email"
+              required
+              style={{
+                width: "100%",
+                padding: "12px",
+                fontSize: "18px",
+                borderRadius: "10px",
+                border: "1px solid #64748b",
+                background: "#0f172a",
+                color: "white",
+              }}
+            />
           </div>
-          <div>
-            <label>Access Code</label>
-            <input className="input" placeholder="Enter access code"
-                   value={code} onChange={onCodeChange} autoCapitalize="characters" autoCorrect="off" />
+
+          {/* ACCESS CODE */}
+          <div style={{ marginBottom: "20px" }}>
+            <label
+              style={{
+                fontSize: "18px",
+                display: "block",
+                marginBottom: "6px",
+              }}
+            >
+              Access Code
+            </label>
+            <input
+              type="text"
+              required
+              style={{
+                width: "100%",
+                padding: "12px",
+                fontSize: "18px",
+                borderRadius: "10px",
+                border: "1px solid #64748b",
+                background: "#0f172a",
+                color: "white",
+              }}
+            />
           </div>
-          <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-            <input id="remember" type="checkbox" checked={remember}
-                   onChange={(e)=>toggleRemember(e.target.checked)} style={{ width:24, height:24 }} />
-            <label htmlFor="remember">Remember this device</label>
-          </div>
-          <button className="btn" type="submit">Continue</button>
-        </form>
-      </div>
-    </div>
-  );
-}
+
+          {/* REMEMBER DEVICE */}
+          <div
+            style={{
+              marginBottom: "22px",
+              fontSize: "16px",
+            }}
+          >
+            <label>
+              <input type="checkbox" style={{ marginRight: "8px" }} />
+              Remember this device
+            </label>
