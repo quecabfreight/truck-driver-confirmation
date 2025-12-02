@@ -9,18 +9,19 @@ export default function Login() {
   const [accessCode, setAccessCode] = useState("");
   const [rememberDevice, setRememberDevice] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (loading) return;
 
     setLoading(true);
+    setErrorMessage("");
 
     try {
       const result = await loginDemo({ email, accessCode });
 
       if (result.ok) {
-        // later we can store a real token; for now, just demo behavior
         if (rememberDevice) {
           localStorage.setItem(
             "quecabads_demo_remember",
@@ -28,14 +29,14 @@ export default function Login() {
           );
         }
 
-        alert("Demo only – opening AdbS Control Center view.");
+        // Success – later this will be real Control Center auth
         navigate("/control-center");
       } else {
-        alert(result.message);
+        setErrorMessage(result.message || "Demo login failed.");
       }
     } catch (err) {
       console.error(err);
-      alert("Unexpected error during demo login.");
+      setErrorMessage("Unexpected error during demo login.");
     } finally {
       setLoading(false);
     }
@@ -202,10 +203,28 @@ export default function Login() {
           </button>
         </form>
 
+        {/* ERROR BAR (if any) */}
+        {errorMessage && (
+          <div
+            style={{
+              marginTop: "16px",
+              fontSize: "15px",
+              padding: "10px 14px",
+              borderRadius: "10px",
+              background: "rgba(220, 38, 38, 0.16)",
+              border: "1px solid rgba(248, 113, 113, 0.9)",
+              color: "#fecaca",
+              textAlign: "center",
+            }}
+          >
+            {errorMessage}
+          </div>
+        )}
+
         {/* DEMO NOTICE BAR */}
         <div
           style={{
-            marginTop: "20px",
+            marginTop: "16px",
             fontSize: "16px",
             padding: "10px 14px",
             borderRadius: "10px",
