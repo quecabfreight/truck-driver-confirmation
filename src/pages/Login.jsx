@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { loginDemo } from "../api/demoApi";
 
@@ -10,6 +10,23 @@ export default function Login() {
   const [rememberDevice, setRememberDevice] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
+  // On first load, see if we have a remembered email
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("quecabads_demo_remember");
+      if (!raw) return;
+
+      const data = JSON.parse(raw);
+      if (data && typeof data.email === "string" && data.email.trim() !== "") {
+        setEmail(data.email.trim());
+        setRememberDevice(true);
+      }
+    } catch {
+      // If anything is corrupted, just ignore it
+      localStorage.removeItem("quecabads_demo_remember");
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -27,6 +44,8 @@ export default function Login() {
             "quecabads_demo_remember",
             JSON.stringify({ email: email.trim() })
           );
+        } else {
+          localStorage.removeItem("quecabads_demo_remember");
         }
 
         // Success – later this will be real Control Center auth
