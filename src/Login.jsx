@@ -199,7 +199,7 @@ export default function Login() {
               cursor: loading ? "default" : "pointer",
             }}
           >
-            {loading ? "Checking..." : "Log In (Demo)"}
+            {loading ? "Checking..." : "Log In (Demo – use DEMO123)"}
           </button>
         </form>
 
