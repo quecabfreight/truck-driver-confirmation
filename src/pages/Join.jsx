@@ -1,218 +1,453 @@
-import React, { useState } from "react";
-
-function formatPhone(value) {
-  const digits = value.replace(/\D/g, "").slice(0, 10);
-  const len = digits.length;
-
-  if (len <= 3) return digits;
-  if (len <= 6) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
-  return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
-}
+import { useState } from "react";
+import { submitAccessRequest } from "../api/requestAccessApi";
 
 export default function Join() {
-  const [form, setForm] = useState({
-    legalName: "",
-    contactName: "",
-    role: "broker",
-    ein: "",
-    businessEmail: "",
-    mcNumber: "",
-    businessPhone: "",
-  });
+  const [legalName, setLegalName] = useState("");
+  const [contactName, setContactName] = useState("");
+  const [role, setRole] = useState("Broker"); // Broker or Shipper
+  const [mcNumber, setMcNumber] = useState("");
+  const [ein, setEin] = useState("");
+  const [businessPhone, setBusinessPhone] = useState("");
+  const [businessEmail, setBusinessEmail] = useState("");
 
-  const [status, setStatus] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
-  function handleChange(e) {
-    const { name, value, type, checked } = e.target;
-    let nextValue = type === "checkbox" ? checked : value;
+  // Auto-format phone as 123-456-7890
+  const formatPhone = (value) => {
+    const digits = value.replace(/\D/g, "").slice(0, 10);
+    const len = digits.length;
 
-    if (name === "mcNumber") {
-      // Digits only for MC number
-      nextValue = nextValue.replace(/\D/g, "").slice(0, 10);
-    }
+    if (len <= 3) return digits;
+    if (len <= 6) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+    return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+  };
 
-    if (name === "businessPhone") {
-      nextValue = formatPhone(nextValue);
-    }
+  const handlePhoneChange = (e) => {
+    setBusinessPhone(formatPhone(e.target.value));
+  };
 
-    setForm((prev) => ({
-      ...prev,
-      [name]: nextValue,
-    }));
-  }
+  // Uppercase & tidy MC and EIN
+  const handleMcChange = (e) => {
+    const raw = e.target.value.toUpperCase();
+    setMcNumber(raw);
+  };
 
-  function handleSubmit(e) {
+  const handleEinChange = (e) => {
+    const raw = e.target.value.toUpperCase();
+    setEin(raw);
+  };
+
+  const resetForm = () => {
+    setLegalName("");
+    setContactName("");
+    setRole("Broker");
+    setMcNumber("");
+    setEin("");
+    setBusinessPhone("");
+    setBusinessEmail("");
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (submitting) return;
 
-    if (!form.legalName || !form.contactName || !form.businessEmail || !form.mcNumber || !form.businessPhone) {
-      setStatus({
-        type: "error",
-        message:
-          "For this demo, please complete Legal Name, Contact Name, MC#, Business Email, and Business Phone.",
-      });
-      return;
+    setSubmitting(true);
+    setSuccessMessage("");
+    setErrorMessage("");
+
+    try {
+      const payload = {
+        legalName: legalName.trim(),
+        contactName: contactName.trim(),
+        role,
+        mcNumber: mcNumber.trim(),
+        ein: ein.trim(),
+        businessPhone: businessPhone.trim(),
+        businessEmail: businessEmail.trim(),
+      };
+
+      // Basic front-end check
+      if (!payload.legalName || !payload.contactName || !payload.mcNumber || !payload.businessEmail) {
+        setErrorMessage(
+          "Please complete all required fields (Legal Name, Contact Name, MC Number, Business Email)."
+        );
+        setSubmitting(false);
+        return;
+      }
+
+      const result = await submitAccessRequest(payload);
+
+      if (result.ok) {
+        setSuccessMessage(
+          result.message ||
+            "Demo only – your request has been recorded. In production this would alert QueCab AdbS support."
+        );
+        resetForm();
+      } else {
+        setErrorMessage(
+          result.message || "Unable to submit your request in this demo."
+        );
+      }
+    } catch (err) {
+      console.error(err);
+      setErrorMessage("Unexpected error while submitting your request.");
+    } finally {
+      setSubmitting(false);
     }
-
-    setStatus({
-      type: "success",
-      message:
-        "Request received. In this demo build, the form is not yet wired to the live AdbS Control Center.",
-    });
-  }
+  };
 
   return (
-    <div className="qc-shell qc-form-shell">
-      <div className="qc-inner qc-form-inner">
-        <div className="qc-form-card">
-          <h1 className="qc-heading qc-form-heading">Request Access</h1>
-          <p className="qc-sub qc-form-sub">
-            For licensed brokers and shippers who want to deploy QueCab AdbS to
-            verify Truck-Driver units in real time at the dock.
-          </p>
+    <div
+      style={{
+        width: "100%",
+        minHeight: "calc(100vh - 120px)",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        padding: "40px 0",
+        background: "linear-gradient(180deg, #050814 0%, #0b0f19 40%, #131e33 100%)",
+      }}
+    >
+      <div
+        style={{
+          background: "#020617",
+          padding: "40px",
+          borderRadius: "18px",
+          width: "900px",
+          border: "1px solid rgba(148,163,184,0.6)",
+          boxShadow: "0 18px 45px rgba(0,0,0,0.65)",
+          color: "white",
+        }}
+      >
+        {/* HEADER */}
+        <h1
+          style={{
+            fontSize: "32px",
+            marginBottom: "10px",
+          }}
+        >
+          Request Access
+        </h1>
+        <p
+          style={{
+            fontSize: "16px",
+            marginBottom: "24px",
+            opacity: 0.8,
+          }}
+        >
+          For licensed brokers and shippers who want to deploy QueCab AdbS to
+          verify Truck-Driver links in front of the dock.
+        </p>
 
-          <form className="qc-form" onSubmit={handleSubmit}>
-            <div className="qc-form-grid">
-              {/* Legal name */}
-              <div className="qc-field">
-                <label className="qc-label">
-                  Legal Name / Legal Business Name
-                  <span className="qc-required">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="legalName"
-                  className="qc-input"
-                  value={form.legalName}
-                  onChange={handleChange}
-                  placeholder="Full legal name on FMCSA / IRS records"
-                />
-              </div>
-
-              {/* Primary contact */}
-              <div className="qc-field">
-                <label className="qc-label">
-                  Primary Contact Name<span className="qc-required">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="contactName"
-                  className="qc-input"
-                  value={form.contactName}
-                  onChange={handleChange}
-                  placeholder="Who will manage AdbS access?"
-                />
-              </div>
-
-              {/* Role */}
-              <div className="qc-field">
-                <label className="qc-label">
-                  Role<span className="qc-required">*</span>
-                </label>
-                <div className="qc-radio-row">
-                  <label className="qc-radio">
-                    <input
-                      type="radio"
-                      name="role"
-                      value="broker"
-                      checked={form.role === "broker"}
-                      onChange={handleChange}
-                    />
-                    <span>Broker</span>
-                  </label>
-                  <label className="qc-radio">
-                    <input
-                      type="radio"
-                      name="role"
-                      value="shipper"
-                      checked={form.role === "shipper"}
-                      onChange={handleChange}
-                    />
-                    <span>Shipper</span>
-                  </label>
-                </div>
-              </div>
-
-              {/* EIN optional */}
-              <div className="qc-field">
-                <label className="qc-label">EIN (optional)</label>
-                <input
-                  type="text"
-                  name="ein"
-                  className="qc-input"
-                  value={form.ein}
-                  onChange={handleChange}
-                  placeholder="XX-XXXXXXX"
-                />
-              </div>
-
-              {/* Business email */}
-              <div className="qc-field">
-                <label className="qc-label">
-                  Business Email<span className="qc-required">*</span>
-                </label>
-                <input
-                  type="email"
-                  name="businessEmail"
-                  className="qc-input"
-                  value={form.businessEmail}
-                  onChange={handleChange}
-                  placeholder="Where AdbS access details will be sent"
-                />
-              </div>
-
-              {/* MC number */}
-              <div className="qc-field">
-                <label className="qc-label">
-                  MC Number<span className="qc-required">*</span>
-                </label>
-                <div className="qc-mc-row">
-                  <span className="qc-mc-tag">MC</span>
-                  <input
-                    type="text"
-                    name="mcNumber"
-                    className="qc-input qc-input-mc"
-                    value={form.mcNumber}
-                    onChange={handleChange}
-                    placeholder="Digits only"
-                  />
-                </div>
-              </div>
-
-              {/* Business phone */}
-              <div className="qc-field">
-                <label className="qc-label">
-                  Business Phone<span className="qc-required">*</span>
-                </label>
-                <input
-                  type="tel"
-                  name="businessPhone"
-                  className="qc-input"
-                  value={form.businessPhone}
-                  onChange={handleChange}
-                  placeholder="123-456-7890"
-                />
-              </div>
-            </div>
-
-            {status && (
-              <div
-                className={
-                  status.type === "success"
-                    ? "qc-status qc-status-success"
-                    : "qc-status qc-status-error"
-                }
+        {/* FORM */}
+        <form onSubmit={handleSubmit}>
+          {/* TOP ROW: LEGAL NAME + CONTACT NAME */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1.2fr 1fr",
+              gap: "20px",
+              marginBottom: "20px",
+            }}
+          >
+            <div>
+              <label
+                style={{
+                  fontSize: "16px",
+                  display: "block",
+                  marginBottom: "6px",
+                }}
               >
-                {status.message}
-              </div>
-            )}
-
-            <div className="qc-form-actions">
-              <button type="submit" className="qc-btn-primary qc-btn-wide">
-                Submit Request
-              </button>
+                Legal Name or Legal Business Name<span style={{ color: "#f97373" }}> *</span>
+              </label>
+              <input
+                type="text"
+                value={legalName}
+                onChange={(e) => setLegalName(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  fontSize: "16px",
+                  borderRadius: "10px",
+                  border: "1px solid #64748b",
+                  background: "#0f172a",
+                  color: "white",
+                }}
+              />
             </div>
-          </form>
-        </div>
+            <div>
+              <label
+                style={{
+                  fontSize: "16px",
+                  display: "block",
+                  marginBottom: "6px",
+                }}
+              >
+                Primary Contact Name<span style={{ color: "#f97373" }}> *</span>
+              </label>
+              <input
+                type="text"
+                value={contactName}
+                onChange={(e) => setContactName(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  fontSize: "16px",
+                  borderRadius: "10px",
+                  border: "1px solid #64748b",
+                  background: "#0f172a",
+                  color: "white",
+                }}
+              />
+            </div>
+          </div>
+
+          {/* ROLE + MC + EIN */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1.2fr 0.9fr 0.9fr",
+              gap: "20px",
+              marginBottom: "20px",
+            }}
+          >
+            {/* ROLE */}
+            <div>
+              <label
+                style={{
+                  fontSize: "16px",
+                  display: "block",
+                  marginBottom: "6px",
+                }}
+              >
+                Role<span style={{ color: "#f97373" }}> *</span>
+              </label>
+              <div
+                style={{
+                  display: "flex",
+                  gap: "18px",
+                  fontSize: "15px",
+                  marginTop: "4px",
+                }}
+              >
+                <label>
+                  <input
+                    type="radio"
+                    name="role"
+                    value="Broker"
+                    checked={role === "Broker"}
+                    onChange={() => setRole("Broker")}
+                    style={{ marginRight: "6px" }}
+                  />
+                  Broker
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    name="role"
+                    value="Shipper"
+                    checked={role === "Shipper"}
+                    onChange={() => setRole("Shipper")}
+                    style={{ marginRight: "6px" }}
+                  />
+                  Shipper
+                </label>
+              </div>
+            </div>
+
+            {/* MC NUMBER */}
+            <div>
+              <label
+                style={{
+                  fontSize: "16px",
+                  display: "block",
+                  marginBottom: "6px",
+                }}
+              >
+                MC Number<span style={{ color: "#f97373" }}> *</span>
+              </label>
+              <input
+                type="text"
+                value={mcNumber}
+                onChange={handleMcChange}
+                placeholder="MC 000000"
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  fontSize: "16px",
+                  borderRadius: "10px",
+                  border: "1px solid #64748b",
+                  background: "#0f172a",
+                  color: "white",
+                }}
+              />
+            </div>
+
+            {/* EIN (optional) */}
+            <div>
+              <label
+                style={{
+                  fontSize: "16px",
+                  display: "block",
+                  marginBottom: "6px",
+                }}
+              >
+                EIN <span style={{ opacity: 0.7 }}>(optional)</span>
+              </label>
+              <input
+                type="text"
+                value={ein}
+                onChange={handleEinChange}
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  fontSize: "16px",
+                  borderRadius: "10px",
+                  border: "1px solid #64748b",
+                  background: "#0f172a",
+                  color: "white",
+                }}
+              />
+            </div>
+          </div>
+
+          {/* PHONE + EMAIL */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1.4fr",
+              gap: "20px",
+              marginBottom: "24px",
+            }}
+          >
+            <div>
+              <label
+                style={{
+                  fontSize: "16px",
+                  display: "block",
+                  marginBottom: "6px",
+                }}
+              >
+                Business Phone<span style={{ color: "#f97373" }}> *</span>
+              </label>
+              <input
+                type="text"
+                value={businessPhone}
+                onChange={handlePhoneChange}
+                placeholder="123-456-7890"
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  fontSize: "16px",
+                  borderRadius: "10px",
+                  border: "1px solid #64748b",
+                  background: "#0f172a",
+                  color: "white",
+                }}
+              />
+            </div>
+            <div>
+              <label
+                style={{
+                  fontSize: "16px",
+                  display: "block",
+                  marginBottom: "6px",
+                }}
+              >
+                Business Email<span style={{ color: "#f97373" }}> *</span>
+              </label>
+              <input
+                type="email"
+                value={businessEmail}
+                onChange={(e) => setBusinessEmail(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  fontSize: "16px",
+                  borderRadius: "10px",
+                  border: "1px solid #64748b",
+                  background: "#0f172a",
+                  color: "white",
+                }}
+              />
+            </div>
+          </div>
+
+          {/* SUBMIT BUTTON */}
+          <button
+            type="submit"
+            disabled={submitting}
+            style={{
+              padding: "12px 26px",
+              fontSize: "18px",
+              borderRadius: "999px",
+              border: "none",
+              background: submitting
+                ? "linear-gradient(135deg, #6b7280, #9ca3af)"
+                : "linear-gradient(135deg, #0ea5e9, #22c55e, #0ea5e9)",
+              color: "#0b1120",
+              fontWeight: 700,
+              cursor: submitting ? "default" : "pointer",
+              minWidth: "220px",
+            }}
+          >
+            {submitting ? "Submitting..." : "Submit Request"}
+          </button>
+        </form>
+
+        {/* ERROR MESSAGE */}
+        {errorMessage && (
+          <div
+            style={{
+              marginTop: "18px",
+              fontSize: "15px",
+              padding: "10px 14px",
+              borderRadius: "10px",
+              background: "rgba(220, 38, 38, 0.16)",
+              border: "1px solid rgba(248, 113, 113, 0.9)",
+              color: "#fecaca",
+            }}
+          >
+            {errorMessage}
+          </div>
+        )}
+
+        {/* SUCCESS MESSAGE */}
+        {successMessage && (
+          <div
+            style={{
+              marginTop: "18px",
+              fontSize: "15px",
+              padding: "10px 14px",
+              borderRadius: "10px",
+              background: "rgba(22, 163, 74, 0.2)",
+              border: "1px solid rgba(74, 222, 128, 0.8)",
+              color: "#bbf7d0",
+            }}
+          >
+            {successMessage}
+          </div>
+        )}
+
+        {/* DEMO NOTICE */}
+        {!successMessage && !errorMessage && (
+          <div
+            style={{
+              marginTop: "18px",
+              fontSize: "15px",
+              padding: "10px 14px",
+              borderRadius: "10px",
+              background: "rgba(22, 163, 74, 0.2)",
+              border: "1px solid rgba(74, 222, 128, 0.8)",
+              color: "#bbf7d0",
+            }}
+          >
+            Demo only – in production this form would create an access request
+            record and notify QueCab AdbS support or your account admin.
+          </div>
+        )}
       </div>
     </div>
   );
