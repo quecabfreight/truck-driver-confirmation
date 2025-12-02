@@ -135,3 +135,44 @@ export default function Login() {
               <input type="checkbox" style={{ marginRight: "8px" }} />
               Remember this device
             </label>
+          </div>
+
+          {/* BUTTON */}
+          <button
+            type="submit"
+            style={{
+              width: "100%",
+              padding: "12px",
+              fontSize: "20px",
+              borderRadius: "12px",
+              border: "none",
+              background: "linear-gradient(135deg, #0ea5e9, #22c55e, #0ea5e9)",
+              color: "#0b1120",
+              fontWeight: 700,
+              cursor: "pointer",
+            }}
+          >
+            Log In (Demo)
+          </button>
+        </form>
+
+        {/* DEMO NOTICE BAR */}
+        <div
+          style={{
+            marginTop: "20px",
+            fontSize: "16px",
+            padding: "10px 14px",
+            borderRadius: "10px",
+            background: "rgba(22, 163, 74, 0.2)",
+            border: "1px solid rgba(74, 222, 128, 0.8)",
+            color: "#bbf7d0",
+            textAlign: "center",
+          }}
+        >
+          Demo only – in production this login opens the QueCab AdbS Control
+          Center.
+        </div>
+      </div>
+    </div>
+  );
+}
