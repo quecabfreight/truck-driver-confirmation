@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 
 export default function VerifyDriver() {
@@ -9,14 +9,18 @@ export default function VerifyDriver() {
 
   const [usdot, setUsdot] = useState("");
   const [plate, setPlate] = useState("");
-  const [phoneResult, setPhoneResult] = useState("");
+  const [phoneResult, setPhoneResult] = useState(""); // YES / NO
 
   const [expectedUsdot, setExpectedUsdot] = useState("");
   const [expectedPlate, setExpectedPlate] = useState("");
 
+  const [failCount, setFailCount] = useState(0);
+
+  const lastOutcomeRef = useRef(null);
+
   const DEMO_PIN = "1234";
 
-  // Load expected USDOT + plate for this token (demo only)
+  // Load expected USDOT + Plate for this token (demo only)
   useEffect(() => {
     try {
       if (typeof window === "undefined") return;
@@ -27,6 +31,18 @@ export default function VerifyDriver() {
       setExpectedPlate((parsed.plate || "").toUpperCase());
     } catch {
       // ignore demo errors
+    }
+  }, [token]);
+
+  // Load existing fail count for this token (demo only)
+  useEffect(() => {
+    try {
+      if (typeof window === "undefined") return;
+      const raw = window.localStorage.getItem(`demo_fail_${token}`);
+      const n = parseInt(raw || "0", 10);
+      setFailCount(Number.isNaN(n) ? 0 : n);
+    } catch {
+      // ignore
     }
   }, [token]);
 
@@ -50,26 +66,60 @@ export default function VerifyDriver() {
     normalizedUsdot === expectedUsdot &&
     normalizedPlate === expectedPlate;
 
+  // We only decide after the phone YES/NO is set.
   const canDecide =
-    pinVerified && dotAndPlateEntered && expectedUsdot && expectedPlate && phoneResult;
+    pinVerified &&
+    dotAndPlateEntered &&
+    expectedUsdot &&
+    expectedPlate &&
+    phoneResult;
 
+  // Status box content (what dock actually sees)
   let statusTitle = "";
   let statusDetail = "";
-  let statusColor = "#1e293b"; // neutral slate
+  let statusColor = "#1e293b"; // neutral
 
   if (canDecide) {
     if (systemMatch && phoneResult === "YES") {
       statusTitle = "CLEAR TO LOAD";
       statusDetail =
-        "USDOT# and plate match the broker / shipper record, and the driver answered their registered phone.";
+        "All checks for this Truck-Driver have cleared. Proceed with loading according to your internal procedures.";
       statusColor = "#047857"; // green
     } else {
       statusTitle = "CAUTION ALERT – DO NOT LOAD";
       statusDetail =
-        "At least one check failed. Hold this load and follow your internal escalation steps.";
+        "One or more checks did not clear. Hold this load and contact the broker / shipper for instructions.";
       statusColor = "#b91c1c"; // red
     }
   }
+
+  // Track failed attempts (CAUTION outcomes) – demo only
+  useEffect(() => {
+    if (!canDecide) return;
+
+    const outcome =
+      systemMatch && phoneResult === "YES" ? "CLEAR" : "CAUTION";
+
+    // Avoid double-counting the same outcome over and over
+    if (outcome === lastOutcomeRef.current) return;
+    lastOutcomeRef.current = outcome;
+
+    if (outcome === "CAUTION") {
+      try {
+        if (typeof window === "undefined") return;
+        const key = `demo_fail_${token}`;
+        const current = parseInt(
+          window.localStorage.getItem(key) || "0",
+          10
+        );
+        const next = (Number.isNaN(current) ? 0 : current) + 1;
+        window.localStorage.setItem(key, String(next));
+        setFailCount(next);
+      } catch {
+        // ignore
+      }
+    }
+  }, [canDecide, systemMatch, phoneResult, token]);
 
   return (
     <div
@@ -90,7 +140,7 @@ export default function VerifyDriver() {
           width: "100%",
         }}
       >
-        {/* LEFT COLUMN */}
+        {/* LEFT COLUMN – PIN + verification */}
         <div style={{ flex: 2 }}>
           <h1
             style={{
@@ -205,7 +255,7 @@ export default function VerifyDriver() {
                   display: "grid",
                   gridTemplateColumns: "1fr 1fr",
                   gap: "16px",
-                  marginBottom: "10px",
+                  marginBottom: "24px",
                 }}
               >
                 <div>
@@ -221,7 +271,9 @@ export default function VerifyDriver() {
                   <input
                     type="text"
                     value={usdot}
-                    onChange={(e) => setUsdot(e.target.value.toUpperCase())}
+                    onChange={(e) =>
+                      setUsdot(e.target.value.toUpperCase())
+                    }
                     style={{
                       width: "100%",
                       padding: "10px 12px",
@@ -246,7 +298,9 @@ export default function VerifyDriver() {
                   <input
                     type="text"
                     value={plate}
-                    onChange={(e) => setPlate(e.target.value.toUpperCase())}
+                    onChange={(e) =>
+                      setPlate(e.target.value.toUpperCase())
+                    }
                     style={{
                       width: "100%",
                       padding: "10px 12px",
@@ -260,54 +314,7 @@ export default function VerifyDriver() {
                 </div>
               </div>
 
-              {/* System match display */}
-              <div
-                style={{
-                  marginTop: "8px",
-                  marginBottom: "20px",
-                }}
-              >
-                <p
-                  style={{
-                    fontSize: "18px",
-                    marginBottom: "6px",
-                    textTransform: "uppercase",
-                  }}
-                >
-                  DOES THE USDOT# AND PLATE ON THE TRUCK MATCH THE BROKER /
-                  SHIPPER RECORD?
-                </p>
-                <div
-                  style={{
-                    fontSize: "20px",
-                    fontWeight: 700,
-                    marginBottom: "4px",
-                    color: dotAndPlateEntered
-                      ? systemMatch
-                        ? "#bbf7d0"
-                        : "#fecaca"
-                      : "#e5e7eb",
-                  }}
-                >
-                  {dotAndPlateEntered
-                    ? systemMatch
-                      ? "YES — SYSTEM MATCH"
-                      : "NO — SYSTEM MISMATCH"
-                    : "WAITING FOR ENTRY"}
-                </div>
-                <div
-                  style={{
-                    fontSize: "14px",
-                    opacity: 0.85,
-                  }}
-                >
-                  System compares the USDOT# and plate you entered to the
-                  broker / shipper&apos;s record for this link. Dock personnel
-                  cannot override this result.
-                </div>
-              </div>
-
-              {/* Phone check – Call button then Y/N */}
+              {/* Phone check – Call button then YES/NO */}
               <div style={{ marginBottom: "24px" }}>
                 <p
                   style={{
@@ -371,7 +378,7 @@ export default function VerifyDriver() {
                 </div>
               </div>
 
-              {/* Status box */}
+              {/* STATUS BOX – only shows final result, not which check failed */}
               <div
                 style={{
                   borderRadius: "14px",
@@ -407,19 +414,18 @@ export default function VerifyDriver() {
                       opacity: 0.85,
                     }}
                   >
-                    Enter the USDOT# and plate from the truck, then record
-                    whether the driver answered their registered phone. When all
-                    checks are complete, this box will show CLEAR TO LOAD or a
-                    CAUTION ALERT.
+                    Enter the USDOT# and plate from the truck, call the
+                    registered driver, then record YES or NO. The system
+                    will determine whether this Truck-Driver is CLEAR TO
+                    LOAD or requires a CAUTION ALERT.
                   </div>
                 )}
               </div>
             </div>
           )}
-
-          {/* RIGHT COLUMN – Checklist */}
         </div>
 
+        {/* RIGHT COLUMN – Dock Checklist / demo note */}
         <div style={{ flex: 1 }}>
           <div
             style={{
@@ -447,33 +453,47 @@ export default function VerifyDriver() {
             >
               <li>Driver remains in cab or waiting area.</li>
               <li>
-                Confirm this is the correct verify screen for the load you are
-                checking in.
+                Confirm this is the correct verify screen for the load you
+                are checking in.
               </li>
               <li>
-                Enter the USDOT# and license plate exactly as on the truck.
+                Enter the USDOT# and license plate exactly as shown on the
+                truck.
               </li>
               <li>
-                Use the “Call Driver” button to reach the registered phone. If
-                anything feels off, mark NO.
+                Use the “Call Driver” button to reach the registered phone.
+                If anything feels off, mark NO.
               </li>
               <li>
-                Only when system match is YES and the phone check is YES should
-                this Truck-Driver be CLEAR TO LOAD.
+                Only when this screen shows CLEAR TO LOAD should this
+                Truck-Driver be loaded.
               </li>
             </ol>
             <div
               style={{
-                fontSize: "15px",
-                opacity: 0.8,
+                fontSize: "14px",
+                opacity: 0.85,
                 borderTop: "1px solid rgba(148,163,184,0.4)",
                 paddingTop: "10px",
                 marginTop: "8px",
               }}
             >
-              This demo does not store live data. In production, each decision
-              would be logged in the QueCab AdbS Control Center.
+              In production, multiple failed verification attempts for the
+              same load quietly alert the broker / shipper for follow-up.
             </div>
+            {failCount >= 3 && (
+              <div
+                style={{
+                  marginTop: "8px",
+                  fontSize: "13px",
+                  color: "#fca5a5",
+                }}
+              >
+                Demo note: you&apos;ve reached 3 CAUTION results for this
+                demo link. In the live system, this would have triggered an
+                alert to the broker / shipper.
+              </div>
+            )}
           </div>
         </div>
       </div>
