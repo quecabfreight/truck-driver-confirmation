@@ -35,7 +35,7 @@ export default function HowItWorks() {
             justifyContent: "center",
             alignItems: "center",
             pointerEvents: "none",
-            opacity: 0.20,
+            opacity: 0.2,
           }}
         >
           <img
@@ -49,7 +49,7 @@ export default function HowItWorks() {
           />
         </div>
 
-        {/* TEXT OVERLAY IN FRONT OF LOGO */}
+        {/* TEXT OVERLAY */}
         <div
           style={{
             position: "relative",
@@ -72,6 +72,7 @@ export default function HowItWorks() {
           >
             How QueCab AdbS Works
           </h1>
+
           <p
             style={{
               fontSize: "20px",
@@ -81,7 +82,7 @@ export default function HowItWorks() {
               opacity: 0.9,
             }}
           >
-            1 Link. 3 Checks. Instant Verification.
+            1 LINK. 3 CHECKS. INSTANT VERIFICATION.
           </p>
 
           <div
@@ -100,8 +101,8 @@ export default function HowItWorks() {
                 margin: 0,
               }}
             >
-              <li>What&apos;s the USDOT# on the truck?</li>
-              <li>What&apos;s the license plate number?</li>
+              <li>What is the USDOT number on the truck?</li>
+              <li>What is the license plate number?</li>
               <li>Did the driver answer their registered phone?</li>
             </ul>
           </div>
@@ -115,6 +116,7 @@ export default function HowItWorks() {
             <span style={{ color: "#bbf7d0", fontWeight: 600 }}>✓ YES</span> ={" "}
             Cleared to Load
           </div>
+
           <div
             style={{
               fontSize: "18px",
@@ -131,9 +133,8 @@ export default function HowItWorks() {
               opacity: 0.8,
             }}
           >
-            No apps. No downloads. The AdbS Truck-Driver Verification Link
-            brings the broker / shipper, driver, and dock onto the same screen
-            in seconds.
+            The AdbS Truck-Driver Verification Link brings the broker or shipper,
+            driver, and dock onto the same screen in seconds.
           </p>
         </div>
       </div>
