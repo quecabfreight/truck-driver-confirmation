@@ -16,7 +16,7 @@ export default function VerifyDriver() {
 
   const DEMO_PIN = "1234";
 
-  // Pull the expected DOT + plate for this token from localStorage (demo only)
+  // Load expected USDOT + plate for this token (demo only)
   useEffect(() => {
     try {
       if (typeof window === "undefined") return;
@@ -25,7 +25,7 @@ export default function VerifyDriver() {
       const parsed = JSON.parse(raw);
       setExpectedUsdot((parsed.usdot || "").toUpperCase());
       setExpectedPlate((parsed.plate || "").toUpperCase());
-    } catch (err) {
+    } catch {
       // ignore demo errors
     }
   }, [token]);
@@ -50,13 +50,12 @@ export default function VerifyDriver() {
     normalizedUsdot === expectedUsdot &&
     normalizedPlate === expectedPlate;
 
-  // STATUS BOX
+  const canDecide =
+    pinVerified && dotAndPlateEntered && expectedUsdot && expectedPlate && phoneResult;
+
   let statusTitle = "";
   let statusDetail = "";
   let statusColor = "#1e293b"; // neutral slate
-
-  const canDecide =
-    pinVerified && dotAndPlateEntered && expectedUsdot && expectedPlate && phoneResult;
 
   if (canDecide) {
     if (systemMatch && phoneResult === "YES") {
@@ -91,7 +90,7 @@ export default function VerifyDriver() {
           width: "100%",
         }}
       >
-        {/* LEFT COLUMN – PIN + VERIFICATION FORM */}
+        {/* LEFT COLUMN */}
         <div style={{ flex: 2 }}>
           <h1
             style={{
@@ -120,7 +119,7 @@ export default function VerifyDriver() {
             Demo token: <strong>{token}</strong>
           </p>
 
-          {/* DOCK PIN GATE */}
+          {/* PIN GATE */}
           {!pinVerified && (
             <div
               style={{
@@ -222,7 +221,7 @@ export default function VerifyDriver() {
                   <input
                     type="text"
                     value={usdot}
-                    onChange={(e) => setUsdot(e.target.value)}
+                    onChange={(e) => setUsdot(e.target.value.toUpperCase())}
                     style={{
                       width: "100%",
                       padding: "10px 12px",
@@ -247,7 +246,7 @@ export default function VerifyDriver() {
                   <input
                     type="text"
                     value={plate}
-                    onChange={(e) => setPlate(e.target.value)}
+                    onChange={(e) => setPlate(e.target.value.toUpperCase())}
                     style={{
                       width: "100%",
                       padding: "10px 12px",
@@ -261,7 +260,7 @@ export default function VerifyDriver() {
                 </div>
               </div>
 
-              {/* SYSTEM MATCH RESULT – not editable by dock staff */}
+              {/* System match display */}
               <div
                 style={{
                   marginTop: "8px",
@@ -283,7 +282,11 @@ export default function VerifyDriver() {
                     fontSize: "20px",
                     fontWeight: 700,
                     marginBottom: "4px",
-                    color: systemMatch ? "#bbf7d0" : "#fecaca",
+                    color: dotAndPlateEntered
+                      ? systemMatch
+                        ? "#bbf7d0"
+                        : "#fecaca"
+                      : "#e5e7eb",
                   }}
                 >
                   {dotAndPlateEntered
@@ -304,7 +307,7 @@ export default function VerifyDriver() {
                 </div>
               </div>
 
-              {/* Question 2 – phone call result */}
+              {/* Phone check – Call button then Y/N */}
               <div style={{ marginBottom: "24px" }}>
                 <p
                   style={{
@@ -323,6 +326,26 @@ export default function VerifyDriver() {
                     fontSize: "18px",
                   }}
                 >
+                  <button
+                    type="button"
+                    onClick={() =>
+                      alert(
+                        "Demo only: in production this would call the registered driver phone."
+                      )
+                    }
+                    style={{
+                      fontSize: "16px",
+                      padding: "8px 14px",
+                      borderRadius: "999px",
+                      border: "1px solid #38bdf8",
+                      background: "transparent",
+                      color: "#e5e7eb",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Call Driver (Demo)
+                  </button>
+
                   <label>
                     <input
                       type="radio"
@@ -330,7 +353,7 @@ export default function VerifyDriver() {
                       value="YES"
                       checked={phoneResult === "YES"}
                       onChange={(e) => setPhoneResult(e.target.value)}
-                      style={{ marginRight: "6px" }}
+                      style={{ marginRight: "6px", marginLeft: "6px" }}
                     />
                     YES
                   </label>
@@ -345,31 +368,10 @@ export default function VerifyDriver() {
                     />
                     NO
                   </label>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      alert(
-                        "Demo only: in production this would call the registered driver phone."
-                      )
-                    }
-                    style={{
-                      marginLeft: "24px",
-                      fontSize: "16px",
-                      padding: "8px 14px",
-                      borderRadius: "999px",
-                      border: "1px solid #38bdf8",
-                      background: "transparent",
-                      color: "#e5e7eb",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Call Driver (Demo)
-                  </button>
                 </div>
               </div>
 
-              {/* STATUS BOX */}
+              {/* Status box */}
               <div
                 style={{
                   borderRadius: "14px",
@@ -415,61 +417,62 @@ export default function VerifyDriver() {
             </div>
           )}
 
-          {/* RIGHT COLUMN – DOCK CHECKLIST */}
-          <div style={{ flex: 1 }}>
-            <div
+          {/* RIGHT COLUMN – Checklist */}
+        </div>
+
+        <div style={{ flex: 1 }}>
+          <div
+            style={{
+              background: "#020617",
+              borderRadius: "16px",
+              padding: "24px",
+              border: "1px solid rgba(148, 163, 184, 0.6)",
+            }}
+          >
+            <h2
               style={{
-                background: "#020617",
-                borderRadius: "16px",
-                padding: "24px",
-                border: "1px solid rgba(148, 163, 184, 0.6)",
+                fontSize: "22px",
+                marginBottom: "12px",
               }}
             >
-              <h2
-                style={{
-                  fontSize: "22px",
-                  marginBottom: "12px",
-                }}
-              >
-                Dock Checklist
-              </h2>
-              <ol
-                style={{
-                  fontSize: "16px",
-                  lineHeight: 1.6,
-                  paddingLeft: "20px",
-                  marginBottom: "16px",
-                }}
-              >
-                <li>Driver remains in cab or waiting area.</li>
-                <li>
-                  Confirm this is the correct verify screen for the load you are
-                  checking in.
-                </li>
-                <li>
-                  Enter the USDOT# and license plate exactly as on the truck.
-                </li>
-                <li>
-                  Use the “Call Driver” button to reach the registered phone. If
-                  anything feels off, mark NO.
-                </li>
-                <li>
-                  Only when system match is YES and the phone check is YES
-                  should this Truck-Driver be CLEAR TO LOAD.
-                </li>
-              </ol>
-              <div
-                style={{
-                  fontSize: "15px",
-                  opacity: 0.8,
-                  borderTop: "1px solid rgba(148,163,184,0.4)",
-                  paddingTop: "10px",
-                  marginTop: "8px",
-                }}
-              >
-                This demo does not store live data. In production, each decision
-                would be logged in the QueCab AdbS Control Center.
-              </div>
+              Dock Checklist
+            </h2>
+            <ol
+              style={{
+                fontSize: "16px",
+                lineHeight: 1.6,
+                paddingLeft: "20px",
+                marginBottom: "16px",
+              }}
+            >
+              <li>Driver remains in cab or waiting area.</li>
+              <li>
+                Confirm this is the correct verify screen for the load you are
+                checking in.
+              </li>
+              <li>
+                Enter the USDOT# and license plate exactly as on the truck.
+              </li>
+              <li>
+                Use the “Call Driver” button to reach the registered phone. If
+                anything feels off, mark NO.
+              </li>
+              <li>
+                Only when system match is YES and the phone check is YES should
+                this Truck-Driver be CLEAR TO LOAD.
+              </li>
+            </ol>
+            <div
+              style={{
+                fontSize: "15px",
+                opacity: 0.8,
+                borderTop: "1px solid rgba(148,163,184,0.4)",
+                paddingTop: "10px",
+                marginTop: "8px",
+              }}
+            >
+              This demo does not store live data. In production, each decision
+              would be logged in the QueCab AdbS Control Center.
             </div>
           </div>
         </div>
