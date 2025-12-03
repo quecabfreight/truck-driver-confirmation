@@ -1,92 +1,140 @@
+import React from "react";
+
 export default function HowItWorks() {
   return (
     <div
       style={{
         width: "100%",
         minHeight: "calc(100vh - 120px)",
-        padding: "40px 0",
-        background: "linear-gradient(180deg, #050814 0%, #0b0f19 40%, #131e33 100%)",
         display: "flex",
         justifyContent: "center",
+        alignItems: "center",
+        padding: "40px 0",
+        background:
+          "radial-gradient(circle at top, #1f2937 0%, #020617 45%, #020617 100%)",
+        color: "white",
       }}
     >
       <div
         style={{
-          width: "95%",
-          maxWidth: "1200px",
-          margin: "0 auto",
+          position: "relative",
+          width: "100%",
+          maxWidth: "960px",
+          padding: "32px 24px",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
         }}
       >
-        {/* HERO: TRANSPARENT LOGO + CENTERED TEXT */}
+        {/* LOGO AS BACKDROP */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            pointerEvents: "none",
+            opacity: 0.20,
+          }}
+        >
+          <img
+            src="/qc-logo.png"
+            alt="QueCab AdbS"
+            style={{
+              width: "420px",
+              height: "auto",
+              filter: "drop-shadow(0 24px 40px rgba(0,0,0,0.9))",
+            }}
+          />
+        </div>
+
+        {/* TEXT OVERLAY IN FRONT OF LOGO */}
         <div
           style={{
             position: "relative",
-            height: "520px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            backgroundImage: "url('/qc-logo.png')", // <-- use the new transparent logo
-            backgroundRepeat: "no-repeat",
-            backgroundPosition: "center",
-            backgroundSize: "contain", // show whole logo, no cropping
+            zIndex: 1,
+            maxWidth: "720px",
+            textAlign: "center",
+            padding: "32px 28px",
+            borderRadius: "18px",
+            border: "1px solid rgba(148,163,184,0.7)",
+            background:
+              "linear-gradient(135deg, rgba(15,23,42,0.95), rgba(15,23,42,0.88))",
+            boxShadow: "0 26px 60px rgba(0,0,0,0.85)",
           }}
         >
-          {/* TEXT OVERLAY */}
-          <div
+          <h1
             style={{
-              textAlign: "center",
-              maxWidth: "900px",
-              padding: "12px 20px",
-              color: "#f9fafb",
-              textShadow: "0 4px 10px rgba(0, 0, 0, 0.95)", // makes it readable over chrome
+              fontSize: "32px",
+              marginBottom: "8px",
             }}
           >
-            <h1
-              style={{
-                fontSize: "48px",
-                fontWeight: 700,
-                marginBottom: "12px",
-              }}
-            >
-              How QueCab AdbS Works
-            </h1>
+            How QueCab AdbS Works
+          </h1>
+          <p
+            style={{
+              fontSize: "20px",
+              marginBottom: "18px",
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+              opacity: 0.9,
+            }}
+          >
+            1 Link. 3 Checks. Instant Verification.
+          </p>
 
-            <h2
-              style={{
-                fontSize: "26px",
-                fontWeight: 600,
-                marginBottom: "24px",
-              }}
-            >
-              1 LINK. 3 CHECKS. INSTANT VERIFICATION.
-            </h2>
-
+          <div
+            style={{
+              fontSize: "18px",
+              lineHeight: 1.6,
+              textAlign: "left",
+              margin: "0 auto 18px",
+              maxWidth: "560px",
+            }}
+          >
             <ul
               style={{
-                listStyle: "none",
-                padding: 0,
+                listStyleType: "disc",
+                paddingLeft: "22px",
                 margin: 0,
-                fontSize: "24px",
-                lineHeight: 1.7,
               }}
             >
-              <li>• What’s the USDOT# on the truck?</li>
-              <li>• What’s the license plate number?</li>
-              <li>• Did the driver answer their registered phone?</li>
+              <li>What&apos;s the USDOT# on the truck?</li>
+              <li>What&apos;s the license plate number?</li>
+              <li>Did the driver answer their registered phone?</li>
             </ul>
-
-            <p
-              style={{
-                marginTop: "24px",
-                fontSize: "24px",
-                fontWeight: 600,
-              }}
-            >
-              ✓ YES = Cleared to Load
-              <br />
-              ✖ NO = Caution Alert (Hold This Load)
-            </p>
           </div>
+
+          <div
+            style={{
+              fontSize: "18px",
+              marginBottom: "8px",
+            }}
+          >
+            <span style={{ color: "#bbf7d0", fontWeight: 600 }}>✓ YES</span> ={" "}
+            Cleared to Load
+          </div>
+          <div
+            style={{
+              fontSize: "18px",
+            }}
+          >
+            <span style={{ color: "#fecaca", fontWeight: 600 }}>✖ NO</span> ={" "}
+            Caution Alert (Hold This Load)
+          </div>
+
+          <p
+            style={{
+              fontSize: "15px",
+              marginTop: "20px",
+              opacity: 0.8,
+            }}
+          >
+            No apps. No downloads. The AdbS Truck-Driver Verification Link
+            brings the broker / shipper, driver, and dock onto the same screen
+            in seconds.
+          </p>
         </div>
       </div>
     </div>
