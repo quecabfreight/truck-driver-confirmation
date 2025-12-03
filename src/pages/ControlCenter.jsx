@@ -85,7 +85,7 @@ export default function ControlCenter() {
         createdAt: now,
       };
 
-      // 🔐 Demo-only: stash expected DOT + plate locally for this token
+      // Demo-only: stash expected DOT + plate locally for this AdbS ID
       try {
         if (typeof window !== "undefined" && window.localStorage) {
           window.localStorage.setItem(
@@ -98,7 +98,7 @@ export default function ControlCenter() {
             })
           );
         }
-      } catch (err) {
+      } catch {
         // ignore demo-storage errors
       }
 
@@ -758,7 +758,7 @@ export default function ControlCenter() {
                       {check.loadRef} – {check.carrierName}
                     </div>
                     <div style={{ opacity: 0.9 }}>
-                      Token: {check.token}
+                      AdbS ID: {check.token}
                       <br />
                       Status: {check.status}
                     </div>
