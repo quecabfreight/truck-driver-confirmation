@@ -40,7 +40,7 @@ export default function ControlCenter() {
   const origin =
     typeof window !== "undefined" ? window.location.origin : "https://quecabads.com";
 
-  const handleIssueLink = async (e) => {
+  const handleIssueLink = (e) => {
     e.preventDefault();
 
     if (!loadRef.trim() || !carrierName.trim() || !usdot.trim() || !plate.trim()) {
@@ -61,11 +61,11 @@ export default function ControlCenter() {
     setIsIssuing(true);
     setIssueMessage("");
 
-    // mimic a short network delay
     setTimeout(() => {
       const token = randomToken();
+      const normalizedUsdot = usdot.trim().toUpperCase();
+      const normalizedPlate = plate.trim().toUpperCase();
       const url = `${origin}/#/verify/${token}`;
-
       const now = new Date().toLocaleString();
 
       const newLink = {
@@ -73,8 +73,8 @@ export default function ControlCenter() {
         url,
         loadRef: loadRef.trim(),
         carrierName: carrierName.trim(),
-        usdot: usdot.trim().toUpperCase(),
-        plate: plate.trim().toUpperCase(),
+        usdot: normalizedUsdot,
+        plate: normalizedPlate,
         driverName: driverName.trim(),
         driverPhone: driverPhone.trim(),
         sendEmail,
@@ -85,22 +85,40 @@ export default function ControlCenter() {
         createdAt: now,
       };
 
+      // 🔐 Demo-only: stash expected DOT + plate locally for this token
+      try {
+        if (typeof window !== "undefined" && window.localStorage) {
+          window.localStorage.setItem(
+            `demo_verify_${token}`,
+            JSON.stringify({
+              loadRef: newLink.loadRef,
+              carrierName: newLink.carrierName,
+              usdot: newLink.usdot,
+              plate: newLink.plate,
+            })
+          );
+        }
+      } catch (err) {
+        // ignore demo-storage errors
+      }
+
       setActiveLinks((prev) => [newLink, ...prev].slice(0, 8));
-      setRecentChecks((prev) => [
-        {
-          token,
-          loadRef: newLink.loadRef,
-          carrierName: newLink.carrierName,
-          createdAt: now,
-          status: "Awaiting dock verification",
-        },
-        ...prev,
-      ].slice(0, 6));
+      setRecentChecks((prev) =>
+        [
+          {
+            token,
+            loadRef: newLink.loadRef,
+            carrierName: newLink.carrierName,
+            createdAt: now,
+            status: "Awaiting dock verification",
+          },
+          ...prev,
+        ].slice(0, 6)
+      );
 
       setIsIssuing(false);
       setIssueMessage("Demo verification link issued – copy the URL from the Active Links column.");
 
-      // keep the core values but clear some optional fields
       setDriverName("");
       setDriverPhone("");
     }, 500);
@@ -126,7 +144,7 @@ export default function ControlCenter() {
           padding: "0 24px",
         }}
       >
-        {/* TOP HEADER + LOGO ROW */}
+        {/* HEADER */}
         <div
           style={{
             display: "flex",
@@ -176,7 +194,7 @@ export default function ControlCenter() {
           </div>
         </div>
 
-        {/* MAIN 3-COLUMN LAYOUT */}
+        {/* GRID */}
         <div
           style={{
             display: "grid",
