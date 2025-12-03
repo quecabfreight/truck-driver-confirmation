@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { HashRouter as Router, Routes, Route } from "react-router-dom";
 
 import Layout from "./components/Layout.jsx";
 
@@ -11,29 +11,31 @@ import HowItWorks from "./pages/HowItWorks.jsx";
 
 export default function App() {
   return (
-    <Layout>
-      <Routes>
-        {/* HOME */}
-        <Route path="/" element={<Home />} />
+    <Router>
+      <Layout>
+        <Routes>
+          {/* HOME */}
+          <Route path="/" element={<Home />} />
 
-        {/* HOW IT WORKS */}
-        <Route path="/how-it-works" element={<HowItWorks />} />
+          {/* HOW IT WORKS */}
+          <Route path="/how-it-works" element={<HowItWorks />} />
 
-        {/* REQUEST ACCESS */}
-        <Route path="/join" element={<Join />} />
+          {/* REQUEST ACCESS */}
+          <Route path="/join" element={<Join />} />
 
-        {/* LOGIN */}
-        <Route path="/login" element={<Login />} />
+          {/* LOGIN */}
+          <Route path="/login" element={<Login />} />
 
-        {/* CONTROL CENTER */}
-        <Route path="/control-center" element={<ControlCenter />} />
+          {/* AdbS CONTROL CENTER */}
+          <Route path="/control-center" element={<ControlCenter />} />
 
-        {/* TRUCK-DRIVER VERIFICATION */}
-        <Route path="/verify/:token" element={<VerifyDriver />} />
+          {/* TRUCK-DRIVER VERIFICATION */}
+          <Route path="/verify/:token" element={<VerifyDriver />} />
 
-        {/* FALLBACK */}
-        <Route path="*" element={<Home />} />
-      </Routes>
-    </Layout>
+          {/* FALLBACK */}
+          <Route path="*" element={<Home />} />
+        </Routes>
+      </Layout>
+    </Router>
   );
 }
