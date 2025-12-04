@@ -1,3 +1,4 @@
+import React from "react";
 import { Routes, Route, Link } from "react-router-dom";
 
 // Page components
@@ -13,7 +14,8 @@ function App() {
     <div
       style={{
         minHeight: "100vh",
-        background: "linear-gradient(180deg, #050814 0%, #0b0f19 40%, #131e33 100%)",
+        background:
+          "linear-gradient(180deg, #050814 0%, #0b0f19 40%, #131e33 100%)",
         color: "white",
       }}
     >
@@ -33,7 +35,6 @@ function App() {
             alt="QueCab AdbS Logo"
             style={{ width: "54px", height: "54px", objectFit: "contain" }}
           />
-          <span style={{ fontSize: "22px", fontWeight: 700 }}>QueCab AdbS</span>
         </div>
 
         <nav
