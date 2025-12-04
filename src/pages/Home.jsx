@@ -1,34 +1,74 @@
-import React from "react";
-import { Link } from "react-router-dom";
-
 export default function Home() {
   return (
-    <div className="qc-shell qc-hero">
-      <div className="qc-hero-overlay"></div>
-      <div className="qc-inner qc-hero-content">
-        <div className="qc-hero-text">
-          <h1 className="qc-heading">
-            1 LINK.
-            <br />
-            3 CHECKS.
-            <br />
-            <span className="qc-hero-line">INSTANT VERIFICATION.</span>
-          </h1>
+    <div
+      style={{
+        width: "100%",
+        minHeight: "calc(100vh - 120px)",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        padding: "40px 0",
+        background: "linear-gradient(180deg, #050814 0%, #0b0f19 40%, #131e33 100%)",
+      }}
+    >
+      <div style={{ textAlign: "center", color: "white", maxWidth: "900px" }}>
+        <img
+          src="/qc-logo.png"
+          alt="QueCab AdbS Logo"
+          style={{
+            width: "260px",
+            marginBottom: "30px",
+            filter: "drop-shadow(0 0 14px rgba(0,0,0,0.6))",
+          }}
+        />
 
-          <p className="qc-sub">
-            Secure your load - verify before you load. Instantly confirm the
-            Truck-Driver unit (truck plus driver) against the broker or
-            shipper&apos;s record right at the dock.
-          </p>
+        <h1 style={{ fontSize: "42px", marginBottom: "25px" }}>
+          Secure Your Load With QueCab AdbS
+        </h1>
 
-          <div className="qc-hero-actions">
-            <Link to="/join" className="qc-btn-primary">
-              Request Access
-            </Link>
-            <Link to="/login" className="qc-btn-ghost">
-              Already Authorized? Log In
-            </Link>
-          </div>
+        <p
+          style={{
+            fontSize: "22px",
+            opacity: 0.9,
+            lineHeight: 1.5,
+            marginBottom: "50px",
+          }}
+        >
+          The nation’s first real-time <strong>Truck-Driver</strong> authentication system.
+          Designed for brokers, shippers, and loading-dock personnel to eliminate
+          double-brokering, identity fraud, and stolen loads — before they happen.
+        </p>
+
+        <div style={{ display: "flex", justifyContent: "center", gap: "24px" }}>
+          <a
+            href="#/join"
+            style={{
+              padding: "16px 32px",
+              background: "linear-gradient(90deg, #0ea5e9, #22d3ee)",
+              borderRadius: "12px",
+              fontSize: "20px",
+              color: "#000",
+              fontWeight: "bold",
+              textDecoration: "none",
+            }}
+          >
+            Request Access
+          </a>
+
+          <a
+            href="#/login"
+            style={{
+              padding: "16px 32px",
+              background: "linear-gradient(90deg, #4ade80, #22c55e)",
+              borderRadius: "12px",
+              fontSize: "20px",
+              color: "#000",
+              fontWeight: "bold",
+              textDecoration: "none",
+            }}
+          >
+            Log In
+          </a>
         </div>
       </div>
     </div>
