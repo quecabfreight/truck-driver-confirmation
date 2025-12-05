@@ -1,14 +1,16 @@
 import React from "react";
 import { Routes, Route, Link } from "react-router-dom";
 
+// Core pages that we know are present
 import Home from "./pages/Home";
 import HowItWorks from "./pages/HowItWorks";
 import Login from "./pages/Login";
 import Join from "./pages/Join";
-import ControlCenter from "./pages/ControlCenter";
-import Verify from "./pages/Verify";
+// We'll re-attach these once routing is confirmed working:
+// import ControlCenter from "./pages/ControlCenter";
+// import Verify from "./pages/Verify";
 
-export default function App() {
+function App() {
   return (
     <div
       style={{
@@ -40,10 +42,18 @@ export default function App() {
         </div>
 
         <nav style={{ display: "flex", gap: "26px", fontSize: "18px" }}>
-          <Link to="/" style={linkStyle}>Home</Link>
-          <Link to="/how-it-works" style={linkStyle}>How It Works</Link>
-          <Link to="/login" style={linkStyle}>Log In</Link>
-          <Link to="/join" style={linkStyle}>Request Access</Link>
+          <Link to="/" style={linkStyle}>
+            Home
+          </Link>
+          <Link to="/how-it-works" style={linkStyle}>
+            How It Works
+          </Link>
+          <Link to="/login" style={linkStyle}>
+            Log In
+          </Link>
+          <Link to="/join" style={linkStyle}>
+            Request Access
+          </Link>
         </nav>
       </header>
 
@@ -54,8 +64,9 @@ export default function App() {
           <Route path="/how-it-works" element={<HowItWorks />} />
           <Route path="/login" element={<Login />} />
           <Route path="/join" element={<Join />} />
-          <Route path="/control-center" element={<ControlCenter />} />
-          <Route path="/verify/:token" element={<Verify />} />
+          {/* We'll re-enable these after sanity check */}
+          {/* <Route path="/control-center" element={<ControlCenter />} />
+          <Route path="/verify/:token" element={<Verify />} /> */}
         </Routes>
       </main>
     </div>
@@ -66,3 +77,5 @@ const linkStyle = {
   color: "white",
   textDecoration: "none",
 };
+
+export default App;
