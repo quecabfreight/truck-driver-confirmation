@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+
+const DEMO_CODE = "DEMO123";
 
 export default function Login() {
-  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [accessCode, setAccessCode] = useState("");
   const [rememberDevice, setRememberDevice] = useState(false);
@@ -14,7 +14,13 @@ export default function Login() {
 
     const normalizedCode = String(accessCode || "").trim().toUpperCase();
 
-    if (normalizedCode === "DEMO123") {
+    if (!email.trim()) {
+      setError("Please enter a business email.");
+      return;
+    }
+
+    if (normalizedCode === DEMO_CODE) {
+      // Simple demo “remember device”
       if (rememberDevice) {
         localStorage.setItem(
           "adbsv1_demoAuth",
@@ -27,7 +33,8 @@ export default function Login() {
         localStorage.removeItem("adbsv1_demoAuth");
       }
 
-      navigate("/control-center");
+      // Hard redirect to the Control Center route
+      window.location.href = "/#/control-center";
     } else {
       setError("Demo login failed. Use access code DEMO123 with any business email.");
     }
@@ -55,7 +62,6 @@ export default function Login() {
           color: "white",
         }}
       >
-        {/* HEADING */}
         <h1
           style={{
             fontSize: "32px",
@@ -76,7 +82,6 @@ export default function Login() {
           For authorized brokers and shippers using QueCab AdbS.
         </p>
 
-        {/* ERROR BANNER */}
         {error && (
           <div
             style={{
@@ -93,7 +98,6 @@ export default function Login() {
           </div>
         )}
 
-        {/* FORM */}
         <form onSubmit={handleSubmit}>
           {/* BUSINESS EMAIL */}
           <div style={{ marginBottom: "20px" }}>
@@ -188,7 +192,6 @@ export default function Login() {
           </button>
         </form>
 
-        {/* FOOTER NOTE */}
         <div
           style={{
             marginTop: "18px",
@@ -197,7 +200,8 @@ export default function Login() {
             opacity: 0.8,
           }}
         >
-          Demo only – in production this login opens the QueCab AdbS Control Center.
+          Demo only – in production this login opens the QueCab AdbS Control
+          Center.
         </div>
       </div>
     </div>
