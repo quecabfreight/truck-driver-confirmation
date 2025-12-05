@@ -1,63 +1,35 @@
-import { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { loginDemo } from "../api/demoApi";
 
 export default function Login() {
   const navigate = useNavigate();
-
   const [email, setEmail] = useState("");
   const [accessCode, setAccessCode] = useState("");
   const [rememberDevice, setRememberDevice] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [error, setError] = useState("");
 
-  // On first load, see if we have a remembered email
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem("quecabads_demo_remember");
-      if (!raw) return;
-
-      const data = JSON.parse(raw);
-      if (data && typeof data.email === "string" && data.email.trim() !== "") {
-        setEmail(data.email.trim());
-        setRememberDevice(true);
-      }
-    } catch {
-      // If anything is corrupted, just ignore it
-      localStorage.removeItem("quecabads_demo_remember");
-    }
-  }, []);
-
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    if (loading) return;
+    setError("");
 
-    setLoading(true);
-    setErrorMessage("");
+    const normalizedCode = String(accessCode || "").trim().toUpperCase();
 
-    try {
-      const result = await loginDemo({ email, accessCode });
-
-      if (result.ok) {
-        if (rememberDevice) {
-          localStorage.setItem(
-            "quecabads_demo_remember",
-            JSON.stringify({ email: email.trim() })
-          );
-        } else {
-          localStorage.removeItem("quecabads_demo_remember");
-        }
-
-        // Success – later this will be real Control Center auth
-        navigate("/control-center");
+    if (normalizedCode === "DEMO123") {
+      if (rememberDevice) {
+        localStorage.setItem(
+          "adbsv1_demoAuth",
+          JSON.stringify({
+            email,
+            ts: Date.now(),
+          })
+        );
       } else {
-        setErrorMessage(result.message || "Demo login failed.");
+        localStorage.removeItem("adbsv1_demoAuth");
       }
-    } catch (err) {
-      console.error(err);
-      setErrorMessage("Unexpected error during demo login.");
-    } finally {
-      setLoading(false);
+
+      navigate("/control-center");
+    } else {
+      setError("Demo login failed. Use access code DEMO123 with any business email.");
     }
   };
 
@@ -70,7 +42,6 @@ export default function Login() {
         justifyContent: "center",
         alignItems: "center",
         padding: "40px 0",
-        background: "linear-gradient(180deg, #050814 0%, #0b0f19 40%, #131e33 100%)",
       }}
     >
       <div
@@ -84,25 +55,6 @@ export default function Login() {
           color: "white",
         }}
       >
-        {/* LOGO */}
-        <div
-          style={{
-            width: "100%",
-            display: "flex",
-            justifyContent: "center",
-            marginBottom: "26px",
-          }}
-        >
-          <img
-            src="/qc-logo.png"
-            alt="QueCab AdbS Logo"
-            style={{
-              width: "260px",
-              height: "auto",
-            }}
-          />
-        </div>
-
         {/* HEADING */}
         <h1
           style={{
@@ -123,6 +75,23 @@ export default function Login() {
         >
           For authorized brokers and shippers using QueCab AdbS.
         </p>
+
+        {/* ERROR BANNER */}
+        {error && (
+          <div
+            style={{
+              background: "rgba(248,113,113,0.08)",
+              border: "1px solid rgba(248,113,113,0.7)",
+              color: "#fecaca",
+              padding: "10px 14px",
+              borderRadius: "10px",
+              marginBottom: "18px",
+              fontSize: "14px",
+            }}
+          >
+            {error}
+          </div>
+        )}
 
         {/* FORM */}
         <form onSubmit={handleSubmit}>
@@ -203,58 +172,32 @@ export default function Login() {
           {/* BUTTON */}
           <button
             type="submit"
-            disabled={loading}
             style={{
               width: "100%",
-              padding: "12px",
-              fontSize: "20px",
-              borderRadius: "12px",
+              padding: "14px",
+              fontSize: "18px",
+              fontWeight: 600,
+              borderRadius: "999px",
               border: "none",
-              background: loading
-                ? "linear-gradient(135deg, #6b7280, #9ca3af)"
-                : "linear-gradient(135deg, #0ea5e9, #22c55e, #0ea5e9)",
-              color: "#0b1120",
-              fontWeight: 700,
-              cursor: loading ? "default" : "pointer",
+              cursor: "pointer",
+              background:
+                "linear-gradient(90deg, #22c55e 0%, #0ea5e9 50%, #22c55e 100%)",
             }}
           >
-            {loading ? "Checking..." : "Log In (Demo – use DEMO123)"}
+            Log In (Demo – use DEMO123)
           </button>
         </form>
 
-        {/* ERROR BAR (if any) */}
-        {errorMessage && (
-          <div
-            style={{
-              marginTop: "16px",
-              fontSize: "15px",
-              padding: "10px 14px",
-              borderRadius: "10px",
-              background: "rgba(220, 38, 38, 0.16)",
-              border: "1px solid rgba(248, 113, 113, 0.9)",
-              color: "#fecaca",
-              textAlign: "center",
-            }}
-          >
-            {errorMessage}
-          </div>
-        )}
-
-        {/* DEMO NOTICE BAR */}
+        {/* FOOTER NOTE */}
         <div
           style={{
-            marginTop: "16px",
-            fontSize: "16px",
-            padding: "10px 14px",
-            borderRadius: "10px",
-            background: "rgba(22, 163, 74, 0.2)",
-            border: "1px solid rgba(74, 222, 128, 0.8)",
-            color: "#bbf7d0",
+            marginTop: "18px",
+            fontSize: "13px",
             textAlign: "center",
+            opacity: 0.8,
           }}
         >
-          Demo only – in production this login opens the QueCab AdbS Control
-          Center.
+          Demo only – in production this login opens the QueCab AdbS Control Center.
         </div>
       </div>
     </div>
