@@ -1,12 +1,12 @@
 import React from "react";
 import { HashRouter, Routes, Route, Link } from "react-router-dom";
 
-import Home from "./pages/Home";
-import HowItWorks from "./pages/HowItWorks";
-import Login from "./pages/Login";
-import Join from "./pages/Join";
-import ControlCenter from "./pages/ControlCenter";
-import Verify from "./pages/Verify";
+// IMPORTANT: only import files we know exist
+import Home from "./pages/Home.jsx";
+import Join from "./pages/Join.jsx";
+import Login from "./pages/Login.jsx";
+import ControlCenter from "./pages/ControlCenter.jsx";
+import VerifyDriver from "./pages/VerifyDriver.jsx";
 
 export default function App() {
   return (
@@ -59,12 +59,26 @@ export default function App() {
         {/* PAGE CONTENT */}
         <main>
           <Routes>
+            {/* HOME */}
             <Route path="/" element={<Home />} />
-            <Route path="/how-it-works" element={<HowItWorks />} />
+
+            {/* HOW IT WORKS – for now, reuse Home */}
+            <Route path="/how-it-works" element={<Home />} />
+
+            {/* LOGIN */}
             <Route path="/login" element={<Login />} />
+
+            {/* REQUEST ACCESS */}
             <Route path="/join" element={<Join />} />
+
+            {/* CONTROL CENTER */}
             <Route path="/control-center" element={<ControlCenter />} />
-            <Route path="/verify/:token" element={<Verify />} />
+
+            {/* TRUCK-DRIVER VERIFICATION */}
+            <Route path="/verify/:token" element={<VerifyDriver />} />
+
+            {/* FALLBACK */}
+            <Route path="*" element={<Home />} />
           </Routes>
         </main>
       </div>
