@@ -8,8 +8,7 @@ export default function Login() {
   const [rememberDevice, setRememberDevice] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleLoginClick = () => {
     setError("");
 
     const normalizedCode = String(accessCode || "").trim().toUpperCase();
@@ -20,7 +19,6 @@ export default function Login() {
     }
 
     if (normalizedCode === DEMO_CODE) {
-      // Simple demo “remember device”
       if (rememberDevice) {
         localStorage.setItem(
           "adbsv1_demoAuth",
@@ -33,10 +31,12 @@ export default function Login() {
         localStorage.removeItem("adbsv1_demoAuth");
       }
 
-      // Hard redirect to the Control Center route
+      // BRUTE FORCE: hard redirect to Control Center
       window.location.href = "/#/control-center";
     } else {
-      setError("Demo login failed. Use access code DEMO123 with any business email.");
+      setError(
+        "Demo login failed. Use access code DEMO123 with any business email."
+      );
     }
   };
 
@@ -62,6 +62,18 @@ export default function Login() {
           color: "white",
         }}
       >
+        {/* DEBUG LABEL SO WE KNOW THIS FILE IS LIVE */}
+        <div
+          style={{
+            fontSize: "14px",
+            marginBottom: "8px",
+            textAlign: "center",
+            opacity: 0.7,
+          }}
+        >
+          LOGIN DEMO V3
+        </div>
+
         <h1
           style={{
             fontSize: "32px",
@@ -98,7 +110,8 @@ export default function Login() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit}>
+        {/* NO FORM SUBMIT – JUST A BUTTON CLICK */}
+        <div>
           {/* BUSINESS EMAIL */}
           <div style={{ marginBottom: "20px" }}>
             <label
@@ -112,7 +125,6 @@ export default function Login() {
             </label>
             <input
               type="email"
-              required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               style={{
@@ -140,7 +152,6 @@ export default function Login() {
             </label>
             <input
               type="text"
-              required
               value={accessCode}
               onChange={(e) => setAccessCode(e.target.value)}
               style={{
@@ -175,7 +186,8 @@ export default function Login() {
 
           {/* BUTTON */}
           <button
-            type="submit"
+            type="button"
+            onClick={handleLoginClick}
             style={{
               width: "100%",
               padding: "14px",
@@ -190,7 +202,7 @@ export default function Login() {
           >
             Log In (Demo – use DEMO123)
           </button>
-        </form>
+        </div>
 
         <div
           style={{
