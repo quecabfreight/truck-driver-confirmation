@@ -1,7 +1,7 @@
 import React from "react";
 import { HashRouter, Routes, Route, Link } from "react-router-dom";
 
-// IMPORTANT: only import files we know exist
+// IMPORTANT: only import files we actually have
 import Home from "./pages/Home.jsx";
 import Join from "./pages/Join.jsx";
 import Login from "./pages/Login.jsx";
