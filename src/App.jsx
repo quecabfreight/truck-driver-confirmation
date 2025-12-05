@@ -1,16 +1,14 @@
 import React from "react";
 import { Routes, Route, Link } from "react-router-dom";
 
-// Core pages that we know are present
 import Home from "./pages/Home";
 import HowItWorks from "./pages/HowItWorks";
 import Login from "./pages/Login";
 import Join from "./pages/Join";
-// We'll re-attach these once routing is confirmed working:
-// import ControlCenter from "./pages/ControlCenter";
-// import Verify from "./pages/Verify";
+import ControlCenter from "./pages/ControlCenter";
+import Verify from "./pages/Verify";
 
-function App() {
+export default function App() {
   return (
     <div
       style={{
@@ -34,11 +32,9 @@ function App() {
           <img
             src="/qc-logo.png"
             alt="QueCab AdbS Logo"
-            style={{ width: "58px", height: "58px" }}
+            style={{ width: "58px", height: "58px", objectFit: "contain" }}
           />
-          <span style={{ fontSize: "24px", fontWeight: 700 }}>
-            QueCab AdbS
-          </span>
+          <span style={{ fontSize: "24px", fontWeight: 700 }}>QueCab AdbS</span>
         </div>
 
         <nav style={{ display: "flex", gap: "26px", fontSize: "18px" }}>
@@ -64,9 +60,8 @@ function App() {
           <Route path="/how-it-works" element={<HowItWorks />} />
           <Route path="/login" element={<Login />} />
           <Route path="/join" element={<Join />} />
-          {/* We'll re-enable these after sanity check */}
-          {/* <Route path="/control-center" element={<ControlCenter />} />
-          <Route path="/verify/:token" element={<Verify />} /> */}
+          <Route path="/control-center" element={<ControlCenter />} />
+          <Route path="/verify/:token" element={<Verify />} />
         </Routes>
       </main>
     </div>
@@ -77,5 +72,3 @@ const linkStyle = {
   color: "white",
   textDecoration: "none",
 };
-
-export default App;
