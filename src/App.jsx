@@ -1,7 +1,6 @@
 import React from "react";
-import { HashRouter, Routes, Route, Link } from "react-router-dom";
+import { HashRouter as Router, Routes, Route, Link } from "react-router-dom";
 
-// IMPORTANT: only import files we actually have
 import Home from "./pages/Home.jsx";
 import Join from "./pages/Join.jsx";
 import Login from "./pages/Login.jsx";
@@ -10,7 +9,7 @@ import VerifyDriver from "./pages/VerifyDriver.jsx";
 
 export default function App() {
   return (
-    <HashRouter>
+    <Router>
       <div
         style={{
           minHeight: "100vh",
@@ -44,6 +43,7 @@ export default function App() {
             <Link to="/" style={linkStyle}>
               Home
             </Link>
+            {/* HOW IT WORKS reuses Home for now */}
             <Link to="/how-it-works" style={linkStyle}>
               How It Works
             </Link>
@@ -62,7 +62,7 @@ export default function App() {
             {/* HOME */}
             <Route path="/" element={<Home />} />
 
-            {/* HOW IT WORKS – for now, reuse Home */}
+            {/* HOW IT WORKS – temporarily same as Home */}
             <Route path="/how-it-works" element={<Home />} />
 
             {/* LOGIN */}
@@ -82,7 +82,7 @@ export default function App() {
           </Routes>
         </main>
       </div>
-    </HashRouter>
+    </Router>
   );
 }
 
