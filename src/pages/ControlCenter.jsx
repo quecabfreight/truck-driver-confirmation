@@ -2,6 +2,15 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 const STORAGE_KEY_PREFIX = "adbsv1_token_";
+const ATTEMPT_PREFIX = "adbsv1_attempts_";
+
+// Auto-format phone as 123-456-7890
+function formatPhone(value) {
+  const digits = String(value || "").replace(/\D/g, "").slice(0, 10);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+  return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+}
 
 function generateToken() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -14,7 +23,6 @@ function generateToken() {
 
 export default function ControlCenter() {
   const navigate = useNavigate();
-
   const [loadRef, setLoadRef] = useState("12345");
   const [carrierName, setCarrierName] = useState("ABC Trucking");
   const [usdDot, setUsdDot] = useState("ABC12345");
@@ -31,7 +39,6 @@ export default function ControlCenter() {
   const [activeLinks, setActiveLinks] = useState([]);
   const [recentChecks] = useState([]);
 
-  // simple demo "auth" gate
   useEffect(() => {
     const raw = localStorage.getItem("adbsv1_demoAuth");
     if (!raw) {
@@ -67,8 +74,8 @@ export default function ControlCenter() {
       adbSId: token,
       loadRef,
       carrierName,
-      usdDotOnRecord: usdDot.toUpperCase(),
-      plateOnRecord: plate.toUpperCase(),
+      usdDotOnRecord: usdDot,
+      plateOnRecord: plate,
       driverName,
       driverPhone,
       sendEmail,
@@ -80,13 +87,13 @@ export default function ControlCenter() {
       `${STORAGE_KEY_PREFIX}${token}`,
       JSON.stringify(payload)
     );
+    localStorage.setItem(`${ATTEMPT_PREFIX}${token}`, "0");
 
     setIssuedToken(token);
     setIssuedUrl(verifyUrl);
     setStatusMessage(
       "Demo only – this link would be sent to the driver and dock in production."
     );
-
     setActiveLinks((prev) => [payload, ...prev].slice(0, 5));
   };
 
@@ -96,6 +103,7 @@ export default function ControlCenter() {
         padding: "32px 40px 48px",
         display: "flex",
         gap: "24px",
+        color: "white",
       }}
     >
       {/* LEFT: ISSUE LINK */}
@@ -109,14 +117,28 @@ export default function ControlCenter() {
           boxShadow: "0 18px 40px rgba(0,0,0,0.7)",
         }}
       >
-        <h2
+        <div
           style={{
-            fontSize: "24px",
-            marginBottom: "4px",
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            marginBottom: "6px",
           }}
         >
-          AdbS Control Center
-        </h2>
+          <img
+            src="/qc-logo.png"
+            alt="QueCab AdbS Logo"
+            style={{ width: "40px", height: "40px", objectFit: "contain" }}
+          />
+          <h2
+            style={{
+              fontSize: "24px",
+            }}
+          >
+            AdbS Control Center
+          </h2>
+        </div>
+
         <p
           style={{
             fontSize: "14px",
@@ -136,7 +158,11 @@ export default function ControlCenter() {
             marginBottom: "18px",
           }}
         >
-          <Field label="Load / Reference #" value={loadRef} onChange={setLoadRef} />
+          <Field
+            label="Load / Reference #"
+            value={loadRef}
+            onChange={setLoadRef}
+          />
           <Field
             label="Carrier / Legal Name"
             value={carrierName}
@@ -160,7 +186,7 @@ export default function ControlCenter() {
           <Field
             label="Driver Phone #"
             value={driverPhone}
-            onChange={setDriverPhone}
+            onChange={(v) => setDriverPhone(formatPhone(v))}
           />
           <Field
             label="Send link via email"
@@ -228,7 +254,7 @@ export default function ControlCenter() {
         )}
       </section>
 
-      {/* RIGHT SIDE: ACTIVE LINKS + RECENT CHECKS */}
+      {/* RIGHT: ACTIVE LINKS + RECENT CHECKS */}
       <section
         style={{
           flex: 0.9,
