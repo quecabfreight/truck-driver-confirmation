@@ -1,76 +1,214 @@
-import React from "react";
-import { HashRouter, Routes, Route, Link } from "react-router-dom";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-import Home from "./pages/Home";
-import HowItWorks from "./pages/HowItWorks";
-import Login from "./pages/Login";
-import Join from "./pages/Join";
-import ControlCenter from "./pages/ControlCenter";
-import Verify from "./pages/Verify";
+export default function Login() {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [accessCode, setAccessCode] = useState("");
+  const [rememberDevice, setRememberDevice] = useState(false);
+  const [error, setError] = useState("");
 
-export default function App() {
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setError("");
+
+    const normalizedCode = String(accessCode || "").trim().toUpperCase();
+
+    if (normalizedCode === "DEMO123") {
+      if (rememberDevice) {
+        localStorage.setItem(
+          "adbsv1_demoAuth",
+          JSON.stringify({
+            email,
+            ts: Date.now(),
+          })
+        );
+      } else {
+        localStorage.removeItem("adbsv1_demoAuth");
+      }
+
+      navigate("/control-center");
+    } else {
+      setError(
+        "Demo login failed. Use access code DEMO123 with any business email."
+      );
+    }
+  };
+
   return (
-    <HashRouter>
+    <div
+      style={{
+        width: "100%",
+        minHeight: "calc(100vh - 120px)",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        padding: "40px 0",
+      }}
+    >
       <div
         style={{
-          minHeight: "100vh",
-          background:
-            "linear-gradient(180deg, #050814 0%, #0b0f19 40%, #131e33 100%)",
+          background: "#020617",
+          padding: "40px",
+          borderRadius: "18px",
+          width: "480px",
+          border: "1px solid rgba(148,163,184,0.6)",
+          boxShadow: "0 18px 45px rgba(0,0,0,0.65)",
           color: "white",
         }}
       >
-        <header
+        <div style={{ textAlign: "center", marginBottom: "16px" }}>
+          <img
+            src="/qc-logo.png"
+            alt="QueCab AdbS Logo"
+            style={{
+              width: "70px",
+              height: "70px",
+              objectFit: "contain",
+              marginBottom: "8px",
+            }}
+          />
+          <div style={{ fontSize: "12px", opacity: 0.6 }}>LOGIN DEMO</div>
+        </div>
+
+        <h1
           style={{
-            padding: "18px 48px",
-            borderBottom: "1px solid rgba(148,163,184,0.35)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
+            fontSize: "30px",
+            marginBottom: "8px",
+            textAlign: "center",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-            <img
-              src="/qc-logo.png"
-              alt="QueCab AdbS Logo"
-              style={{ width: "58px", height: "58px", objectFit: "contain" }}
+          Log In
+        </h1>
+        <p
+          style={{
+            fontSize: "16px",
+            marginBottom: "24px",
+            textAlign: "center",
+            opacity: 0.85,
+          }}
+        >
+          For authorized brokers and shippers using QueCab AdbS.
+        </p>
+
+        {error && (
+          <div
+            style={{
+              background: "rgba(248,113,113,0.08)",
+              border: "1px solid rgba(248,113,113,0.7)",
+              color: "#fecaca",
+              padding: "10px 14px",
+              borderRadius: "10px",
+              marginBottom: "18px",
+              fontSize: "14px",
+            }}
+          >
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: "18px" }}>
+            <label
+              style={{
+                fontSize: "18px",
+                display: "block",
+                marginBottom: "6px",
+              }}
+            >
+              Business Email
+            </label>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "12px",
+                fontSize: "18px",
+                borderRadius: "10px",
+                border: "1px solid #64748b",
+                background: "#0f172a",
+                color: "white",
+              }}
             />
-            <span style={{ fontSize: "24px", fontWeight: 700 }}>
-              QueCab AdbS
-            </span>
           </div>
 
-          <nav style={{ display: "flex", gap: "26px", fontSize: "18px" }}>
-            <Link to="/" style={linkStyle}>
-              Home
-            </Link>
-            <Link to="/how-it-works" style={linkStyle}>
-              How It Works
-            </Link>
-            <Link to="/login" style={linkStyle}>
-              Log In
-            </Link>
-            <Link to="/join" style={linkStyle}>
-              Request Access
-            </Link>
-          </nav>
-        </header>
+          <div style={{ marginBottom: "18px" }}>
+            <label
+              style={{
+                fontSize: "18px",
+                display: "block",
+                marginBottom: "6px",
+              }}
+            >
+              Access Code
+            </label>
+            <input
+              type="text"
+              required
+              value={accessCode}
+              onChange={(e) => setAccessCode(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "12px",
+                fontSize: "18px",
+                borderRadius: "10px",
+                border: "1px solid #64748b",
+                background: "#0f172a",
+                color: "white",
+              }}
+            />
+          </div>
 
-        <main>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/how-it-works" element={<HowItWorks />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/join" element={<Join />} />
-            <Route path="/control-center" element={<ControlCenter />} />
-            <Route path="/verify/:token" element={<Verify />} />
-          </Routes>
-        </main>
+          <div
+            style={{
+              marginBottom: "22px",
+              fontSize: "16px",
+            }}
+          >
+            <label>
+              <input
+                type="checkbox"
+                checked={rememberDevice}
+                onChange={(e) => setRememberDevice(e.target.checked)}
+                style={{ marginRight: "8px" }}
+              />
+              Remember this device
+            </label>
+          </div>
+
+          <button
+            type="submit"
+            style={{
+              width: "100%",
+              padding: "14px",
+              fontSize: "18px",
+              fontWeight: 600,
+              borderRadius: "999px",
+              border: "none",
+              cursor: "pointer",
+              background:
+                "linear-gradient(90deg, #22c55e 0%, #0ea5e9 50%, #22c55e 100%)",
+            }}
+          >
+            Log In (Demo – use DEMO123)
+          </button>
+        </form>
+
+        <div
+          style={{
+            marginTop: "18px",
+            fontSize: "13px",
+            textAlign: "center",
+            opacity: 0.8,
+          }}
+        >
+          Demo only – in production this login opens the QueCab AdbS Control
+          Center.
+        </div>
       </div>
-    </HashRouter>
+    </div>
   );
 }
-
-const linkStyle = {
-  color: "white",
-  textDecoration: "none",
-};
