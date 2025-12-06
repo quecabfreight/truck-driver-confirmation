@@ -1,75 +1,107 @@
+import React from "react";
+import { Link } from "react-router-dom";
+
 export default function Home() {
   return (
     <div
       style={{
-        width: "100%",
         minHeight: "calc(100vh - 120px)",
         display: "flex",
-        justifyContent: "center",
         alignItems: "center",
-        padding: "40px 0",
-        background: "linear-gradient(180deg, #050814 0%, #0b0f19 40%, #131e33 100%)",
+        justifyContent: "center",
       }}
     >
-      <div style={{ textAlign: "center", color: "white", maxWidth: "900px" }}>
+      <div
+        style={{
+          maxWidth: "780px",
+          textAlign: "center",
+          padding: "40px 32px 46px",
+          background: "#020617",
+          borderRadius: "20px",
+          border: "1px solid rgba(148,163,184,0.5)",
+          boxShadow: "0 20px 60px rgba(0,0,0,0.7)",
+        }}
+      >
         <img
           src="/qc-logo.png"
           alt="QueCab AdbS Logo"
           style={{
-            width: "260px",
-            marginBottom: "30px",
-            filter: "drop-shadow(0 0 14px rgba(0,0,0,0.6))",
+            width: "110px",
+            height: "110px",
+            objectFit: "contain",
+            marginBottom: "18px",
           }}
         />
-
-        <h1 style={{ fontSize: "42px", marginBottom: "25px" }}>
+        <h1 style={{ fontSize: "30px", marginBottom: "10px" }}>
           Secure Your Load With QueCab AdbS
         </h1>
+        <p
+          style={{
+            fontSize: "18px",
+            opacity: 0.9,
+            marginBottom: "26px",
+          }}
+        >
+          The nation&apos;s first real-time <strong>Truck-Driver</strong>{" "}
+          authentication system. Designed for brokers, shippers, and loading-dock
+          personnel to kill double-brokering and identity fraud before it
+          reaches the dock.
+        </p>
+
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            gap: "18px",
+            marginBottom: "18px",
+          }}
+        >
+          <Link to="/join">
+            <button
+              type="button"
+              style={{
+                padding: "14px 26px",
+                borderRadius: "999px",
+                border: "none",
+                cursor: "pointer",
+                fontSize: "18px",
+                fontWeight: 600,
+                background:
+                  "linear-gradient(90deg, #22c55e 0%, #0ea5e9 50%, #22c55e 100%)",
+              }}
+            >
+              Request Access
+            </button>
+          </Link>
+
+          <Link to="/login">
+            <button
+              type="button"
+              style={{
+                padding: "14px 26px",
+                borderRadius: "999px",
+                border: "1px solid #38bdf8",
+                cursor: "pointer",
+                fontSize: "18px",
+                fontWeight: 600,
+                background: "transparent",
+                color: "white",
+              }}
+            >
+              Log In
+            </button>
+          </Link>
+        </div>
 
         <p
           style={{
-            fontSize: "22px",
-            opacity: 0.9,
-            lineHeight: 1.5,
-            marginBottom: "50px",
+            fontSize: "14px",
+            opacity: 0.8,
           }}
         >
-          The nation’s first real-time <strong>Truck-Driver</strong> authentication system.
-          Designed for brokers, shippers, and loading-dock personnel to eliminate
-          double-brokering, identity fraud, and stolen loads — before they happen.
+          Demo environment only – production version connects to live QueCab
+          AdbS control lanes.
         </p>
-
-        <div style={{ display: "flex", justifyContent: "center", gap: "24px" }}>
-          <a
-            href="#/join"
-            style={{
-              padding: "16px 32px",
-              background: "linear-gradient(90deg, #0ea5e9, #22d3ee)",
-              borderRadius: "12px",
-              fontSize: "20px",
-              color: "#000",
-              fontWeight: "bold",
-              textDecoration: "none",
-            }}
-          >
-            Request Access
-          </a>
-
-          <a
-            href="#/login"
-            style={{
-              padding: "16px 32px",
-              background: "linear-gradient(90deg, #4ade80, #22c55e)",
-              borderRadius: "12px",
-              fontSize: "20px",
-              color: "#000",
-              fontWeight: "bold",
-              textDecoration: "none",
-            }}
-          >
-            Log In
-          </a>
-        </div>
       </div>
     </div>
   );
