@@ -14,6 +14,7 @@ function generateToken() {
 
 export default function ControlCenter() {
   const navigate = useNavigate();
+
   const [loadRef, setLoadRef] = useState("12345");
   const [carrierName, setCarrierName] = useState("ABC Trucking");
   const [usdDot, setUsdDot] = useState("ABC12345");
@@ -28,11 +29,9 @@ export default function ControlCenter() {
   const [statusMessage, setStatusMessage] = useState("");
 
   const [activeLinks, setActiveLinks] = useState([]);
-  const [recentChecks] = useState([
-    // demo placeholders – in production these would be real records
-  ]);
+  const [recentChecks] = useState([]);
 
-  // Require demo auth; if not present, kick back to login
+  // simple demo "auth" gate
   useEffect(() => {
     const raw = localStorage.getItem("adbsv1_demoAuth");
     if (!raw) {
@@ -41,7 +40,6 @@ export default function ControlCenter() {
   }, [navigate]);
 
   useEffect(() => {
-    // Load any tokens from storage for sidebar
     const keys = Object.keys(localStorage).filter((k) =>
       k.startsWith(STORAGE_KEY_PREFIX)
     );
@@ -62,16 +60,15 @@ export default function ControlCenter() {
   const handleIssueLink = () => {
     setStatusMessage("");
     const token = generateToken();
-
     const verifyUrl = `${window.location.origin}/#/verify/${token}`;
 
     const payload = {
       token,
-      adbSId: token, // label in UI
+      adbSId: token,
       loadRef,
       carrierName,
-      usdDotOnRecord: usdDot,
-      plateOnRecord: plate,
+      usdDotOnRecord: usdDot.toUpperCase(),
+      plateOnRecord: plate.toUpperCase(),
       driverName,
       driverPhone,
       sendEmail,
@@ -86,7 +83,9 @@ export default function ControlCenter() {
 
     setIssuedToken(token);
     setIssuedUrl(verifyUrl);
-    setStatusMessage("Demo only – this link would be sent to the driver and dock in production.");
+    setStatusMessage(
+      "Demo only – this link would be sent to the driver and dock in production."
+    );
 
     setActiveLinks((prev) => [payload, ...prev].slice(0, 5));
   };
@@ -125,8 +124,8 @@ export default function ControlCenter() {
             marginBottom: "20px",
           }}
         >
-          Issue AdbS Truck-Driver verification links and monitor activity in front of the dock.
-          Demo mode only – no live data is stored.
+          Issue AdbS Truck-Driver verification links and monitor activity in
+          front of the dock. Demo mode only – no live data is stored.
         </p>
 
         <div
@@ -137,11 +136,7 @@ export default function ControlCenter() {
             marginBottom: "18px",
           }}
         >
-          <Field
-            label="Load / Reference #"
-            value={loadRef}
-            onChange={setLoadRef}
-          />
+          <Field label="Load / Reference #" value={loadRef} onChange={setLoadRef} />
           <Field
             label="Carrier / Legal Name"
             value={carrierName}
@@ -227,8 +222,8 @@ export default function ControlCenter() {
               opacity: 0.75,
             }}
           >
-            Demo only – in production this panel would send the AdbS Truck-Driver
-            Verification Link to the driver and check-in device.
+            Demo only – in production this panel would send the AdbS
+            Truck-Driver Verification Link to the driver and check-in device.
           </div>
         )}
       </section>
@@ -242,7 +237,6 @@ export default function ControlCenter() {
           gap: "18px",
         }}
       >
-        {/* ACTIVE VERIFICATION LINKS */}
         <div
           style={{
             background: "#020617",
@@ -266,7 +260,8 @@ export default function ControlCenter() {
                 opacity: 0.8,
               }}
             >
-              No demo links yet. Issue a Truck-Driver verification link to see it listed here.
+              No demo links yet. Issue a Truck-Driver verification link to see
+              it listed here.
             </p>
           ) : (
             <div
@@ -306,7 +301,6 @@ export default function ControlCenter() {
           )}
         </div>
 
-        {/* RECENT TRUCK-DRIVER CHECKS (DEMO PLACEHOLDER) */}
         <div
           style={{
             background: "#020617",
