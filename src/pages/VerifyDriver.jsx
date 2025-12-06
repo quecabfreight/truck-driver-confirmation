@@ -1,125 +1,88 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+
+const STORAGE_KEY_PREFIX = "adbsv1_token_";
 
 export default function VerifyDriver() {
   const { token } = useParams();
+  const [record, setRecord] = useState(null);
+  const [usdDotOnTruck, setUsdDotOnTruck] = useState("");
+  const [plateOnTruck, setPlateOnTruck] = useState("");
+  const [driverAnswered, setDriverAnswered] = useState("");
+  const [result, setResult] = useState(null); // "clear" | "caution" | null
 
-  const [pin, setPin] = useState("");
-  const [pinVerified, setPinVerified] = useState(false);
-
-  const [usdot, setUsdot] = useState("");
-  const [plate, setPlate] = useState("");
-  const [phoneResult, setPhoneResult] = useState(""); // YES / NO
-
-  const [expectedUsdot, setExpectedUsdot] = useState("");
-  const [expectedPlate, setExpectedPlate] = useState("");
-
-  const [failCount, setFailCount] = useState(0);
-
-  const lastOutcomeRef = useRef(null);
-
-  const DEMO_PIN = "1234";
-
-  // Load expected USDOT + Plate for this token (demo only)
   useEffect(() => {
-    try {
-      if (typeof window === "undefined") return;
-      const raw = window.localStorage.getItem(`demo_verify_${token}`);
-      if (!raw) return;
-      const parsed = JSON.parse(raw);
-      setExpectedUsdot((parsed.usdot || "").toUpperCase());
-      setExpectedPlate((parsed.plate || "").toUpperCase());
-    } catch {
-      // ignore demo errors
+    if (!token) return;
+    const raw = localStorage.getItem(`${STORAGE_KEY_PREFIX}${token}`);
+    if (raw) {
+      try {
+        setRecord(JSON.parse(raw));
+      } catch {
+        setRecord(null);
+      }
     }
   }, [token]);
 
-  // Load existing fail count for this token (demo only)
-  useEffect(() => {
-    try {
-      if (typeof window === "undefined") return;
-      const raw = window.localStorage.getItem(`demo_fail_${token}`);
-      const n = parseInt(raw || "0", 10);
-      setFailCount(Number.isNaN(n) ? 0 : n);
-    } catch {
-      // ignore
-    }
-  }, [token]);
+  const handleCallDriver = () => {
+    window.alert(
+      "Demo only – in production this would call the registered driver phone."
+    );
+  };
 
-  const handlePinSubmit = (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    if (pin.trim() === DEMO_PIN) {
-      setPinVerified(true);
+    if (!record) return;
+
+    // System quietly compares, but only the final result is obvious.
+    const usdOk =
+      usdDotOnTruck.trim().toUpperCase() ===
+      String(record.usdDotOnRecord || "").trim().toUpperCase();
+    const plateOk =
+      plateOnTruck.trim().toUpperCase() ===
+      String(record.plateOnRecord || "").trim().toUpperCase();
+
+    if (driverAnswered === "yes" && usdOk && plateOk) {
+      setResult("clear");
     } else {
-      alert("Incorrect PIN for demo. Use 1234.");
+      setResult("caution");
     }
   };
 
-  const normalizedUsdot = usdot.trim().toUpperCase();
-  const normalizedPlate = plate.trim().toUpperCase();
-
-  const dotAndPlateEntered = normalizedUsdot && normalizedPlate;
-  const systemMatch =
-    dotAndPlateEntered &&
-    expectedUsdot &&
-    expectedPlate &&
-    normalizedUsdot === expectedUsdot &&
-    normalizedPlate === expectedPlate;
-
-  // We only decide after the phone YES/NO is set.
-  const canDecide =
-    pinVerified &&
-    dotAndPlateEntered &&
-    expectedUsdot &&
-    expectedPlate &&
-    phoneResult;
-
-  // Status box content (what dock actually sees)
-  let statusTitle = "";
-  let statusDetail = "";
-  let statusColor = "#1e293b"; // neutral
-
-  if (canDecide) {
-    if (systemMatch && phoneResult === "YES") {
-      statusTitle = "CLEAR TO LOAD";
-      statusDetail =
-        "All checks for this Truck-Driver have cleared. Proceed with loading according to your internal procedures.";
-      statusColor = "#047857"; // green
-    } else {
-      statusTitle = "CAUTION ALERT – DO NOT LOAD";
-      statusDetail =
-        "One or more checks did not clear. Hold this load and contact the broker / shipper for instructions.";
-      statusColor = "#b91c1c"; // red
-    }
+  if (!record) {
+    return (
+      <div
+        style={{
+          minHeight: "calc(100vh - 120px)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "32px",
+        }}
+      >
+        <div
+          style={{
+            background: "#020617",
+            padding: "30px 32px",
+            borderRadius: "16px",
+            border: "1px solid rgba(248,113,113,0.7)",
+            maxWidth: "540px",
+          }}
+        >
+          <h1 style={{ fontSize: "22px", marginBottom: "8px" }}>
+            Truck-Driver Verification
+          </h1>
+          <p style={{ fontSize: "15px", opacity: 0.85 }}>
+            Demo only – this verification link is not associated with a stored
+            record. The AdbS ID may have expired or was never created on this
+            device.
+          </p>
+        </div>
+      </div>
+    );
   }
 
-  // Track failed attempts (CAUTION outcomes) – demo only
-  useEffect(() => {
-    if (!canDecide) return;
-
-    const outcome =
-      systemMatch && phoneResult === "YES" ? "CLEAR" : "CAUTION";
-
-    // Avoid double-counting the same outcome over and over
-    if (outcome === lastOutcomeRef.current) return;
-    lastOutcomeRef.current = outcome;
-
-    if (outcome === "CAUTION") {
-      try {
-        if (typeof window === "undefined") return;
-        const key = `demo_fail_${token}`;
-        const current = parseInt(
-          window.localStorage.getItem(key) || "0",
-          10
-        );
-        const next = (Number.isNaN(current) ? 0 : current) + 1;
-        window.localStorage.setItem(key, String(next));
-        setFailCount(next);
-      } catch {
-        // ignore
-      }
-    }
-  }, [canDecide, systemMatch, phoneResult, token]);
+  const clear = result === "clear";
+  const caution = result === "caution";
 
   return (
     <div
@@ -127,376 +90,252 @@ export default function VerifyDriver() {
         minHeight: "calc(100vh - 120px)",
         display: "flex",
         justifyContent: "center",
-        alignItems: "flex-start",
-        paddingTop: "40px",
-        color: "white",
+        padding: "32px 24px 40px",
       }}
     >
       <div
         style={{
-          display: "flex",
-          gap: "32px",
-          maxWidth: "1200px",
+          display: "grid",
+          gridTemplateColumns: "minmax(0, 640px) 320px",
+          gap: "24px",
+          maxWidth: "1120px",
           width: "100%",
         }}
       >
-        {/* LEFT COLUMN – PIN + verification */}
-        <div style={{ flex: 2 }}>
+        {/* LEFT: VERIFICATION */}
+        <section
+          style={{
+            background: "#020617",
+            borderRadius: "18px",
+            border: "1px solid rgba(148,163,184,0.55)",
+            padding: "22px 22px 26px",
+          }}
+        >
           <h1
             style={{
-              fontSize: "32px",
-              marginBottom: "8px",
+              fontSize: "22px",
+              marginBottom: "4px",
             }}
           >
             Truck-Driver Verification
           </h1>
           <p
             style={{
-              fontSize: "18px",
-              marginBottom: "4px",
-              opacity: 0.85,
+              fontSize: "13px",
+              opacity: 0.8,
+              marginBottom: "10px",
             }}
           >
             For authorized dock / check-in personnel only.
-          </p>
-          <p
-            style={{
-              fontSize: "16px",
-              marginBottom: "20px",
-              opacity: 0.7,
-            }}
-          >
-            Demo token: <strong>{token}</strong>
+            <br />
+            AdbS ID: {record.adbSId}
           </p>
 
-          {/* PIN GATE */}
-          {!pinVerified && (
+          <form onSubmit={handleSubmit}>
             <div
               style={{
-                background: "#020617",
-                borderRadius: "16px",
-                padding: "24px",
-                border: "1px solid rgba(148, 163, 184, 0.6)",
-                marginBottom: "24px",
-              }}
-            >
-              <h2
-                style={{
-                  fontSize: "24px",
-                  marginBottom: "12px",
-                }}
-              >
-                Dock Access PIN
-              </h2>
-              <p
-                style={{
-                  fontSize: "16px",
-                  marginBottom: "16px",
-                  opacity: 0.85,
-                }}
-              >
-                Enter the dock PIN to unlock the verification checks. Demo PIN is{" "}
-                <strong>1234</strong>.
-              </p>
-              <form
-                onSubmit={handlePinSubmit}
-                style={{ display: "flex", gap: "12px", alignItems: "center" }}
-              >
-                <input
-                  type="password"
-                  value={pin}
-                  onChange={(e) => setPin(e.target.value)}
-                  maxLength={8}
-                  style={{
-                    fontSize: "22px",
-                    padding: "10px 14px",
-                    borderRadius: "10px",
-                    border: "1px solid #64748b",
-                    background: "#020617",
-                    color: "white",
-                    width: "160px",
-                    letterSpacing: "0.25em",
-                    textAlign: "center",
-                  }}
-                />
-                <button
-                  type="submit"
-                  style={{
-                    fontSize: "18px",
-                    padding: "10px 20px",
-                    borderRadius: "999px",
-                    border: "none",
-                    background:
-                      "linear-gradient(135deg, #0ea5e9, #22c55e, #0ea5e9)",
-                    color: "#0b1120",
-                    fontWeight: 700,
-                    cursor: "pointer",
-                  }}
-                >
-                  Unlock
-                </button>
-              </form>
-            </div>
-          )}
-
-          {/* MAIN VERIFICATION FORM */}
-          {pinVerified && (
-            <div
-              style={{
-                background: "#020617",
-                borderRadius: "16px",
-                padding: "24px",
-                border: "1px solid rgba(148, 163, 184, 0.6)",
-              }}
-            >
-              {/* Truck identifiers */}
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: "16px",
-                  marginBottom: "24px",
-                }}
-              >
-                <div>
-                  <label
-                    style={{
-                      display: "block",
-                      fontSize: "16px",
-                      marginBottom: "6px",
-                    }}
-                  >
-                    USDOT# on Truck
-                  </label>
-                  <input
-                    type="text"
-                    value={usdot}
-                    onChange={(e) =>
-                      setUsdot(e.target.value.toUpperCase())
-                    }
-                    style={{
-                      width: "100%",
-                      padding: "10px 12px",
-                      fontSize: "18px",
-                      borderRadius: "10px",
-                      border: "1px solid #64748b",
-                      background: "#020617",
-                      color: "white",
-                    }}
-                  />
-                </div>
-                <div>
-                  <label
-                    style={{
-                      display: "block",
-                      fontSize: "16px",
-                      marginBottom: "6px",
-                    }}
-                  >
-                    License Plate on Truck
-                  </label>
-                  <input
-                    type="text"
-                    value={plate}
-                    onChange={(e) =>
-                      setPlate(e.target.value.toUpperCase())
-                    }
-                    style={{
-                      width: "100%",
-                      padding: "10px 12px",
-                      fontSize: "18px",
-                      borderRadius: "10px",
-                      border: "1px solid #64748b",
-                      background: "#020617",
-                      color: "white",
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* Phone check – Call button then YES/NO */}
-              <div style={{ marginBottom: "24px" }}>
-                <p
-                  style={{
-                    fontSize: "18px",
-                    marginBottom: "8px",
-                    textTransform: "uppercase",
-                  }}
-                >
-                  DID THE DRIVER ANSWER THEIR REGISTERED PHONE?
-                </p>
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "18px",
-                    alignItems: "center",
-                    fontSize: "18px",
-                  }}
-                >
-                  <button
-                    type="button"
-                    onClick={() =>
-                      alert(
-                        "Demo only: in production this would call the registered driver phone."
-                      )
-                    }
-                    style={{
-                      fontSize: "16px",
-                      padding: "8px 14px",
-                      borderRadius: "999px",
-                      border: "1px solid #38bdf8",
-                      background: "transparent",
-                      color: "#e5e7eb",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Call Driver (Demo)
-                  </button>
-
-                  <label>
-                    <input
-                      type="radio"
-                      name="phoneResult"
-                      value="YES"
-                      checked={phoneResult === "YES"}
-                      onChange={(e) => setPhoneResult(e.target.value)}
-                      style={{ marginRight: "6px", marginLeft: "6px" }}
-                    />
-                    YES
-                  </label>
-                  <label>
-                    <input
-                      type="radio"
-                      name="phoneResult"
-                      value="NO"
-                      checked={phoneResult === "NO"}
-                      onChange={(e) => setPhoneResult(e.target.value)}
-                      style={{ marginRight: "6px" }}
-                    />
-                    NO
-                  </label>
-                </div>
-              </div>
-
-              {/* STATUS BOX – only shows final result, not which check failed */}
-              <div
-                style={{
-                  borderRadius: "14px",
-                  padding: "18px 20px",
-                  background: statusColor,
-                  minHeight: "76px",
-                }}
-              >
-                {statusTitle ? (
-                  <>
-                    <div
-                      style={{
-                        fontSize: "20px",
-                        fontWeight: 700,
-                        marginBottom: "6px",
-                      }}
-                    >
-                      {statusTitle}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: "16px",
-                        opacity: 0.95,
-                      }}
-                    >
-                      {statusDetail}
-                    </div>
-                  </>
-                ) : (
-                  <div
-                    style={{
-                      fontSize: "16px",
-                      opacity: 0.85,
-                    }}
-                  >
-                    Enter the USDOT# and plate from the truck, call the
-                    registered driver, then record YES or NO. The system
-                    will determine whether this Truck-Driver is CLEAR TO
-                    LOAD or requires a CAUTION ALERT.
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* RIGHT COLUMN – Dock Checklist / demo note */}
-        <div style={{ flex: 1 }}>
-          <div
-            style={{
-              background: "#020617",
-              borderRadius: "16px",
-              padding: "24px",
-              border: "1px solid rgba(148, 163, 184, 0.6)",
-            }}
-          >
-            <h2
-              style={{
-                fontSize: "22px",
-                marginBottom: "12px",
-              }}
-            >
-              Dock Checklist
-            </h2>
-            <ol
-              style={{
-                fontSize: "16px",
-                lineHeight: 1.6,
-                paddingLeft: "20px",
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "10px 14px",
                 marginBottom: "16px",
               }}
             >
-              <li>Driver remains in cab or waiting area.</li>
-              <li>
-                Confirm this is the correct verify screen for the load you
-                are checking in.
-              </li>
-              <li>
-                Enter the USDOT# and license plate exactly as shown on the
-                truck.
-              </li>
-              <li>
-                Use the “Call Driver” button to reach the registered phone.
-                If anything feels off, mark NO.
-              </li>
-              <li>
-                Only when this screen shows CLEAR TO LOAD should this
-                Truck-Driver be loaded.
-              </li>
-            </ol>
+              <Field
+                label="USDOT# on Truck"
+                value={usdDotOnTruck}
+                onChange={(v) => setUsdDotOnTruck(v.toUpperCase())}
+              />
+              <Field
+                label="License Plate on Truck"
+                value={plateOnTruck}
+                onChange={(v) => setPlateOnTruck(v.toUpperCase())}
+              />
+            </div>
+
             <div
               style={{
-                fontSize: "14px",
-                opacity: 0.85,
-                borderTop: "1px solid rgba(148,163,184,0.4)",
-                paddingTop: "10px",
-                marginTop: "8px",
+                marginBottom: "14px",
+                fontSize: "15px",
               }}
             >
-              In production, multiple failed verification attempts for the
-              same load quietly alert the broker / shipper for follow-up.
-            </div>
-            {failCount >= 3 && (
-              <div
-                style={{
-                  marginTop: "8px",
-                  fontSize: "13px",
-                  color: "#fca5a5",
-                }}
-              >
-                Demo note: you&apos;ve reached 3 CAUTION results for this
-                demo link. In the live system, this would have triggered an
-                alert to the broker / shipper.
+              <div style={{ marginBottom: "6px" }}>
+                DID THE DRIVER ANSWER THEIR REGISTERED PHONE?
               </div>
-            )}
-          </div>
-        </div>
+              <div style={{ display: "flex", gap: "18px", alignItems: "center" }}>
+                <label>
+                  <input
+                    type="radio"
+                    name="driverAnswered"
+                    value="yes"
+                    checked={driverAnswered === "yes"}
+                    onChange={(e) => setDriverAnswered(e.target.value)}
+                    style={{ marginRight: "6px" }}
+                  />
+                  YES
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    name="driverAnswered"
+                    value="no"
+                    checked={driverAnswered === "no"}
+                    onChange={(e) => setDriverAnswered(e.target.value)}
+                    style={{ marginRight: "6px" }}
+                  />
+                  NO
+                </label>
+                <button
+                  type="button"
+                  onClick={handleCallDriver}
+                  style={{
+                    marginLeft: "18px",
+                    padding: "6px 12px",
+                    fontSize: "14px",
+                    borderRadius: "999px",
+                    border: "1px solid #38bdf8",
+                    background: "transparent",
+                    color: "white",
+                    cursor: "pointer",
+                  }}
+                >
+                  Call Driver (Demo)
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              style={{
+                marginTop: "8px",
+                padding: "12px 20px",
+                fontSize: "17px",
+                fontWeight: 600,
+                borderRadius: "999px",
+                border: "none",
+                cursor: "pointer",
+                background:
+                  "linear-gradient(90deg, #22c55e 0%, #0ea5e9 50%, #22c55e 100%)",
+              }}
+            >
+              Run Checks
+            </button>
+          </form>
+
+          {/* RESULT PANEL */}
+          {clear && (
+            <div
+              style={{
+                marginTop: "18px",
+                padding: "14px 16px",
+                borderRadius: "12px",
+                background: "rgba(22,163,74,0.1)",
+                border: "1px solid rgba(34,197,94,0.8)",
+                fontSize: "15px",
+              }}
+            >
+              <strong>CLEAR TO LOAD</strong>
+              <br />
+              All checks for this Truck-Driver have cleared. Proceed with loading
+              according to your internal procedures.
+            </div>
+          )}
+
+          {caution && (
+            <div
+              style={{
+                marginTop: "18px",
+                padding: "14px 16px",
+                borderRadius: "12px",
+                background: "rgba(239,68,68,0.08)",
+                border: "1px solid rgba(239,68,68,0.9)",
+                fontSize: "15px",
+              }}
+            >
+              <strong>CAUTION ALERT – DO NOT LOAD</strong>
+              <br />
+              One or more checks did not clear. Hold this load and contact your
+              broker / shipper immediately for instructions.
+            </div>
+          )}
+        </section>
+
+        {/* RIGHT: DOCK CHECKLIST */}
+        <section
+          style={{
+            background: "#020617",
+            borderRadius: "18px",
+            border: "1px solid rgba(148,163,184,0.55)",
+            padding: "20px",
+          }}
+        >
+          <h2
+            style={{
+              fontSize: "18px",
+              marginBottom: "10px",
+            }}
+          >
+            Dock Checklist
+          </h2>
+          <ol
+            style={{
+              fontSize: "14px",
+              lineHeight: 1.7,
+              paddingLeft: "20px",
+            }}
+          >
+            <li>Driver remains in cab or waiting area.</li>
+            <li>Confirm this is the correct verify screen for the load.</li>
+            <li>Enter the USDOT and license plate exactly as shown on the truck.</li>
+            <li>
+              Use the “Call Driver” button to reach the registered phone. If
+              anything feels off, mark NO.
+            </li>
+            <li>
+              Only when the screen shows CLEAR TO LOAD should this Truck-Driver
+              be loaded.
+            </li>
+          </ol>
+          <p
+            style={{
+              marginTop: "12px",
+              fontSize: "12px",
+              opacity: 0.75,
+            }}
+          >
+            This demo does not store live data. In production, each decision
+            would be logged in the QueCab AdbS Control Center.
+          </p>
+        </section>
       </div>
+    </div>
+  );
+}
+
+function Field({ label, value, onChange }) {
+  return (
+    <div>
+      <label
+        style={{
+          display: "block",
+          fontSize: "13px",
+          marginBottom: "4px",
+        }}
+      >
+        {label}
+      </label>
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        style={{
+          width: "100%",
+          padding: "9px 10px",
+          fontSize: "15px",
+          borderRadius: "10px",
+          border: "1px solid #64748b",
+          background: "#0f172a",
+          color: "white",
+        }}
+      />
     </div>
   );
 }
