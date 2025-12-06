@@ -18,13 +18,24 @@ export default function HowItWorks() {
           borderRadius: "18px",
           border: "1px solid rgba(148,163,184,0.6)",
           boxShadow: "0 18px 48px rgba(0,0,0,0.7)",
+          textAlign: "center",
         }}
       >
+        <img
+          src="/qc-logo.png"
+          alt="QueCab AdbS Logo"
+          style={{
+            width: "72px",
+            height: "72px",
+            objectFit: "contain",
+            marginBottom: "14px",
+          }}
+        />
+
         <h1
           style={{
             fontSize: "24px",
             marginBottom: "4px",
-            textAlign: "center",
           }}
         >
           How QueCab AdbS Works
@@ -33,7 +44,6 @@ export default function HowItWorks() {
           style={{
             fontSize: "16px",
             marginBottom: "18px",
-            textAlign: "center",
             opacity: 0.85,
           }}
         >
@@ -46,6 +56,7 @@ export default function HowItWorks() {
             lineHeight: 1.7,
             marginBottom: "18px",
             paddingLeft: "20px",
+            textAlign: "left",
           }}
         >
           <li>What is the USDOT number on the truck?</li>
@@ -56,7 +67,6 @@ export default function HowItWorks() {
         <p
           style={{
             fontSize: "14px",
-            textAlign: "center",
             marginBottom: "8px",
           }}
         >
@@ -67,7 +77,6 @@ export default function HowItWorks() {
         <p
           style={{
             fontSize: "14px",
-            textAlign: "center",
             color: "#f97373",
           }}
         >
@@ -81,7 +90,6 @@ export default function HowItWorks() {
             marginTop: "14px",
             fontSize: "13px",
             opacity: 0.8,
-            textAlign: "center",
           }}
         >
           The AdbS Truck-Driver Verification Link brings the broker/shipper,
