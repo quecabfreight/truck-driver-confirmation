@@ -1,42 +1,83 @@
 import React, { useState } from "react";
 
+// Auto-format phone as 123-456-7890
+function formatPhone(value) {
+  const digits = String(value || "").replace(/\D/g, "").slice(0, 10);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+  return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+}
+
 export default function Join() {
-  const [submitting, setSubmitting] = useState(false);
+  const [legalName, setLegalName] = useState("");
+  const [contactName, setContactName] = useState("");
+  const [role, setRole] = useState("Broker");
+  const [mcNumber, setMcNumber] = useState("");
+  const [ein, setEin] = useState("");
+  const [businessPhone, setBusinessPhone] = useState("");
+  const [businessEmail, setBusinessEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    setSubmitting(true);
+    setSubmitted(true);
 
-    setTimeout(() => {
-      setSubmitting(false);
-      setSubmitted(true);
-    }, 700);
+    // Demo only
+    console.log("Request Access (demo):", {
+      legalName,
+      contactName,
+      role,
+      mcNumber,
+      ein,
+      businessPhone,
+      businessEmail,
+    });
   };
 
   return (
     <div
       style={{
+        width: "100%",
         minHeight: "calc(100vh - 120px)",
         display: "flex",
-        alignItems: "center",
         justifyContent: "center",
+        alignItems: "center",
+        padding: "40px 0",
+        color: "white",
       }}
     >
       <div
         style={{
-          width: "780px",
           background: "#020617",
+          padding: "40px 40px 36px",
           borderRadius: "18px",
-          border: "1px solid rgba(148,163,184,0.55)",
-          boxShadow: "0 20px 55px rgba(0,0,0,0.7)",
-          padding: "30px 32px 32px",
+          width: "720px",
+          border: "1px solid rgba(148,163,184,0.6)",
+          boxShadow: "0 18px 45px rgba(0,0,0,0.65)",
         }}
       >
+        <div
+          style={{
+            textAlign: "center",
+            marginBottom: "14px",
+          }}
+        >
+          <img
+            src="/qc-logo.png"
+            alt="QueCab AdbS Logo"
+            style={{
+              width: "72px",
+              height: "72px",
+              objectFit: "contain",
+              marginBottom: "6px",
+            }}
+          />
+        </div>
+
         <h1
           style={{
-            fontSize: "26px",
-            marginBottom: "4px",
+            fontSize: "28px",
+            marginBottom: "8px",
           }}
         >
           Request Access
@@ -44,68 +85,143 @@ export default function Join() {
         <p
           style={{
             fontSize: "15px",
-            marginBottom: "18px",
-            opacity: 0.85,
+            opacity: 0.9,
+            marginBottom: "20px",
           }}
         >
           For licensed brokers and shippers who want to deploy QueCab AdbS to
           verify Truck-Driver links in front of the dock.
         </p>
 
-        {submitted && (
-          <div
-            style={{
-              marginBottom: "16px",
-              padding: "10px 12px",
-              borderRadius: "10px",
-              background: "rgba(34,197,94,0.1)",
-              border: "1px solid rgba(34,197,94,0.7)",
-              fontSize: "14px",
-            }}
-          >
-            Demo only – your request would be forwarded to QueCab AdbS support
-            or your account admin.
-          </div>
-        )}
-
         <form onSubmit={handleSubmit}>
+          {/* ROW 1 */}
           <div
             style={{
               display: "grid",
               gridTemplateColumns: "1fr 1fr",
               gap: "14px 18px",
+              marginBottom: "14px",
             }}
           >
-            <Field label="Legal Name or Legal Business Name *" />
-            <Field label="Primary Contact Name *" />
-            <Field label="Role *" placeholder="Broker or Shipper" />
-            <Field label="MC Number *" placeholder="MC 000000" />
-            <Field label="EIN (optional)" />
-            <Field label="Business Phone *" placeholder="123-456-7890" />
-            <Field label="Business Email *" />
+            <Field
+              label="Legal Name or Legal Business Name *"
+              value={legalName}
+              onChange={setLegalName}
+            />
+            <Field
+              label="Primary Contact Name *"
+              value={contactName}
+              onChange={setContactName}
+            />
+          </div>
+
+          {/* ROW 2 – ROLE + MC + EIN */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr 1fr",
+              gap: "14px 18px",
+              marginBottom: "14px",
+            }}
+          >
+            <div>
+              <div
+                style={{
+                  fontSize: "14px",
+                  marginBottom: "4px",
+                }}
+              >
+                Role *
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "16px",
+                  padding: "10px 12px",
+                  borderRadius: "10px",
+                  border: "1px solid #64748b",
+                  background: "#0f172a",
+                }}
+              >
+                <label style={{ fontSize: "14px" }}>
+                  <input
+                    type="radio"
+                    name="role"
+                    value="Broker"
+                    checked={role === "Broker"}
+                    onChange={() => setRole("Broker")}
+                    style={{ marginRight: "6px" }}
+                  />
+                  Broker
+                </label>
+                <label style={{ fontSize: "14px" }}>
+                  <input
+                    type="radio"
+                    name="role"
+                    value="Shipper"
+                    checked={role === "Shipper"}
+                    onChange={() => setRole("Shipper")}
+                    style={{ marginRight: "6px" }}
+                  />
+                  Shipper
+                </label>
+              </div>
+            </div>
+
+            <Field
+              label="MC Number *"
+              value={mcNumber}
+              onChange={(v) => setMcNumber(v.toUpperCase())}
+            />
+
+            <Field
+              label="EIN (optional)"
+              value={ein}
+              onChange={setEin}
+            />
+          </div>
+
+          {/* ROW 3 – PHONE + EMAIL */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1.2fr",
+              gap: "14px 18px",
+              marginBottom: "18px",
+            }}
+          >
+            <Field
+              label="Business Phone *"
+              value={businessPhone}
+              onChange={(v) => setBusinessPhone(formatPhone(v))}
+            />
+            <Field
+              label="Business Email *"
+              value={businessEmail}
+              onChange={setBusinessEmail}
+              type="email"
+            />
           </div>
 
           <button
             type="submit"
-            disabled={submitting}
             style={{
-              marginTop: "20px",
-              padding: "14px 26px",
-              fontSize: "18px",
-              fontWeight: 600,
+              padding: "14px 30px",
               borderRadius: "999px",
               border: "none",
               cursor: "pointer",
+              fontSize: "18px",
+              fontWeight: 600,
               background:
                 "linear-gradient(90deg, #22c55e 0%, #0ea5e9 50%, #22c55e 100%)",
-              opacity: submitting ? 0.7 : 1,
             }}
           >
-            {submitting ? "Submitting..." : "Submit Request"}
+            Submit Request
           </button>
         </form>
 
-        <p
+        <div
           style={{
             marginTop: "16px",
             fontSize: "13px",
@@ -114,13 +230,25 @@ export default function Join() {
         >
           Demo only – in production this form would create an access request
           record and notify QueCab AdbS support or your account admin.
-        </p>
+        </div>
+
+        {submitted && (
+          <div
+            style={{
+              marginTop: "10px",
+              fontSize: "13px",
+              color: "#a5f3fc",
+            }}
+          >
+            Submitted (demo only) – no live data has been stored.
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-function Field({ label, placeholder }) {
+function Field({ label, value, onChange, type = "text" }) {
   return (
     <div>
       <label
@@ -133,7 +261,9 @@ function Field({ label, placeholder }) {
         {label}
       </label>
       <input
-        placeholder={placeholder}
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
         style={{
           width: "100%",
           padding: "10px 11px",
@@ -143,6 +273,7 @@ function Field({ label, placeholder }) {
           background: "#0f172a",
           color: "white",
         }}
+        required={label.includes("*")}
       />
     </div>
   );
