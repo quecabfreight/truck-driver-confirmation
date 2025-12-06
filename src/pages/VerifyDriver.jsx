@@ -1,52 +1,44 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 
 const STORAGE_KEY_PREFIX = "adbsv1_token_";
+const ATTEMPT_PREFIX = "adbsv1_attempts_";
 
 export default function VerifyDriver() {
   const { token } = useParams();
+
   const [record, setRecord] = useState(null);
   const [usdDotOnTruck, setUsdDotOnTruck] = useState("");
   const [plateOnTruck, setPlateOnTruck] = useState("");
-  const [driverAnswered, setDriverAnswered] = useState("");
-  const [result, setResult] = useState(null); // "clear" | "caution" | null
+  const [driverAnswered, setDriverAnswered] = useState(null); // "YES" | "NO" | null
+  const [status, setStatus] = useState("idle"); // "idle" | "clear" | "caution"
+  const [attempts, setAttempts] = useState(0);
 
   useEffect(() => {
     if (!token) return;
+
     const raw = localStorage.getItem(`${STORAGE_KEY_PREFIX}${token}`);
-    if (raw) {
-      try {
-        setRecord(JSON.parse(raw));
-      } catch {
-        setRecord(null);
-      }
+    if (!raw) {
+      setRecord(null);
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(raw);
+      setRecord(parsed);
+      // Prefill truck fields with what’s on record (demo convenience)
+      setUsdDotOnTruck(parsed.usdDotOnRecord || "");
+      setPlateOnTruck(parsed.plateOnRecord || "");
+    } catch {
+      setRecord(null);
+    }
+
+    const rawAttempts = localStorage.getItem(`${ATTEMPT_PREFIX}${token}`);
+    if (rawAttempts) {
+      const n = parseInt(rawAttempts, 10);
+      if (!isNaN(n)) setAttempts(n);
     }
   }, [token]);
-
-  const handleCallDriver = () => {
-    window.alert(
-      "Demo only – in production this would call the registered driver phone."
-    );
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!record) return;
-
-    // System quietly compares, but only the final result is obvious.
-    const usdOk =
-      usdDotOnTruck.trim().toUpperCase() ===
-      String(record.usdDotOnRecord || "").trim().toUpperCase();
-    const plateOk =
-      plateOnTruck.trim().toUpperCase() ===
-      String(record.plateOnRecord || "").trim().toUpperCase();
-
-    if (driverAnswered === "yes" && usdOk && plateOk) {
-      setResult("clear");
-    } else {
-      setResult("caution");
-    }
-  };
 
   if (!record) {
     return (
@@ -56,286 +48,367 @@ export default function VerifyDriver() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          padding: "32px",
+          color: "white",
         }}
       >
         <div
           style={{
             background: "#020617",
-            padding: "30px 32px",
+            padding: "28px 32px",
             borderRadius: "16px",
-            border: "1px solid rgba(248,113,113,0.7)",
-            maxWidth: "540px",
+            border: "1px solid rgba(148,163,184,0.5)",
+            maxWidth: "520px",
+            textAlign: "center",
           }}
         >
-          <h1 style={{ fontSize: "22px", marginBottom: "8px" }}>
+          <h1 style={{ fontSize: "24px", marginBottom: "8px" }}>
             Truck-Driver Verification
           </h1>
-          <p style={{ fontSize: "15px", opacity: 0.85 }}>
-            Demo only – this verification link is not associated with a stored
-            record. The AdbS ID may have expired or was never created on this
-            device.
+          <p style={{ fontSize: "15px", opacity: 0.9 }}>
+            This demo link is not currently active. In production, this message
+            would show if the AdbS Truck-Driver Verification Link expired or
+            was revoked by the broker / shipper.
           </p>
         </div>
       </div>
     );
   }
 
-  const clear = result === "clear";
-  const caution = result === "caution";
+  const handleCallDriver = () => {
+    alert("Demo only – in production this would call the registered driver phone.");
+  };
+
+  const handleRunChecks = () => {
+    // Normalize for case / spacing
+    const normalize = (val) => String(val || "").trim().toUpperCase();
+
+    const usdTruck = normalize(usdDotOnTruck);
+    const plateTruck = normalize(plateOnTruck);
+    const usdRecord = normalize(record.usdDotOnRecord);
+    const plateRecord = normalize(record.plateOnRecord);
+
+    const usdMatches = usdTruck !== "" && usdTruck === usdRecord;
+    const plateMatches = plateTruck !== "" && plateTruck === plateRecord;
+    const phoneOK = driverAnswered === "YES";
+
+    const allGood = usdMatches && plateMatches && phoneOK;
+
+    const nextAttempts = attempts + 1;
+    setAttempts(nextAttempts);
+    localStorage.setItem(`${ATTEMPT_PREFIX}${token}`, String(nextAttempts));
+
+    if (allGood) {
+      setStatus("clear");
+    } else {
+      setStatus("caution");
+    }
+  };
+
+  // Status panel styles
+  let statusTitle = "Waiting for checks…";
+  let statusDetail =
+    "Enter USDOT and plate from the truck, run checks after calling the driver.";
+  let statusStyle = {
+    background: "rgba(15,23,42,0.95)",
+    border: "1px solid rgba(148,163,184,0.7)",
+  };
+
+  if (status === "clear") {
+    statusTitle = "CLEAR TO LOAD";
+    statusDetail =
+      "USDOT#, plate, and driver phone all matched the broker / shipper record.";
+    statusStyle = {
+      background: "#16a34a",
+      border: "1px solid #22c55e",
+    };
+  } else if (status === "caution") {
+    statusTitle = "CAUTION ALERT – DO NOT LOAD";
+    statusDetail =
+      "One or more checks did not clear. Hold this load and contact your broker / shipper immediately for instructions.";
+    statusStyle = {
+      background: "#b91c1c",
+      border: "1px solid #f97373",
+    };
+  }
+
+  const extraNotice =
+    attempts >= 3
+      ? "Demo note: multiple failed attempts – in production this would quietly alert the broker / shipper."
+      : "";
 
   return (
     <div
       style={{
-        minHeight: "calc(100vh - 120px)",
+        padding: "32px 40px 48px",
         display: "flex",
-        justifyContent: "center",
-        padding: "32px 24px 40px",
+        gap: "24px",
+        color: "white",
       }}
     >
-      <div
+      {/* LEFT: MAIN VERIFY PANEL */}
+      <section
         style={{
-          display: "grid",
-          gridTemplateColumns: "minmax(0, 640px) 320px",
-          gap: "24px",
-          maxWidth: "1120px",
-          width: "100%",
+          flex: 1.2,
+          background: "#020617",
+          borderRadius: "18px",
+          padding: "24px 24px 28px",
+          border: "1px solid rgba(148,163,184,0.4)",
+          boxShadow: "0 18px 40px rgba(0,0,0,0.7)",
         }}
       >
-        {/* LEFT: VERIFICATION */}
-        <section
+        <h1
           style={{
-            background: "#020617",
-            borderRadius: "18px",
-            border: "1px solid rgba(148,163,184,0.55)",
-            padding: "22px 22px 26px",
+            fontSize: "24px",
+            marginBottom: "4px",
           }}
         >
-          <h1
-            style={{
-              fontSize: "22px",
-              marginBottom: "4px",
-            }}
-          >
-            Truck-Driver Verification
-          </h1>
-          <p
-            style={{
-              fontSize: "13px",
-              opacity: 0.8,
-              marginBottom: "10px",
-            }}
-          >
-            For authorized dock / check-in personnel only.
-            <br />
-            AdbS ID: {record.adbSId}
-          </p>
-
-          <form onSubmit={handleSubmit}>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "10px 14px",
-                marginBottom: "16px",
-              }}
-            >
-              <Field
-                label="USDOT# on Truck"
-                value={usdDotOnTruck}
-                onChange={(v) => setUsdDotOnTruck(v.toUpperCase())}
-              />
-              <Field
-                label="License Plate on Truck"
-                value={plateOnTruck}
-                onChange={(v) => setPlateOnTruck(v.toUpperCase())}
-              />
-            </div>
-
-            <div
-              style={{
-                marginBottom: "14px",
-                fontSize: "15px",
-              }}
-            >
-              <div style={{ marginBottom: "6px" }}>
-                DID THE DRIVER ANSWER THEIR REGISTERED PHONE?
-              </div>
-              <div style={{ display: "flex", gap: "18px", alignItems: "center" }}>
-                <label>
-                  <input
-                    type="radio"
-                    name="driverAnswered"
-                    value="yes"
-                    checked={driverAnswered === "yes"}
-                    onChange={(e) => setDriverAnswered(e.target.value)}
-                    style={{ marginRight: "6px" }}
-                  />
-                  YES
-                </label>
-                <label>
-                  <input
-                    type="radio"
-                    name="driverAnswered"
-                    value="no"
-                    checked={driverAnswered === "no"}
-                    onChange={(e) => setDriverAnswered(e.target.value)}
-                    style={{ marginRight: "6px" }}
-                  />
-                  NO
-                </label>
-                <button
-                  type="button"
-                  onClick={handleCallDriver}
-                  style={{
-                    marginLeft: "18px",
-                    padding: "6px 12px",
-                    fontSize: "14px",
-                    borderRadius: "999px",
-                    border: "1px solid #38bdf8",
-                    background: "transparent",
-                    color: "white",
-                    cursor: "pointer",
-                  }}
-                >
-                  Call Driver (Demo)
-                </button>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              style={{
-                marginTop: "8px",
-                padding: "12px 20px",
-                fontSize: "17px",
-                fontWeight: 600,
-                borderRadius: "999px",
-                border: "none",
-                cursor: "pointer",
-                background:
-                  "linear-gradient(90deg, #22c55e 0%, #0ea5e9 50%, #22c55e 100%)",
-              }}
-            >
-              Run Checks
-            </button>
-          </form>
-
-          {/* RESULT PANEL */}
-          {clear && (
-            <div
-              style={{
-                marginTop: "18px",
-                padding: "14px 16px",
-                borderRadius: "12px",
-                background: "rgba(22,163,74,0.1)",
-                border: "1px solid rgba(34,197,94,0.8)",
-                fontSize: "15px",
-              }}
-            >
-              <strong>CLEAR TO LOAD</strong>
-              <br />
-              All checks for this Truck-Driver have cleared. Proceed with loading
-              according to your internal procedures.
-            </div>
-          )}
-
-          {caution && (
-            <div
-              style={{
-                marginTop: "18px",
-                padding: "14px 16px",
-                borderRadius: "12px",
-                background: "rgba(239,68,68,0.08)",
-                border: "1px solid rgba(239,68,68,0.9)",
-                fontSize: "15px",
-              }}
-            >
-              <strong>CAUTION ALERT – DO NOT LOAD</strong>
-              <br />
-              One or more checks did not clear. Hold this load and contact your
-              broker / shipper immediately for instructions.
-            </div>
-          )}
-        </section>
-
-        {/* RIGHT: DOCK CHECKLIST */}
-        <section
+          Truck-Driver Verification
+        </h1>
+        <p
           style={{
-            background: "#020617",
-            borderRadius: "18px",
-            border: "1px solid rgba(148,163,184,0.55)",
-            padding: "20px",
+            fontSize: "14px",
+            opacity: 0.85,
+            marginBottom: "10px",
           }}
         >
-          <h2
+          For authorized dock / check-in personnel only.
+          <br />
+          AdbS ID: {token}
+        </p>
+
+        {/* FIELDS */}
+        <div
+          style={{
+            marginTop: "14px",
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "14px 18px",
+          }}
+        >
+          <div>
+            <label
+              style={{
+                display: "block",
+                fontSize: "14px",
+                marginBottom: "4px",
+              }}
+            >
+              USDOT# on Truck
+            </label>
+            <input
+              value={usdDotOnTruck}
+              onChange={(e) => setUsdDotOnTruck(e.target.value.toUpperCase())}
+              style={{
+                width: "100%",
+                padding: "10px 11px",
+                fontSize: "16px",
+                borderRadius: "10px",
+                border: "1px solid #64748b",
+                background: "#0f172a",
+                color: "white",
+              }}
+            />
+          </div>
+
+          <div>
+            <label
+              style={{
+                display: "block",
+                fontSize: "14px",
+                marginBottom: "4px",
+              }}
+            >
+              License Plate on Truck
+            </label>
+            <input
+              value={plateOnTruck}
+              onChange={(e) => setPlateOnTruck(e.target.value.toUpperCase())}
+              style={{
+                width: "100%",
+                padding: "10px 11px",
+                fontSize: "16px",
+                borderRadius: "10px",
+                border: "1px solid #64748b",
+                background: "#0f172a",
+                color: "white",
+              }}
+            />
+          </div>
+        </div>
+
+        {/* PHONE CHECK ROW */}
+        <div
+          style={{
+            marginTop: "18px",
+            display: "flex",
+            flexWrap: "wrap",
+            alignItems: "center",
+            gap: "14px 18px",
+          }}
+        >
+          <button
+            type="button"
+            onClick={handleCallDriver}
+            style={{
+              padding: "10px 20px",
+              borderRadius: "999px",
+              border: "1px solid #38bdf8",
+              background: "transparent",
+              color: "white",
+              cursor: "pointer",
+              fontSize: "16px",
+              fontWeight: 500,
+            }}
+          >
+            Call Driver (Demo)
+          </button>
+
+          <div style={{ fontSize: "15px" }}>
+            DID THE DRIVER ANSWER THEIR REGISTERED PHONE?
+            <label style={{ marginLeft: "14px", marginRight: "10px" }}>
+              <input
+                type="radio"
+                name="driverAnswered"
+                value="YES"
+                checked={driverAnswered === "YES"}
+                onChange={() => setDriverAnswered("YES")}
+                style={{ marginRight: "4px" }}
+              />
+              YES
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="driverAnswered"
+                value="NO"
+                checked={driverAnswered === "NO"}
+                onChange={() => setDriverAnswered("NO")}
+                style={{ marginRight: "4px" }}
+              />
+              NO
+            </label>
+          </div>
+        </div>
+
+        {/* RUN CHECKS BUTTON */}
+        <div style={{ marginTop: "18px" }}>
+          <button
+            type="button"
+            onClick={handleRunChecks}
+            style={{
+              padding: "12px 32px",
+              borderRadius: "999px",
+              border: "none",
+              cursor: "pointer",
+              fontSize: "18px",
+              fontWeight: 600,
+              background:
+                "linear-gradient(90deg, #22c55e 0%, #0ea5e9 50%, #22c55e 100%)",
+            }}
+          >
+            Run Checks
+          </button>
+        </div>
+
+        {/* STATUS PANEL – BIG GREEN/RED BAR */}
+        <div
+          style={{
+            marginTop: "20px",
+            padding: "16px 18px",
+            borderRadius: "14px",
+            ...statusStyle,
+          }}
+        >
+          <div
             style={{
               fontSize: "18px",
-              marginBottom: "10px",
+              fontWeight: 700,
+              marginBottom: "6px",
             }}
           >
-            Dock Checklist
-          </h2>
-          <ol
-            style={{
-              fontSize: "14px",
-              lineHeight: 1.7,
-              paddingLeft: "20px",
-            }}
-          >
-            <li>Driver remains in cab or waiting area.</li>
-            <li>Confirm this is the correct verify screen for the load.</li>
-            <li>Enter the USDOT and license plate exactly as shown on the truck.</li>
-            <li>
-              Use the “Call Driver” button to reach the registered phone. If
-              anything feels off, mark NO.
-            </li>
-            <li>
-              Only when the screen shows CLEAR TO LOAD should this Truck-Driver
-              be loaded.
-            </li>
-          </ol>
-          <p
-            style={{
-              marginTop: "12px",
-              fontSize: "12px",
-              opacity: 0.75,
-            }}
-          >
-            This demo does not store live data. In production, each decision
-            would be logged in the QueCab AdbS Control Center.
-          </p>
-        </section>
-      </div>
-    </div>
-  );
-}
+            {statusTitle}
+          </div>
+          <div style={{ fontSize: "14px" }}>{statusDetail}</div>
+          {extraNotice && (
+            <div
+              style={{
+                marginTop: "6px",
+                fontSize: "12px",
+                opacity: 0.9,
+              }}
+            >
+              {extraNotice}
+            </div>
+          )}
+        </div>
 
-function Field({ label, value, onChange }) {
-  return (
-    <div>
-      <label
+        <div
+          style={{
+            marginTop: "10px",
+            fontSize: "12px",
+            opacity: 0.75,
+          }}
+        >
+          This demo does not store live data. In production, each decision would
+          be logged in the QueCab AdbS Control Center.
+        </div>
+      </section>
+
+      {/* RIGHT: DOCK CHECKLIST */}
+      <section
         style={{
-          display: "block",
-          fontSize: "13px",
-          marginBottom: "4px",
+          flex: 0.9,
+          background: "#020617",
+          borderRadius: "18px",
+          padding: "22px 22px 24px",
+          border: "1px solid rgba(148,163,184,0.4)",
         }}
       >
-        {label}
-      </label>
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        style={{
-          width: "100%",
-          padding: "9px 10px",
-          fontSize: "15px",
-          borderRadius: "10px",
-          border: "1px solid #64748b",
-          background: "#0f172a",
-          color: "white",
-        }}
-      />
+        <h2
+          style={{
+            fontSize: "18px",
+            marginBottom: "10px",
+          }}
+        >
+          Dock Checklist
+        </h2>
+        <ol
+          style={{
+            fontSize: "14px",
+            lineHeight: 1.7,
+            paddingLeft: "18px",
+            marginBottom: "16px",
+          }}
+        >
+          <li>Driver remains in cab or waiting area.</li>
+          <li>
+            Confirm this is the correct verify screen for the load you are
+            checking in.
+          </li>
+          <li>
+            Enter the USDOT# and license plate exactly as shown on the truck.
+          </li>
+          <li>
+            Use the “Call Driver” button to reach the registered phone. If
+            anything feels off, mark NO.
+          </li>
+          <li>
+            Only when this screen shows CLEAR TO LOAD should this Truck-Driver
+            be loaded.
+          </li>
+        </ol>
+
+        <p
+          style={{
+            fontSize: "12px",
+            opacity: 0.8,
+          }}
+        >
+          This demo does not store live data. In production, each decision would
+          be logged in the QueCab AdbS Control Center for audit and lane
+          monitoring.
+        </p>
+      </section>
     </div>
   );
 }
