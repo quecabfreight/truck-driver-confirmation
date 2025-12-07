@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 const STORAGE_KEY_PREFIX = "adbsv1_token_";
-const AUDIT_KEY = "adbsv1_audit_log";
 
 function generateToken() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -12,14 +12,16 @@ function generateToken() {
   return `DEMO-${out}`;
 }
 
-function formatPhone(value) {
-  const digits = String(value || "").replace(/\D/g, "").slice(0, 10);
+function formatPhoneDigits(value) {
+  const digits = (value || "").replace(/\D/g, "").slice(0, 10);
   if (digits.length <= 3) return digits;
   if (digits.length <= 6) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
   return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
 }
 
 export default function ControlCenter() {
+  const navigate = useNavigate();
+
   const [loadRef, setLoadRef] = useState("12345");
   const [carrierName, setCarrierName] = useState("ABC Trucking");
   const [usdDot, setUsdDot] = useState("ABC12345");
@@ -30,51 +32,45 @@ export default function ControlCenter() {
   const [linkExpires, setLinkExpires] = useState("12/31/2025");
 
   const [issuedToken, setIssuedToken] = useState("");
-  const [issuedUrl, setIssuedUrl] = useState("");
   const [statusMessage, setStatusMessage] = useState("");
-
   const [activeLinks, setActiveLinks] = useState([]);
-  const [recentChecks, setRecentChecks] = useState([]);
+  const [recentChecks] = useState([]); // still demo placeholder
 
-  // Load active links + recent checks from localStorage
+  // Require demo auth; if not present, kick back to login
   useEffect(() => {
-    // Active links
+    const raw = localStorage.getItem("adbsv1_demoAuth");
+    if (!raw) {
+      navigate("/login");
+    }
+  }, [navigate]);
+
+  // Load active links from localStorage on mount
+  useEffect(() => {
     const keys = Object.keys(localStorage).filter((k) =>
       k.startsWith(STORAGE_KEY_PREFIX)
     );
+
     const items = keys
       .map((key) => {
         try {
-          return JSON.parse(localStorage.getItem(key) || "{}");
+          const parsed = JSON.parse(localStorage.getItem(key) || "{}");
+          return parsed;
         } catch {
           return null;
         }
       })
       .filter(Boolean)
-      .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0))
-      .slice(-5);
-    setActiveLinks(items);
+      .filter((item) => !item.revoked)
+      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+      .slice(0, 10);
 
-    // Recent checks
-    try {
-      const rawLog = localStorage.getItem(AUDIT_KEY);
-      if (rawLog) {
-        const arr = JSON.parse(rawLog);
-        const sorted = arr
-          .slice()
-          .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
-          .slice(0, 5);
-        setRecentChecks(sorted);
-      }
-    } catch {
-      setRecentChecks([]);
-    }
+    setActiveLinks(items);
   }, []);
 
   const handleIssueLink = () => {
     setStatusMessage("");
     const token = generateToken();
-    const verifyUrl = `${window.location.origin}/#/verify/${token}`;
+    const now = Date.now();
 
     const payload = {
       token,
@@ -87,46 +83,58 @@ export default function ControlCenter() {
       driverPhone,
       sendEmail,
       linkExpires,
-      createdAt: Date.now(),
-      revoked: false,
+      createdAt: now,
+      status: "Awaiting dock verification",
       failedAttempts: 0,
+      lastResult: null,
+      revoked: false,
     };
 
-    localStorage.setItem(
-      `${STORAGE_KEY_PREFIX}${token}`,
-      JSON.stringify(payload)
-    );
-
-    setIssuedToken(token);
-    setIssuedUrl(verifyUrl);
-    setStatusMessage(
-      "Demo only – this AdbS Truck-Driver verification link would be sent to the driver and dock in production."
-    );
-
-    setActiveLinks((prev) => {
-      const updated = [...prev, payload];
-      return updated.slice(-5);
-    });
-  };
-
-  const handleRevokeLink = (token) => {
-    const key = `${STORAGE_KEY_PREFIX}${token}`;
     try {
-      const raw = localStorage.getItem(key);
-      if (!raw) return;
-      const parsed = JSON.parse(raw);
-      parsed.revoked = true;
-      localStorage.setItem(key, JSON.stringify(parsed));
-
-      setActiveLinks((prev) =>
-        prev.map((item) =>
-          item.token === token ? { ...item, revoked: true } : item
-        )
+      localStorage.setItem(
+        `${STORAGE_KEY_PREFIX}${token}`,
+        JSON.stringify(payload)
       );
     } catch {
-      // demo only
+      // ignore demo storage failures
     }
+
+    setIssuedToken(token);
+    setStatusMessage(
+      "Demo only – these AdbS links would be sent to the driver and dock in production."
+    );
+
+    setActiveLinks((prev) => [payload, ...prev].slice(0, 10));
   };
+
+  const handleRevoke = (token) => {
+    try {
+      const key = `${STORAGE_KEY_PREFIX}${token}`;
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        const data = JSON.parse(raw);
+        data.revoked = true;
+        localStorage.setItem(key, JSON.stringify(data));
+      }
+    } catch {
+      // ignore
+    }
+
+    setActiveLinks((prev) => prev.filter((item) => item.token !== token));
+  };
+
+  const baseUrl =
+    typeof window !== "undefined" ? window.location.origin : "";
+
+  const lastVerifyUrl =
+    issuedToken && baseUrl
+      ? `${baseUrl}/#/verify/${issuedToken}`
+      : "";
+
+  const lastDriverUrl =
+    issuedToken && baseUrl
+      ? `${baseUrl}/#/driver/${issuedToken}`
+      : "";
 
   return (
     <div
@@ -136,7 +144,7 @@ export default function ControlCenter() {
         gap: "24px",
       }}
     >
-      {/* LEFT: ISSUE LINK */}
+      {/* LEFT: ISSUE AdbS LINKS */}
       <section
         style={{
           flex: 1.2,
@@ -187,12 +195,12 @@ export default function ControlCenter() {
           <Field
             label="USDOT# on Record"
             value={usdDot}
-            onChange={(v) => setUsdDot(v.toUpperCase())}
+            onChange={(v) => setUsdDot((v || "").toUpperCase())}
           />
           <Field
             label="License Plate on Record"
             value={plate}
-            onChange={(v) => setPlate(v.toUpperCase())}
+            onChange={(v) => setPlate((v || "").toUpperCase())}
           />
           <Field
             label="Driver Name (optional)"
@@ -202,7 +210,7 @@ export default function ControlCenter() {
           <Field
             label="Driver Phone #"
             value={driverPhone}
-            onChange={(v) => setDriverPhone(formatPhone(v))}
+            onChange={(v) => setDriverPhone(formatPhoneDigits(v))}
           />
           <Field
             label="Send link via email"
@@ -231,10 +239,10 @@ export default function ControlCenter() {
               "linear-gradient(90deg, #22c55e 0%, #0ea5e9 50%, #22c55e 100%)",
           }}
         >
-          Issue Verification Link (Demo)
+          Issue AdbS Truck-Driver Links (Demo)
         </button>
 
-        {issuedToken && (
+        {issuedToken ? (
           <div
             style={{
               marginTop: "18px",
@@ -249,14 +257,38 @@ export default function ControlCenter() {
               <strong>AdbS ID:</strong> {issuedToken}
             </div>
             <div style={{ marginBottom: "4px" }}>
-              <strong>Verify URL:</strong>{" "}
-              <span style={{ wordBreak: "break-all" }}>{issuedUrl}</span>
+              <strong>Driver Link:</strong>{" "}
+              {lastDriverUrl ? (
+                <a
+                  href={lastDriverUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ color: "#38bdf8" }}
+                >
+                  Open AdbS Driver Link
+                </a>
+              ) : (
+                "—"
+              )}
             </div>
-            <div style={{ opacity: 0.85 }}>{statusMessage}</div>
+            <div style={{ marginBottom: "4px" }}>
+              <strong>Dock Link:</strong>{" "}
+              {lastVerifyUrl ? (
+                <a
+                  href={lastVerifyUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ color: "#38bdf8" }}
+                >
+                  Open dock verification
+                </a>
+              ) : (
+                "—"
+              )}
+            </div>
+            <div style={{ opacity: 0.8 }}>{statusMessage}</div>
           </div>
-        )}
-
-        {!issuedToken && (
+        ) : (
           <div
             style={{
               marginTop: "16px",
@@ -264,13 +296,14 @@ export default function ControlCenter() {
               opacity: 0.75,
             }}
           >
-            Demo only – in production this panel would send the AdbS
-            Truck-Driver Verification Link to the driver and check-in device.
+            Demo only – in production this panel would send both the AdbS
+            Driver Link and the AdbS Truck-Driver verification link to the
+            driver and dock devices.
           </div>
         )}
       </section>
 
-      {/* RIGHT: ACTIVE LINKS + RECENT CHECKS */}
+      {/* RIGHT SIDE: ACTIVE LINKS + RECENT CHECKS */}
       <section
         style={{
           flex: 0.9,
@@ -279,7 +312,7 @@ export default function ControlCenter() {
           gap: "18px",
         }}
       >
-        {/* ACTIVE VERIFICATION LINKS */}
+        {/* ACTIVE AdbS LINKS */}
         <div
           style={{
             background: "#020617",
@@ -296,7 +329,6 @@ export default function ControlCenter() {
           >
             Active AdbS Links (Demo)
           </h3>
-
           {activeLinks.length === 0 ? (
             <p
               style={{
@@ -304,8 +336,8 @@ export default function ControlCenter() {
                 opacity: 0.8,
               }}
             >
-              No demo links yet. Issue a Truck-Driver verification link to see
-              it listed here.
+              No demo links yet. Issue an AdbS Truck-Driver link to see it
+              listed here.
             </p>
           ) : (
             <div
@@ -316,82 +348,104 @@ export default function ControlCenter() {
                 fontSize: "14px",
               }}
             >
-              {activeLinks.map((item) => (
-                <div
-                  key={item.token}
-                  style={{
-                    padding: "10px 12px",
-                    borderRadius: "10px",
-                    background: "#020617",
-                    border: item.revoked
-                      ? "1px solid rgba(248,113,113,0.9)"
-                      : "1px solid rgba(55,65,81,0.9)",
-                  }}
-                >
-                  {/* TOP ROW: ID + REVOKE BUTTON */}
+              {activeLinks.map((item) => {
+                const verifyUrl =
+                  baseUrl && item.token
+                    ? `${baseUrl}/#/verify/${item.token}`
+                    : "";
+                const driverUrl =
+                  baseUrl && item.token
+                    ? `${baseUrl}/#/driver/${item.token}`
+                    : "";
+                return (
                   <div
+                    key={item.token}
                     style={{
+                      padding: "10px 12px",
+                      borderRadius: "10px",
+                      background: "#020617",
+                      border: "1px solid rgba(55,65,81,0.9)",
                       display: "flex",
                       justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: "4px",
+                      gap: "12px",
                     }}
                   >
                     <div>
-                      <strong>AdbS ID:</strong> {item.adbSId}
+                      <div>
+                        <strong>AdbS ID:</strong> {item.adbSId || item.token}
+                      </div>
+                      <div>
+                        <strong>Load:</strong> {item.loadRef} –{" "}
+                        {item.carrierName}
+                      </div>
+                      <div>
+                        <strong>USDOT / Plate:</strong>{" "}
+                        {item.usdDotOnRecord} / {item.plateOnRecord}
+                      </div>
+                      <div style={{ opacity: 0.85 }}>
+                        <strong>Status:</strong>{" "}
+                        {item.status || "Awaiting dock verification"}
+                      </div>
+                      {(verifyUrl || driverUrl) && (
+                        <div
+                          style={{
+                            marginTop: "4px",
+                            fontSize: "12px",
+                            opacity: 0.9,
+                          }}
+                        >
+                          {driverUrl && (
+                            <>
+                              <a
+                                href={driverUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                style={{ color: "#38bdf8", marginRight: 10 }}
+                              >
+                                Driver link
+                              </a>
+                            </>
+                          )}
+                          {verifyUrl && (
+                            <a
+                              href={verifyUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              style={{ color: "#38bdf8" }}
+                            >
+                              Dock link
+                            </a>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    {!item.revoked && (
+
+                    <div style={{ display: "flex", alignItems: "center" }}>
                       <button
                         type="button"
-                        onClick={() => handleRevokeLink(item.token)}
+                        onClick={() => handleRevoke(item.token)}
                         style={{
-                          padding: "6px 14px",
-                          fontSize: "12px",
+                          padding: "8px 14px",
                           borderRadius: "999px",
-                          border: "1px solid rgba(248,113,113,0.9)",
-                          background: "rgba(127,29,29,0.9)",
-                          color: "#fecaca",
+                          border: "none",
                           cursor: "pointer",
+                          fontSize: "13px",
                           fontWeight: 600,
+                          background: "#b91c1c",
+                          color: "white",
                         }}
                       >
                         Revoke Link
                       </button>
-                    )}
+                    </div>
                   </div>
-
-                  <div>
-                    <strong>Load:</strong> {item.loadRef} – {item.carrierName}
-                  </div>
-                  <div>
-                    <strong>USDOT / Plate:</strong> {item.usdDotOnRecord} /{" "}
-                    {item.plateOnRecord}
-                  </div>
-                  <div style={{ opacity: 0.9 }}>
-                    <strong>Status:</strong>{" "}
-                    {item.revoked
-                      ? "Revoked by broker/shipper"
-                      : "Awaiting dock verification"}
-                  </div>
-                  {typeof item.failedAttempts === "number" &&
-                    item.failedAttempts > 0 && (
-                      <div
-                        style={{
-                          fontSize: "12px",
-                          opacity: 0.8,
-                          marginTop: "2px",
-                        }}
-                      >
-                        Failed attempts (demo): {item.failedAttempts}
-                      </div>
-                    )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
 
-        {/* RECENT TRUCK-DRIVER CHECKS */}
+        {/* RECENT TRUCK-DRIVER CHECKS (still demo text only) */}
         <div
           style={{
             background: "#020617",
@@ -418,50 +472,7 @@ export default function ControlCenter() {
               Demo only – in production, this panel would show the most recent
               CLEAR TO LOAD and NOT CLEARED TO LOAD results for your lanes.
             </p>
-          ) : (
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "10px",
-                fontSize: "14px",
-              }}
-            >
-              {recentChecks.map((item) => (
-                <div
-                  key={`${item.token}-${item.timestamp}`}
-                  style={{
-                    padding: "10px 12px",
-                    borderRadius: "10px",
-                    background: "#020617",
-                    border: "1px solid rgba(55,65,81,0.9)",
-                  }}
-                >
-                  <div>
-                    <strong>AdbS ID:</strong> {item.adbSId}
-                  </div>
-                  <div>
-                    <strong>Load:</strong> {item.loadRef} – {item.carrierName}
-                  </div>
-                  <div>
-                    <strong>Result:</strong>{" "}
-                    {item.outcome === "CLEAR"
-                      ? "CLEAR TO LOAD"
-                      : "NOT CLEARED TO LOAD"}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "12px",
-                      opacity: 0.75,
-                    }}
-                  >
-                    Dock check time:{" "}
-                    {new Date(item.timestamp).toLocaleString()}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          ) : null}
         </div>
       </section>
     </div>
