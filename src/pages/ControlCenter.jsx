@@ -2,16 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 const STORAGE_KEY_PREFIX = "adbsv1_token_";
-const RECENT_CHECKS_KEY = "adbsv1_recentChecks";
-
-// Phone formatter: 1234567890 -> 123-456-7890
-function formatPhone(value) {
-  const digits = value.replace(/\D/g, "").slice(0, 10);
-  if (!digits) return "";
-  if (digits.length <= 3) return digits;
-  if (digits.length <= 6) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
-  return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
-}
 
 function generateToken() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -22,8 +12,16 @@ function generateToken() {
   return `DEMO-${out}`;
 }
 
+function formatPhone(value) {
+  const digits = String(value || "").replace(/\D/g, "").slice(0, 10);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+  return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+}
+
 export default function ControlCenter() {
   const navigate = useNavigate();
+
   const [loadRef, setLoadRef] = useState("12345");
   const [carrierName, setCarrierName] = useState("ABC Trucking");
   const [usdDot, setUsdDot] = useState("ABC12345");
@@ -38,7 +36,7 @@ export default function ControlCenter() {
   const [statusMessage, setStatusMessage] = useState("");
 
   const [activeLinks, setActiveLinks] = useState([]);
-  const [recentChecks, setRecentChecks] = useState([]);
+  const [recentChecks] = useState([]); // future phase
 
   // Require demo auth; if not present, kick back to login
   useEffect(() => {
@@ -48,7 +46,7 @@ export default function ControlCenter() {
     }
   }, [navigate]);
 
-  // Load any tokens from storage for sidebar
+  // Load active links from localStorage
   useEffect(() => {
     const keys = Object.keys(localStorage).filter((k) =>
       k.startsWith(STORAGE_KEY_PREFIX)
@@ -63,29 +61,9 @@ export default function ControlCenter() {
       })
       .filter(Boolean)
       .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
-      .reverse()
       .slice(0, 5);
-    setActiveLinks(items);
-  }, []);
 
-  // Load recent checks log
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(RECENT_CHECKS_KEY);
-      if (!raw) return;
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) {
-        // newest first
-        setRecentChecks(
-          parsed
-            .slice()
-            .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
-            .slice(0, 10)
-        );
-      }
-    } catch {
-      // ignore bad data
-    }
+    setActiveLinks(items);
   }, []);
 
   const handleIssueLink = () => {
@@ -106,6 +84,8 @@ export default function ControlCenter() {
       sendEmail,
       linkExpires,
       createdAt: Date.now(),
+      revoked: false,
+      failedAttempts: 0,
     };
 
     localStorage.setItem(
@@ -116,21 +96,29 @@ export default function ControlCenter() {
     setIssuedToken(token);
     setIssuedUrl(verifyUrl);
     setStatusMessage(
-      "Demo only – this link would be sent to the driver and dock in production."
+      "Demo only – this AdbS Truck-Driver verification link would be sent to the driver and dock in production."
     );
 
     setActiveLinks((prev) => [payload, ...prev].slice(0, 5));
   };
 
-  const formatWhen = (ts) => {
-    if (!ts) return "";
-    const d = new Date(ts);
-    return d.toLocaleString(undefined, {
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    });
+  const handleRevokeLink = (token) => {
+    const key = `${STORAGE_KEY_PREFIX}${token}`;
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      parsed.revoked = true;
+      localStorage.setItem(key, JSON.stringify(parsed));
+
+      setActiveLinks((prev) =>
+        prev.map((item) =>
+          item.token === token ? { ...item, revoked: true } : item
+        )
+      );
+    } catch {
+      // ignore demo errors
+    }
   };
 
   return (
@@ -257,7 +245,7 @@ export default function ControlCenter() {
               <strong>Verify URL:</strong>{" "}
               <span style={{ wordBreak: "break-all" }}>{issuedUrl}</span>
             </div>
-            <div style={{ opacity: 0.8 }}>{statusMessage}</div>
+            <div style={{ opacity: 0.85 }}>{statusMessage}</div>
           </div>
         )}
 
@@ -327,7 +315,9 @@ export default function ControlCenter() {
                     padding: "10px 12px",
                     borderRadius: "10px",
                     background: "#020617",
-                    border: "1px solid rgba(55,65,81,0.9)",
+                    border: item.revoked
+                      ? "1px solid rgba(248,113,113,0.9)"
+                      : "1px solid rgba(55,65,81,0.9)",
                   }}
                 >
                   <div>
@@ -340,16 +330,49 @@ export default function ControlCenter() {
                     <strong>USDOT / Plate:</strong> {item.usdDotOnRecord} /{" "}
                     {item.plateOnRecord}
                   </div>
-                  <div style={{ opacity: 0.8 }}>
-                    <strong>Status:</strong> Awaiting dock verification
+                  <div style={{ opacity: 0.9 }}>
+                    <strong>Status:</strong>{" "}
+                    {item.revoked
+                      ? "Revoked by broker/shipper"
+                      : "Awaiting dock verification"}
                   </div>
+                  {typeof item.failedAttempts === "number" &&
+                    item.failedAttempts > 0 && (
+                      <div
+                        style={{
+                          fontSize: "12px",
+                          opacity: 0.8,
+                          marginTop: "2px",
+                        }}
+                      >
+                        Failed attempts (demo): {item.failedAttempts}
+                      </div>
+                    )}
+                  {!item.revoked && (
+                    <button
+                      type="button"
+                      onClick={() => handleRevokeLink(item.token)}
+                      style={{
+                        marginTop: "8px",
+                        padding: "6px 12px",
+                        fontSize: "12px",
+                        borderRadius: "999px",
+                        border: "1px solid rgba(248,113,113,0.9)",
+                        background: "transparent",
+                        color: "#fecaca",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Revoke Link
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        {/* RECENT TRUCK-DRIVER CHECKS */}
+        {/* RECENT TRUCK-DRIVER CHECKS (DEMO PLACEHOLDER) */}
         <div
           style={{
             background: "#020617",
@@ -373,53 +396,10 @@ export default function ControlCenter() {
                 opacity: 0.8,
               }}
             >
-              Demo only – once checks are run at the dock, this panel will show
-              the most recent CLEAR TO LOAD and CAUTION ALERT results for your
-              lanes.
+              Demo only – in production, this panel would show the most recent
+              CLEAR TO LOAD and NOT CLEARED TO LOAD results for your lanes.
             </p>
-          ) : (
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "10px",
-                fontSize: "14px",
-              }}
-            >
-              {recentChecks.map((c) => (
-                <div
-                  key={`${c.token}-${c.timestamp}`}
-                  style={{
-                    padding: "10px 12px",
-                    borderRadius: "10px",
-                    background: "#020617",
-                    border: "1px solid rgba(55,65,81,0.9)",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      marginBottom: "4px",
-                    }}
-                  >
-                    <span>
-                      <strong>{c.outcome === "CLEAR" ? "CLEAR TO LOAD" : "CAUTION"}</strong>{" "}
-                      · {c.adbSId}
-                    </span>
-                    <span style={{ opacity: 0.8 }}>{formatWhen(c.timestamp)}</span>
-                  </div>
-                  <div>
-                    <strong>Load:</strong> {c.loadRef} – {c.carrierName}
-                  </div>
-                  <div>
-                    <strong>USDOT / Plate:</strong> {c.usdDotOnRecord} /{" "}
-                    {c.plateOnRecord}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          ) : null}
         </div>
       </section>
     </div>
