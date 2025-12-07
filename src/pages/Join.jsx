@@ -19,7 +19,7 @@ export default function Join() {
   const [businessName, setBusinessName] = useState("ABC Trucking");
   const [contactName, setContactName] = useState("Rob Johnson");
   const [role, setRole] = useState("Broker");
-  const [mcNumber, setMcNumber] = useState("MC 000000");
+  const [mcNumber, setMcNumber] = useState("");            // ⬅️ STARTS EMPTY NOW
   const [ein, setEin] = useState("");
   const [businessPhone, setBusinessPhone] = useState("585-506-1158");
   const [businessEmail, setBusinessEmail] = useState("quecabinc@gmail.com");
@@ -244,6 +244,7 @@ export default function Join() {
             <input
               type="text"
               required
+              placeholder="MC 000000"                        // ⬅️ JUST A PLACEHOLDER
               value={mcNumber}
               onChange={(e) => setMcNumber(formatMc(e.target.value))}
               style={inputStyle}
