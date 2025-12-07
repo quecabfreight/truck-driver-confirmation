@@ -34,7 +34,17 @@ export default function App() {
             justifyContent: "space-between",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+          {/* CLICKABLE LOGO → HOME */}
+          <Link
+            to="/"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "14px",
+              textDecoration: "none",
+              color: "white",
+            }}
+          >
             <img
               src="/qc-logo.png"
               alt="QueCab AdbS Logo"
@@ -43,7 +53,7 @@ export default function App() {
             <span style={{ fontSize: "24px", fontWeight: 700 }}>
               QueCab AdbS
             </span>
-          </div>
+          </Link>
 
           <nav
             style={{
