@@ -1,32 +1,103 @@
 import React from "react";
+import { HashRouter as Router, Routes, Route, Link } from "react-router-dom";
 
-export default function About() {
+import Home from "./pages/Home.jsx";
+import HowItWorks from "./pages/HowItWorks.jsx";
+import Login from "./pages/Login.jsx";
+import Join from "./pages/Join.jsx";
+import ControlCenter from "./pages/ControlCenter.jsx";
+import VerifyDriver from "./pages/VerifyDriver.jsx";
+import DriverLink from "./pages/DriverLink.jsx";
+
+const navLinkStyle = {
+  color: "white",
+  textDecoration: "none",
+};
+
+export default function App() {
   return (
-    <div className="page centered">
-      <img src="/qc-logo.png" alt="QueCab AdbS" className="page-logo" />
-      <div className="card">
-        <h1>About QueCab AdbS</h1>
-        <p style={{ marginTop: 8 }}>
-          Designed for docks of any size. Big text, clean screens, no gimmicks.
-        </p>
+    <Router>
+      <div
+        style={{
+          minHeight: "100vh",
+          background:
+            "linear-gradient(180deg, #050814 0%, #0b0f19 40%, #131e33 100%)",
+          color: "white",
+        }}
+      >
+        {/* TOP NAV BAR */}
+        <header
+          style={{
+            padding: "18px 48px",
+            borderBottom: "1px solid rgba(148,163,184,0.35)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+            <img
+              src="/qc-logo.png"
+              alt="QueCab AdbS Logo"
+              style={{ width: "54px", height: "54px", objectFit: "contain" }}
+            />
+            <span style={{ fontSize: "22px", fontWeight: 700 }}>
+              QueCab AdbS
+            </span>
+          </div>
 
-        <h2 className="h2">What it is</h2>
-        <p>Brokers &amp; Shippers helping dock staff confirm the proper trucks and drivers.</p>
+          <nav
+            style={{
+              display: "flex",
+              gap: "26px",
+              fontSize: "18px",
+              fontWeight: 500,
+            }}
+          >
+            <Link to="/" style={navLinkStyle}>
+              Home
+            </Link>
+            <Link to="/how-it-works" style={navLinkStyle}>
+              How It Works
+            </Link>
+            <Link to="/login" style={navLinkStyle}>
+              Log In
+            </Link>
+            <Link to="/join" style={navLinkStyle}>
+              Request Access
+            </Link>
+          </nav>
+        </header>
 
-        <h2 className="h2">How it works</h2>
-        <ol>
-          <li>Broker/Shipper generates one AdbS Truck-Driver Verification Link per shipment.</li>
-          <li>Driver receives the <strong>AdbS Truck-Driver Link</strong> by text and taps it.</li>
-          <li>Dock receives the <strong>AdbS Truck-Driver Verify Link</strong> by email, types what they see (USDOT# and Plate), calls the driver, then submits.</li>
-        </ol>
-        <p>Phone question: dock taps Y if the driver answered their call; N if not.</p>
+        {/* PAGE CONTENT */}
+        <main style={{ padding: "32px 24px 48px" }}>
+          <Routes>
+            {/* HOME */}
+            <Route path="/" element={<Home />} />
 
-        <h2 className="h2">Results</h2>
-        <ul>
-          <li>All three checks “Yes” → <strong>CLEAR TO LOAD</strong>.</li>
-          <li>Any “No” → <strong>CAUTION ALERT — DO NOT LOAD</strong> (subtle red flash + alert tone). Alerts go to the Broker/Shipper only.</li>
-        </ul>
+            {/* HOW IT WORKS */}
+            <Route path="/how-it-works" element={<HowItWorks />} />
+
+            {/* LOGIN */}
+            <Route path="/login" element={<Login />} />
+
+            {/* REQUEST ACCESS */}
+            <Route path="/join" element={<Join />} />
+
+            {/* CONTROL CENTER */}
+            <Route path="/control-center" element={<ControlCenter />} />
+
+            {/* DOCK TRUCK-DRIVER VERIFICATION */}
+            <Route path="/verify/:token" element={<VerifyDriver />} />
+
+            {/* DRIVER LINK (NEW) */}
+            <Route path="/driver/:token" element={<DriverLink />} />
+
+            {/* FALLBACK */}
+            <Route path="*" element={<Home />} />
+          </Routes>
+        </main>
       </div>
-    </div>
+    </Router>
   );
 }
