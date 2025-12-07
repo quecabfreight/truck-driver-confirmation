@@ -34,7 +34,7 @@ export default function App() {
             justifyContent: "space-between",
           }}
         >
-          {/* CLICKABLE LOGO → HOME */}
+          {/* Logo + title now link back Home */}
           <Link
             to="/"
             style={{
@@ -48,11 +48,9 @@ export default function App() {
             <img
               src="/qc-logo.png"
               alt="QueCab AdbS Logo"
-              style={{ width: "70px", height: "70px", objectFit: "contain" }}
+              style={{ width: "54px", height: "54px", objectFit: "contain" }}
             />
-            <span style={{ fontSize: "24px", fontWeight: 700 }}>
-              QueCab AdbS
-            </span>
+            <span style={{ fontSize: "22px", fontWeight: 700 }}>QueCab AdbS</span>
           </Link>
 
           <nav
