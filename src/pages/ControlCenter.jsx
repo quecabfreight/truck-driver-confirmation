@@ -60,16 +60,14 @@ export default function ControlCenter() {
         }
       })
       .filter(Boolean)
-      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
-      .slice(0, 5);
-
+      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)) // oldest at top
+      .slice(-5); // last 5
     setActiveLinks(items);
   }, []);
 
   const handleIssueLink = () => {
     setStatusMessage("");
     const token = generateToken();
-
     const verifyUrl = `${window.location.origin}/#/verify/${token}`;
 
     const payload = {
@@ -99,7 +97,10 @@ export default function ControlCenter() {
       "Demo only – this AdbS Truck-Driver verification link would be sent to the driver and dock in production."
     );
 
-    setActiveLinks((prev) => [payload, ...prev].slice(0, 5));
+    setActiveLinks((prev) => {
+      const updated = [...prev, payload];
+      return updated.slice(-5);
+    });
   };
 
   const handleRevokeLink = (token) => {
@@ -117,7 +118,7 @@ export default function ControlCenter() {
         )
       );
     } catch {
-      // ignore demo errors
+      // demo only
     }
   };
 
@@ -263,7 +264,7 @@ export default function ControlCenter() {
         )}
       </section>
 
-      {/* RIGHT SIDE: ACTIVE LINKS + RECENT CHECKS */}
+      {/* RIGHT: ACTIVE LINKS + RECENT CHECKS */}
       <section
         style={{
           flex: 0.9,
@@ -289,6 +290,7 @@ export default function ControlCenter() {
           >
             Active AdbS Links (Demo)
           </h3>
+
           {activeLinks.length === 0 ? (
             <p
               style={{
@@ -320,9 +322,38 @@ export default function ControlCenter() {
                       : "1px solid rgba(55,65,81,0.9)",
                   }}
                 >
-                  <div>
-                    <strong>AdbS ID:</strong> {item.adbSId}
+                  {/* TOP ROW: ID + REVOKE BUTTON */}
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: "4px",
+                    }}
+                  >
+                    <div>
+                      <strong>AdbS ID:</strong> {item.adbSId}
+                    </div>
+                    {!item.revoked && (
+                      <button
+                        type="button"
+                        onClick={() => handleRevokeLink(item.token)}
+                        style={{
+                          padding: "6px 14px",
+                          fontSize: "12px",
+                          borderRadius: "999px",
+                          border: "1px solid rgba(248,113,113,0.9)",
+                          background: "rgba(127,29,29,0.9)",
+                          color: "#fecaca",
+                          cursor: "pointer",
+                          fontWeight: 600,
+                        }}
+                      >
+                        Revoke Link
+                      </button>
+                    )}
                   </div>
+
                   <div>
                     <strong>Load:</strong> {item.loadRef} – {item.carrierName}
                   </div>
@@ -348,24 +379,6 @@ export default function ControlCenter() {
                         Failed attempts (demo): {item.failedAttempts}
                       </div>
                     )}
-                  {!item.revoked && (
-                    <button
-                      type="button"
-                      onClick={() => handleRevokeLink(item.token)}
-                      style={{
-                        marginTop: "8px",
-                        padding: "6px 12px",
-                        fontSize: "12px",
-                        borderRadius: "999px",
-                        border: "1px solid rgba(248,113,113,0.9)",
-                        background: "transparent",
-                        color: "#fecaca",
-                        cursor: "pointer",
-                      }}
-                    >
-                      Revoke Link
-                    </button>
-                  )}
                 </div>
               ))}
             </div>
