@@ -7,6 +7,7 @@ import Login from "./pages/Login.jsx";
 import Join from "./pages/Join.jsx";
 import ControlCenter from "./pages/ControlCenter.jsx";
 import VerifyDriver from "./pages/VerifyDriver.jsx";
+import DriverLink from "./pages/DriverLink.jsx";
 
 const navLinkStyle = {
   color: "white",
@@ -34,7 +35,7 @@ export default function App() {
             justifyContent: "space-between",
           }}
         >
-          {/* Logo + title now link back Home */}
+          {/* Logo + title link back Home */}
           <Link
             to="/"
             style={{
@@ -50,7 +51,9 @@ export default function App() {
               alt="QueCab AdbS Logo"
               style={{ width: "54px", height: "54px", objectFit: "contain" }}
             />
-            <span style={{ fontSize: "22px", fontWeight: 700 }}>QueCab AdbS</span>
+            <span style={{ fontSize: "22px", fontWeight: 700 }}>
+              QueCab AdbS
+            </span>
           </Link>
 
           <nav
@@ -85,6 +88,7 @@ export default function App() {
             <Route path="/join" element={<Join />} />
             <Route path="/control-center" element={<ControlCenter />} />
             <Route path="/verify/:token" element={<VerifyDriver />} />
+            <Route path="/driver/:token" element={<DriverLink />} />
             <Route path="*" element={<Home />} />
           </Routes>
         </main>
