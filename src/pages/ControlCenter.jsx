@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 const STORAGE_KEY_PREFIX = "adbsv1_token_";
+const RECENT_CHECKS_KEY = "adbsv1_recentChecks";
 
 // Phone formatter: 1234567890 -> 123-456-7890
 function formatPhone(value) {
@@ -37,7 +38,7 @@ export default function ControlCenter() {
   const [statusMessage, setStatusMessage] = useState("");
 
   const [activeLinks, setActiveLinks] = useState([]);
-  const [recentChecks] = useState([]); // demo placeholder
+  const [recentChecks, setRecentChecks] = useState([]);
 
   // Require demo auth; if not present, kick back to login
   useEffect(() => {
@@ -62,8 +63,29 @@ export default function ControlCenter() {
       })
       .filter(Boolean)
       .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+      .reverse()
       .slice(0, 5);
     setActiveLinks(items);
+  }, []);
+
+  // Load recent checks log
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(RECENT_CHECKS_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        // newest first
+        setRecentChecks(
+          parsed
+            .slice()
+            .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
+            .slice(0, 10)
+        );
+      }
+    } catch {
+      // ignore bad data
+    }
   }, []);
 
   const handleIssueLink = () => {
@@ -98,6 +120,17 @@ export default function ControlCenter() {
     );
 
     setActiveLinks((prev) => [payload, ...prev].slice(0, 5));
+  };
+
+  const formatWhen = (ts) => {
+    if (!ts) return "";
+    const d = new Date(ts);
+    return d.toLocaleString(undefined, {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
   };
 
   return (
@@ -316,7 +349,7 @@ export default function ControlCenter() {
           )}
         </div>
 
-        {/* RECENT TRUCK-DRIVER CHECKS (DEMO PLACEHOLDER) */}
+        {/* RECENT TRUCK-DRIVER CHECKS */}
         <div
           style={{
             background: "#020617",
@@ -340,10 +373,53 @@ export default function ControlCenter() {
                 opacity: 0.8,
               }}
             >
-              Demo only – in production, this panel would show the most recent
-              CLEAR TO LOAD and CAUTION ALERT results for your lanes.
+              Demo only – once checks are run at the dock, this panel will show
+              the most recent CLEAR TO LOAD and CAUTION ALERT results for your
+              lanes.
             </p>
-          ) : null}
+          ) : (
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "10px",
+                fontSize: "14px",
+              }}
+            >
+              {recentChecks.map((c) => (
+                <div
+                  key={`${c.token}-${c.timestamp}`}
+                  style={{
+                    padding: "10px 12px",
+                    borderRadius: "10px",
+                    background: "#020617",
+                    border: "1px solid rgba(55,65,81,0.9)",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      marginBottom: "4px",
+                    }}
+                  >
+                    <span>
+                      <strong>{c.outcome === "CLEAR" ? "CLEAR TO LOAD" : "CAUTION"}</strong>{" "}
+                      · {c.adbSId}
+                    </span>
+                    <span style={{ opacity: 0.8 }}>{formatWhen(c.timestamp)}</span>
+                  </div>
+                  <div>
+                    <strong>Load:</strong> {c.loadRef} – {c.carrierName}
+                  </div>
+                  <div>
+                    <strong>USDOT / Plate:</strong> {c.usdDotOnRecord} /{" "}
+                    {c.plateOnRecord}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
     </div>
