@@ -2,12 +2,25 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
 const STORAGE_KEY_PREFIX = "adbsv1_token_";
+const RECENT_CHECKS_KEY = "adbsv1_recentChecks";
 
 function normalize(value) {
   return String(value || "")
     .trim()
     .toUpperCase()
     .replace(/\s+/g, "");
+}
+
+function appendRecentCheck(entry) {
+  try {
+    const raw = localStorage.getItem(RECENT_CHECKS_KEY);
+    const existing = raw ? JSON.parse(raw) : [];
+    const arr = Array.isArray(existing) ? existing : [];
+    const updated = [...arr, entry].slice(-20); // keep last 20
+    localStorage.setItem(RECENT_CHECKS_KEY, JSON.stringify(updated));
+  } catch {
+    // ignore
+  }
 }
 
 export default function VerifyDriver() {
@@ -52,10 +65,25 @@ export default function VerifyDriver() {
 
   const runChecks = () => {
     if (!record) {
+      const msg =
+        "This Truck-Driver verification link is invalid or expired. Hold this load and contact your broker / shipper for instructions.";
       setResult("caution");
-      setResultText(
-        "This Truck-Driver verification link is invalid or expired. Hold this load and contact your broker / shipper for instructions."
-      );
+      setResultText(msg);
+
+      appendRecentCheck({
+        token,
+        adbSId: token || "UNKNOWN",
+        loadRef: "UNKNOWN",
+        carrierName: "UNKNOWN",
+        usdDotOnRecord: "",
+        plateOnRecord: "",
+        usdDotOnTruck,
+        plateOnTruck,
+        driverAnswer,
+        outcome: "CAUTION",
+        timestamp: Date.now(),
+      });
+
       return;
     }
 
@@ -67,16 +95,21 @@ export default function VerifyDriver() {
 
     const allClear = dotMatches && plateMatches && driverYes;
 
+    let outcome;
+    let text;
+
     if (allClear) {
+      outcome = "CLEAR";
       setResult("clear");
-      setResultText(
-        "All checks for this Truck-Driver have cleared. Proceed with loading according to your internal procedures."
-      );
+      text =
+        "All checks for this Truck-Driver have cleared. Proceed with loading according to your internal procedures.";
+      setResultText(text);
     } else {
+      outcome = "CAUTION";
       setResult("caution");
-      setResultText(
-        "One or more checks did not clear. Hold this load and contact your broker / shipper immediately for instructions."
-      );
+      text =
+        "One or more checks did not clear. Hold this load and contact your broker / shipper immediately for instructions.";
+      setResultText(text);
 
       // Track failed attempts (demo only)
       if (token) {
@@ -90,6 +123,21 @@ export default function VerifyDriver() {
         }
       }
     }
+
+    // Log this check so Control Center can see it
+    appendRecentCheck({
+      token,
+      adbSId: record.adbSId,
+      loadRef: record.loadRef,
+      carrierName: record.carrierName,
+      usdDotOnRecord: record.usdDotOnRecord,
+      plateOnRecord: record.plateOnRecord,
+      usdDotOnTruck,
+      plateOnTruck,
+      driverAnswer,
+      outcome,
+      timestamp: Date.now(),
+    });
   };
 
   const showEscalationHint = result === "caution" && attempts >= 3;
