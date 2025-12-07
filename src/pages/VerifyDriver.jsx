@@ -1,470 +1,627 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 
 const STORAGE_KEY_PREFIX = "adbsv1_token_";
-const RECENT_CHECKS_KEY = "adbsv1_recentChecks";
-
-function normalize(value) {
-  return String(value || "")
-    .trim()
-    .toUpperCase()
-    .replace(/\s+/g, "");
-}
-
-function appendRecentCheck(entry) {
-  try {
-    const raw = localStorage.getItem(RECENT_CHECKS_KEY);
-    const existing = raw ? JSON.parse(raw) : [];
-    const arr = Array.isArray(existing) ? existing : [];
-    const updated = [...arr, entry].slice(-20); // keep last 20
-    localStorage.setItem(RECENT_CHECKS_KEY, JSON.stringify(updated));
-  } catch {
-    // ignore
-  }
-}
+const DEMO_PIN = "1234";
 
 export default function VerifyDriver() {
   const { token } = useParams();
+
   const [record, setRecord] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const [usdDotOnTruck, setUsdDotOnTruck] = useState("");
+  const [pin, setPin] = useState("");
+  const [pinVerified, setPinVerified] = useState(false);
+
+  const [usdotOnTruck, setUsdotOnTruck] = useState("");
   const [plateOnTruck, setPlateOnTruck] = useState("");
-  const [driverAnswer, setDriverAnswer] = useState(""); // "YES" | "NO" | ""
+  const [driverAnswered, setDriverAnswered] = useState(""); // "YES" or "NO"
 
-  const [result, setResult] = useState("idle"); // "idle" | "clear" | "caution"
-  const [resultText, setResultText] = useState("");
-  const [attempts, setAttempts] = useState(0);
+  const [statusMode, setStatusMode] = useState("idle"); // "idle" | "clear" | "not_clear"
 
-  // Load record from localStorage
   useEffect(() => {
-    if (!token) return;
     try {
       const raw = localStorage.getItem(`${STORAGE_KEY_PREFIX}${token}`);
       if (!raw) {
         setRecord(null);
-        return;
+      } else {
+        const parsed = JSON.parse(raw);
+        setRecord(parsed);
       }
-      const parsed = JSON.parse(raw);
-      setRecord(parsed);
     } catch {
       setRecord(null);
+    } finally {
+      setLoading(false);
     }
   }, [token]);
 
-  // Load attempt count
-  useEffect(() => {
-    if (!token) return;
-    const attemptKey = `adbsv1_attempts_${token}`;
-    try {
-      const val = parseInt(localStorage.getItem(attemptKey) || "0", 10);
-      if (!Number.isNaN(val)) setAttempts(val);
-    } catch {
-      // ignore
+  const normalize = (val) => String(val || "").trim().toUpperCase();
+
+  const handlePinSubmit = (e) => {
+    e.preventDefault();
+    if (pin.trim() === DEMO_PIN) {
+      setPinVerified(true);
+    } else {
+      alert("Incorrect PIN for demo. Use 1234.");
     }
-  }, [token]);
+  };
 
-  const runChecks = () => {
-    if (!record) {
-      const msg =
-        "This Truck-Driver verification link is invalid or expired. Hold this load and contact your broker / shipper for instructions.";
-      setResult("caution");
-      setResultText(msg);
-
-      appendRecentCheck({
-        token,
-        adbSId: token || "UNKNOWN",
-        loadRef: "UNKNOWN",
-        carrierName: "UNKNOWN",
-        usdDotOnRecord: "",
-        plateOnRecord: "",
-        usdDotOnTruck,
-        plateOnTruck,
-        driverAnswer,
-        outcome: "CAUTION",
-        timestamp: Date.now(),
-      });
-
+  const computeStatus = (dotVal, plateVal, driverAns) => {
+    if (!record || record.revoked) {
+      setStatusMode("not_clear");
       return;
     }
 
+    const dotNorm = normalize(dotVal);
+    const plateNorm = normalize(plateVal);
+
     const dotMatches =
-      normalize(usdDotOnTruck) === normalize(record.usdDotOnRecord);
+      dotNorm.length > 0 && dotNorm === normalize(record.usdDotOnRecord);
     const plateMatches =
-      normalize(plateOnTruck) === normalize(record.plateOnRecord);
-    const driverYes = driverAnswer === "YES";
+      plateNorm.length > 0 && plateNorm === normalize(record.plateOnRecord);
 
-    const allClear = dotMatches && plateMatches && driverYes;
+    if (dotMatches && plateMatches && driverAns === "YES") {
+      setStatusMode("clear");
+    } else if (driverAns === "YES" || driverAns === "NO") {
+      // Any failed condition → NOT CLEARED
+      setStatusMode("not_clear");
 
-    let outcome;
-    let text;
-
-    if (allClear) {
-      outcome = "CLEAR";
-      setResult("clear");
-      text =
-        "All checks for this Truck-Driver have cleared. Proceed with loading according to your internal procedures.";
-      setResultText(text);
-    } else {
-      outcome = "CAUTION";
-      setResult("caution");
-      text =
-        "One or more checks did not clear. Hold this load and contact your broker / shipper immediately for instructions.";
-      setResultText(text);
-
-      // Track failed attempts (demo only)
-      if (token) {
-        const attemptKey = `adbsv1_attempts_${token}`;
-        const next = attempts + 1;
-        setAttempts(next);
-        try {
-          localStorage.setItem(attemptKey, String(next));
-        } catch {
-          // ignore
+      // Quietly bump failed attempts count for this token (demo-only)
+      try {
+        const key = `${STORAGE_KEY_PREFIX}${token}`;
+        const raw = localStorage.getItem(key);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          const fails = (parsed.failedAttempts || 0) + 1;
+          parsed.failedAttempts = fails;
+          localStorage.setItem(key, JSON.stringify(parsed));
         }
+      } catch {
+        // ignore demo errors
       }
+    } else {
+      setStatusMode("idle");
     }
-
-    // Log this check so Control Center can see it
-    appendRecentCheck({
-      token,
-      adbSId: record.adbSId,
-      loadRef: record.loadRef,
-      carrierName: record.carrierName,
-      usdDotOnRecord: record.usdDotOnRecord,
-      plateOnRecord: record.plateOnRecord,
-      usdDotOnTruck,
-      plateOnTruck,
-      driverAnswer,
-      outcome,
-      timestamp: Date.now(),
-    });
   };
 
-  const showEscalationHint = result === "caution" && attempts >= 3;
+  const handleUsdotChange = (value) => {
+    const upper = value.toUpperCase();
+    setUsdotOnTruck(upper);
+    if (driverAnswered) {
+      computeStatus(upper, plateOnTruck, driverAnswered);
+    }
+  };
+
+  const handlePlateChange = (value) => {
+    const upper = value.toUpperCase();
+    setPlateOnTruck(upper);
+    if (driverAnswered) {
+      computeStatus(usdotOnTruck, upper, driverAnswered);
+    }
+  };
+
+  const handleDriverAnsweredChange = (value) => {
+    setDriverAnswered(value);
+    computeStatus(usdotOnTruck, plateOnTruck, value);
+  };
+
+  if (loading) {
+    return null;
+  }
+
+  // If token not found at all
+  if (!record) {
+    return (
+      <div
+        style={{
+          minHeight: "calc(100vh - 120px)",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          paddingTop: "40px",
+          color: "white",
+        }}
+      >
+        <div
+          style={{
+            maxWidth: "700px",
+            width: "100%",
+            background: "#020617",
+            borderRadius: "18px",
+            padding: "28px 26px",
+            border: "1px solid rgba(248,113,113,0.7)",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.75)",
+            textAlign: "center",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "26px",
+              fontWeight: 700,
+              marginBottom: "10px",
+              color: "#fecaca",
+            }}
+          >
+            NOT CLEARED TO LOAD — HOLD LOAD
+          </div>
+          <div
+            style={{
+              fontSize: "16px",
+              opacity: 0.9,
+            }}
+          >
+            This AdbS Truck-Driver verification link is not recognized. Hold this
+            load and contact your dispatcher or broker/shipper immediately.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // If revoked by broker/shipper
+  if (record.revoked) {
+    return (
+      <div
+        style={{
+          minHeight: "calc(100vh - 120px)",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          paddingTop: "40px",
+          color: "white",
+        }}
+      >
+        <div
+          style={{
+            maxWidth: "700px",
+            width: "100%",
+            background: "#020617",
+            borderRadius: "18px",
+            padding: "28px 26px",
+            border: "1px solid rgba(248,113,113,0.7)",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.75)",
+            textAlign: "center",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "26px",
+              fontWeight: 700,
+              marginBottom: "10px",
+              color: "#fecaca",
+            }}
+          >
+            NOT CLEARED TO LOAD — HOLD LOAD
+          </div>
+          <div
+            style={{
+              fontSize: "16px",
+              opacity: 0.9,
+            }}
+          >
+            This verification link has been revoked by the broker/shipper. Hold
+            this load and await updated instructions.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const isClear = statusMode === "clear";
+  const isNotClear = statusMode === "not_clear";
 
   return (
     <div
       style={{
-        width: "100%",
         minHeight: "calc(100vh - 120px)",
         display: "flex",
         justifyContent: "center",
-        alignItems: "center",
-        padding: "40px 0",
+        alignItems: "flex-start",
+        paddingTop: "40px",
+        color: "white",
       }}
     >
       <div
         style={{
-          display: "grid",
-          gridTemplateColumns: "minmax(520px, 620px) 360px",
-          gap: "24px",
-          alignItems: "flex-start",
+          display: "flex",
+          gap: "32px",
+          maxWidth: "1200px",
+          width: "100%",
+          padding: "0 24px 40px",
         }}
       >
-        {/* LEFT: VERIFICATION FORM */}
-        <section
-          style={{
-            background: "#020617",
-            borderRadius: "20px",
-            padding: "24px 26px 26px",
-            border: "1px solid rgba(148,163,184,0.6)",
-            boxShadow: "0 20px 55px rgba(0,0,0,0.75)",
-          }}
-        >
+        {/* LEFT COLUMN – PIN + VERIFICATION FORM */}
+        <div style={{ flex: 2 }}>
           <h1
             style={{
-              fontSize: "24px",
-              marginBottom: "4px",
+              fontSize: "32px",
+              marginBottom: "8px",
             }}
           >
             Truck-Driver Verification
           </h1>
+
           <p
             style={{
-              fontSize: "14px",
-              opacity: 0.9,
-              marginBottom: "10px",
+              fontSize: "18px",
+              marginBottom: "4px",
+              opacity: 0.85,
             }}
           >
             For authorized dock / check-in personnel only.
           </p>
-          {record && (
-            <p
-              style={{
-                fontSize: "13px",
-                opacity: 0.8,
-                marginBottom: "16px",
-              }}
-            >
-              <strong>AdbS ID:</strong> {record.adbSId}
-            </p>
-          )}
 
-          {/* INPUTS */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: "14px 18px",
-              marginBottom: "18px",
-            }}
-          >
-            <div>
-              <label
-                style={{
-                  display: "block",
-                  fontSize: "14px",
-                  marginBottom: "4px",
-                }}
-              >
-                USDOT# on Truck
-              </label>
-              <input
-                value={usdDotOnTruck}
-                onChange={(e) => setUsdDotOnTruck(e.target.value.toUpperCase())}
-                style={{
-                  width: "100%",
-                  padding: "11px 12px",
-                  fontSize: "16px",
-                  borderRadius: "10px",
-                  border: "1px solid #64748b",
-                  background: "#0f172a",
-                  color: "white",
-                }}
-              />
-            </div>
-            <div>
-              <label
-                style={{
-                  display: "block",
-                  fontSize: "14px",
-                  marginBottom: "4px",
-                }}
-              >
-                License Plate on Truck
-              </label>
-              <input
-                value={plateOnTruck}
-                onChange={(e) => setPlateOnTruck(e.target.value.toUpperCase())}
-                style={{
-                  width: "100%",
-                  padding: "11px 12px",
-                  fontSize: "16px",
-                  borderRadius: "10px",
-                  border: "1px solid #64748b",
-                  background: "#0f172a",
-                  color: "white",
-                }}
-              />
-            </div>
-          </div>
-
-          {/* DRIVER ANSWER RADIO */}
-          <div
-            style={{
-              marginBottom: "18px",
-            }}
-          >
-            <div
-              style={{
-                fontSize: "14px",
-                marginBottom: "6px",
-              }}
-            >
-              DID THE DRIVER ANSWER THEIR REGISTERED PHONE?
-            </div>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "18px",
-                fontSize: "15px",
-              }}
-            >
-              <label>
-                <input
-                  type="radio"
-                  name="driverAnswer"
-                  value="YES"
-                  checked={driverAnswer === "YES"}
-                  onChange={() => setDriverAnswer("YES")}
-                  style={{ marginRight: "6px" }}
-                />
-                YES
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  name="driverAnswer"
-                  value="NO"
-                  checked={driverAnswer === "NO"}
-                  onChange={() => setDriverAnswer("NO")}
-                  style={{ marginRight: "6px" }}
-                />
-                NO
-              </label>
-            </div>
-          </div>
-
-          {/* CALL DRIVER BUTTON (DEMO) */}
-          <div style={{ marginBottom: "18px" }}>
-            <button
-              type="button"
-              style={{
-                padding: "8px 14px",
-                borderRadius: "999px",
-                border: "1px solid #38bdf8",
-                background: "transparent",
-                color: "white",
-                fontSize: "14px",
-                cursor: "pointer",
-              }}
-              onClick={() => {
-                if (!record || !record.driverPhone) return;
-                // Demo only – in production this would be locked to authorized devices.
-                window.open(`tel:${record.driverPhone}`, "_self");
-              }}
-            >
-              Call Driver (Demo)
-            </button>
-          </div>
-
-          {/* RUN CHECKS BUTTON */}
-          <button
-            type="button"
-            onClick={runChecks}
-            style={{
-              padding: "12px 26px",
-              borderRadius: "999px",
-              border: "none",
-              cursor: "pointer",
-              fontSize: "18px",
-              fontWeight: 600,
-              background:
-                "linear-gradient(90deg, #22c55e 0%, #0ea5e9 50%, #22c55e 100%)",
-            }}
-          >
-            Run Checks
-          </button>
-
-          {/* RESULT BANNER */}
-          {result !== "idle" && (
-            <div
-              style={{
-                marginTop: "18px",
-                padding: "14px 16px",
-                borderRadius: "14px",
-                border:
-                  result === "clear"
-                    ? "1px solid rgba(74,222,128,0.8)"
-                    : "1px solid rgba(248,113,113,0.9)",
-                background:
-                  result === "clear"
-                    ? "rgba(22,163,74,0.18)"
-                    : "rgba(220,38,38,0.18)",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "16px",
-                  fontWeight: 700,
-                  marginBottom: "4px",
-                  color: result === "clear" ? "#bbf7d0" : "#fecaca",
-                }}
-              >
-                {result === "clear"
-                  ? "CLEAR TO LOAD"
-                  : "CAUTION ALERT – DO NOT LOAD"}
-              </div>
-              <div
-                style={{
-                  fontSize: "14px",
-                  color: "white",
-                }}
-              >
-                {resultText}
-              </div>
-              {showEscalationHint && (
-                <div
-                  style={{
-                    marginTop: "6px",
-                    fontSize: "12px",
-                    opacity: 0.85,
-                    color: "#fecaca",
-                  }}
-                >
-                  Demo note – in production, repeated CAUTION results for the
-                  same load would quietly alert the broker / shipper for
-                  follow-up.
-                </div>
-              )}
-            </div>
-          )}
-
-          {!record && (
-            <div
-              style={{
-                marginTop: "16px",
-                fontSize: "13px",
-                opacity: 0.85,
-              }}
-            >
-              Demo note – no AdbS record was found for this link. In production
-              this would be treated as a high-risk CAUTION.
-            </div>
-          )}
-        </section>
-
-        {/* RIGHT: DOCK CHECKLIST */}
-        <section
-          style={{
-            background: "#020617",
-            borderRadius: "20px",
-            padding: "22px 22px 24px",
-            border: "1px solid rgba(148,163,184,0.6)",
-            boxShadow: "0 20px 55px rgba(0,0,0,0.75)",
-          }}
-        >
-          <h2
-            style={{
-              fontSize: "20px",
-              marginBottom: "10px",
-            }}
-          >
-            Dock Checklist
-          </h2>
-          <ol
-            style={{
-              fontSize: "14px",
-              lineHeight: 1.7,
-              marginLeft: "18px",
-              marginBottom: "18px",
-            }}
-          >
-            <li>Driver remains in cab or waiting area.</li>
-            <li>Confirm this is the correct verify screen for the load.</li>
-            <li>
-              Enter the USDOT# and license plate exactly as shown on the truck.
-            </li>
-            <li>
-              Use the “Call Driver” button to reach the registered phone. If
-              anything feels off, mark NO.
-            </li>
-            <li>
-              Only when this screen shows CLEAR TO LOAD should this
-              Truck-Driver be loaded.
-            </li>
-          </ol>
           <p
             style={{
-              fontSize: "12px",
+              fontSize: "16px",
+              marginBottom: "6px",
               opacity: 0.8,
             }}
           >
-            This demo does not store live data. In production, each decision
-            would be logged in the QueCab AdbS Control Center.
+            AdbS ID: <strong>{record.adbSId || token}</strong>
           </p>
-        </section>
+          <p
+            style={{
+              fontSize: "14px",
+              marginBottom: "18px",
+              opacity: 0.75,
+            }}
+          >
+            Load: <strong>{record.loadRef}</strong> &mdash;{" "}
+            <strong>{record.carrierName}</strong>
+          </p>
+
+          {/* DOCK PIN GATE */}
+          {!pinVerified && (
+            <div
+              style={{
+                background: "#020617",
+                borderRadius: "16px",
+                padding: "24px",
+                border: "1px solid rgba(148, 163, 184, 0.6)",
+                marginBottom: "24px",
+              }}
+            >
+              <h2
+                style={{
+                  fontSize: "24px",
+                  marginBottom: "12px",
+                }}
+              >
+                Dock Access PIN
+              </h2>
+              <p
+                style={{
+                  fontSize: "16px",
+                  marginBottom: "16px",
+                  opacity: 0.85,
+                }}
+              >
+                Enter the dock PIN to unlock the verification checks. Demo PIN is{" "}
+                <strong>1234</strong>.
+              </p>
+              <form
+                onSubmit={handlePinSubmit}
+                style={{ display: "flex", gap: "12px", alignItems: "center" }}
+              >
+                <input
+                  type="password"
+                  value={pin}
+                  onChange={(e) => setPin(e.target.value)}
+                  maxLength={8}
+                  style={{
+                    fontSize: "22px",
+                    padding: "10px 14px",
+                    borderRadius: "10px",
+                    border: "1px solid #64748b",
+                    background: "#020617",
+                    color: "white",
+                    width: "170px",
+                    letterSpacing: "0.25em",
+                    textAlign: "center",
+                  }}
+                />
+                <button
+                  type="submit"
+                  style={{
+                    fontSize: "18px",
+                    padding: "10px 20px",
+                    borderRadius: "999px",
+                    border: "none",
+                    background:
+                      "linear-gradient(135deg, #0ea5e9, #22c55e, #0ea5e9)",
+                    color: "#0b1120",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                  }}
+                >
+                  Unlock
+                </button>
+              </form>
+            </div>
+          )}
+
+          {/* MAIN VERIFICATION FORM */}
+          {pinVerified && (
+            <div
+              style={{
+                background: "#020617",
+                borderRadius: "16px",
+                padding: "24px",
+                border: "1px solid rgba(148, 163, 184, 0.6)",
+              }}
+            >
+              {/* Truck identifiers */}
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "16px",
+                  marginBottom: "24px",
+                }}
+              >
+                <div>
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: "16px",
+                      marginBottom: "6px",
+                    }}
+                  >
+                    USDOT# on Truck
+                  </label>
+                  <input
+                    type="text"
+                    value={usdotOnTruck}
+                    onChange={(e) => handleUsdotChange(e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: "10px 12px",
+                      fontSize: "18px",
+                      borderRadius: "10px",
+                      border: "1px solid #64748b",
+                      background: "#020617",
+                      color: "white",
+                      textTransform: "uppercase",
+                    }}
+                  />
+                </div>
+                <div>
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: "16px",
+                      marginBottom: "6px",
+                    }}
+                  >
+                    License Plate on Truck
+                  </label>
+                  <input
+                    type="text"
+                    value={plateOnTruck}
+                    onChange={(e) => handlePlateChange(e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: "10px 12px",
+                      fontSize: "18px",
+                      borderRadius: "10px",
+                      border: "1px solid #64748b",
+                      background: "#020617",
+                      color: "white",
+                      textTransform: "uppercase",
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* DRIVER ANSWERED QUESTION + CALL BUTTON */}
+              <div style={{ marginBottom: "24px" }}>
+                <p
+                  style={{
+                    fontSize: "18px",
+                    marginBottom: "8px",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  DID THE DRIVER ANSWER THEIR REGISTERED PHONE?
+                </p>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "18px",
+                    alignItems: "center",
+                    fontSize: "18px",
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (record.driverPhone) {
+                        alert(
+                          `Demo only: this would call the registered driver phone: ${record.driverPhone}`
+                        );
+                      } else {
+                        alert(
+                          "Demo only: in production this would call the registered driver phone."
+                        );
+                      }
+                    }}
+                    style={{
+                      padding: "10px 16px",
+                      borderRadius: "999px",
+                      border: "1px solid #38bdf8",
+                      background: "transparent",
+                      color: "#e5e7eb",
+                      cursor: "pointer",
+                      fontSize: "16px",
+                    }}
+                  >
+                    Call Driver (Demo)
+                  </button>
+
+                  <label>
+                    <input
+                      type="radio"
+                      name="driverAnswered"
+                      value="YES"
+                      checked={driverAnswered === "YES"}
+                      onChange={() => handleDriverAnsweredChange("YES")}
+                      style={{ marginRight: "6px" }}
+                    />
+                    YES
+                  </label>
+                  <label>
+                    <input
+                      type="radio"
+                      name="driverAnswered"
+                      value="NO"
+                      checked={driverAnswered === "NO"}
+                      onChange={() => handleDriverAnsweredChange("NO")}
+                      style={{ marginRight: "6px" }}
+                    />
+                    NO
+                  </label>
+                </div>
+              </div>
+
+              {/* STATUS BOX – CLEAR / NOT CLEARED */}
+              <div
+                style={{
+                  borderRadius: "16px",
+                  padding: "20px 22px",
+                  marginTop: "4px",
+                  background: isClear
+                    ? "#16a34a"
+                    : isNotClear
+                    ? "#b91c1c"
+                    : "#020617",
+                  border:
+                    statusMode === "idle"
+                      ? "1px dashed rgba(148,163,184,0.6)"
+                      : "1px solid rgba(15,23,42,0.9)",
+                  textAlign: "center",
+                  minHeight: "90px",
+                }}
+              >
+                {isClear && (
+                  <>
+                    <div
+                      style={{
+                        fontSize: "26px",
+                        fontWeight: 800,
+                        marginBottom: "6px",
+                      }}
+                    >
+                      CLEAR TO LOAD
+                    </div>
+                    <div
+                      style={{
+                        fontSize: "16px",
+                        opacity: 0.95,
+                      }}
+                    >
+                      USDOT and license plate match the broker/shipper record,
+                      and the driver answered their registered phone.
+                    </div>
+                  </>
+                )}
+
+                {isNotClear && (
+                  <>
+                    <div
+                      style={{
+                        fontSize: "26px",
+                        fontWeight: 800,
+                        marginBottom: "6px",
+                      }}
+                    >
+                      NOT CLEARED TO LOAD — HOLD LOAD
+                    </div>
+                    <div
+                      style={{
+                        fontSize: "16px",
+                        opacity: 0.95,
+                      }}
+                    >
+                      Hold this load. Contact your dispatcher or
+                      broker/shipper for further instructions.
+                    </div>
+                  </>
+                )}
+
+                {statusMode === "idle" && !isClear && !isNotClear && (
+                  <div
+                    style={{
+                      fontSize: "16px",
+                      opacity: 0.9,
+                    }}
+                  >
+                    Enter the USDOT and license plate from the truck, then call
+                    the driver and record whether they answered. The system will
+                    determine if this Truck-Driver is CLEAR TO LOAD or NOT
+                    CLEARED TO LOAD.
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* RIGHT COLUMN – DOCK CHECKLIST */}
+        <div style={{ flex: 1 }}>
+          <div
+            style={{
+              background: "#020617",
+              borderRadius: "16px",
+              padding: "24px",
+              border: "1px solid rgba(148, 163, 184, 0.6)",
+            }}
+          >
+            <h2
+              style={{
+                fontSize: "22px",
+                marginBottom: "12px",
+              }}
+            >
+              Dock Checklist
+            </h2>
+            <ol
+              style={{
+                fontSize: "16px",
+                lineHeight: 1.6,
+                paddingLeft: "20px",
+                marginBottom: "16px",
+              }}
+            >
+              <li>Driver remains in cab or waiting area.</li>
+              <li>
+                Confirm this is the correct AdbS link for the load you are
+                checking in.
+              </li>
+              <li>Enter the USDOT and license plate exactly as on the truck.</li>
+              <li>
+                Use the “Call Driver” action to reach the registered phone. If
+                anything feels off, select NO.
+              </li>
+              <li>
+                Only when the system returns CLEAR TO LOAD should the
+                Truck-Driver be loaded.
+              </li>
+            </ol>
+            <div
+              style={{
+                fontSize: "14px",
+                opacity: 0.8,
+                borderTop: "1px solid rgba(148,163,184,0.4)",
+                paddingTop: "10px",
+                marginTop: "8px",
+              }}
+            >
+              Demo only – in production, each decision would be logged in the
+              QueCab AdbS Control Center for the broker/shipper.
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
