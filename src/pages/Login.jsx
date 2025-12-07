@@ -15,6 +15,7 @@ export default function Login() {
     const normalizedCode = String(accessCode || "").trim().toUpperCase();
 
     if (normalizedCode === "DEMO123") {
+      // Demo-only "remember this device"
       if (rememberDevice) {
         localStorage.setItem(
           "adbsv1_demoAuth",
@@ -27,6 +28,7 @@ export default function Login() {
         localStorage.removeItem("adbsv1_demoAuth");
       }
 
+      // ✅ Always go to Control Center on successful demo login
       navigate("/control-center");
     } else {
       setError(
@@ -57,23 +59,24 @@ export default function Login() {
           color: "white",
         }}
       >
-        <div style={{ textAlign: "center", marginBottom: "16px" }}>
-          <img
-            src="/qc-logo.png"
-            alt="QueCab AdbS Logo"
-            style={{
-              width: "70px",
-              height: "70px",
-              objectFit: "contain",
-              marginBottom: "8px",
-            }}
-          />
-          <div style={{ fontSize: "12px", opacity: 0.6 }}>LOGIN DEMO</div>
+        {/* SMALL LABEL */}
+        <div
+          style={{
+            fontSize: "11px",
+            letterSpacing: "0.12em",
+            textTransform: "uppercase",
+            opacity: 0.7,
+            textAlign: "center",
+            marginBottom: "6px",
+          }}
+        >
+          Login Demo v3
         </div>
 
+        {/* HEADING */}
         <h1
           style={{
-            fontSize: "30px",
+            fontSize: "32px",
             marginBottom: "8px",
             textAlign: "center",
           }}
@@ -85,12 +88,13 @@ export default function Login() {
             fontSize: "16px",
             marginBottom: "24px",
             textAlign: "center",
-            opacity: 0.85,
+            opacity: 0.8,
           }}
         >
           For authorized brokers and shippers using QueCab AdbS.
         </p>
 
+        {/* ERROR BANNER */}
         {error && (
           <div
             style={{
@@ -107,8 +111,10 @@ export default function Login() {
           </div>
         )}
 
+        {/* FORM */}
         <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: "18px" }}>
+          {/* BUSINESS EMAIL */}
+          <div style={{ marginBottom: "20px" }}>
             <label
               style={{
                 fontSize: "18px",
@@ -135,7 +141,8 @@ export default function Login() {
             />
           </div>
 
-          <div style={{ marginBottom: "18px" }}>
+          {/* ACCESS CODE */}
+          <div style={{ marginBottom: "20px" }}>
             <label
               style={{
                 fontSize: "18px",
@@ -162,6 +169,7 @@ export default function Login() {
             />
           </div>
 
+          {/* REMEMBER DEVICE */}
           <div
             style={{
               marginBottom: "22px",
@@ -179,6 +187,7 @@ export default function Login() {
             </label>
           </div>
 
+          {/* BUTTON */}
           <button
             type="submit"
             style={{
@@ -197,6 +206,7 @@ export default function Login() {
           </button>
         </form>
 
+        {/* FOOTER NOTE */}
         <div
           style={{
             marginTop: "18px",
