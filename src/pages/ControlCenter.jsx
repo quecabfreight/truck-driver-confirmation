@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 const STORAGE_KEY_PREFIX = "adbsv1_token_";
+const AUDIT_KEY = "adbsv1_audit_log";
 
 function generateToken() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -36,7 +37,7 @@ export default function ControlCenter() {
   const [statusMessage, setStatusMessage] = useState("");
 
   const [activeLinks, setActiveLinks] = useState([]);
-  const [recentChecks] = useState([]); // future phase
+  const [recentChecks, setRecentChecks] = useState([]);
 
   // Require demo auth; if not present, kick back to login
   useEffect(() => {
@@ -46,8 +47,9 @@ export default function ControlCenter() {
     }
   }, [navigate]);
 
-  // Load active links from localStorage
+  // Load active links + recent checks from localStorage
   useEffect(() => {
+    // Active links
     const keys = Object.keys(localStorage).filter((k) =>
       k.startsWith(STORAGE_KEY_PREFIX)
     );
@@ -60,9 +62,24 @@ export default function ControlCenter() {
         }
       })
       .filter(Boolean)
-      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)) // oldest at top
-      .slice(-5); // last 5
+      .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0))
+      .slice(-5);
     setActiveLinks(items);
+
+    // Recent checks
+    try {
+      const rawLog = localStorage.getItem(AUDIT_KEY);
+      if (rawLog) {
+        const arr = JSON.parse(rawLog);
+        const sorted = arr
+          .slice()
+          .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
+          .slice(0, 5);
+        setRecentChecks(sorted);
+      }
+    } catch {
+      setRecentChecks([]);
+    }
   }, []);
 
   const handleIssueLink = () => {
@@ -385,7 +402,7 @@ export default function ControlCenter() {
           )}
         </div>
 
-        {/* RECENT TRUCK-DRIVER CHECKS (DEMO PLACEHOLDER) */}
+        {/* RECENT TRUCK-DRIVER CHECKS */}
         <div
           style={{
             background: "#020617",
@@ -412,7 +429,50 @@ export default function ControlCenter() {
               Demo only – in production, this panel would show the most recent
               CLEAR TO LOAD and NOT CLEARED TO LOAD results for your lanes.
             </p>
-          ) : null}
+          ) : (
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "10px",
+                fontSize: "14px",
+              }}
+            >
+              {recentChecks.map((item) => (
+                <div
+                  key={`${item.token}-${item.timestamp}`}
+                  style={{
+                    padding: "10px 12px",
+                    borderRadius: "10px",
+                    background: "#020617",
+                    border: "1px solid rgba(55,65,81,0.9)",
+                  }}
+                >
+                  <div>
+                    <strong>AdbS ID:</strong> {item.adbSId}
+                  </div>
+                  <div>
+                    <strong>Load:</strong> {item.loadRef} – {item.carrierName}
+                  </div>
+                  <div>
+                    <strong>Result:</strong>{" "}
+                    {item.outcome === "CLEAR"
+                      ? "CLEAR TO LOAD"
+                      : "NOT CLEARED TO LOAD"}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "12px",
+                      opacity: 0.75,
+                    }}
+                  >
+                    Dock check time:{" "}
+                    {new Date(item.timestamp).toLocaleString()}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
     </div>
