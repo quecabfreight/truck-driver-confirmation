@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 
 const STORAGE_KEY_PREFIX = "adbsv1_token_";
 const AUDIT_KEY = "adbsv1_audit_log";
@@ -21,8 +20,6 @@ function formatPhone(value) {
 }
 
 export default function ControlCenter() {
-  const navigate = useNavigate();
-
   const [loadRef, setLoadRef] = useState("12345");
   const [carrierName, setCarrierName] = useState("ABC Trucking");
   const [usdDot, setUsdDot] = useState("ABC12345");
@@ -38,14 +35,6 @@ export default function ControlCenter() {
 
   const [activeLinks, setActiveLinks] = useState([]);
   const [recentChecks, setRecentChecks] = useState([]);
-
-  // Require demo auth; if not present, kick back to login
-  useEffect(() => {
-    const raw = localStorage.getItem("adbsv1_demoAuth");
-    if (!raw) {
-      navigate("/login");
-    }
-  }, [navigate]);
 
   // Load active links + recent checks from localStorage
   useEffect(() => {
