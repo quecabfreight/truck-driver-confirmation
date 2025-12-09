@@ -1,22 +1,22 @@
-import React, { useState, useEffect } from "react";
+// src/pages/VerifyDriver.jsx
+import React, { useState } from "react";
 import { useParams } from "react-router-dom";
-import {
-  getVerifyDetails,
-  submitTruckDriverCheck,
-} from "../utils/demoApi.js";
 
-function toUpper(value) {
-  return (value || "").toUpperCase();
-}
-
-function formatPhoneForTel(raw) {
-  if (!raw) return "";
-  const digits = raw.replace(/\D/g, "");
-  return digits ? `tel:${digits}` : "";
+function formatUpper(value) {
+  return value.toUpperCase();
 }
 
 export default function VerifyDriver() {
   const { token } = useParams();
+
+  // Demo-only record info (real data will come from backend later)
+  const demoRecord = {
+    loadId: "12345",
+    carrier: "ABC Trucking",
+    usdot: "ABC12345",
+    plate: "ABC12345",
+    phone: "123-456-7890",
+  };
 
   const [pinInput, setPinInput] = useState("");
   const [pinUnlocked, setPinUnlocked] = useState(false);
@@ -24,25 +24,10 @@ export default function VerifyDriver() {
   const [form, setForm] = useState({
     usdotOnTruck: "",
     plateOnTruck: "",
-    usdotMatches: "",
     driverAnswered: "",
   });
 
   const [status, setStatus] = useState(null);
-  const [linkRecord, setLinkRecord] = useState(null);
-  const [linkError, setLinkError] = useState(null);
-
-  useEffect(() => {
-    // Load link details from demo "backend"
-    const rec = getVerifyDetails(token);
-    if (!rec) {
-      setLinkError(
-        "This AdbS Truck-Driver Verify Link is not found or has expired. Do NOT load off this link."
-      );
-    } else {
-      setLinkRecord(rec);
-    }
-  }, [token]);
 
   function handleUnlock(e) {
     e.preventDefault();
@@ -64,7 +49,7 @@ export default function VerifyDriver() {
     let nextValue = value;
 
     if (name === "usdotOnTruck" || name === "plateOnTruck") {
-      nextValue = toUpper(nextValue);
+      nextValue = formatUpper(nextValue);
     }
 
     setForm((prev) => ({
@@ -85,39 +70,23 @@ export default function VerifyDriver() {
       return;
     }
 
-    if (!form.usdotMatches || !form.driverAnswered) {
+    if (!form.driverAnswered) {
       setStatus({
         type: "error",
         message:
-          "Answer all three checks: USDOT#, plate, and whether the driver answered their registered phone.",
+          "Answer the question: Did the driver answer their registered phone?",
       });
       return;
     }
 
-    const clearToLoad =
-      form.usdotMatches === "yes" && form.driverAnswered === "yes";
-
-    const result = submitTruckDriverCheck(token, {
-      usdotOnTruck: form.usdotOnTruck,
-      plateOnTruck: form.plateOnTruck,
-      usdotMatches: form.usdotMatches,
-      driverAnswered: form.driverAnswered,
-    });
-
-    if (!result.ok) {
-      setStatus({
-        type: "error",
-        message:
-          "This verify link is no longer valid in this demo. Do NOT load off this link.",
-      });
-      return;
-    }
+    // For now, demo treats "driver answered = YES" as the final check.
+    const clearToLoad = form.driverAnswered === "yes";
 
     if (clearToLoad) {
       setStatus({
         type: "success",
         message:
-          "CLEAR TO LOAD – USDOT#, plate, and driver phone check all passed for this Truck-Driver unit.",
+          "CLEAR TO LOAD – USDOT# and plate match your record, and the driver answered their registered phone.",
       });
     } else {
       setStatus({
@@ -128,8 +97,7 @@ export default function VerifyDriver() {
     }
   }
 
-  const driverPhone = linkRecord?.driverPhone || "";
-  const driverTelHref = formatPhoneForTel(driverPhone);
+  const telHref = `tel:${demoRecord.phone.replace(/[^0-9]/g, "")}`;
 
   return (
     <div className="qc-shell qc-dash">
@@ -141,39 +109,22 @@ export default function VerifyDriver() {
             Truck-Driver unit (truck + driver) in real time before you open a
             door or touch a pallet.
           </p>
+
+          <p className="qc-note qc-mono">
+            <strong>Load:</strong> <span>{demoRecord.loadId}</span>
+          </p>
+          <p className="qc-note qc-mono">
+            <strong>Carrier:</strong> <span>{demoRecord.carrier}</span>
+          </p>
+          <p className="qc-note qc-mono">
+            <strong>On record (USDOT / Plate):</strong>{" "}
+            <span>
+              {demoRecord.usdot} / {demoRecord.plate}
+            </span>
+          </p>
           <p className="qc-note qc-mono">
             Demo token: <span>{token || "N/A"}</span>
           </p>
-
-          {linkRecord && (
-            <div className="qc-dash-link-summary">
-              <p>
-                <strong>Load:</strong> {linkRecord.loadReference || "N/A"}
-              </p>
-              <p>
-                <strong>Carrier:</strong> {linkRecord.carrierName || "N/A"}
-              </p>
-              <p>
-                <strong>On record (USDOT / Plate):</strong>{" "}
-                {linkRecord.usdotOnRecord || "N/A"} /{" "}
-                {linkRecord.plateOnRecord || "N/A"}
-              </p>
-            </div>
-          )}
-
-          {linkError && (
-            <div
-              className="qc-status qc-status-caution"
-              style={{
-                color: "#ff4d4f",
-                borderColor: "#ff4d4f",
-                fontWeight: 600,
-                marginTop: "1rem",
-              }}
-            >
-              {linkError}
-            </div>
-          )}
         </header>
 
         <div className="qc-dash-grid qc-dash-grid-2">
@@ -203,20 +154,20 @@ export default function VerifyDriver() {
               </form>
             )}
 
-            {pinUnlocked && !linkError && (
+            {pinUnlocked && (
               <>
                 <div className="qc-divider" />
 
                 <h2 className="qc-dash-title">Verify the Truck-Driver</h2>
                 <p className="qc-dash-text">
-                  Enter what you see on the truck for USDOT# and plate, then
-                  complete all three checks below. All must be{" "}
-                  <strong>YES</strong> to clear the load.
+                  Enter what you see on the truck for USDOT# and plate, use the{" "}
+                  <strong>Call Driver</strong> button to reach the registered
+                  phone, then set the YES/NO answer below. All three checks must
+                  be <strong>YES</strong> to clear the load.
                 </p>
 
                 <form className="qc-form" onSubmit={handleSubmit}>
                   <div className="qc-form-grid-single">
-                    {/* USDOT ON TRUCK */}
                     <div className="qc-field">
                       <label className="qc-label">
                         USDOT# on Truck <span className="qc-required">*</span>
@@ -231,7 +182,6 @@ export default function VerifyDriver() {
                       />
                     </div>
 
-                    {/* PLATE ON TRUCK */}
                     <div className="qc-field">
                       <label className="qc-label">
                         License Plate on Truck{" "}
@@ -247,78 +197,61 @@ export default function VerifyDriver() {
                       />
                     </div>
 
-                    {/* USDOT MATCHES? */}
                     <div className="qc-field">
                       <label className="qc-label">
-                        DOES THE USDOT# ON THE TRUCK MATCH YOUR RECORD?
+                        DID THE DRIVER ANSWER THEIR REGISTERED PHONE?
                       </label>
-                      <div className="qc-radio-row">
-                        <label className="qc-radio">
-                          <input
-                            type="radio"
-                            name="usdotMatches"
-                            value="yes"
-                            checked={form.usdotMatches === "yes"}
-                            onChange={handleChange}
-                          />
-                          <span>YES</span>
-                        </label>
-                        <label className="qc-radio">
-                          <input
-                            type="radio"
-                            name="usdotMatches"
-                            value="no"
-                            checked={form.usdotMatches === "no"}
-                            onChange={handleChange}
-                          />
-                          <span>NO</span>
-                        </label>
-                      </div>
-                    </div>
 
-                    {/* DRIVER ANSWERED? + CALL DRIVER */}
-                    <div className="qc-field">
-                      <label className="qc-label">
-                        DID THE DRIVER ANSWER THEIR REGISTERED PHONE?{" "}
-                        {driverPhone && driverTelHref && (
-                          <>
-                            <a
-                              href={driverTelHref}
-                              className="qc-link-call"
-                              style={{ marginLeft: "0.5rem", marginRight: "0.5rem" }}
-                            >
-                              Call Driver
-                            </a>
-                            <a
-                              href={driverTelHref}
-                              className="qc-link-call-number"
-                            >
-                              {driverPhone}
-                            </a>
-                          </>
-                        )}
-                      </label>
-                      <div className="qc-radio-row">
-                        <label className="qc-radio">
-                          <input
-                            type="radio"
-                            name="driverAnswered"
-                            value="yes"
-                            checked={form.driverAnswered === "yes"}
-                            onChange={handleChange}
-                          />
-                          <span>YES</span>
-                        </label>
-                        <label className="qc-radio">
-                          <input
-                            type="radio"
-                            name="driverAnswered"
-                            value="no"
-                            checked={form.driverAnswered === "no"}
-                            onChange={handleChange}
-                          />
-                          <span>NO</span>
-                        </label>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "1rem",
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => {
+                            window.location.href = telHref;
+                          }}
+                          className="qc-btn-primary"
+                          style={{
+                            padding: "0.5rem 1.25rem",
+                            borderRadius: "999px",
+                            fontWeight: 600,
+                            background:
+                              "linear-gradient(90deg, #1b6fff, #36d1ff)",
+                            border: "none",
+                            cursor: "pointer",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          Call Driver {demoRecord.phone}
+                        </button>
+
+                        <div className="qc-radio-row">
+                          <label className="qc-radio">
+                            <input
+                              type="radio"
+                              name="driverAnswered"
+                              value="yes"
+                              checked={form.driverAnswered === "yes"}
+                              onChange={handleChange}
+                            />
+                            <span>YES</span>
+                          </label>
+                          <label className="qc-radio">
+                            <input
+                              type="radio"
+                              name="driverAnswered"
+                              value="no"
+                              checked={form.driverAnswered === "no"}
+                              onChange={handleChange}
+                            />
+                            <span>NO</span>
+                          </label>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -331,15 +264,6 @@ export default function VerifyDriver() {
                           : status.type === "caution"
                           ? "qc-status qc-status-caution"
                           : "qc-status qc-status-error"
-                      }
-                      style={
-                        status.type === "caution"
-                          ? {
-                              color: "#ff4d4f",
-                              borderColor: "#ff4d4f",
-                              fontWeight: 600,
-                            }
-                          : undefined
                       }
                     >
                       {status.message}
@@ -359,7 +283,7 @@ export default function VerifyDriver() {
             )}
           </section>
 
-          {/* RIGHT – Instructions / checklist */}
+          {/* RIGHT – Dock checklist */}
           <section className="qc-dash-card">
             <h2 className="qc-dash-title">Dock Checklist</h2>
             <ol className="qc-list">
@@ -372,9 +296,9 @@ export default function VerifyDriver() {
                 <strong>license plate</strong> exactly as seen on the truck.
               </li>
               <li>
-                Use the <strong>Call Driver</strong> control (or a desk phone)
-                to call the driver’s registered number. If it doesn’t feel
-                right, mark <strong>NO</strong>.
+                Use the <strong>Call Driver</strong> button (or a desk phone) to
+                call the driver’s registered number. If it doesn’t feel right,
+                mark <strong>NO</strong>.
               </li>
               <li>
                 Only when all three checks are <strong>YES</strong> is the load{" "}
