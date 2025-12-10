@@ -1,32 +1,33 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useParams } from "react-router-dom";
 
-const STORAGE_KEY = "adbsv1-demo-links";
-
-function loadStoredLinks() {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.sessionStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-function findLinkByToken(token) {
-  if (!token) return null;
-  const list = loadStoredLinks();
-  return list.find((item) => item.token === token) || null;
-}
-
 function formatUpper(value) {
-  return (value || "").toUpperCase();
+  return value.toUpperCase();
+}
+
+// Simple phone formatter for the demo
+function formatPhoneDisplay(raw) {
+  const digits = raw.replace(/\D/g, "");
+  if (digits.length === 10) {
+    return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+  return raw;
 }
 
 export default function VerifyDriver() {
   const { token } = useParams();
+
+  // Demo-only header data (in live system this will come from the backend)
+  const demoData = {
+    loadRef: "12345",
+    carrierName: "ABC Trucking",
+    usdotRecord: "ABC12345",
+    plateRecord: "ABC12345",
+    driverPhoneRaw: "1234567890",
+  };
+
+  const driverPhoneTel = demoData.driverPhoneRaw.replace(/\D/g, "");
+  const driverPhoneDisplay = formatPhoneDisplay(demoData.driverPhoneRaw);
 
   const [pinInput, setPinInput] = useState("");
   const [pinUnlocked, setPinUnlocked] = useState(false);
@@ -38,23 +39,11 @@ export default function VerifyDriver() {
   });
 
   const [status, setStatus] = useState(null);
-  const [linkData, setLinkData] = useState(null);
-  const [linkNotFound, setLinkNotFound] = useState(false);
-
-  useEffect(() => {
-    if (!token) return;
-    const found = findLinkByToken(token);
-    if (found) {
-      setLinkData(found);
-      setLinkNotFound(false);
-    } else {
-      setLinkData(null);
-      setLinkNotFound(true);
-    }
-  }, [token]);
 
   function handleUnlock(e) {
     e.preventDefault();
+
+    // DEMO-ONLY PIN. In the live system this will be per dock / facility.
     if (pinInput.trim() === "1234") {
       setPinUnlocked(true);
       setStatus(null);
@@ -96,7 +85,7 @@ export default function VerifyDriver() {
       setStatus({
         type: "error",
         message:
-          "Answer the question: Did the driver answer their registered phone?",
+          "Answer the question about whether the driver answered their registered phone.",
       });
       return;
     }
@@ -107,7 +96,7 @@ export default function VerifyDriver() {
       setStatus({
         type: "success",
         message:
-          "CLEAR TO LOAD – USDOT# and plate match your record, and the driver answered their registered phone.",
+          "CLEAR TO LOAD – USDOT# and plate are on record for this load, and the driver answered their registered phone.",
       });
     } else {
       setStatus({
@@ -117,9 +106,6 @@ export default function VerifyDriver() {
       });
     }
   }
-
-  const driverPhone = linkData?.driverPhone || "123-456-7890";
-  const driverPhoneDigits = driverPhone.replace(/\D/g, "");
 
   return (
     <div className="qc-shell qc-dash">
@@ -131,35 +117,21 @@ export default function VerifyDriver() {
             Truck-Driver unit (truck + driver) in real time before you open a
             door or touch a pallet.
           </p>
-
-          {token && (
-            <p className="qc-note qc-mono">
-              Demo token: <span>{token}</span>
+          <p className="qc-note qc-mono">
+            Demo token: <span>{token || "N/A"}</span>
+          </p>
+          <div className="qc-dash-meta">
+            <p>
+              <strong>Load:</strong> {demoData.loadRef}
             </p>
-          )}
-
-          {linkData && (
-            <div className="qc-link-summary">
-              <p className="qc-mono">
-                <strong>Load:</strong> {linkData.loadReference || "N/A"}
-              </p>
-              <p className="qc-mono">
-                <strong>Carrier:</strong> {linkData.carrierName || "N/A"}
-              </p>
-              <p className="qc-mono">
-                <strong>On record (USDOT / Plate):</strong>{" "}
-                {linkData.usdotOnRecord || "?"} /{" "}
-                {linkData.plateOnRecord || "?"}
-              </p>
-            </div>
-          )}
-
-          {linkNotFound && (
-            <p className="qc-status qc-status-error qc-mt-sm">
-              This demo token was not found in the current browser session. Issue a
-              new link from the AdbS Control Center, then open the new Verify link.
+            <p>
+              <strong>Carrier:</strong> {demoData.carrierName}
             </p>
-          )}
+            <p>
+              <strong>On record (USDOT / Plate):</strong>{" "}
+              {demoData.usdotRecord} / {demoData.plateRecord}
+            </p>
+          </div>
         </header>
 
         <div className="qc-dash-grid qc-dash-grid-2">
@@ -195,9 +167,9 @@ export default function VerifyDriver() {
 
                 <h2 className="qc-dash-title">Verify the Truck-Driver</h2>
                 <p className="qc-dash-text">
-                  Enter what you see on the truck, then call the driver and mark
-                  whether they answered their registered phone. All checks must
-                  be <strong>YES</strong> to clear the load.
+                  Enter what you see on the truck for USDOT# and plate, then
+                  call the driver and answer the final check. All steps must
+                  pass before loading.
                 </p>
 
                 <form className="qc-form" onSubmit={handleSubmit}>
@@ -232,57 +204,46 @@ export default function VerifyDriver() {
                     </div>
 
                     <div className="qc-field">
-                      <label className="qc-label qc-label-inline">
+                      <label className="qc-label">
                         DID THE DRIVER ANSWER THEIR REGISTERED PHONE?
                       </label>
                       <div className="qc-call-row">
+                        <div className="qc-radio-row">
+                          <label className="qc-radio">
+                            <input
+                              type="radio"
+                              name="driverAnswered"
+                              value="yes"
+                              checked={form.driverAnswered === "yes"}
+                              onChange={handleChange}
+                            />
+                            <span>YES</span>
+                          </label>
+                          <label className="qc-radio">
+                            <input
+                              type="radio"
+                              name="driverAnswered"
+                              value="no"
+                              checked={form.driverAnswered === "no"}
+                              onChange={handleChange}
+                            />
+                            <span>NO</span>
+                          </label>
+                        </div>
+
+                        {/* Premium action-blue Call Driver button */}
                         <a
-                          href={
-                            driverPhoneDigits
-                              ? `tel:${driverPhoneDigits}`
-                              : undefined
-                          }
-                          className="qc-btn-secondary qc-btn-sm"
+                          href={`tel:${driverPhoneTel}`}
+                          className="qc-btn-primary qc-btn-call"
                         >
-                          Call Driver
+                          Call Driver: {driverPhoneDisplay}
                         </a>
-                        <span className="qc-phone-inline">
-                          {driverPhone && (
-                            <a
-                              href={
-                                driverPhoneDigits
-                                  ? `tel:${driverPhoneDigits}`
-                                  : undefined
-                              }
-                              className="qc-inline-link"
-                            >
-                              {driverPhone}
-                            </a>
-                          )}
-                        </span>
                       </div>
-                      <div className="qc-radio-row qc-mt-xs">
-                        <label className="qc-radio">
-                          <input
-                            type="radio"
-                            name="driverAnswered"
-                            value="yes"
-                            checked={form.driverAnswered === "yes"}
-                            onChange={handleChange}
-                          />
-                          <span>YES</span>
-                        </label>
-                        <label className="qc-radio">
-                          <input
-                            type="radio"
-                            name="driverAnswered"
-                            value="no"
-                            checked={form.driverAnswered === "no"}
-                            onChange={handleChange}
-                          />
-                          <span>NO</span>
-                        </label>
-                      </div>
+                      <p className="qc-note">
+                        If your station doesn’t support click-to-call, dial the
+                        number shown on the button using your desk or wall
+                        phone.
+                      </p>
                     </div>
                   </div>
 
@@ -313,26 +274,26 @@ export default function VerifyDriver() {
             )}
           </section>
 
-          {/* RIGHT – DOCK CHECKLIST */}
+          {/* RIGHT – Instructions / checklist */}
           <section className="qc-dash-card">
             <h2 className="qc-dash-title">Dock Checklist</h2>
             <ol className="qc-list">
               <li>Ask the driver to remain in the cab or waiting area.</li>
               <li>
-                Confirm you are on the correct AdbS verify screen for this
-                load.
+                Confirm you are on the correct AdbS verify screen for this load.
               </li>
               <li>
                 Enter the <strong>USDOT#</strong> and{" "}
                 <strong>license plate</strong> exactly as seen on the truck.
               </li>
               <li>
-                Use the <strong>Call Driver</strong> control (or a desk phone)
-                to call the driver’s registered number. If it doesn’t feel
-                right, mark <strong>NO</strong>.
+                Use the <strong>Call Driver</strong> button (or a desk phone) to
+                call the driver’s registered number. If it doesn’t feel right,
+                mark <strong>NO</strong>.
               </li>
               <li>
-                Only when all checks are <strong>YES</strong> is the load{" "}
+                Only when all checks pass and the phone check is{" "}
+                <strong>YES</strong> is the load{" "}
                 <strong>CLEAR TO LOAD</strong>.
               </li>
             </ol>
