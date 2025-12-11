@@ -27,7 +27,7 @@ function formatPhone(value) {
   return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
 }
 
-// Format date label for window display
+// Nice label for display window
 function formatDateLabel(dateStr) {
   if (!dateStr) return "Not set";
   const d = new Date(dateStr);
@@ -58,9 +58,9 @@ export default function ControlCenter() {
   const [lastDemo, setLastDemo] = useState(null);
   const [activeLinks, setActiveLinks] = useState([]);
 
-  // For Option 2: mobile tabs
+  // Mobile layout – tabs instead of 3 squished cards
   const [isMobile, setIsMobile] = useState(false);
-  const [activePanel, setActivePanel] = useState("issue"); // "issue" | "active" | "recent"
+  const [activePanel, setActivePanel] = useState("issue");
 
   useEffect(() => {
     function handleResize() {
@@ -178,7 +178,7 @@ export default function ControlCenter() {
     });
   }
 
-  // ---------- Panel render helpers ----------
+  // ---------- Panels ----------
 
   function renderIssuePanel() {
     return (
@@ -230,13 +230,14 @@ export default function ControlCenter() {
                 className="qc-input"
                 value={form.usdot}
                 onChange={handleChange}
-                placeholder="As on FMCSA / paperwork"
+                placeholder="As painted on the truck door"
               />
             </div>
 
             <div className="qc-field">
               <label className="qc-label">
-                License Plate <span className="qc-required">*</span>
+                License Plate on Truck{" "}
+                <span className="qc-required">*</span>
               </label>
               <input
                 type="text"
@@ -244,7 +245,7 @@ export default function ControlCenter() {
                 className="qc-input"
                 value={form.plate}
                 onChange={handleChange}
-                placeholder="Plate text from paperwork"
+                placeholder="Exact plate text"
               />
             </div>
 
@@ -364,11 +365,11 @@ export default function ControlCenter() {
                     href={lastDemo.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="qc-link"
                     style={{
                       textDecoration: "none",
-                      color: "#5ecbff",
-                      fontWeight: 600,
+                      color: "#7fd4ff",
+                      fontWeight: 700,
+                      wordBreak: "break-all",
                     }}
                   >
                     {lastDemo.url}
@@ -444,11 +445,10 @@ export default function ControlCenter() {
                     href={link.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="qc-link"
                     style={{
                       textDecoration: "none",
-                      color: "#5ecbff",
-                      fontWeight: 600,
+                      color: "#7fd4ff",
+                      fontWeight: 700,
                       wordBreak: "break-all",
                     }}
                   >
@@ -497,7 +497,7 @@ export default function ControlCenter() {
 
         {isMobile ? (
           <>
-            {/* Option 2: mobile tabs */}
+            {/* Mobile: tabs */}
             <div className="qc-tabs">
               <button
                 type="button"
@@ -541,7 +541,7 @@ export default function ControlCenter() {
             </div>
           </>
         ) : (
-          // Desktop: original 3-panel layout
+          // Desktop: 3-panel layout
           <div className="qc-dash-grid qc-dash-grid-3">
             {renderIssuePanel()}
             {renderActivePanel()}
