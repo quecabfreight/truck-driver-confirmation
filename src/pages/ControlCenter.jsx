@@ -1,25 +1,9 @@
-// src/pages/ControlCenter.jsx
-import React, { useEffect, useState } from "react";
+import { useState } from "react";
+import Layout from "../components/Layout";
 
-// Demo token generator like DEMO-ABC123
-function makeDemoToken() {
-  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let code = "";
-  for (let i = 0; i < 6; i += 1) {
-    code += alphabet[Math.floor(Math.random() * alphabet.length)];
-  }
-  return `DEMO-${code}`;
-}
+function formatPhoneNumber(value) {
+  const digits = value.replace(/\D/g, "").slice(0, 10);
 
-// Uppercase for USDOT / plate
-function formatUpper(value) {
-  return (value || "").toUpperCase();
-}
-
-// Auto-format phone as 123-456-7890
-function formatPhone(value) {
-  const digits = (value || "").replace(/\D/g, "").slice(0, 10);
-  if (!digits) return "";
   if (digits.length <= 3) return digits;
   if (digits.length <= 6) {
     return `${digits.slice(0, 3)}-${digits.slice(3)}`;
@@ -27,528 +11,380 @@ function formatPhone(value) {
   return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
 }
 
-// Nice label for display window
-function formatDateLabel(dateStr) {
-  if (!dateStr) return "Not set";
-  const d = new Date(dateStr);
-  if (Number.isNaN(d.getTime())) return "Not set";
-  return d.toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "2-digit",
-  });
+function generateDemoToken() {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let result = "";
+  for (let i = 0; i < 6; i += 1) {
+    const idx = Math.floor(Math.random() * chars.length);
+    result += chars[idx];
+  }
+  return `DEMO-${result}`;
 }
 
 export default function ControlCenter() {
-  const [form, setForm] = useState({
-    loadRef: "",
-    carrierName: "",
-    usdot: "",
-    plate: "",
-    driverName: "",
-    driverPhone: "",
-    sendEmail: true,
-    sendText: false,
-    sendToEmail: "",
-    linkStart: "",
-    linkExpires: "",
-  });
+  const [loadRef, setLoadRef] = useState("");
+  const [carrierName, setCarrierName] = useState("");
+  const [usdDot, setUsdDot] = useState("");
+  const [licensePlate, setLicensePlate] = useState("");
+  const [driverName, setDriverName] = useState("");
+  const [driverPhone, setDriverPhone] = useState("");
+  const [sendViaEmail, setSendViaEmail] = useState(true);
+  const [sendViaText, setSendViaText] = useState(false);
+  const [sendToEmail, setSendToEmail] = useState("");
+  const [linkStart, setLinkStart] = useState("");
+  const [linkExpires, setLinkExpires] = useState("");
 
-  const [status, setStatus] = useState(null);
-  const [lastDemo, setLastDemo] = useState(null);
-  const [activeLinks, setActiveLinks] = useState([]);
+  const [status, setStatus] = useState(null); // { type: "success" | "error", message: string }
+  const [lastIssued, setLastIssued] = useState(null);
+  const [links, setLinks] = useState([]);
 
-  // Mobile layout – tabs instead of 3 squished cards
-  const [isMobile, setIsMobile] = useState(false);
-  const [activePanel, setActivePanel] = useState("issue");
+  const handleDriverPhoneChange = (e) => {
+    const formatted = formatPhoneNumber(e.target.value);
+    setDriverPhone(formatted);
+  };
 
-  useEffect(() => {
-    function handleResize() {
-      setIsMobile(window.innerWidth <= 900);
-    }
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  function handleChange(e) {
-    const { name, type, checked, value } = e.target;
-    let nextValue = type === "checkbox" ? checked : value;
-
-    if (name === "usdot" || name === "plate") {
-      nextValue = formatUpper(nextValue);
-    }
-
-    if (name === "driverPhone") {
-      nextValue = formatPhone(nextValue);
-    }
-
-    setForm((prev) => ({
-      ...prev,
-      [name]: nextValue,
-    }));
-  }
-
-  function handleSubmit(e) {
+  const handleIssueLink = (e) => {
     e.preventDefault();
     setStatus(null);
 
-    if (!form.loadRef.trim()) {
-      setStatus({ type: "error", message: "Load reference is required." });
-      return;
-    }
-    if (!form.carrierName.trim()) {
+    if (
+      !loadRef.trim() ||
+      !carrierName.trim() ||
+      !usdDot.trim() ||
+      !licensePlate.trim() ||
+      !driverPhone.trim() ||
+      !sendToEmail.trim()
+    ) {
       setStatus({
         type: "error",
-        message: "Carrier / legal name is required.",
-      });
-      return;
-    }
-    if (!form.usdot.trim()) {
-      setStatus({ type: "error", message: "USDOT# on Truck is required." });
-      return;
-    }
-    if (!form.plate.trim()) {
-      setStatus({
-        type: "error",
-        message: "License plate on Truck is required.",
-      });
-      return;
-    }
-    if (!form.sendEmail && !form.sendText) {
-      setStatus({
-        type: "error",
-        message: "Choose at least one delivery method: Email or Text.",
-      });
-      return;
-    }
-    if (form.sendEmail && !form.sendToEmail.trim()) {
-      setStatus({
-        type: "error",
-        message:
-          "Enter the email where the AdbS Truck-Driver Verify Link should be sent.",
-      });
-      return;
-    }
-    if (!form.driverPhone.trim()) {
-      setStatus({
-        type: "error",
-        message: "Enter a driver phone number for this load.",
+        message: "Please complete all required fields before issuing a link.",
       });
       return;
     }
 
-    const token = makeDemoToken();
-    const origin =
-      typeof window !== "undefined"
-        ? window.location.origin
-        : "https://quecabadbs.com";
-    const url = `${origin}/#/verify/${token}`;
+    if (!sendViaEmail && !sendViaText) {
+      setStatus({
+        type: "error",
+        message: "Select at least one method under “Send Link Via”.",
+      });
+      return;
+    }
 
-    const startLabel = form.linkStart
-      ? formatDateLabel(form.linkStart)
-      : "Starts now";
-    const endLabel = form.linkExpires
-      ? formatDateLabel(form.linkExpires)
-      : "Until cleared";
+    const token = generateDemoToken();
+    const baseUrl =
+      typeof window !== "undefined" ? window.location.origin : "";
+    const verifyUrl = `${baseUrl}/#/verify/${token}`;
 
-    const entry = {
+    const linkRecord = {
       token,
-      url,
-      loadRef: form.loadRef.trim(),
-      carrierName: form.carrierName.trim(),
-      usdot: form.usdot.trim(),
-      plate: form.plate.trim(),
-      driverName: form.driverName.trim(),
-      driverPhone: form.driverPhone.trim(),
-      sendEmail: form.sendEmail,
-      sendText: form.sendText,
-      sendToEmail: form.sendToEmail.trim(),
-      windowStart: startLabel,
-      windowEnd: endLabel,
+      verifyUrl,
+      loadRef,
+      carrierName,
+      usdDot,
+      licensePlate,
+      driverName,
+      driverPhone,
+      sendViaEmail,
+      sendViaText,
+      sendToEmail,
+      linkStart,
+      linkExpires,
+      createdAt: new Date().toISOString(),
     };
 
-    setLastDemo(entry);
-    setActiveLinks((prev) => [entry, ...prev]);
-
+    setLastIssued(linkRecord);
+    setLinks((prev) => [linkRecord, ...prev]);
     setStatus({
       type: "success",
-      message:
-        "Demo only. This would generate a unique AdbS Truck-Driver Verify Link and deliver it by the methods you chose.",
+      message: "Demo Truck-Driver Verify link issued below.",
     });
-  }
+  };
 
-  // ---------- Panels ----------
-
-  function renderIssuePanel() {
-    return (
-      <section className="qc-dash-card">
-        <h2 className="qc-dash-title">Issue AdbS Verification Link</h2>
-        <p className="qc-dash-text">
-          Define a specific load and Truck-Driver unit. AdbS will generate a
-          verification link that your dock team uses to confirm the USDOT# and
-          plate against your record before loading.
-        </p>
-
-        <form className="qc-form" onSubmit={handleSubmit}>
-          <div className="qc-form-grid-single">
-            <div className="qc-field">
-              <label className="qc-label">
-                Load Reference <span className="qc-required">*</span>
-              </label>
-              <input
-                type="text"
-                name="loadRef"
-                className="qc-input"
-                value={form.loadRef}
-                onChange={handleChange}
-                placeholder="PO#, load ID, or internal ref"
-              />
-            </div>
-
-            <div className="qc-field">
-              <label className="qc-label">
-                Carrier / Legal Name <span className="qc-required">*</span>
-              </label>
-              <input
-                type="text"
-                name="carrierName"
-                className="qc-input"
-                value={form.carrierName}
-                onChange={handleChange}
-                placeholder="ABC Trucking"
-              />
-            </div>
-
-            <div className="qc-field">
-              <label className="qc-label">
-                USDOT# on Truck <span className="qc-required">*</span>
-              </label>
-              <input
-                type="text"
-                name="usdot"
-                className="qc-input"
-                value={form.usdot}
-                onChange={handleChange}
-                placeholder="As painted on the truck door"
-              />
-            </div>
-
-            <div className="qc-field">
-              <label className="qc-label">
-                License Plate on Truck{" "}
-                <span className="qc-required">*</span>
-              </label>
-              <input
-                type="text"
-                name="plate"
-                className="qc-input"
-                value={form.plate}
-                onChange={handleChange}
-                placeholder="Exact plate text"
-              />
-            </div>
-
-            <div className="qc-field">
-              <label className="qc-label">
-                Driver Name{" "}
-                <span className="qc-label-optional">optional</span>
-              </label>
-              <input
-                type="text"
-                name="driverName"
-                className="qc-input"
-                value={form.driverName}
-                onChange={handleChange}
-                placeholder="For your internal notes"
-              />
-            </div>
-
-            <div className="qc-field">
-              <label className="qc-label">
-                Driver Phone <span className="qc-required">*</span>
-              </label>
-              <input
-                type="text"
-                name="driverPhone"
-                className="qc-input"
-                value={form.driverPhone}
-                onChange={handleChange}
-                placeholder="123-456-7890"
-              />
-            </div>
-
-            <div className="qc-field">
-              <label className="qc-label">Send Link Via</label>
-              <div className="qc-checkbox-row">
-                <label className="qc-checkbox">
-                  <input
-                    type="checkbox"
-                    name="sendEmail"
-                    checked={form.sendEmail}
-                    onChange={handleChange}
-                  />
-                  <span>Email</span>
-                </label>
-                <label className="qc-checkbox">
-                  <input
-                    type="checkbox"
-                    name="sendText"
-                    checked={form.sendText}
-                    onChange={handleChange}
-                  />
-                  <span>Text</span>
-                </label>
-              </div>
-            </div>
-
-            <div className="qc-field">
-              <label className="qc-label">
-                Send To Email <span className="qc-required">*</span>
-              </label>
-              <input
-                type="email"
-                name="sendToEmail"
-                className="qc-input"
-                value={form.sendToEmail}
-                onChange={handleChange}
-                placeholder="dock or dispatcher email"
-              />
-            </div>
-
-            <div className="qc-field qc-field-row">
-              <div className="qc-field">
-                <label className="qc-label">
-                  Link Start{" "}
-                  <span className="qc-label-optional">optional</span>
-                </label>
-                <input
-                  type="date"
-                  name="linkStart"
-                  className="qc-input"
-                  value={form.linkStart}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="qc-field">
-                <label className="qc-label">
-                  Link Expires{" "}
-                  <span className="qc-label-optional">optional</span>
-                </label>
-                <input
-                  type="date"
-                  name="linkExpires"
-                  className="qc-input"
-                  value={form.linkExpires}
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
-          </div>
+  return (
+    <Layout pageTitle="AdbS Control Center">
+      <main className="page-container control-center-page">
+        <div className="content-shell">
+          <h1 className="page-title">AdbS Control Center</h1>
+          <p className="page-subtitle">
+            Issue QueCab AdbS Truck-Driver Verify Links, review active links,
+            and track recent checks. This demo issues mock links for testing.
+          </p>
 
           {status && (
             <div
-              className={
+              className={`status-banner ${
                 status.type === "success"
-                  ? "qc-status qc-status-success"
-                  : "qc-status qc-status-error"
-              }
+                  ? "status-banner-success"
+                  : "status-banner-error"
+              }`}
             >
               {status.message}
-              {lastDemo && (
-                <div className="qc-status-sub">
-                  Token:{" "}
-                  <span className="qc-mono">{lastDemo.token}</span>
-                  <br />
-                  Link:{" "}
-                  <a
-                    href={lastDemo.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{
-                      textDecoration: "none",
-                      color: "#7fd4ff",
-                      fontWeight: 700,
-                      wordBreak: "break-all",
-                    }}
-                  >
-                    {lastDemo.url}
-                  </a>
-                </div>
-              )}
             </div>
           )}
 
-          <div className="qc-form-actions">
-            <button type="submit" className="qc-btn-primary qc-btn-wide">
-              Issue Verification Link (Demo)
-            </button>
+          <div className="control-center-grid">
+            {/* Left panel: Issue AdbS Verification Link */}
+            <section className="card control-card issue-link-card">
+              <h2 className="card-title">Issue AdbS Truck-Driver Verify Link</h2>
+              <form onSubmit={handleIssueLink} className="form-grid">
+                <div className="form-row">
+                  <label className="form-label">
+                    Load Reference<span className="required">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={loadRef}
+                    onChange={(e) => setLoadRef(e.target.value)}
+                    placeholder="Load / PO / Reference #"
+                  />
+                </div>
+
+                <div className="form-row">
+                  <label className="form-label">
+                    Carrier / Legal Name<span className="required">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={carrierName}
+                    onChange={(e) => setCarrierName(e.target.value)}
+                    placeholder="Exact carrier / legal name"
+                  />
+                </div>
+
+                <div className="form-row two-col">
+                  <div className="col">
+                    <label className="form-label">
+                      USDOT# on Truck<span className="required">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={usdDot}
+                      onChange={(e) => setUsdDot(e.target.value.toUpperCase())}
+                      placeholder="e.g. 1234567"
+                    />
+                  </div>
+                  <div className="col">
+                    <label className="form-label">
+                      License Plate on Truck<span className="required">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={licensePlate}
+                      onChange={(e) =>
+                        setLicensePlate(e.target.value.toUpperCase())
+                      }
+                      placeholder="e.g. ABC1234"
+                    />
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <label className="form-label">Driver Name (optional)</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={driverName}
+                    onChange={(e) => setDriverName(e.target.value)}
+                    placeholder="Driver name (optional)"
+                  />
+                </div>
+
+                <div className="form-row">
+                  <label className="form-label">
+                    Driver Phone<span className="required">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    className="form-input"
+                    value={driverPhone}
+                    onChange={handleDriverPhoneChange}
+                    placeholder="585-506-1158"
+                  />
+                </div>
+
+                <div className="form-row">
+                  <span className="form-label">
+                    Send Link Via<span className="required">*</span>
+                  </span>
+                  <div className="checkbox-row">
+                    <label className="checkbox-label">
+                      <input
+                        type="checkbox"
+                        checked={sendViaEmail}
+                        onChange={(e) => setSendViaEmail(e.target.checked)}
+                      />
+                      <span>Email</span>
+                    </label>
+                    <label className="checkbox-label">
+                      <input
+                        type="checkbox"
+                        checked={sendViaText}
+                        onChange={(e) => setSendViaText(e.target.checked)}
+                      />
+                      <span>Text</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <label className="form-label">
+                    Send To Email<span className="required">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    className="form-input"
+                    value={sendToEmail}
+                    onChange={(e) => setSendToEmail(e.target.value)}
+                    placeholder="Where should the link be emailed?"
+                  />
+                </div>
+
+                <div className="form-row two-col">
+                  <div className="col">
+                    <label className="form-label">Link Start (optional)</label>
+                    <input
+                      type="date"
+                      className="form-input"
+                      value={linkStart}
+                      onChange={(e) => setLinkStart(e.target.value)}
+                    />
+                  </div>
+                  <div className="col">
+                    <label className="form-label">
+                      Link Expires (optional)
+                    </label>
+                    <input
+                      type="date"
+                      className="form-input"
+                      value={linkExpires}
+                      onChange={(e) => setLinkExpires(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="form-actions">
+                  <button type="submit" className="primary-button">
+                    Issue Demo Verify Link
+                  </button>
+                </div>
+              </form>
+
+              {lastIssued && (
+                <div className="status-banner status-banner-success last-issued-banner">
+                  <div className="last-issued-title">
+                    Latest demo Truck-Driver Verify Link:
+                  </div>
+                  <div className="last-issued-body">
+                    <div>
+                      <strong>Token:</strong> {lastIssued.token}
+                    </div>
+                    <div>
+                      <strong>Verify URL:</strong>{" "}
+                      <a
+                        href={lastIssued.verifyUrl}
+                        style={{
+                          color: "#4db2ff",
+                          textDecoration: "none",
+                          fontWeight: 600,
+                        }}
+                      >
+                        {lastIssued.verifyUrl}
+                      </a>
+                    </div>
+                    <div className="last-issued-meta">
+                      <span>
+                        <strong>Load:</strong> {lastIssued.loadRef}
+                      </span>
+                      <span>
+                        <strong>Carrier:</strong> {lastIssued.carrierName}
+                      </span>
+                      <span>
+                        <strong>USDOT:</strong> {lastIssued.usdDot}
+                      </span>
+                      <span>
+                        <strong>Plate:</strong> {lastIssued.licensePlate}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </section>
+
+            {/* Center panel: Active Verify Links */}
+            <section className="card control-card active-links-card">
+              <h2 className="card-title">Active Verify Links (demo)</h2>
+              {links.length === 0 ? (
+                <p className="card-empty">
+                  No active demo links yet. Issue a Truck-Driver Verify Link on
+                  the left to see it here.
+                </p>
+              ) : (
+                <ul className="active-links-list">
+                  {links.map((link) => (
+                    <li key={link.token} className="active-link-item">
+                      <div className="active-link-main">
+                        <div className="active-link-row">
+                          <strong>Load:</strong> {link.loadRef}
+                        </div>
+                        <div className="active-link-row">
+                          <strong>Carrier:</strong> {link.carrierName}
+                        </div>
+                        <div className="active-link-row">
+                          <strong>USDOT / Plate:</strong> {link.usdDot} /{" "}
+                          {link.licensePlate}
+                        </div>
+                        <div className="active-link-row">
+                          <strong>Send:</strong>{" "}
+                          {[
+                            link.sendViaEmail ? "Email" : null,
+                            link.sendViaText ? "Text" : null,
+                          ]
+                            .filter(Boolean)
+                            .join(" & ")}{" "}
+                          → {link.sendToEmail}
+                        </div>
+                        <div className="active-link-row">
+                          <strong>Window:</strong>{" "}
+                          {link.linkStart || "Immediate"}{" "}
+                          {link.linkExpires
+                            ? `→ Expires ${link.linkExpires}`
+                            : ""}
+                        </div>
+                      </div>
+                      <div className="active-link-url">
+                        <a
+                          href={link.verifyUrl}
+                          style={{
+                            color: "#4db2ff",
+                            textDecoration: "none",
+                            fontWeight: 600,
+                          }}
+                        >
+                          {link.verifyUrl}
+                        </a>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+
+            {/* Right panel: Recent Truck-Driver Checks */}
+            <section className="card control-card recent-checks-card">
+              <h2 className="card-title">Recent Truck-Driver Checks</h2>
+              <p className="card-empty">
+                No recent checks in this demo. Once the Verify screen is wired
+                to return outcomes, completed Truck-Driver verifications will
+                appear here.
+              </p>
+            </section>
           </div>
-
-          <p className="qc-note qc-mono qc-mt-sm">
-            Demo only. In the live system this will generate a unique AdbS
-            Truck-Driver Verify Link for this load and deliver it by the
-            methods you choose.
-          </p>
-        </form>
-      </section>
-    );
-  }
-
-  function renderActivePanel() {
-    return (
-      <section className="qc-dash-card">
-        <h2 className="qc-dash-title">Active Verify Links</h2>
-        <p className="qc-dash-text">
-          In the full system, this will show AdbS Truck-Driver Verify Links
-          that are currently valid and waiting to be used at the dock.
-        </p>
-
-        {activeLinks.length === 0 && (
-          <div className="qc-empty">
-            No active links in this demo yet. Once live, each entry will show
-            load reference, carrier, link status, and last activity.
-          </div>
-        )}
-
-        {activeLinks.length > 0 && (
-          <ul className="qc-list qc-list-tight">
-            {activeLinks.map((link) => (
-              <li key={link.token} className="qc-list-item">
-                <div className="qc-list-main">
-                  <strong>{link.loadRef}</strong> — {link.carrierName}
-                </div>
-                <div className="qc-list-sub qc-mono">
-                  USDOT#: {link.usdot} &nbsp; | &nbsp; Plate: {link.plate}
-                </div>
-                <div className="qc-list-sub">
-                  Send via:{" "}
-                  {[
-                    link.sendEmail ? "Email" : null,
-                    link.sendText ? "Text" : null,
-                  ]
-                    .filter(Boolean)
-                    .join(" + ")}{" "}
-                  {link.sendToEmail && (
-                    <>
-                      • Email to{" "}
-                      <span className="qc-mono">{link.sendToEmail}</span>
-                    </>
-                  )}
-                </div>
-                <div className="qc-list-sub qc-mono">
-                  Window: {link.windowStart} → {link.windowEnd}
-                </div>
-                <div className="qc-list-sub">
-                  Link:{" "}
-                  <a
-                    href={link.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{
-                      textDecoration: "none",
-                      color: "#7fd4ff",
-                      fontWeight: 700,
-                      wordBreak: "break-all",
-                    }}
-                  >
-                    {link.url}
-                  </a>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-    );
-  }
-
-  function renderRecentPanel() {
-    return (
-      <section className="qc-dash-card">
-        <h2 className="qc-dash-title">Recent Truck-Driver Checks</h2>
-        <p className="qc-dash-text">
-          This panel will list recent dock-side verifications, including
-          whether the USDOT# and plate matched and if the driver answered
-          their registered phone.
-        </p>
-
-        <div className="qc-empty">
-          No recent checks in this demo. When wired, this becomes your
-          at-a-glance history of Truck-Driver confirmations.
         </div>
-      </section>
-    );
-  }
-
-  // ---------- Render ----------
-
-  return (
-    <div className="qc-shell qc-dash">
-      <div className="qc-inner">
-        <header className="qc-dash-header">
-          <h1 className="qc-heading">AdbS Control Center</h1>
-          <p className="qc-sub">
-            For licensed brokers and shippers to issue AdbS Truck-Driver
-            Verify Links, monitor active loads, and review recent dock-side
-            checks. This build is a visual demo — live wiring comes next.
-          </p>
-        </header>
-
-        {isMobile ? (
-          <>
-            {/* Mobile: tabs */}
-            <div className="qc-tabs">
-              <button
-                type="button"
-                onClick={() => setActivePanel("issue")}
-                className={
-                  activePanel === "issue"
-                    ? "qc-tab qc-tab-active"
-                    : "qc-tab"
-                }
-              >
-                Issue Link
-              </button>
-              <button
-                type="button"
-                onClick={() => setActivePanel("active")}
-                className={
-                  activePanel === "active"
-                    ? "qc-tab qc-tab-active"
-                    : "qc-tab"
-                }
-              >
-                Active Links
-              </button>
-              <button
-                type="button"
-                onClick={() => setActivePanel("recent")}
-                className={
-                  activePanel === "recent"
-                    ? "qc-tab qc-tab-active"
-                    : "qc-tab"
-                }
-              >
-                Recent Checks
-              </button>
-            </div>
-
-            <div className="qc-tabs-panel">
-              {activePanel === "issue" && renderIssuePanel()}
-              {activePanel === "active" && renderActivePanel()}
-              {activePanel === "recent" && renderRecentPanel()}
-            </div>
-          </>
-        ) : (
-          // Desktop: 3-panel layout
-          <div className="qc-dash-grid qc-dash-grid-3">
-            {renderIssuePanel()}
-            {renderActivePanel()}
-            {renderRecentPanel()}
-          </div>
-        )}
-      </div>
-    </div>
+      </main>
+    </Layout>
   );
 }
