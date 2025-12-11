@@ -1,232 +1,195 @@
-// src/pages/Join.jsx
-import React, { useState } from "react";
+import { useState } from "react";
+import Layout from "../components/Layout";
+
+function formatPhoneNumber(value) {
+  const digits = value.replace(/\D/g, "").slice(0, 10);
+
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) {
+    return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+  }
+  return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+}
 
 export default function Join() {
-  const [form, setForm] = useState({
-    businessName: "",
-    contactName: "",
-    role: "Broker",
-    mcNumber: "",
-    ein: "",
-    businessPhone: "",
-    businessEmail: "",
-  });
+  const [legalBusinessName, setLegalBusinessName] = useState("");
+  const [primaryContactName, setPrimaryContactName] = useState("");
+  const [role, setRole] = useState("");
+  const [mcNumber, setMcNumber] = useState("");
+  const [einTaxId, setEinTaxId] = useState("");
+  const [businessPhone, setBusinessPhone] = useState("");
+  const [businessEmail, setBusinessEmail] = useState("");
 
-  const [status, setStatus] = useState(null);
+  const [status, setStatus] = useState(null); // { type: "success" | "error", message: string }
 
-  function handleChange(e) {
-    const { name, value } = e.target;
-
-    let nextValue = value;
-    if (name === "mcNumber") {
-      // Simple MC format helper: strip spaces, uppercase
-      nextValue = value.toUpperCase().replace(/\s+/g, "");
-    }
-
-    setForm((prev) => ({
-      ...prev,
-      [name]: nextValue,
-    }));
-  }
-
-  function handleSubmit(e) {
+  const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Basic required checks for demo
-    if (!form.businessName.trim()) {
-      setStatus({ type: "error", message: "Enter your legal business name." });
-      return;
-    }
-    if (!form.contactName.trim()) {
+    setStatus(null);
+
+    const missingRequired =
+      !legalBusinessName.trim() ||
+      !primaryContactName.trim() ||
+      !role.trim() ||
+      !mcNumber.trim() ||
+      !businessPhone.trim() ||
+      !businessEmail.trim();
+
+    if (missingRequired) {
       setStatus({
         type: "error",
-        message: "Enter a primary contact name.",
-      });
-      return;
-    }
-    if (!form.mcNumber.trim()) {
-      setStatus({
-        type: "error",
-        message: "Enter your MC number.",
-      });
-      return;
-    }
-    if (!form.businessPhone.trim()) {
-      setStatus({
-        type: "error",
-        message: "Enter a business phone.",
-      });
-      return;
-    }
-    if (!form.businessEmail.trim()) {
-      setStatus({
-        type: "error",
-        message: "Enter a business email.",
+        message: "Please complete all required fields before submitting.",
       });
       return;
     }
 
-    // Demo only – this is where a real API call would go.
+    // Demo-only behavior: show success, then clear the form.
     setStatus({
       type: "success",
       message:
-        "Request sent. In the live system, QueCab AdbS will review and email your access details.",
+        "Request sent (demo). QueCab AdbS will review and email your access details.",
     });
 
-    // Clear the form after a successful "submit"
-    setForm({
-      businessName: "",
-      contactName: "",
-      role: "Broker",
-      mcNumber: "",
-      ein: "",
-      businessPhone: "",
-      businessEmail: "",
-    });
-  }
+    setLegalBusinessName("");
+    setPrimaryContactName("");
+    setRole("");
+    setMcNumber("");
+    setEinTaxId("");
+    setBusinessPhone("");
+    setBusinessEmail("");
+  };
+
+  const handlePhoneChange = (e) => {
+    const formatted = formatPhoneNumber(e.target.value);
+    setBusinessPhone(formatted);
+  };
 
   return (
-    <div className="qc-shell">
-      <div className="qc-inner qc-inner-narrow">
-        <header className="qc-page-header">
-          <h1 className="qc-heading">Request Access</h1>
-          <p className="qc-sub">
+    <Layout pageTitle="Request Access">
+      <main className="page-container request-access-page">
+        <div className="content-shell">
+          <h1 className="page-title">Request Access</h1>
+          <p className="page-subtitle">
             For licensed brokers and shippers who want to use QueCab AdbS to
-            verify Truck-Driver units before loading. Fill this out to request
-            a subscription and onboarding.
+            verify Truck-Driver units before loading. Fill this out to request a
+            subscription and onboarding.
           </p>
-        </header>
 
-        <section className="qc-dash-card">
-          <form className="qc-form" onSubmit={handleSubmit}>
-            <div className="qc-form-grid-single">
-              <div className="qc-field">
-                <label className="qc-label">
-                  Legal Business Name <span className="qc-required">*</span>
+          {status && (
+            <div
+              className={`status-banner ${
+                status.type === "success"
+                  ? "status-banner-success"
+                  : "status-banner-error"
+              }`}
+            >
+              {status.message}
+            </div>
+          )}
+
+          <section className="card request-access-card">
+            <form onSubmit={handleSubmit} className="form-grid">
+              <div className="form-row">
+                <label className="form-label">
+                  Legal Business Name<span className="required">*</span>
                 </label>
                 <input
                   type="text"
-                  name="businessName"
-                  className="qc-input"
-                  value={form.businessName}
-                  onChange={handleChange}
-                  placeholder="Exact name on FMCSA / paperwork"
+                  className="form-input"
+                  value={legalBusinessName}
+                  onChange={(e) => setLegalBusinessName(e.target.value)}
+                  placeholder="Exact name from FMCSA / paperwork"
                 />
               </div>
 
-              <div className="qc-field">
-                <label className="qc-label">
-                  Primary Contact Name <span className="qc-required">*</span>
+              <div className="form-row">
+                <label className="form-label">
+                  Primary Contact Name<span className="required">*</span>
                 </label>
                 <input
                   type="text"
-                  name="contactName"
-                  className="qc-input"
-                  value={form.contactName}
-                  onChange={handleChange}
+                  className="form-input"
+                  value={primaryContactName}
+                  onChange={(e) => setPrimaryContactName(e.target.value)}
                   placeholder="Who will manage AdbS access?"
                 />
               </div>
 
-              <div className="qc-field">
-                <label className="qc-label">
-                  Role <span className="qc-required">*</span>
+              <div className="form-row">
+                <label className="form-label">
+                  Role<span className="required">*</span>
                 </label>
                 <select
-                  name="role"
-                  className="qc-input"
-                  value={form.role}
-                  onChange={handleChange}
+                  className="form-input"
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
                 >
+                  <option value="">Select role</option>
                   <option value="Broker">Broker</option>
                   <option value="Shipper">Shipper</option>
+                  <option value="Broker/Shipper">Broker &amp; Shipper</option>
                 </select>
               </div>
 
-              <div className="qc-field">
-                <label className="qc-label">
-                  MC# <span className="qc-required">*</span>
+              <div className="form-row">
+                <label className="form-label">
+                  MC#<span className="required">*</span>
                 </label>
                 <input
                   type="text"
-                  name="mcNumber"
-                  className="qc-input"
-                  value={form.mcNumber}
-                  onChange={handleChange}
+                  className="form-input"
+                  value={mcNumber}
+                  onChange={(e) => setMcNumber(e.target.value)}
                   placeholder="MC123456"
                 />
               </div>
 
-              <div className="qc-field">
-                <label className="qc-label">
-                  EIN / Tax ID{" "}
-                  <span className="qc-label-optional">optional</span>
-                </label>
+              <div className="form-row">
+                <label className="form-label">EIN / Tax ID (optional)</label>
                 <input
                   type="text"
-                  name="ein"
-                  className="qc-input"
-                  value={form.ein}
-                  onChange={handleChange}
+                  className="form-input"
+                  value={einTaxId}
+                  onChange={(e) => setEinTaxId(e.target.value)}
                   placeholder="For billing verification (optional)"
                 />
               </div>
 
-              <div className="qc-field">
-                <label className="qc-label">
-                  Business Phone <span className="qc-required">*</span>
+              <div className="form-row">
+                <label className="form-label">
+                  Business Phone<span className="required">*</span>
                 </label>
                 <input
                   type="tel"
-                  name="businessPhone"
-                  className="qc-input"
-                  value={form.businessPhone}
-                  onChange={handleChange}
-                  placeholder="Main dispatch or office line"
+                  className="form-input"
+                  value={businessPhone}
+                  onChange={handlePhoneChange}
+                  placeholder="585-506-1158"
                 />
               </div>
 
-              <div className="qc-field">
-                <label className="qc-label">
-                  Business Email <span className="qc-required">*</span>
+              <div className="form-row">
+                <label className="form-label">
+                  Business Email<span className="required">*</span>
                 </label>
                 <input
                   type="email"
-                  name="businessEmail"
-                  className="qc-input"
-                  value={form.businessEmail}
-                  onChange={handleChange}
-                  placeholder="name@business.com"
+                  className="form-input"
+                  value={businessEmail}
+                  onChange={(e) => setBusinessEmail(e.target.value)}
+                  placeholder="name@yourbusiness.com"
                 />
               </div>
-            </div>
 
-            {status && (
-              <div
-                className={
-                  status.type === "success"
-                    ? "qc-status qc-status-success"
-                    : "qc-status qc-status-error"
-                }
-              >
-                {status.message}
+              <div className="form-actions">
+                <button type="submit" className="primary-button">
+                  Submit Request
+                </button>
               </div>
-            )}
-
-            <div className="qc-form-actions">
-              <button type="submit" className="qc-btn-primary qc-btn-wide">
-                Submit Request
-              </button>
-            </div>
-
-            <p className="qc-note qc-mono qc-mt-sm">
-              Demo only. In the live system, this request will create a ticket
-              for the QueCab AdbS team to vet your MC, confirm identity, and
-              send subscription options.
-            </p>
-          </form>
-        </section>
-      </div>
-    </div>
+            </form>
+          </section>
+        </div>
+      </main>
+    </Layout>
   );
 }
