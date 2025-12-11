@@ -21,6 +21,11 @@ function generateDemoToken() {
   return `DEMO-${result}`;
 }
 
+function randomFailedAttempts() {
+  // Just for demo flavor in the Active Links list
+  return Math.floor(Math.random() * 8); // 0–7
+}
+
 export default function ControlCenter() {
   const [loadRef, setLoadRef] = useState("");
   const [carrierName, setCarrierName] = useState("");
@@ -89,6 +94,8 @@ export default function ControlCenter() {
       sendToEmail,
       linkStart,
       linkExpires,
+      statusText: "Awaiting dock verification",
+      failedAttempts: randomFailedAttempts(),
       createdAt: new Date().toISOString(),
     };
 
@@ -100,14 +107,18 @@ export default function ControlCenter() {
     });
   };
 
+  const handleRevokeLink = (token) => {
+    setLinks((prev) => prev.filter((link) => link.token !== token));
+  };
+
   return (
     <Layout pageTitle="AdbS Control Center">
       <main className="page-container control-center-page">
         <div className="content-shell">
           <h1 className="page-title">AdbS Control Center</h1>
           <p className="page-subtitle">
-            Issue QueCab AdbS Truck-Driver Verify Links, review active links,
-            and track recent checks. This demo issues mock links for testing.
+            Issue AdbS Truck-Driver verification links and monitor activity in
+            front of the dock. Demo mode only – no live data is stored.
           </p>
 
           {status && (
@@ -125,11 +136,13 @@ export default function ControlCenter() {
           <div className="control-center-grid">
             {/* Left panel: Issue AdbS Verification Link */}
             <section className="card control-card issue-link-card">
-              <h2 className="card-title">Issue AdbS Truck-Driver Verify Link</h2>
+              <h2 className="card-title">
+                Issue AdbS Truck-Driver Verify Link
+              </h2>
               <form onSubmit={handleIssueLink} className="form-grid">
                 <div className="form-row">
                   <label className="form-label">
-                    Load Reference<span className="required">*</span>
+                    Load / Reference #<span className="required">*</span>
                   </label>
                   <input
                     type="text"
@@ -177,7 +190,7 @@ export default function ControlCenter() {
                       onChange={(e) =>
                         setLicensePlate(e.target.value.toUpperCase())
                       }
-                      placeholder="e.g. ABC1234"
+                      placeholder="e.g. ABC12345"
                     />
                   </div>
                 </div>
@@ -195,7 +208,7 @@ export default function ControlCenter() {
 
                 <div className="form-row">
                   <label className="form-label">
-                    Driver Phone<span className="required">*</span>
+                    Driver Phone #<span className="required">*</span>
                   </label>
                   <input
                     type="tel"
@@ -232,7 +245,7 @@ export default function ControlCenter() {
 
                 <div className="form-row">
                   <label className="form-label">
-                    Send To Email<span className="required">*</span>
+                    Send to Email<span className="required">*</span>
                   </label>
                   <input
                     type="email"
@@ -245,7 +258,9 @@ export default function ControlCenter() {
 
                 <div className="form-row two-col">
                   <div className="col">
-                    <label className="form-label">Link Start (optional)</label>
+                    <label className="form-label">
+                      Link Start (optional)
+                    </label>
                     <input
                       type="date"
                       className="form-input"
@@ -268,7 +283,7 @@ export default function ControlCenter() {
 
                 <div className="form-actions">
                   <button type="submit" className="primary-button">
-                    Issue Demo Verify Link
+                    Issue Verification Link (Demo)
                   </button>
                 </div>
               </form>
@@ -280,7 +295,7 @@ export default function ControlCenter() {
                   </div>
                   <div className="last-issued-body">
                     <div>
-                      <strong>Token:</strong> {lastIssued.token}
+                      <strong>AdbS ID:</strong> {lastIssued.token}
                     </div>
                     <div>
                       <strong>Verify URL:</strong>{" "}
@@ -297,16 +312,12 @@ export default function ControlCenter() {
                     </div>
                     <div className="last-issued-meta">
                       <span>
-                        <strong>Load:</strong> {lastIssued.loadRef}
+                        <strong>Load:</strong> {lastIssued.loadRef} –{" "}
+                        {lastIssued.carrierName}
                       </span>
                       <span>
-                        <strong>Carrier:</strong> {lastIssued.carrierName}
-                      </span>
-                      <span>
-                        <strong>USDOT:</strong> {lastIssued.usdDot}
-                      </span>
-                      <span>
-                        <strong>Plate:</strong> {lastIssued.licensePlate}
+                        <strong>USDOT / Plate:</strong> {lastIssued.usdDot} /{" "}
+                        {lastIssued.licensePlate}
                       </span>
                     </div>
                   </div>
@@ -314,9 +325,9 @@ export default function ControlCenter() {
               )}
             </section>
 
-            {/* Center panel: Active Verify Links */}
+            {/* Center panel: Active AdbS Links */}
             <section className="card control-card active-links-card">
-              <h2 className="card-title">Active Verify Links (demo)</h2>
+              <h2 className="card-title">Active AdbS Links (Demo)</h2>
               {links.length === 0 ? (
                 <p className="card-empty">
                   No active demo links yet. Issue a Truck-Driver Verify Link on
@@ -326,42 +337,54 @@ export default function ControlCenter() {
                 <ul className="active-links-list">
                   {links.map((link) => (
                     <li key={link.token} className="active-link-item">
-                      <div className="active-link-main">
-                        <div className="active-link-row">
-                          <strong>Load:</strong> {link.loadRef}
-                        </div>
-                        <div className="active-link-row">
-                          <strong>Carrier:</strong> {link.carrierName}
-                        </div>
-                        <div className="active-link-row">
-                          <strong>USDOT / Plate:</strong> {link.usdDot} /{" "}
-                          {link.licensePlate}
-                        </div>
-                        <div className="active-link-row">
-                          <strong>Send:</strong>{" "}
-                          {[
-                            link.sendViaEmail ? "Email" : null,
-                            link.sendViaText ? "Text" : null,
-                          ]
-                            .filter(Boolean)
-                            .join(" & ")}{" "}
-                          → {link.sendToEmail}
-                        </div>
-                        <div className="active-link-row">
-                          <strong>Window:</strong>{" "}
-                          {link.linkStart || "Immediate"}{" "}
-                          {link.linkExpires
-                            ? `→ Expires ${link.linkExpires}`
-                            : ""}
-                        </div>
+                      <div className="active-link-header">
+                        <span className="active-link-id">
+                          <strong>AdbS ID:</strong> {link.token}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleRevokeLink(link.token)}
+                          className="revoke-link-button"
+                          style={{
+                            backgroundColor: "#b02a37",
+                            border: "none",
+                            borderRadius: "999px",
+                            padding: "0.3rem 0.9rem",
+                            fontSize: "0.85rem",
+                            fontWeight: 600,
+                            color: "#ffffff",
+                            cursor: "pointer",
+                            boxShadow:
+                              "0 0 0 1px rgba(0,0,0,0.3), 0 6px 12px rgba(0,0,0,0.4)",
+                          }}
+                        >
+                          Revoke Link
+                        </button>
                       </div>
-                      <div className="active-link-url">
+                      <div className="active-link-row">
+                        <strong>Load:</strong> {link.loadRef} –{" "}
+                        {link.carrierName}
+                      </div>
+                      <div className="active-link-row">
+                        <strong>USDOT# / Plate:</strong> {link.usdDot} /{" "}
+                        {link.licensePlate}
+                      </div>
+                      <div className="active-link-row">
+                        <strong>Status:</strong> {link.statusText}
+                      </div>
+                      <div className="active-link-row">
+                        <strong>Failed attempts (demo):</strong>{" "}
+                        {link.failedAttempts}
+                      </div>
+                      <div className="active-link-row">
+                        <strong>Verify URL:</strong>{" "}
                         <a
                           href={link.verifyUrl}
                           style={{
                             color: "#4db2ff",
                             textDecoration: "none",
                             fontWeight: 600,
+                            wordBreak: "break-all",
                           }}
                         >
                           {link.verifyUrl}
