@@ -13,7 +13,6 @@ export default function Layout({ pageTitle, children }) {
     color: "#f9fafb",
   };
 
-  // SINGLE header band – this is the ONLY bar that should exist
   const headerStyle = {
     position: "sticky",
     top: 0,
@@ -70,60 +69,68 @@ export default function Layout({ pageTitle, children }) {
     color: "#ffffff",
   };
 
+  // ✅ On the Request Access page, we hide THIS header to avoid the double bar.
+  const hideGlobalHeaderForThisPage =
+    pageTitle &&
+    typeof pageTitle === "string" &&
+    pageTitle.toLowerCase().includes("request access");
+
   return (
     <div style={shellStyle}>
-      <header style={headerStyle}>
-        <div style={headerInnerStyle}>
-          <div style={brandRowStyle}>
-            <img
-              src="/qc-logo.png"
-              alt="QueCab AdbS logo"
-              style={logoStyle}
-            />
-            <span style={brandTextStyle}>QueCab AdbS</span>
+      {!hideGlobalHeaderForThisPage && (
+        <header style={headerStyle}>
+          <div style={headerInnerStyle}>
+            <div style={brandRowStyle}>
+              <img
+                src="/qc-logo.png"
+                alt="QueCab AdbS logo"
+                style={logoStyle}
+              />
+              <span style={brandTextStyle}>QueCab AdbS</span>
+            </div>
+            <nav style={navStyle}>
+              <NavLink
+                to="/"
+                style={({ isActive }) => ({
+                  ...linkBaseStyle,
+                  ...(isActive ? activeUnderlineStyle : {}),
+                })}
+              >
+                Home
+              </NavLink>
+              <NavLink
+                to="/how-it-works"
+                style={({ isActive }) => ({
+                  ...linkBaseStyle,
+                  ...(isActive ? activeUnderlineStyle : {}),
+                })}
+              >
+                How It Works
+              </NavLink>
+              <NavLink
+                to="/login"
+                style={({ isActive }) => ({
+                  ...linkBaseStyle,
+                  ...(isActive ? activeUnderlineStyle : {}),
+                })}
+              >
+                Log In
+              </NavLink>
+              <NavLink
+                to="/join"
+                style={({ isActive }) => ({
+                  ...linkBaseStyle,
+                  ...(isActive ? activeUnderlineStyle : {}),
+                })}
+              >
+                Request Access
+              </NavLink>
+            </nav>
           </div>
-          <nav style={navStyle}>
-            <NavLink
-              to="/"
-              style={({ isActive }) => ({
-                ...linkBaseStyle,
-                ...(isActive ? activeUnderlineStyle : {}),
-              })}
-            >
-              Home
-            </NavLink>
-            <NavLink
-              to="/how-it-works"
-              style={({ isActive }) => ({
-                ...linkBaseStyle,
-                ...(isActive ? activeUnderlineStyle : {}),
-              })}
-            >
-              How It Works
-            </NavLink>
-            <NavLink
-              to="/login"
-              style={({ isActive }) => ({
-                ...linkBaseStyle,
-                ...(isActive ? activeUnderlineStyle : {}),
-              })}
-            >
-              Log In
-            </NavLink>
-            <NavLink
-              to="/join"
-              style={({ isActive }) => ({
-                ...linkBaseStyle,
-                ...(isActive ? activeUnderlineStyle : {}),
-              })}
-            >
-              Request Access
-            </NavLink>
-          </nav>
-        </div>
-      </header>
+        </header>
+      )}
 
-      {/* Page content */}
+      {/* Page content (cards/forms) */}
       {children}
     </div>
   );
