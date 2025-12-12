@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Layout from "../components/Layout";
 
+// Format 5855061158 -> 585-506-1158
 function formatPhoneNumber(value) {
   const digits = value.replace(/\D/g, "").slice(0, 10);
 
@@ -22,8 +23,7 @@ function generateDemoToken() {
 }
 
 function randomFailedAttempts() {
-  // Just for demo flavor in the Active Links list
-  return Math.floor(Math.random() * 8); // 0–7
+  return Math.floor(Math.random() * 8); // 0–7, demo only
 }
 
 export default function ControlCenter() {
@@ -39,7 +39,7 @@ export default function ControlCenter() {
   const [linkStart, setLinkStart] = useState("");
   const [linkExpires, setLinkExpires] = useState("");
 
-  const [status, setStatus] = useState(null); // { type: "success" | "error", message: string }
+  const [status, setStatus] = useState(null); // { type: "success" | "error", message }
   const [lastIssued, setLastIssued] = useState(null);
   const [links, setLinks] = useState([]);
 
@@ -70,7 +70,7 @@ export default function ControlCenter() {
     if (!sendViaEmail && !sendViaText) {
       setStatus({
         type: "error",
-        message: "Select at least one method under “Send Link Via”.",
+        message: 'Select at least one method under "Send Link Via".',
       });
       return;
     }
@@ -111,81 +111,245 @@ export default function ControlCenter() {
     setLinks((prev) => prev.filter((link) => link.token !== token));
   };
 
+  // Inline layout so this page stops collapsing
+  const shellStyle = {
+    maxWidth: "1200px",
+    margin: "0 auto",
+  };
+
+  const titleStyle = {
+    fontSize: "1.9rem",
+    fontWeight: 700,
+    marginBottom: "6px",
+  };
+
+  const subtitleStyle = {
+    fontSize: "0.95rem",
+    opacity: 0.85,
+  };
+
+  const gridStyle = {
+    display: "grid",
+    gridTemplateColumns: "minmax(0, 2.2fr) minmax(0, 2fr) minmax(0, 2fr)",
+    gap: "24px",
+    marginTop: "24px",
+    alignItems: "flex-start",
+  };
+
+  const cardStyle = {
+    background:
+      "linear-gradient(145deg, rgba(5,10,22,0.98), rgba(3,6,14,0.98))",
+    borderRadius: "16px",
+    padding: "18px 18px 20px",
+    boxShadow: "0 18px 40px rgba(0,0,0,0.85)",
+    border: "1px solid rgba(255,255,255,0.06)",
+  };
+
+  const cardTitleStyle = {
+    fontSize: "1.1rem",
+    fontWeight: 600,
+    marginBottom: "10px",
+  };
+
+  const labelStyle = {
+    display: "block",
+    fontSize: "0.8rem",
+    marginBottom: "4px",
+    opacity: 0.9,
+  };
+
+  const inputStyle = {
+    width: "100%",
+    boxSizing: "border-box",
+    height: "40px",
+    borderRadius: "8px",
+    border: "1px solid rgba(255,255,255,0.16)",
+    backgroundColor: "rgba(2,6,17,0.98)",
+    color: "#f7f9ff",
+    padding: "0 12px",
+    fontSize: "0.9rem",
+    outline: "none",
+  };
+
+  const textareaStyle = {
+    ...inputStyle,
+    height: "80px",
+    paddingTop: "8px",
+    paddingBottom: "8px",
+  };
+
+  const twoColRowStyle = {
+    display: "grid",
+    gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)",
+    gap: "12px",
+    marginBottom: "12px",
+  };
+
+  const rowStyle = {
+    marginBottom: "12px",
+  };
+
+  const checkboxRowStyle = {
+    display: "flex",
+    gap: "16px",
+    alignItems: "center",
+    marginTop: "2px",
+  };
+
+  const checkboxLabelStyle = {
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    fontSize: "0.85rem",
+  };
+
+  const primaryButtonStyle = {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "10px 22px",
+    borderRadius: "999px",
+    border: "none",
+    fontSize: "0.95rem",
+    fontWeight: 600,
+    background:
+      "linear-gradient(135deg, #18a34a, #16c95b)",
+    color: "#ffffff",
+    cursor: "pointer",
+    boxShadow:
+      "0 0 0 1px rgba(0,0,0,0.5), 0 11px 26px rgba(0,0,0,0.9)",
+    marginTop: "4px",
+  };
+
+  const revokeButtonStyle = {
+    backgroundColor: "#b02a37",
+    border: "none",
+    borderRadius: "999px",
+    padding: "4px 14px",
+    fontSize: "0.82rem",
+    fontWeight: 600,
+    color: "#ffffff",
+    cursor: "pointer",
+    boxShadow:
+      "0 0 0 1px rgba(0,0,0,0.4), 0 6px 14px rgba(0,0,0,0.7)",
+  };
+
+  const statusBannerBase = {
+    marginTop: "18px",
+    borderRadius: "10px",
+    padding: "10px 14px",
+    fontSize: "0.9rem",
+    fontWeight: 500,
+  };
+
+  const statusBannerSuccess = {
+    background:
+      "linear-gradient(135deg, rgba(16,185,129,0.16), rgba(5,46,22,0.95))",
+    border: "1px solid rgba(52,211,153,0.6)",
+    color: "#bbf7d0",
+  };
+
+  const statusBannerError = {
+    background:
+      "linear-gradient(135deg, rgba(239,68,68,0.16), rgba(69,10,10,0.95))",
+    border: "1px solid rgba(248,113,113,0.7)",
+    color: "#fecaca",
+  };
+
+  const activeLinkItemStyle = {
+    padding: "10px 12px",
+    borderRadius: "12px",
+    backgroundColor: "rgba(2,8,23,0.95)",
+    border: "1px solid rgba(148,163,184,0.3)",
+    boxShadow: "0 8px 18px rgba(0,0,0,0.75)",
+  };
+
   return (
     <Layout pageTitle="AdbS Control Center">
-      <main className="page-container control-center-page">
-        <div className="content-shell">
-          <h1 className="page-title">AdbS Control Center</h1>
-          <p className="page-subtitle">
+      <main
+        className="page-container control-center-page"
+        style={{ padding: "32px 16px 72px" }}
+      >
+        <div className="content-shell" style={shellStyle}>
+          <h1 style={titleStyle}>AdbS Control Center</h1>
+          <p style={subtitleStyle}>
             Issue AdbS Truck-Driver verification links and monitor activity in
             front of the dock. Demo mode only – no live data is stored.
           </p>
 
           {status && (
             <div
-              className={`status-banner ${
-                status.type === "success"
-                  ? "status-banner-success"
-                  : "status-banner-error"
-              }`}
+              style={{
+                ...statusBannerBase,
+                ...(status.type === "success"
+                  ? statusBannerSuccess
+                  : statusBannerError),
+              }}
             >
               {status.message}
             </div>
           )}
 
-          <div className="control-center-grid">
-            {/* Left panel: Issue AdbS Verification Link */}
-            <section className="card control-card issue-link-card">
-              <h2 className="card-title">
+          <div style={gridStyle}>
+            {/* LEFT: Issue link */}
+            <section style={cardStyle}>
+              <h2 style={cardTitleStyle}>
                 Issue AdbS Truck-Driver Verify Link
               </h2>
-              <form onSubmit={handleIssueLink} className="form-grid">
-                <div className="form-row">
-                  <label className="form-label">
-                    Load / Reference #<span className="required">*</span>
+
+              <form onSubmit={handleIssueLink}>
+                <div style={rowStyle}>
+                  <label style={labelStyle}>
+                    Load / Reference #
+                    <span style={{ color: "#f97373" }}> *</span>
                   </label>
                   <input
                     type="text"
-                    className="form-input"
+                    style={inputStyle}
                     value={loadRef}
                     onChange={(e) => setLoadRef(e.target.value)}
                     placeholder="Load / PO / Reference #"
                   />
                 </div>
 
-                <div className="form-row">
-                  <label className="form-label">
-                    Carrier / Legal Name<span className="required">*</span>
+                <div style={rowStyle}>
+                  <label style={labelStyle}>
+                    Carrier / Legal Name
+                    <span style={{ color: "#f97373" }}> *</span>
                   </label>
                   <input
                     type="text"
-                    className="form-input"
+                    style={inputStyle}
                     value={carrierName}
                     onChange={(e) => setCarrierName(e.target.value)}
                     placeholder="Exact carrier / legal name"
                   />
                 </div>
 
-                <div className="form-row two-col">
-                  <div className="col">
-                    <label className="form-label">
-                      USDOT# on Truck<span className="required">*</span>
+                <div style={twoColRowStyle}>
+                  <div>
+                    <label style={labelStyle}>
+                      USDOT# on Truck
+                      <span style={{ color: "#f97373" }}> *</span>
                     </label>
                     <input
                       type="text"
-                      className="form-input"
+                      style={inputStyle}
                       value={usdDot}
-                      onChange={(e) => setUsdDot(e.target.value.toUpperCase())}
+                      onChange={(e) =>
+                        setUsdDot(e.target.value.toUpperCase())
+                      }
                       placeholder="e.g. 1234567"
                     />
                   </div>
-                  <div className="col">
-                    <label className="form-label">
-                      License Plate on Truck<span className="required">*</span>
+                  <div>
+                    <label style={labelStyle}>
+                      License Plate on Truck
+                      <span style={{ color: "#f97373" }}> *</span>
                     </label>
                     <input
                       type="text"
-                      className="form-input"
+                      style={inputStyle}
                       value={licensePlate}
                       onChange={(e) =>
                         setLicensePlate(e.target.value.toUpperCase())
@@ -195,44 +359,48 @@ export default function ControlCenter() {
                   </div>
                 </div>
 
-                <div className="form-row">
-                  <label className="form-label">Driver Name (optional)</label>
+                <div style={rowStyle}>
+                  <label style={labelStyle}>Driver Name (optional)</label>
                   <input
                     type="text"
-                    className="form-input"
+                    style={inputStyle}
                     value={driverName}
                     onChange={(e) => setDriverName(e.target.value)}
                     placeholder="Driver name (optional)"
                   />
                 </div>
 
-                <div className="form-row">
-                  <label className="form-label">
-                    Driver Phone #<span className="required">*</span>
+                <div style={rowStyle}>
+                  <label style={labelStyle}>
+                    Driver Phone #
+                    <span style={{ color: "#f97373" }}> *</span>
                   </label>
                   <input
                     type="tel"
-                    className="form-input"
+                    style={inputStyle}
                     value={driverPhone}
                     onChange={handleDriverPhoneChange}
                     placeholder="585-506-1158"
                   />
                 </div>
 
-                <div className="form-row">
-                  <span className="form-label">
-                    Send Link Via<span className="required">*</span>
+                <div style={rowStyle}>
+                  <span style={labelStyle}>
+                    Send Link Via
+                    <span style={{ color: "#f97373" }}> *</span>
                   </span>
-                  <div className="checkbox-row">
-                    <label className="checkbox-label">
+                  <div style={checkboxRowStyle}>
+                    <label style={checkboxLabelStyle}>
                       <input
                         type="checkbox"
                         checked={sendViaEmail}
-                        onChange={(e) => setSendViaEmail(e.target.checked)}
+                        onChange={(e) =>
+                          setSendViaEmail(e.target.checked)
+                        }
                       />
                       <span>Email</span>
                     </label>
-                    <label className="checkbox-label">
+                    <label style={checkboxLabelStyle}>
                       <input
                         type="checkbox"
                         checked={sendViaText}
@@ -243,152 +411,158 @@ export default function ControlCenter() {
                   </div>
                 </div>
 
-                <div className="form-row">
-                  <label className="form-label">
-                    Send to Email<span className="required">*</span>
+                <div style={rowStyle}>
+                  <label style={labelStyle}>
+                    Send to Email
+                    <span style={{ color: "#f97373" }}> *</span>
                   </label>
                   <input
                     type="email"
-                    className="form-input"
+                    style={inputStyle}
                     value={sendToEmail}
                     onChange={(e) => setSendToEmail(e.target.value)}
                     placeholder="Where should the link be emailed?"
                   />
                 </div>
 
-                <div className="form-row two-col">
-                  <div className="col">
-                    <label className="form-label">
+                <div style={twoColRowStyle}>
+                  <div>
+                    <label style={labelStyle}>
                       Link Start (optional)
                     </label>
                     <input
                       type="date"
-                      className="form-input"
+                      style={inputStyle}
                       value={linkStart}
                       onChange={(e) => setLinkStart(e.target.value)}
                     />
                   </div>
-                  <div className="col">
-                    <label className="form-label">
+                  <div>
+                    <label style={labelStyle}>
                       Link Expires (optional)
                     </label>
                     <input
                       type="date"
-                      className="form-input"
+                      style={inputStyle}
                       value={linkExpires}
                       onChange={(e) => setLinkExpires(e.target.value)}
                     />
                   </div>
                 </div>
 
-                <div className="form-actions">
-                  <button type="submit" className="primary-button">
+                <div style={{ marginTop: "10px" }}>
+                  <button type="submit" style={primaryButtonStyle}>
                     Issue Verification Link (Demo)
                   </button>
                 </div>
               </form>
 
               {lastIssued && (
-                <div className="status-banner status-banner-success last-issued-banner">
-                  <div className="last-issued-title">
-                    Latest demo Truck-Driver Verify Link:
+                <div
+                  style={{
+                    ...statusBannerBase,
+                    marginTop: "16px",
+                    ...statusBannerSuccess,
+                  }}
+                >
+                  <div style={{ marginBottom: "4px" }}>
+                    <strong>AdbS ID:</strong> {lastIssued.token}
                   </div>
-                  <div className="last-issued-body">
-                    <div>
-                      <strong>AdbS ID:</strong> {lastIssued.token}
-                    </div>
-                    <div>
-                      <strong>Verify URL:</strong>{" "}
-                      <a
-                        href={lastIssued.verifyUrl}
-                        style={{
-                          color: "#4db2ff",
-                          textDecoration: "none",
-                          fontWeight: 600,
-                        }}
-                      >
-                        {lastIssued.verifyUrl}
-                      </a>
-                    </div>
-                    <div className="last-issued-meta">
-                      <span>
-                        <strong>Load:</strong> {lastIssued.loadRef} –{" "}
-                        {lastIssued.carrierName}
-                      </span>
-                      <span>
-                        <strong>USDOT / Plate:</strong> {lastIssued.usdDot} /{" "}
-                        {lastIssued.licensePlate}
-                      </span>
-                    </div>
+                  <div style={{ marginBottom: "4px" }}>
+                    <strong>Verify URL:</strong>{" "}
+                    <a
+                      href={lastIssued.verifyUrl}
+                      style={{
+                        color: "#4db2ff",
+                        textDecoration: "none",
+                        fontWeight: 600,
+                        wordBreak: "break-all",
+                      }}
+                    >
+                      {lastIssued.verifyUrl}
+                    </a>
+                  </div>
+                  <div style={{ fontSize: "0.8rem", opacity: 0.9 }}>
+                    <strong>Load:</strong> {lastIssued.loadRef} –{" "}
+                    {lastIssued.carrierName} •{" "}
+                    <strong>USDOT / Plate:</strong> {lastIssued.usdDot} /{" "}
+                    {lastIssued.licensePlate}
                   </div>
                 </div>
               )}
             </section>
 
-            {/* Center panel: Active AdbS Links */}
-            <section className="card control-card active-links-card">
-              <h2 className="card-title">Active AdbS Links (Demo)</h2>
+            {/* CENTER: Active links */}
+            <section style={cardStyle}>
+              <h2 style={cardTitleStyle}>Active AdbS Links (Demo)</h2>
               {links.length === 0 ? (
-                <p className="card-empty">
-                  No active demo links yet. Issue a Truck-Driver Verify Link on
-                  the left to see it here.
+                <p style={{ fontSize: "0.85rem", opacity: 0.85 }}>
+                  No active demo links yet. Issue a Truck-Driver Verify Link
+                  on the left to see it here.
                 </p>
               ) : (
-                <ul className="active-links-list">
+                <ul
+                  style={{
+                    listStyle: "none",
+                    padding: 0,
+                    margin: 0,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "10px",
+                  }}
+                >
                   {links.map((link) => (
-                    <li key={link.token} className="active-link-item">
-                      <div className="active-link-header">
-                        <span className="active-link-id">
+                    <li key={link.token} style={activeLinkItemStyle}>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          marginBottom: "4px",
+                          gap: "8px",
+                        }}
+                      >
+                        <span style={{ fontSize: "0.85rem" }}>
                           <strong>AdbS ID:</strong> {link.token}
                         </span>
                         <button
                           type="button"
                           onClick={() => handleRevokeLink(link.token)}
-                          className="revoke-link-button"
-                          style={{
-                            backgroundColor: "#b02a37",
-                            border: "none",
-                            borderRadius: "999px",
-                            padding: "0.3rem 0.9rem",
-                            fontSize: "0.85rem",
-                            fontWeight: 600,
-                            color: "#ffffff",
-                            cursor: "pointer",
-                            boxShadow:
-                              "0 0 0 1px rgba(0,0,0,0.3), 0 6px 12px rgba(0,0,0,0.4)",
-                          }}
+                          style={revokeButtonStyle}
                         >
                           Revoke Link
                         </button>
                       </div>
-                      <div className="active-link-row">
-                        <strong>Load:</strong> {link.loadRef} –{" "}
-                        {link.carrierName}
-                      </div>
-                      <div className="active-link-row">
-                        <strong>USDOT# / Plate:</strong> {link.usdDot} /{" "}
-                        {link.licensePlate}
-                      </div>
-                      <div className="active-link-row">
-                        <strong>Status:</strong> {link.statusText}
-                      </div>
-                      <div className="active-link-row">
-                        <strong>Failed attempts (demo):</strong>{" "}
-                        {link.failedAttempts}
-                      </div>
-                      <div className="active-link-row">
-                        <strong>Verify URL:</strong>{" "}
-                        <a
-                          href={link.verifyUrl}
-                          style={{
-                            color: "#4db2ff",
-                            textDecoration: "none",
-                            fontWeight: 600,
-                            wordBreak: "break-all",
-                          }}
-                        >
-                          {link.verifyUrl}
-                        </a>
+                      <div style={{ fontSize: "0.82rem" }}>
+                        <div>
+                          <strong>Load:</strong> {link.loadRef} –{" "}
+                          {link.carrierName}
+                        </div>
+                        <div>
+                          <strong>USDOT / Plate:</strong> {link.usdDot} /{" "}
+                          {link.licensePlate}
+                        </div>
+                        <div>
+                          <strong>Status:</strong> {link.statusText}
+                        </div>
+                        <div>
+                          <strong>Failed attempts (demo):</strong>{" "}
+                          {link.failedAttempts}
+                        </div>
+                        <div>
+                          <strong>Verify URL:</strong>{" "}
+                          <a
+                            href={link.verifyUrl}
+                            style={{
+                              color: "#4db2ff",
+                              textDecoration: "none",
+                              fontWeight: 600,
+                              wordBreak: "break-all",
+                            }}
+                          >
+                            {link.verifyUrl}
+                          </a>
+                        </div>
                       </div>
                     </li>
                   ))}
@@ -396,10 +570,10 @@ export default function ControlCenter() {
               )}
             </section>
 
-            {/* Right panel: Recent Truck-Driver Checks */}
-            <section className="card control-card recent-checks-card">
-              <h2 className="card-title">Recent Truck-Driver Checks</h2>
-              <p className="card-empty">
+            {/* RIGHT: Recent checks placeholder */}
+            <section style={cardStyle}>
+              <h2 style={cardTitleStyle}>Recent Truck-Driver Checks</h2>
+              <p style={{ fontSize: "0.85rem", opacity: 0.85 }}>
                 No recent checks in this demo. Once the Verify screen is wired
                 to return outcomes, completed Truck-Driver verifications will
                 appear here.
