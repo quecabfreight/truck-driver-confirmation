@@ -26,6 +26,14 @@ function randomFailedAttempts() {
   return Math.floor(Math.random() * 8); // 0–7, demo only
 }
 
+// Force the browser's native date picker to open on focus (desktop especially)
+function openDatePickerOnFocus(e) {
+  const input = e.target;
+  if (input && typeof input.showPicker === "function") {
+    input.showPicker();
+  }
+}
+
 export default function ControlCenter() {
   const [loadRef, setLoadRef] = useState("");
   const [carrierName, setCarrierName] = useState("");
@@ -432,6 +440,7 @@ export default function ControlCenter() {
                       style={inputStyle}
                       value={linkStart}
                       onChange={(e) => setLinkStart(e.target.value)}
+                      onFocus={openDatePickerOnFocus}
                     />
                   </div>
                   <div>
@@ -443,6 +452,7 @@ export default function ControlCenter() {
                       style={inputStyle}
                       value={linkExpires}
                       onChange={(e) => setLinkExpires(e.target.value)}
+                      onFocus={openDatePickerOnFocus}
                     />
                   </div>
                 </div>
