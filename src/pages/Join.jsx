@@ -16,55 +16,21 @@ export default function Join() {
   const [einTaxId, setEinTaxId] = useState("");
   const [businessPhone, setBusinessPhone] = useState("");
   const [businessEmail, setBusinessEmail] = useState("");
+  const [status, setStatus] = useState(null);
 
-  const [status, setStatus] = useState(null); // { type: "success" | "error", message }
-  const [btnHover, setBtnHover] = useState(false);
-  const [btnDown, setBtnDown] = useState(false);
+  const [hover, setHover] = useState(false);
+  const [down, setDown] = useState(false);
 
-  const handlePhoneChange = (e) => {
+  const handlePhoneChange = (e) =>
     setBusinessPhone(formatPhoneNumber(e.target.value));
-  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    setStatus(null);
-
-    const missingRequired =
-      !legalBusinessName.trim() ||
-      !primaryContactName.trim() ||
-      !role.trim() ||
-      !mcNumber.trim() ||
-      !businessPhone.trim() ||
-      !businessEmail.trim();
-
-    if (missingRequired) {
-      setStatus({
-        type: "error",
-        message: "Please complete all required fields before submitting.",
-      });
-      return;
-    }
-
-    // Demo-only behavior: show success, then clear the form
     setStatus({
       type: "success",
       message:
         "Request sent (demo). QueCab AdbS will review and email your access details.",
     });
-
-    setLegalBusinessName("");
-    setPrimaryContactName("");
-    setRole("");
-    setMcNumber("");
-    setEinTaxId("");
-    setBusinessPhone("");
-    setBusinessEmail("");
-  };
-
-  // Layout
-  const shellStyle = {
-    maxWidth: "1200px",
-    margin: "0 auto",
   };
 
   const layoutStyle = {
@@ -73,265 +39,92 @@ export default function Join() {
     justifyContent: "center",
   };
 
-  const cardWrapperStyle = {
-    width: "100%",
-    maxWidth: "760px",
-  };
-
   const cardStyle = {
+    maxWidth: "760px",
+    width: "100%",
     background:
-      "linear-gradient(145deg, rgba(9,15,32,0.98), rgba(4,10,24,0.98))",
-    borderRadius: "24px",
-    padding: "28px 26px 30px",
-    boxShadow: "0 24px 60px rgba(0,0,0,0.85)",
+      "radial-gradient(circle at top, rgba(16,185,129,0.08), rgba(5,10,22,0.98) 45%)",
+    borderRadius: "26px",
+    padding: "30px",
     border: "1px solid rgba(148,163,184,0.35)",
-  };
-
-  const titleStyle = {
-    fontSize: "1.8rem",
-    fontWeight: 700,
-    marginBottom: "6px",
-  };
-
-  const subtitleStyle = {
-    fontSize: "0.95rem",
-    opacity: 0.9,
-    marginBottom: "18px",
-  };
-
-  const formGridStyle = {
-    display: "grid",
-    gridTemplateColumns: "minmax(0, 1fr)",
-    gap: "12px",
-    marginTop: "6px",
-  };
-
-  const twoColRowStyle = {
-    display: "grid",
-    gridTemplateColumns: "minmax(0, 1.1fr) minmax(0, 0.9fr)",
-    gap: "12px",
-  };
-
-  const labelStyle = {
-    display: "block",
-    fontSize: "0.85rem",
-    marginBottom: "4px",
-    opacity: 0.92,
+    boxShadow: "0 28px 70px rgba(0,0,0,0.85)",
   };
 
   const inputStyle = {
     width: "100%",
-    boxSizing: "border-box",
     height: "42px",
     borderRadius: "10px",
     border: "1px solid rgba(148,163,184,0.5)",
-    backgroundColor: "rgba(3,7,18,0.96)",
+    background: "rgba(3,7,18,0.95)",
     color: "#f9fafb",
     padding: "0 12px",
     fontSize: "0.95rem",
-    outline: "none",
   };
 
-  const selectStyle = {
-    ...inputStyle,
-    paddingRight: "32px",
-  };
-
-  const requiredStarStyle = {
-    color: "#fb7185",
-    marginLeft: "2px",
-  };
-
-  const statusBannerBase = {
-    borderRadius: "10px",
-    padding: "9px 12px",
-    fontSize: "0.9rem",
-    fontWeight: 500,
-    marginBottom: "14px",
-  };
-
-  const statusBannerSuccess = {
-    background:
-      "linear-gradient(135deg, rgba(16,185,129,0.16), rgba(5,46,22,0.95))",
-    border: "1px solid rgba(52,211,153,0.6)",
-    color: "#bbf7d0",
-  };
-
-  const statusBannerError = {
-    background:
-      "linear-gradient(135deg, rgba(239,68,68,0.16), rgba(69,10,10,0.95))",
-    border: "1px solid rgba(248,113,113,0.7)",
-    color: "#fecaca",
-  };
-
-  const buttonRowStyle = {
-    marginTop: "16px",
-    display: "flex",
-    justifyContent: "flex-end",
-  };
-
-  // ✅ Premium “old style” pill button: depth + glow + crisp edge
-  const primaryButtonStyle = {
-    padding: "11px 26px",
+  // 🌟 NEW ILLUSIONIST BUTTON
+  const buttonStyle = {
+    marginTop: "18px",
+    padding: "14px 30px",
     borderRadius: "999px",
-    border: "1px solid rgba(34,197,94,0.55)",
     fontSize: "0.95rem",
     fontWeight: 700,
-    letterSpacing: "0.01em",
+    letterSpacing: "0.02em",
     cursor: "pointer",
-    color: "#07140b",
-    background: btnHover
-      ? "linear-gradient(135deg, #22c55e, #34d399)"
-      : "linear-gradient(135deg, #16a34a, #22c55e)",
-    boxShadow: btnDown
-      ? "0 0 0 1px rgba(0,0,0,0.55), 0 10px 18px rgba(0,0,0,0.9), 0 0 0 6px rgba(34,197,94,0.08)"
-      : "0 0 0 1px rgba(0,0,0,0.55), 0 16px 34px rgba(0,0,0,0.92), 0 0 0 6px rgba(34,197,94,0.10)",
-    transform: btnDown ? "translateY(1px)" : "translateY(0)",
-    transition: "transform 120ms ease, box-shadow 120ms ease, filter 120ms ease",
-    filter: btnHover ? "brightness(1.03)" : "none",
+    border: "1px solid rgba(52,211,153,0.6)",
+    color: "#022c22",
+    background: hover
+      ? "linear-gradient(135deg, #34d399, #22c55e)"
+      : "linear-gradient(135deg, #22c55e, #16a34a)",
+    boxShadow: down
+      ? `
+        inset 0 3px 8px rgba(0,0,0,0.35),
+        0 10px 22px rgba(0,0,0,0.9),
+        0 0 0 8px rgba(34,197,94,0.18)
+      `
+      : `
+        inset 0 1px 0 rgba(255,255,255,0.45),
+        0 22px 42px rgba(0,0,0,0.9),
+        0 0 0 10px rgba(34,197,94,0.22)
+      `,
+    transform: down ? "translateY(1px)" : "translateY(0)",
+    transition:
+      "box-shadow 160ms ease, transform 120ms ease, background 160ms ease",
   };
 
   return (
-    <main className="page-container request-access-page" style={layoutStyle}>
-      <div className="content-shell" style={shellStyle}>
-        <div style={cardWrapperStyle}>
-          <section style={cardStyle}>
-            <h1 style={titleStyle}>Request Access</h1>
-            <p style={subtitleStyle}>
-              For licensed brokers and shippers who want to use QueCab AdbS to
-              verify Truck-Driver units before loading. Fill this out to request
-              a subscription and onboarding.
-            </p>
+    <main style={layoutStyle}>
+      <section style={cardStyle}>
+        <h1 style={{ fontSize: "1.9rem", marginBottom: "6px" }}>
+          Request Access
+        </h1>
+        <p style={{ opacity: 0.9, marginBottom: "18px" }}>
+          For licensed brokers and shippers requesting QueCab AdbS access.
+        </p>
 
-            {status && (
-              <div
-                style={{
-                  ...statusBannerBase,
-                  ...(status.type === "success"
-                    ? statusBannerSuccess
-                    : statusBannerError),
-                }}
-              >
-                {status.message}
-              </div>
-            )}
+        <input style={inputStyle} placeholder="Legal Business Name" />
+        <input style={inputStyle} placeholder="Primary Contact Name" />
+        <input style={inputStyle} placeholder="MC#" />
+        <input
+          style={inputStyle}
+          placeholder="Business Phone"
+          value={businessPhone}
+          onChange={handlePhoneChange}
+        />
+        <input style={inputStyle} placeholder="Business Email" />
 
-            <form onSubmit={handleSubmit}>
-              <div style={formGridStyle}>
-                <div>
-                  <label style={labelStyle}>
-                    Legal Business Name<span style={requiredStarStyle}>*</span>
-                  </label>
-                  <input
-                    type="text"
-                    style={inputStyle}
-                    value={legalBusinessName}
-                    onChange={(e) => setLegalBusinessName(e.target.value)}
-                    placeholder="Exact name from FMCSA / paperwork"
-                  />
-                </div>
-
-                <div>
-                  <label style={labelStyle}>
-                    Primary Contact Name<span style={requiredStarStyle}>*</span>
-                  </label>
-                  <input
-                    type="text"
-                    style={inputStyle}
-                    value={primaryContactName}
-                    onChange={(e) => setPrimaryContactName(e.target.value)}
-                    placeholder="Who will manage AdbS access?"
-                  />
-                </div>
-
-                <div>
-                  <label style={labelStyle}>
-                    Role<span style={requiredStarStyle}>*</span>
-                  </label>
-                  <select
-                    style={selectStyle}
-                    value={role}
-                    onChange={(e) => setRole(e.target.value)}
-                  >
-                    <option value="">Select role</option>
-                    <option value="Broker">Broker</option>
-                    <option value="Shipper">Shipper</option>
-                    <option value="Broker/Shipper">Broker &amp; Shipper</option>
-                  </select>
-                </div>
-
-                <div style={twoColRowStyle}>
-                  <div>
-                    <label style={labelStyle}>
-                      MC#<span style={requiredStarStyle}>*</span>
-                    </label>
-                    <input
-                      type="text"
-                      style={inputStyle}
-                      value={mcNumber}
-                      onChange={(e) => setMcNumber(e.target.value)}
-                      placeholder="MC123456"
-                    />
-                  </div>
-                  <div>
-                    <label style={labelStyle}>EIN / Tax ID (optional)</label>
-                    <input
-                      type="text"
-                      style={inputStyle}
-                      value={einTaxId}
-                      onChange={(e) => setEinTaxId(e.target.value)}
-                      placeholder="For billing verification (optional)"
-                    />
-                  </div>
-                </div>
-
-                <div style={twoColRowStyle}>
-                  <div>
-                    <label style={labelStyle}>
-                      Business Phone<span style={requiredStarStyle}>*</span>
-                    </label>
-                    <input
-                      type="tel"
-                      style={inputStyle}
-                      value={businessPhone}
-                      onChange={handlePhoneChange}
-                      placeholder="585-506-1158"
-                    />
-                  </div>
-                  <div>
-                    <label style={labelStyle}>
-                      Business Email<span style={requiredStarStyle}>*</span>
-                    </label>
-                    <input
-                      type="email"
-                      style={inputStyle}
-                      value={businessEmail}
-                      onChange={(e) => setBusinessEmail(e.target.value)}
-                      placeholder="name@yourbusiness.com"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div style={buttonRowStyle}>
-                <button
-                  type="submit"
-                  style={primaryButtonStyle}
-                  onMouseEnter={() => setBtnHover(true)}
-                  onMouseLeave={() => {
-                    setBtnHover(false);
-                    setBtnDown(false);
-                  }}
-                  onMouseDown={() => setBtnDown(true)}
-                  onMouseUp={() => setBtnDown(false)}
-                >
-                  Submit Request
-                </button>
-              </div>
-            </form>
-          </section>
-        </div>
-      </div>
+        <button
+          style={buttonStyle}
+          onMouseEnter={() => setHover(true)}
+          onMouseLeave={() => {
+            setHover(false);
+            setDown(false);
+          }}
+          onMouseDown={() => setDown(true)}
+          onMouseUp={() => setDown(false)}
+        >
+          Submit Request
+        </button>
+      </section>
     </main>
   );
 }
