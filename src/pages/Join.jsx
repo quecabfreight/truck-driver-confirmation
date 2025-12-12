@@ -1,14 +1,10 @@
 import { useState } from "react";
-import Layout from "../components/Layout";
 
 // Format 5855061158 -> 585-506-1158
 function formatPhoneNumber(value) {
   const digits = value.replace(/\D/g, "").slice(0, 10);
-
   if (digits.length <= 3) return digits;
-  if (digits.length <= 6) {
-    return `${digits.slice(0, 3)}-${digits.slice(3)}`;
-  }
+  if (digits.length <= 6) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
   return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
 }
 
@@ -22,10 +18,11 @@ export default function Join() {
   const [businessEmail, setBusinessEmail] = useState("");
 
   const [status, setStatus] = useState(null); // { type: "success" | "error", message }
+  const [btnHover, setBtnHover] = useState(false);
+  const [btnDown, setBtnDown] = useState(false);
 
   const handlePhoneChange = (e) => {
-    const formatted = formatPhoneNumber(e.target.value);
-    setBusinessPhone(formatted);
+    setBusinessPhone(formatPhoneNumber(e.target.value));
   };
 
   const handleSubmit = (e) => {
@@ -64,23 +61,21 @@ export default function Join() {
     setBusinessEmail("");
   };
 
-  // Shared inline styles so this page matches the pro look
+  // Layout
   const shellStyle = {
     maxWidth: "1200px",
     margin: "0 auto",
   };
 
-  // ↓ Tightened top padding so that extra band you marked is gone
   const layoutStyle = {
-    padding: "8px 16px 72px",
+    padding: "32px 16px 72px",
     display: "flex",
     justifyContent: "center",
   };
 
   const cardWrapperStyle = {
     width: "100%",
-    maxWidth: "720px",
-    marginTop: "8px",
+    maxWidth: "760px",
   };
 
   const cardStyle = {
@@ -175,163 +170,168 @@ export default function Join() {
     justifyContent: "flex-end",
   };
 
+  // ✅ Premium “old style” pill button: depth + glow + crisp edge
   const primaryButtonStyle = {
-    padding: "10px 24px",
+    padding: "11px 26px",
     borderRadius: "999px",
-    border: "none",
+    border: "1px solid rgba(34,197,94,0.55)",
     fontSize: "0.95rem",
-    fontWeight: 600,
+    fontWeight: 700,
+    letterSpacing: "0.01em",
     cursor: "pointer",
-    background:
-      "linear-gradient(135deg, #16a34a, #22c55e)",
-    color: "#ffffff",
-    boxShadow:
-      "0 0 0 1px rgba(0,0,0,0.5), 0 12px 28px rgba(0,0,0,0.9)",
+    color: "#07140b",
+    background: btnHover
+      ? "linear-gradient(135deg, #22c55e, #34d399)"
+      : "linear-gradient(135deg, #16a34a, #22c55e)",
+    boxShadow: btnDown
+      ? "0 0 0 1px rgba(0,0,0,0.55), 0 10px 18px rgba(0,0,0,0.9), 0 0 0 6px rgba(34,197,94,0.08)"
+      : "0 0 0 1px rgba(0,0,0,0.55), 0 16px 34px rgba(0,0,0,0.92), 0 0 0 6px rgba(34,197,94,0.10)",
+    transform: btnDown ? "translateY(1px)" : "translateY(0)",
+    transition: "transform 120ms ease, box-shadow 120ms ease, filter 120ms ease",
+    filter: btnHover ? "brightness(1.03)" : "none",
   };
 
   return (
-    <Layout pageTitle="Request Access">
-      <main className="page-container request-access-page" style={layoutStyle}>
-        <div className="content-shell" style={shellStyle}>
-          <div style={cardWrapperStyle}>
-            <section style={cardStyle}>
-              <h1 style={titleStyle}>Request Access</h1>
-              <p style={subtitleStyle}>
-                For licensed brokers and shippers who want to use QueCab AdbS to
-                verify Truck-Driver units before loading. Fill this out to
-                request a subscription and onboarding.
-              </p>
+    <main className="page-container request-access-page" style={layoutStyle}>
+      <div className="content-shell" style={shellStyle}>
+        <div style={cardWrapperStyle}>
+          <section style={cardStyle}>
+            <h1 style={titleStyle}>Request Access</h1>
+            <p style={subtitleStyle}>
+              For licensed brokers and shippers who want to use QueCab AdbS to
+              verify Truck-Driver units before loading. Fill this out to request
+              a subscription and onboarding.
+            </p>
 
-              {status && (
-                <div
-                  style={{
-                    ...statusBannerBase,
-                    ...(status.type === "success"
-                      ? statusBannerSuccess
-                      : statusBannerError),
+            {status && (
+              <div
+                style={{
+                  ...statusBannerBase,
+                  ...(status.type === "success"
+                    ? statusBannerSuccess
+                    : statusBannerError),
+                }}
+              >
+                {status.message}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit}>
+              <div style={formGridStyle}>
+                <div>
+                  <label style={labelStyle}>
+                    Legal Business Name<span style={requiredStarStyle}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    style={inputStyle}
+                    value={legalBusinessName}
+                    onChange={(e) => setLegalBusinessName(e.target.value)}
+                    placeholder="Exact name from FMCSA / paperwork"
+                  />
+                </div>
+
+                <div>
+                  <label style={labelStyle}>
+                    Primary Contact Name<span style={requiredStarStyle}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    style={inputStyle}
+                    value={primaryContactName}
+                    onChange={(e) => setPrimaryContactName(e.target.value)}
+                    placeholder="Who will manage AdbS access?"
+                  />
+                </div>
+
+                <div>
+                  <label style={labelStyle}>
+                    Role<span style={requiredStarStyle}>*</span>
+                  </label>
+                  <select
+                    style={selectStyle}
+                    value={role}
+                    onChange={(e) => setRole(e.target.value)}
+                  >
+                    <option value="">Select role</option>
+                    <option value="Broker">Broker</option>
+                    <option value="Shipper">Shipper</option>
+                    <option value="Broker/Shipper">Broker &amp; Shipper</option>
+                  </select>
+                </div>
+
+                <div style={twoColRowStyle}>
+                  <div>
+                    <label style={labelStyle}>
+                      MC#<span style={requiredStarStyle}>*</span>
+                    </label>
+                    <input
+                      type="text"
+                      style={inputStyle}
+                      value={mcNumber}
+                      onChange={(e) => setMcNumber(e.target.value)}
+                      placeholder="MC123456"
+                    />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>EIN / Tax ID (optional)</label>
+                    <input
+                      type="text"
+                      style={inputStyle}
+                      value={einTaxId}
+                      onChange={(e) => setEinTaxId(e.target.value)}
+                      placeholder="For billing verification (optional)"
+                    />
+                  </div>
+                </div>
+
+                <div style={twoColRowStyle}>
+                  <div>
+                    <label style={labelStyle}>
+                      Business Phone<span style={requiredStarStyle}>*</span>
+                    </label>
+                    <input
+                      type="tel"
+                      style={inputStyle}
+                      value={businessPhone}
+                      onChange={handlePhoneChange}
+                      placeholder="585-506-1158"
+                    />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>
+                      Business Email<span style={requiredStarStyle}>*</span>
+                    </label>
+                    <input
+                      type="email"
+                      style={inputStyle}
+                      value={businessEmail}
+                      onChange={(e) => setBusinessEmail(e.target.value)}
+                      placeholder="name@yourbusiness.com"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div style={buttonRowStyle}>
+                <button
+                  type="submit"
+                  style={primaryButtonStyle}
+                  onMouseEnter={() => setBtnHover(true)}
+                  onMouseLeave={() => {
+                    setBtnHover(false);
+                    setBtnDown(false);
                   }}
+                  onMouseDown={() => setBtnDown(true)}
+                  onMouseUp={() => setBtnDown(false)}
                 >
-                  {status.message}
-                </div>
-              )}
-
-              <form onSubmit={handleSubmit}>
-                <div style={formGridStyle}>
-                  <div>
-                    <label style={labelStyle}>
-                      Legal Business Name
-                      <span style={requiredStarStyle}>*</span>
-                    </label>
-                    <input
-                      type="text"
-                      style={inputStyle}
-                      value={legalBusinessName}
-                      onChange={(e) => setLegalBusinessName(e.target.value)}
-                      placeholder="Exact name from FMCSA / paperwork"
-                    />
-                  </div>
-
-                  <div>
-                    <label style={labelStyle}>
-                      Primary Contact Name
-                      <span style={requiredStarStyle}>*</span>
-                    </label>
-                    <input
-                      type="text"
-                      style={inputStyle}
-                      value={primaryContactName}
-                      onChange={(e) => setPrimaryContactName(e.target.value)}
-                      placeholder="Who will manage AdbS access?"
-                    />
-                  </div>
-
-                  <div>
-                    <label style={labelStyle}>
-                      Role
-                      <span style={requiredStarStyle}>*</span>
-                    </label>
-                    <select
-                      style={selectStyle}
-                      value={role}
-                      onChange={(e) => setRole(e.target.value)}
-                    >
-                      <option value="">Select role</option>
-                      <option value="Broker">Broker</option>
-                      <option value="Shipper">Shipper</option>
-                      <option value="Broker/Shipper">
-                        Broker &amp; Shipper
-                      </option>
-                    </select>
-                  </div>
-
-                  <div style={twoColRowStyle}>
-                    <div>
-                      <label style={labelStyle}>
-                        MC#
-                        <span style={requiredStarStyle}>*</span>
-                      </label>
-                      <input
-                        type="text"
-                        style={inputStyle}
-                        value={mcNumber}
-                        onChange={(e) => setMcNumber(e.target.value)}
-                        placeholder="MC123456"
-                      />
-                    </div>
-                    <div>
-                      <label style={labelStyle}>
-                        EIN / Tax ID (optional)
-                      </label>
-                      <input
-                        type="text"
-                        style={inputStyle}
-                        value={einTaxId}
-                        onChange={(e) => setEinTaxId(e.target.value)}
-                        placeholder="For billing verification (optional)"
-                      />
-                    </div>
-                  </div>
-
-                  <div style={twoColRowStyle}>
-                    <div>
-                      <label style={labelStyle}>
-                        Business Phone
-                        <span style={requiredStarStyle}>*</span>
-                      </label>
-                      <input
-                        type="tel"
-                        style={inputStyle}
-                        value={businessPhone}
-                        onChange={handlePhoneChange}
-                        placeholder="585-506-1158"
-                      />
-                    </div>
-                    <div>
-                      <label style={labelStyle}>
-                        Business Email
-                        <span style={requiredStarStyle}>*</span>
-                      </label>
-                      <input
-                        type="email"
-                        style={inputStyle}
-                        value={businessEmail}
-                        onChange={(e) => setBusinessEmail(e.target.value)}
-                        placeholder="name@yourbusiness.com"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div style={buttonRowStyle}>
-                  <button type="submit" style={primaryButtonStyle}>
-                    Submit Request
-                  </button>
-                </div>
-              </form>
-            </section>
-          </div>
+                  Submit Request
+                </button>
+              </div>
+            </form>
+          </section>
         </div>
-      </main>
-    </Layout>
+      </div>
+    </main>
   );
 }
