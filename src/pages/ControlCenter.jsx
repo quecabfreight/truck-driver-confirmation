@@ -52,14 +52,15 @@ export default function ControlCenter() {
     e.preventDefault();
     setStatus(null);
 
-    if (
+    const missingRequired =
       !loadRef.trim() ||
       !carrierName.trim() ||
       !usdDot.trim() ||
       !licensePlate.trim() ||
       !driverPhone.trim() ||
-      !sendToEmail.trim()
-    ) {
+      !sendToEmail.trim();
+
+    if (missingRequired) {
       setStatus({
         type: "error",
         message: "Please complete all required fields before issuing a link.",
@@ -111,10 +112,14 @@ export default function ControlCenter() {
     setLinks((prev) => prev.filter((link) => link.token !== token));
   };
 
-  // Inline layout so this page stops collapsing
+  // Layout styles
   const shellStyle = {
     maxWidth: "1200px",
     margin: "0 auto",
+  };
+
+  const layoutStyle = {
+    padding: "32px 16px 72px",
   };
 
   const titleStyle = {
@@ -169,13 +174,6 @@ export default function ControlCenter() {
     padding: "0 12px",
     fontSize: "0.9rem",
     outline: "none",
-  };
-
-  const textareaStyle = {
-    ...inputStyle,
-    height: "80px",
-    paddingTop: "8px",
-    paddingBottom: "8px",
   };
 
   const twoColRowStyle = {
@@ -268,7 +266,7 @@ export default function ControlCenter() {
     <Layout pageTitle="AdbS Control Center">
       <main
         className="page-container control-center-page"
-        style={{ padding: "32px 16px 72px" }}
+        style={layoutStyle}
       >
         <div className="content-shell" style={shellStyle}>
           <h1 style={titleStyle}>AdbS Control Center</h1>
@@ -300,8 +298,7 @@ export default function ControlCenter() {
               <form onSubmit={handleIssueLink}>
                 <div style={rowStyle}>
                   <label style={labelStyle}>
-                    Load / Reference #
-                    <span style={{ color: "#f97373" }}> *</span>
+                    Load / Reference #<span style={{ color: "#f97373" }}> *</span>
                   </label>
                   <input
                     type="text"
