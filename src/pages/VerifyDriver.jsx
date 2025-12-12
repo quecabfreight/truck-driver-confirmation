@@ -1,310 +1,201 @@
-import React, { useState } from "react";
-import { useParams } from "react-router-dom";
+import Layout from "../components/Layout";
 
-function formatUpper(value) {
-  return value.toUpperCase();
-}
+export default function Verify() {
+  // NOTE: This is still a demo-only screen. No live data or matches.
+  // The "on record (USDOT / Plate)" line has been fully removed on purpose.
+  // Dock / check-in staff will enter what they see or what the driver gives them;
+  // the system will compare that to what the broker/shipper has on file behind the scenes.
 
-// Simple phone formatter for the demo
-function formatPhoneDisplay(raw) {
-  const digits = raw.replace(/\D/g, "");
-  if (digits.length === 10) {
-    return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
-  }
-  return raw;
-}
-
-export default function VerifyDriver() {
-  const { token } = useParams();
-
-  // Demo-only header data (in live system this will come from the backend)
-  const demoData = {
-    loadRef: "12345",
-    carrierName: "ABC Trucking",
-    usdotRecord: "ABC12345",
-    plateRecord: "ABC12345",
-    driverPhoneRaw: "1234567890",
+  const pageStyle = {
+    padding: "32px 16px 72px",
   };
 
-  const driverPhoneTel = demoData.driverPhoneRaw.replace(/\D/g, "");
-  const driverPhoneDisplay = formatPhoneDisplay(demoData.driverPhoneRaw);
+  const shellStyle = {
+    maxWidth: "1200px",
+    margin: "0 auto",
+  };
 
-  const [pinInput, setPinInput] = useState("");
-  const [pinUnlocked, setPinUnlocked] = useState(false);
+  const headingStyle = {
+    fontSize: "2.1rem",
+    fontWeight: 800,
+    marginBottom: "6px",
+  };
 
-  const [form, setForm] = useState({
-    usdotOnTruck: "",
-    plateOnTruck: "",
-    driverAnswered: "",
-  });
+  const subheadingStyle = {
+    fontSize: "0.98rem",
+    opacity: 0.9,
+    marginBottom: "18px",
+    maxWidth: "720px",
+  };
 
-  const [status, setStatus] = useState(null);
+  const summaryStyle = {
+    fontSize: "0.9rem",
+    marginBottom: "18px",
+    lineHeight: 1.5,
+  };
 
-  function handleUnlock(e) {
-    e.preventDefault();
+  const summaryRowStyle = {
+    marginBottom: "4px",
+  };
 
-    // DEMO-ONLY PIN. In the live system this will be per dock / facility.
-    if (pinInput.trim() === "1234") {
-      setPinUnlocked(true);
-      setStatus(null);
-    } else {
-      setStatus({
-        type: "error",
-        message: "Invalid dock PIN in this demo. Try 1234.",
-      });
-    }
-  }
+  const gridStyle = {
+    display: "grid",
+    gridTemplateColumns: "minmax(0, 1.1fr) minmax(0, 1.1fr)",
+    gap: "20px",
+  };
 
-  function handleChange(e) {
-    const { name, value } = e.target;
-    let nextValue = value;
+  const cardStyle = {
+    background:
+      "linear-gradient(145deg, rgba(5,10,22,0.98), rgba(3,6,14,0.98))",
+    borderRadius: "18px",
+    padding: "18px 18px 20px",
+    boxShadow: "0 22px 50px rgba(0,0,0,0.9)",
+    border: "1px solid rgba(148,163,184,0.35)",
+  };
 
-    if (name === "usdotOnTruck" || name === "plateOnTruck") {
-      nextValue = formatUpper(nextValue);
-    }
+  const cardTitleStyle = {
+    fontSize: "1.05rem",
+    fontWeight: 600,
+    marginBottom: "10px",
+  };
 
-    setForm((prev) => ({
-      ...prev,
-      [name]: nextValue,
-    }));
-  }
+  const pinLabelStyle = {
+    fontSize: "0.85rem",
+    marginBottom: "6px",
+    opacity: 0.9,
+  };
 
-  function handleSubmit(e) {
-    e.preventDefault();
+  const pinInputStyle = {
+    width: "100%",
+    boxSizing: "border-box",
+    height: "44px",
+    borderRadius: "10px",
+    border: "1px solid rgba(148,163,184,0.7)",
+    backgroundColor: "rgba(2,6,17,0.98)",
+    color: "#f9fafb",
+    padding: "0 12px",
+    fontSize: "1rem",
+    outline: "none",
+    marginBottom: "10px",
+  };
 
-    if (!form.usdotOnTruck || !form.plateOnTruck) {
-      setStatus({
-        type: "error",
-        message:
-          "Enter the USDOT# and license plate exactly as seen on the truck.",
-      });
-      return;
-    }
+  const pinButtonStyle = {
+    width: "100%",
+    height: "42px",
+    borderRadius: "999px",
+    border: "none",
+    fontSize: "0.95rem",
+    fontWeight: 600,
+    cursor: "pointer",
+    background:
+      "linear-gradient(135deg, #16a34a, #22c55e)",
+    color: "#ffffff",
+    boxShadow:
+      "0 0 0 1px rgba(0,0,0,0.6), 0 12px 28px rgba(0,0,0,0.9)",
+  };
 
-    if (!form.driverAnswered) {
-      setStatus({
-        type: "error",
-        message:
-          "Answer the question about whether the driver answered their registered phone.",
-      });
-      return;
-    }
+  const dockNoteStyle = {
+    fontSize: "0.8rem",
+    opacity: 0.8,
+    marginTop: "10px",
+  };
 
-    const clearToLoad = form.driverAnswered === "yes";
+  const checklistListStyle = {
+    fontSize: "0.86rem",
+    lineHeight: 1.55,
+    paddingLeft: "18px",
+    margin: 0,
+  };
 
-    if (clearToLoad) {
-      setStatus({
-        type: "success",
-        message:
-          "CLEAR TO LOAD – USDOT# and plate are on record for this load, and the driver answered their registered phone.",
-      });
-    } else {
-      setStatus({
-        type: "caution",
-        message:
-          "CAUTION ALERT – DO NOT LOAD. At least one check failed. Hold this load and follow your internal escalation steps.",
-      });
-    }
-  }
+  const checklistNoteStyle = {
+    fontSize: "0.8rem",
+    opacity: 0.82,
+    marginTop: "12px",
+  };
 
   return (
-    <div className="qc-shell qc-dash">
-      <div className="qc-inner">
-        <header className="qc-dash-header">
-          <h1 className="qc-heading">Truck-Driver Verification</h1>
-          <p className="qc-sub">
+    <Layout pageTitle="Truck-Driver Verification">
+      <main className="page-container verify-page" style={pageStyle}>
+        <div className="content-shell" style={shellStyle}>
+          <h1 style={headingStyle}>Truck-Driver Verification</h1>
+          <p style={subheadingStyle}>
             For authorized dock and check-in personnel only. Confirm the
             Truck-Driver unit (truck + driver) in real time before you open a
             door or touch a pallet.
           </p>
-          <p className="qc-note qc-mono">
-            Demo token: <span>{token || "N/A"}</span>
-          </p>
-          <div className="qc-dash-meta">
-            <p>
-              <strong>Load:</strong> {demoData.loadRef}
-            </p>
-            <p>
-              <strong>Carrier:</strong> {demoData.carrierName}
-            </p>
-            <p>
-              <strong>On record (USDOT / Plate):</strong>{" "}
-              {demoData.usdotRecord} / {demoData.plateRecord}
-            </p>
+
+          {/* Summary section – DEMO values only */}
+          <div style={summaryStyle}>
+            <div style={summaryRowStyle}>
+              <strong>Demo token:</strong> DEMO-U0I0EZ
+            </div>
+            <div style={summaryRowStyle}>
+              <strong>Load:</strong> 12345
+            </div>
+            <div style={summaryRowStyle}>
+              <strong>Carrier:</strong> ABC Trucking
+            </div>
+            {/* IMPORTANT:
+                The "On record (USDOT / Plate)" line was intentionally removed.
+                No on-record identifiers are shown to dock staff on this screen. */}
           </div>
-        </header>
 
-        <div className="qc-dash-grid qc-dash-grid-2">
-          {/* LEFT – PIN + verification form */}
-          <section className="qc-dash-card">
-            <h2 className="qc-dash-title">Dock Access PIN</h2>
-            <p className="qc-dash-text">
-              In the live system, every dock or check-in station will have its
-              own PIN. Drivers never see this screen.
-            </p>
+          <div style={gridStyle}>
+            {/* LEFT: Dock PIN */}
+            <section style={cardStyle}>
+              <h2 style={cardTitleStyle}>Dock Access PIN</h2>
+              <p style={pinLabelStyle}>
+                In the live system, every dock or check-in station will have its
+                own PIN. Drivers never see this screen.
+              </p>
+              <input
+                type="password"
+                style={pinInputStyle}
+                value="••••••"
+                readOnly
+              />
+              <button type="button" style={pinButtonStyle}>
+                Unlock
+              </button>
+              <p style={dockNoteStyle}>
+                Demo only. In the live system, entering the correct PIN unlocks
+                this station for the Truck-Driver verification steps.
+              </p>
+            </section>
 
-            {!pinUnlocked && (
-              <form className="qc-form" onSubmit={handleUnlock}>
-                <div className="qc-field qc-field-row">
-                  <label className="qc-label">Enter Dock PIN</label>
-                  <input
-                    type="password"
-                    className="qc-input qc-input-pin"
-                    value={pinInput}
-                    onChange={(e) => setPinInput(e.target.value)}
-                    placeholder="••••"
-                  />
-                  <button type="submit" className="qc-btn-primary">
-                    Unlock
-                  </button>
-                </div>
-              </form>
-            )}
-
-            {pinUnlocked && (
-              <>
-                <div className="qc-divider" />
-
-                <h2 className="qc-dash-title">Verify the Truck-Driver</h2>
-                <p className="qc-dash-text">
-                  Enter what you see on the truck for USDOT# and plate, then
-                  call the driver and answer the final check. All steps must
-                  pass before loading.
-                </p>
-
-                <form className="qc-form" onSubmit={handleSubmit}>
-                  <div className="qc-form-grid-single">
-                    <div className="qc-field">
-                      <label className="qc-label">
-                        USDOT# on Truck <span className="qc-required">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        name="usdotOnTruck"
-                        className="qc-input"
-                        value={form.usdotOnTruck}
-                        onChange={handleChange}
-                        placeholder="As painted on the truck door"
-                      />
-                    </div>
-
-                    <div className="qc-field">
-                      <label className="qc-label">
-                        License Plate on Truck{" "}
-                        <span className="qc-required">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        name="plateOnTruck"
-                        className="qc-input"
-                        value={form.plateOnTruck}
-                        onChange={handleChange}
-                        placeholder="Exact plate text"
-                      />
-                    </div>
-
-                    <div className="qc-field">
-                      <label className="qc-label">
-                        DID THE DRIVER ANSWER THEIR REGISTERED PHONE?
-                      </label>
-                      <div className="qc-call-row">
-                        <div className="qc-radio-row">
-                          <label className="qc-radio">
-                            <input
-                              type="radio"
-                              name="driverAnswered"
-                              value="yes"
-                              checked={form.driverAnswered === "yes"}
-                              onChange={handleChange}
-                            />
-                            <span>YES</span>
-                          </label>
-                          <label className="qc-radio">
-                            <input
-                              type="radio"
-                              name="driverAnswered"
-                              value="no"
-                              checked={form.driverAnswered === "no"}
-                              onChange={handleChange}
-                            />
-                            <span>NO</span>
-                          </label>
-                        </div>
-
-                        {/* Premium action-blue Call Driver button */}
-                        <a
-                          href={`tel:${driverPhoneTel}`}
-                          className="qc-btn-primary qc-btn-call"
-                        >
-                          Call Driver: {driverPhoneDisplay}
-                        </a>
-                      </div>
-                      <p className="qc-note">
-                        If your station doesn’t support click-to-call, dial the
-                        number shown on the button using your desk or wall
-                        phone.
-                      </p>
-                    </div>
-                  </div>
-
-                  {status && (
-                    <div
-                      className={
-                        status.type === "success"
-                          ? "qc-status qc-status-success"
-                          : status.type === "caution"
-                          ? "qc-status qc-status-caution"
-                          : "qc-status qc-status-error"
-                      }
-                    >
-                      {status.message}
-                    </div>
-                  )}
-
-                  <div className="qc-form-actions">
-                    <button
-                      type="submit"
-                      className="qc-btn-primary qc-btn-wide"
-                    >
-                      Submit Truck-Driver Check
-                    </button>
-                  </div>
-                </form>
-              </>
-            )}
-          </section>
-
-          {/* RIGHT – Instructions / checklist */}
-          <section className="qc-dash-card">
-            <h2 className="qc-dash-title">Dock Checklist</h2>
-            <ol className="qc-list">
-              <li>Ask the driver to remain in the cab or waiting area.</li>
-              <li>
-                Confirm you are on the correct AdbS verify screen for this load.
-              </li>
-              <li>
-                Enter the <strong>USDOT#</strong> and{" "}
-                <strong>license plate</strong> exactly as seen on the truck.
-              </li>
-              <li>
-                Use the <strong>Call Driver</strong> button (or a desk phone) to
-                call the driver’s registered number. If it doesn’t feel right,
-                mark <strong>NO</strong>.
-              </li>
-              <li>
-                Only when all checks pass and the phone check is{" "}
-                <strong>YES</strong> is the load{" "}
-                <strong>CLEAR TO LOAD</strong>.
-              </li>
-            </ol>
-
-            <p className="qc-note">
-              Demo only. In the live system, your answers here will feed back
-              into the AdbS Control Center and the Truck-Driver checks panel.
-            </p>
-          </section>
+            {/* RIGHT: Dock checklist */}
+            <section style={cardStyle}>
+              <h2 style={cardTitleStyle}>Dock Checklist</h2>
+              <ol style={checklistListStyle}>
+                <li>Ask the driver to remain in the cab or waiting area.</li>
+                <li>
+                  Confirm you are on the correct AdbS verify screen for this
+                  load.
+                </li>
+                <li>
+                  Enter the <strong>USDOT#</strong> and{" "}
+                  <strong>license plate</strong> exactly as given by the driver
+                  or as seen on the truck.
+                </li>
+                <li>
+                  Use the <strong>Call Driver</strong> button (or a desk phone)
+                  to call the driver&apos;s registered number. If it doesn&apos;t
+                  feel right, mark NO.
+                </li>
+                <li>
+                  Only when all checks pass and the phone check is{" "}
+                  <strong>YES</strong> is the load CLEAR TO LOAD.
+                </li>
+              </ol>
+              <p style={checklistNoteStyle}>
+                Demo only. In the live system, your answers here will feed back
+                into the AdbS Control Center and the Truck-Driver record for
+                this load.
+              </p>
+            </section>
+          </div>
         </div>
-      </div>
-    </div>
+      </main>
+    </Layout>
   );
 }
