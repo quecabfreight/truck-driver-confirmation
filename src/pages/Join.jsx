@@ -70,8 +70,9 @@ export default function Join() {
     margin: "0 auto",
   };
 
+  // ↓ Tightened top padding so that extra band you marked is gone
   const layoutStyle = {
-    padding: "32px 16px 72px",
+    padding: "8px 16px 72px",
     display: "flex",
     justifyContent: "center",
   };
@@ -79,6 +80,7 @@ export default function Join() {
   const cardWrapperStyle = {
     width: "100%",
     maxWidth: "720px",
+    marginTop: "8px",
   };
 
   const cardStyle = {
