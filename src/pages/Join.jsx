@@ -13,9 +13,8 @@ function formatUsPhone(v = "") {
 }
 
 function normalizeMc(v = "") {
-  // Keep digits only, max reasonable length (FMCSA MC can be up to 8 digits)
-  const d = onlyDigits(v).slice(0, 8);
-  return d;
+  // digits only, up to 8 digits
+  return onlyDigits(v).slice(0, 8);
 }
 
 export default function Join() {
@@ -36,7 +35,7 @@ export default function Join() {
       legalBusinessName.trim().length > 1 &&
       primaryContactName.trim().length > 1 &&
       (role === "Broker" || role === "Shipper") &&
-      normalizeMc(mcNumber).length >= 4 && // basic sanity check
+      normalizeMc(mcNumber).length >= 4 &&
       formatUsPhone(businessPhone).length >= 12 &&
       businessEmail.trim().includes("@") &&
       betaAcknowledged
@@ -51,16 +50,18 @@ export default function Join() {
     betaAcknowledged,
   ]);
 
+  function fail(msg) {
+    setStatus({ type: "error", message: msg });
+    // shove the user to the message so it never feels like “nothing happened”
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setStatus({ type: "", message: "" });
 
     if (!canSubmit) {
-      setStatus({
-        type: "error",
-        message:
-          "Please complete all required fields and accept the Beta Notice.",
-      });
+      fail("Missing info. Choose Role, confirm the Beta Notice, and complete all required fields.");
       return;
     }
 
@@ -69,34 +70,27 @@ export default function Join() {
       const payload = {
         legal_business_name: legalBusinessName.trim(),
         primary_contact_name: primaryContactName.trim(),
-        role: role,
+        role,
         mc_number: normalizeMc(mcNumber),
         ein_tax_id: einTaxId.trim() || null,
         business_phone: formatUsPhone(businessPhone),
         business_email: businessEmail.trim().toLowerCase(),
-        beta_acknowledged: true, // IMPORTANT for your policy
+        beta_acknowledged: true, // required by your insert policy
       };
 
       const { error } = await supabase.from("beta_requests").insert([payload]);
 
       if (error) {
-        // Common issue: policy/RLS mismatch
-        setStatus({
-          type: "error",
-          message:
-            error.message ||
-            "Could not submit. Please try again in a moment.",
-        });
+        fail(error.message || "Could not submit. Please try again.");
         return;
       }
 
       setStatus({
         type: "success",
-        message:
-          "Request received. QueCab AdbS will review and contact you with next steps.",
+        message: "Request received. QueCab AdbS will review and contact you with next steps.",
       });
 
-      // Clear the form AFTER success (and keep the UI professional)
+      // Clear after success
       setLegalBusinessName("");
       setPrimaryContactName("");
       setRole("");
@@ -105,12 +99,9 @@ export default function Join() {
       setBusinessPhone("");
       setBusinessEmail("");
       setBetaAcknowledged(false);
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
-      setStatus({
-        type: "error",
-        message:
-          err?.message || "Something went wrong. Please try again shortly.",
-      });
+      fail(err?.message || "Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -124,8 +115,8 @@ export default function Join() {
             src="/qc-logo.png"
             alt="QueCab AdbS"
             style={styles.logo}
+            onClick={() => (window.location.hash = "#/")}
             onError={(e) => {
-              // Avoid broken-image ugliness
               e.currentTarget.style.display = "none";
             }}
           />
@@ -133,18 +124,10 @@ export default function Join() {
         </div>
 
         <div style={styles.nav}>
-          <a style={styles.navLink} href="#/">
-            Home
-          </a>
-          <a style={styles.navLink} href="#/how-it-works">
-            How It Works
-          </a>
-          <a style={styles.navLink} href="#/login">
-            Log In
-          </a>
-          <a style={{ ...styles.navLink, ...styles.navLinkActive }} href="#/join">
-            Request Access
-          </a>
+          <a style={styles.navLink} href="#/">Home</a>
+          <a style={styles.navLink} href="#/how-it-works">How It Works</a>
+          <a style={styles.navLink} href="#/login">Log In</a>
+          <a style={{ ...styles.navLink, ...styles.navLinkActive }} href="#/join">Request Access</a>
         </div>
       </div>
 
@@ -153,10 +136,19 @@ export default function Join() {
           <div style={styles.header}>
             <div style={styles.title}>Request Access</div>
             <div style={styles.subtitle}>
-              For licensed brokers and shippers who want to use QueCab AdbS to
-              verify Truck-Driver units before loading. Fill this out to request
-              subscription onboarding.
+              For licensed brokers and shippers requesting QueCab AdbS access.
             </div>
+
+            {status.message ? (
+              <div
+                style={{
+                  ...styles.status,
+                  ...(status.type === "success" ? styles.statusSuccess : styles.statusError),
+                }}
+              >
+                {status.message}
+              </div>
+            ) : null}
           </div>
 
           <form onSubmit={handleSubmit}>
@@ -204,7 +196,7 @@ export default function Join() {
                   style={styles.input}
                   value={mcNumber}
                   onChange={(e) => setMcNumber(normalizeMc(e.target.value))}
-                  placeholder="MC123456"
+                  placeholder="Digits only"
                   inputMode="numeric"
                 />
               </div>
@@ -254,12 +246,7 @@ export default function Join() {
             <div style={styles.noticeBox}>
               <div style={styles.noticeTitle}>Beta Notice</div>
               <div style={styles.noticeText}>
-                This is beta software. QueCab AdbS provides verification prompts
-                and alerts to support your fraud-prevention process; it does not
-                guarantee authenticity of any carrier, truck, driver, or
-                shipment. Do not rely on this system as the only basis for
-                releasing freight or loading a vehicle. Use of this beta is at
-                your discretion, and features may change without notice.
+                This is beta software. QueCab AdbS provides verification prompts and alerts to support your fraud-prevention process; it does not guarantee authenticity of any carrier, truck, driver, or shipment. Do not rely on this system as the only basis for releasing freight or loading a vehicle. Use of this beta is at your discretion, and features may change without notice.
               </div>
 
               <label style={styles.checkboxRow}>
@@ -268,39 +255,29 @@ export default function Join() {
                   checked={betaAcknowledged}
                   onChange={(e) => setBetaAcknowledged(e.target.checked)}
                 />
-                <span style={styles.checkboxText}>
-                  I understand and accept the Beta Notice.
-                </span>
+                <span style={styles.checkboxText}>I understand and accept the Beta Notice.</span>
               </label>
             </div>
-
-            {status.message ? (
-              <div
-                style={{
-                  ...styles.status,
-                  ...(status.type === "success"
-                    ? styles.statusSuccess
-                    : styles.statusError),
-                }}
-              >
-                {status.message}
-              </div>
-            ) : null}
 
             <div style={styles.actions}>
               <button
                 type="submit"
                 style={{
                   ...styles.button,
-                  ...(submitting || !canSubmit
-                    ? styles.buttonDisabled
-                    : null),
+                  ...(submitting ? styles.buttonDisabled : null),
                 }}
-                disabled={submitting || !canSubmit}
+                disabled={submitting}
+                title={!canSubmit ? "Complete all required fields first." : ""}
               >
                 {submitting ? "Submitting…" : "Submit Request"}
               </button>
             </div>
+
+            {!canSubmit ? (
+              <div style={styles.hint}>
+                Tip: Role + Beta checkbox are required. If you skip them, the button won’t do anything useful.
+              </div>
+            ) : null}
           </form>
         </div>
       </div>
@@ -333,6 +310,7 @@ const styles = {
     display: "flex",
     alignItems: "center",
     gap: 12,
+    cursor: "pointer",
   },
   logo: {
     width: 44,
@@ -454,7 +432,7 @@ const styles = {
     padding: "10px 12px",
     borderRadius: 10,
     fontSize: 13,
-    fontWeight: 700,
+    fontWeight: 800,
   },
   statusSuccess: {
     border: "1px solid rgba(40, 210, 120, 0.45)",
@@ -484,7 +462,13 @@ const styles = {
     boxShadow: "0 14px 30px rgba(0,0,0,0.45)",
   },
   buttonDisabled: {
-    opacity: 0.55,
+    opacity: 0.65,
     cursor: "not-allowed",
+  },
+  hint: {
+    marginTop: 10,
+    fontSize: 12,
+    color: "rgba(233,238,247,0.65)",
+    fontWeight: 700,
   },
 };
