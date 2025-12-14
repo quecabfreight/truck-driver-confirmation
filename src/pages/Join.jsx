@@ -13,8 +13,18 @@ function formatUsPhone(v = "") {
 }
 
 function normalizeMc(v = "") {
-  // digits only, max 8
+  // MC digits only, up to 8 digits
   return onlyDigits(v).slice(0, 8);
+}
+
+// Option A: auto-generate code, but DO NOT auto-approve or auto-email.
+function generateAccessCode() {
+  // Example: QC-8F3K-2P9D  (easy to read, hard-ish to guess)
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no O/0/I/1
+  const pick = (n) =>
+    Array.from({ length: n }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join("");
+
+  return `QC-${pick(4)}-${pick(4)}`;
 }
 
 export default function Join() {
@@ -62,7 +72,10 @@ export default function Join() {
     }
 
     setSubmitting(true);
+
     try {
+      const accessCode = generateAccessCode();
+
       const payload = {
         legal_business_name: legalBusinessName.trim(),
         primary_contact_name: primaryContactName.trim(),
@@ -70,7 +83,9 @@ export default function Join() {
         mc_number: normalizeMc(mcNumber),
         business_phone: formatUsPhone(businessPhone),
         business_email: businessEmail.trim().toLowerCase(),
-        beta_acknowledged: true,
+        beta_acknowledged: true, // required by your RLS policy
+        status: "new",           // Option A pipeline starts here
+        access_code: accessCode, // generated now, sent later manually by you
       };
 
       const { error } = await supabase.from("beta_requests").insert([payload]);
@@ -83,13 +98,14 @@ export default function Join() {
         return;
       }
 
+      // Smooth Option A: show success, keep them on page, don't redirect.
       setStatus({
         type: "success",
         message:
           "Request received. QueCab AdbS will review and contact you with next steps.",
       });
 
-      // Clear form after success
+      // Clear form AFTER success
       setLegalBusinessName("");
       setPrimaryContactName("");
       setRole("");
@@ -143,7 +159,8 @@ export default function Join() {
           <div style={styles.header}>
             <div style={styles.title}>Request Access</div>
             <div style={styles.subtitle}>
-              For licensed brokers and shippers requesting QueCab AdbS access.
+              For licensed brokers and shippers who want to use QueCab AdbS to
+              verify Truck-Driver units before loading.
             </div>
           </div>
 
@@ -227,9 +244,12 @@ export default function Join() {
             <div style={styles.noticeBox}>
               <div style={styles.noticeTitle}>Beta Notice</div>
               <div style={styles.noticeText}>
-                This is beta software. QueCab AdbS provides verification prompts and
-                alerts to support your fraud-prevention process; it does not guarantee
-                authenticity of any carrier, truck, driver, or shipment.
+                This is beta software. QueCab AdbS provides verification prompts
+                and alerts to support your fraud-prevention process; it does not
+                guarantee authenticity of any carrier, truck, driver, or shipment.
+                Do not rely on this system as the only basis for releasing freight
+                or loading a vehicle. Use of this beta is at your discretion, and
+                features may change without notice.
               </div>
 
               <label style={styles.checkboxRow}>
@@ -265,11 +285,21 @@ export default function Join() {
                   ...(submitting || !canSubmit ? styles.buttonDisabled : null),
                 }}
                 disabled={submitting || !canSubmit}
+                title={!canSubmit ? "Complete required fields to submit" : ""}
               >
                 {submitting ? "Submitting…" : "Submit Request"}
               </button>
             </div>
           </form>
+
+          <div style={styles.adminHint}>
+            <div style={styles.adminHintTitle}>Admin workflow (Option A)</div>
+            <div style={styles.adminHintText}>
+              New requests are saved as <b>status = new</b> with an auto-generated{" "}
+              <b>access_code</b>. You review in Supabase and manually send the code.
+              (No auto-approval. No auto-email yet.)
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -304,8 +334,14 @@ const styles = {
     objectFit: "contain",
     filter: "drop-shadow(0 6px 14px rgba(0,0,0,0.7))",
   },
-  brandText: { fontWeight: 700, letterSpacing: 0.2, fontSize: 18 },
-  nav: { display: "flex", gap: 18, alignItems: "center", flexWrap: "wrap" },
+  brandText: { fontWeight: 800, letterSpacing: 0.2, fontSize: 18 },
+  nav: {
+    display: "flex",
+    gap: 18,
+    alignItems: "center",
+    flexWrap: "wrap",
+    justifyContent: "flex-end",
+  },
   navLink: {
     color: "rgba(233, 238, 247, 0.92)",
     textDecoration: "none",
@@ -315,6 +351,7 @@ const styles = {
     paddingBottom: 4,
   },
   navLinkActive: { borderBottom: "2px solid rgba(40, 210, 120, 0.95)" },
+
   centerWrap: { display: "flex", justifyContent: "center", padding: "42px 18px 60px" },
   card: {
     width: "min(860px, 100%)",
@@ -322,21 +359,28 @@ const styles = {
     border: "1px solid rgba(255,255,255,0.10)",
     background:
       "linear-gradient(180deg, rgba(10, 20, 40, 0.85), rgba(6, 10, 18, 0.88))",
-    boxShadow: "0 24px 70px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)",
+    boxShadow:
+      "0 24px 70px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)",
     padding: 26,
   },
   header: { marginBottom: 18 },
-  title: { fontSize: 30, fontWeight: 900 },
-  subtitle: { marginTop: 8, color: "rgba(233,238,247,0.72)", fontSize: 14 },
+  title: { fontSize: 30, fontWeight: 900, letterSpacing: 0.2 },
+  subtitle: {
+    marginTop: 8,
+    color: "rgba(233,238,247,0.72)",
+    lineHeight: 1.4,
+    fontSize: 13,
+  },
   label: {
     display: "block",
     marginTop: 12,
     marginBottom: 6,
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: 800,
-    color: "rgba(233,238,247,0.90)",
+    color: "rgba(233,238,247,0.88)",
   },
   req: { color: "rgba(255,120,120,0.95)", fontWeight: 900 },
+
   input: {
     width: "100%",
     boxSizing: "border-box",
@@ -346,23 +390,32 @@ const styles = {
     background: "rgba(0,0,0,0.22)",
     color: "#e9eef7",
     outline: "none",
-    fontSize: 15,
+    fontSize: 14,
   },
-  // IMPORTANT: dropdown text is black for readability
+
+  // Make role dropdown readable (black text) like you asked.
+  // Note: browsers control the dropdown list rendering, but this improves it a lot.
   select: {
     width: "100%",
     boxSizing: "border-box",
     padding: "12px 12px",
     borderRadius: 10,
     border: "1px solid rgba(255,255,255,0.12)",
-    background: "rgba(255,255,255,0.92)",
+    background: "rgba(245, 247, 250, 0.92)",
     color: "#0b0f16",
     outline: "none",
-    fontSize: 15,
-    fontWeight: 700,
+    fontSize: 14,
+    fontWeight: 800,
   },
-  row2: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 4 },
+
+  row2: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: 14,
+    marginTop: 4,
+  },
   col: { minWidth: 0 },
+
   noticeBox: {
     marginTop: 16,
     padding: 14,
@@ -370,11 +423,27 @@ const styles = {
     border: "1px solid rgba(255,255,255,0.10)",
     background: "rgba(0,0,0,0.20)",
   },
-  noticeTitle: { fontWeight: 900, fontSize: 14, marginBottom: 6 },
-  noticeText: { color: "rgba(233,238,247,0.78)", fontSize: 13, lineHeight: 1.45 },
+  noticeTitle: { fontWeight: 900, fontSize: 13, marginBottom: 6 },
+  noticeText: {
+    color: "rgba(233,238,247,0.78)",
+    fontSize: 12,
+    lineHeight: 1.45,
+  },
   checkboxRow: { display: "flex", gap: 10, alignItems: "flex-start", marginTop: 10 },
-  checkboxText: { color: "rgba(233,238,247,0.92)", fontSize: 13, fontWeight: 800 },
-  status: { marginTop: 14, padding: "10px 12px", borderRadius: 10, fontSize: 13, fontWeight: 800 },
+  checkboxText: {
+    color: "rgba(233,238,247,0.92)",
+    fontSize: 12,
+    lineHeight: 1.35,
+    fontWeight: 800,
+  },
+
+  status: {
+    marginTop: 14,
+    padding: "10px 12px",
+    borderRadius: 10,
+    fontSize: 13,
+    fontWeight: 800,
+  },
   statusSuccess: {
     border: "1px solid rgba(40, 210, 120, 0.45)",
     background: "rgba(40, 210, 120, 0.10)",
@@ -385,6 +454,7 @@ const styles = {
     background: "rgba(255, 90, 90, 0.10)",
     color: "rgba(255, 210, 210, 0.98)",
   },
+
   actions: { display: "flex", justifyContent: "flex-end", marginTop: 14 },
   button: {
     border: "none",
@@ -394,8 +464,22 @@ const styles = {
     fontSize: 14,
     cursor: "pointer",
     color: "#06120b",
-    background: "linear-gradient(180deg, rgba(45, 230, 130, 1), rgba(24, 180, 95, 1))",
+    background:
+      "linear-gradient(180deg, rgba(45, 230, 130, 1), rgba(24, 180, 95, 1))",
     boxShadow: "0 14px 30px rgba(0,0,0,0.45)",
   },
   buttonDisabled: { opacity: 0.55, cursor: "not-allowed" },
+
+  adminHint: {
+    marginTop: 18,
+    paddingTop: 16,
+    borderTop: "1px solid rgba(255,255,255,0.10)",
+  },
+  adminHintTitle: { fontSize: 12, fontWeight: 900, color: "rgba(233,238,247,0.85)" },
+  adminHintText: {
+    marginTop: 6,
+    fontSize: 12,
+    lineHeight: 1.4,
+    color: "rgba(233,238,247,0.72)",
+  },
 };
