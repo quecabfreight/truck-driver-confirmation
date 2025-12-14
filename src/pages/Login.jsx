@@ -1,224 +1,175 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useMemo, useState } from "react";
 
 export default function Login() {
-  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [accessCode, setAccessCode] = useState("");
-  const [rememberDevice, setRememberDevice] = useState(false);
-  const [error, setError] = useState("");
+  const [remember, setRemember] = useState(true);
 
-  const handleSubmit = (e) => {
+  const canSubmit = useMemo(() => {
+    return email.trim().includes("@") && accessCode.trim().length >= 4;
+  }, [email, accessCode]);
+
+  function handleSubmit(e) {
     e.preventDefault();
-    setError("");
 
-    const normalizedCode = String(accessCode || "").trim().toUpperCase();
+    // Phase 1 placeholder: we’ll wire magic link / access later
+    if (!canSubmit) return;
 
-    if (normalizedCode === "DEMO123") {
-      // Demo-only "remember this device"
-      if (rememberDevice) {
-        localStorage.setItem(
-          "adbsv1_demoAuth",
-          JSON.stringify({
-            email,
-            ts: Date.now(),
-          })
-        );
-      } else {
-        localStorage.removeItem("adbsv1_demoAuth");
-      }
-
-      // ✅ Always go to Control Center on successful demo login
-      navigate("/control-center");
+    if (remember) {
+      localStorage.setItem("qc_remember_email", email.trim().toLowerCase());
     } else {
-      setError(
-        "Demo login failed. Use access code DEMO123 with any business email."
-      );
+      localStorage.removeItem("qc_remember_email");
     }
-  };
+
+    alert("Login wiring is Phase 2. You’re good — this screen is now in place.");
+  }
 
   return (
-    <div
-      style={{
-        width: "100%",
-        minHeight: "calc(100vh - 120px)",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        padding: "40px 0",
-      }}
-    >
-      <div
-        style={{
-          background: "#020617",
-          padding: "40px",
-          borderRadius: "18px",
-          width: "480px",
-          border: "1px solid rgba(148,163,184,0.6)",
-          boxShadow: "0 18px 45px rgba(0,0,0,0.65)",
-          color: "white",
-        }}
-      >
-        {/* SMALL LABEL */}
-        <div
-          style={{
-            fontSize: "11px",
-            letterSpacing: "0.12em",
-            textTransform: "uppercase",
-            opacity: 0.7,
-            textAlign: "center",
-            marginBottom: "6px",
-          }}
-        >
-          Login Demo v3
-        </div>
+    <div style={styles.page}>
+      <TopBar active="login" />
 
-        {/* HEADING */}
-        <h1
-          style={{
-            fontSize: "32px",
-            marginBottom: "8px",
-            textAlign: "center",
-          }}
-        >
-          Log In
-        </h1>
-        <p
-          style={{
-            fontSize: "16px",
-            marginBottom: "24px",
-            textAlign: "center",
-            opacity: 0.8,
-          }}
-        >
-          For authorized brokers and shippers using QueCab AdbS.
-        </p>
-
-        {/* ERROR BANNER */}
-        {error && (
-          <div
-            style={{
-              background: "rgba(248,113,113,0.08)",
-              border: "1px solid rgba(248,113,113,0.7)",
-              color: "#fecaca",
-              padding: "10px 14px",
-              borderRadius: "10px",
-              marginBottom: "18px",
-              fontSize: "14px",
-            }}
-          >
-            {error}
+      <div style={styles.centerWrap}>
+        <div style={styles.card}>
+          <div style={styles.title}>Log In</div>
+          <div style={styles.subtitle}>
+            Authorized brokers/shippers only. (Wiring is coming next — this is the professional shell.)
           </div>
-        )}
 
-        {/* FORM */}
-        <form onSubmit={handleSubmit}>
-          {/* BUSINESS EMAIL */}
-          <div style={{ marginBottom: "20px" }}>
-            <label
-              style={{
-                fontSize: "18px",
-                display: "block",
-                marginBottom: "6px",
-              }}
-            >
-              Business Email
-            </label>
+          <form onSubmit={handleSubmit}>
+            <label style={styles.label}>Business Email</label>
             <input
-              type="email"
-              required
+              style={styles.input}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "12px",
-                fontSize: "18px",
-                borderRadius: "10px",
-                border: "1px solid #64748b",
-                background: "#0f172a",
-                color: "white",
-              }}
+              placeholder="name@company.com"
+              autoComplete="email"
             />
-          </div>
 
-          {/* ACCESS CODE */}
-          <div style={{ marginBottom: "20px" }}>
-            <label
-              style={{
-                fontSize: "18px",
-                display: "block",
-                marginBottom: "6px",
-              }}
-            >
-              Access Code
-            </label>
+            <label style={styles.label}>Access Code</label>
             <input
-              type="text"
-              required
+              style={styles.input}
               value={accessCode}
               onChange={(e) => setAccessCode(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "12px",
-                fontSize: "18px",
-                borderRadius: "10px",
-                border: "1px solid #64748b",
-                background: "#0f172a",
-                color: "white",
-              }}
+              placeholder="Enter access code"
+              autoComplete="one-time-code"
             />
-          </div>
 
-          {/* REMEMBER DEVICE */}
-          <div
-            style={{
-              marginBottom: "22px",
-              fontSize: "16px",
-            }}
-          >
-            <label>
-              <input
-                type="checkbox"
-                checked={rememberDevice}
-                onChange={(e) => setRememberDevice(e.target.checked)}
-                style={{ marginRight: "8px" }}
-              />
-              Remember this device
+            <label style={styles.checkboxRow}>
+              <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
+              <span style={styles.checkboxText}>Remember this device</span>
             </label>
-          </div>
 
-          {/* BUTTON */}
-          <button
-            type="submit"
-            style={{
-              width: "100%",
-              padding: "14px",
-              fontSize: "18px",
-              fontWeight: 600,
-              borderRadius: "999px",
-              border: "none",
-              cursor: "pointer",
-              background:
-                "linear-gradient(90deg, #22c55e 0%, #0ea5e9 50%, #22c55e 100%)",
-            }}
-          >
-            Log In (Demo – use DEMO123)
-          </button>
-        </form>
-
-        {/* FOOTER NOTE */}
-        <div
-          style={{
-            marginTop: "18px",
-            fontSize: "13px",
-            textAlign: "center",
-            opacity: 0.8,
-          }}
-        >
-          Demo only – in production this login opens the QueCab AdbS Control
-          Center.
+            <div style={styles.actions}>
+              <button type="submit" style={{ ...styles.button, ...(canSubmit ? null : styles.buttonDisabled) }} disabled={!canSubmit}>
+                Continue
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
   );
 }
+
+function TopBar({ active }) {
+  return (
+    <div style={styles.topBar}>
+      <div style={styles.brand}>
+        <img src="/qc-logo.png" alt="QueCab AdbS" style={styles.logo} onError={(e) => (e.currentTarget.style.display = "none")} />
+        <div style={styles.brandText}>QueCab AdbS</div>
+      </div>
+
+      <div style={styles.nav}>
+        <a style={{ ...styles.navLink, ...(active === "home" ? styles.navLinkActive : null) }} href="#/">
+          Home
+        </a>
+        <a style={{ ...styles.navLink, ...(active === "how" ? styles.navLinkActive : null) }} href="#/how-it-works">
+          How It Works
+        </a>
+        <a style={{ ...styles.navLink, ...(active === "login" ? styles.navLinkActive : null) }} href="#/login">
+          Log In
+        </a>
+        <a style={{ ...styles.navLink, ...(active === "join" ? styles.navLinkActive : null) }} href="#/join">
+          Request Access
+        </a>
+      </div>
+    </div>
+  );
+}
+
+const styles = {
+  page: {
+    minHeight: "100vh",
+    background:
+      "radial-gradient(1200px 700px at 50% 30%, rgba(22, 60, 110, 0.35), rgba(4, 10, 20, 1) 55%, rgba(0,0,0,1) 100%)",
+    color: "#e9eef7",
+    fontFamily:
+      'system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif',
+  },
+  topBar: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "18px 26px",
+    borderBottom: "1px solid rgba(255,255,255,0.08)",
+    background: "rgba(0,0,0,0.25)",
+    backdropFilter: "blur(6px)",
+    position: "sticky",
+    top: 0,
+    zIndex: 5,
+  },
+  brand: { display: "flex", alignItems: "center", gap: 12 },
+  logo: { width: 44, height: 44, objectFit: "contain", filter: "drop-shadow(0 6px 14px rgba(0,0,0,0.7))" },
+  brandText: { fontWeight: 800, letterSpacing: 0.2, fontSize: 18 },
+  nav: { display: "flex", gap: 18, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" },
+  navLink: {
+    color: "rgba(233, 238, 247, 0.92)",
+    textDecoration: "none",
+    fontWeight: 700,
+    fontSize: 14,
+    borderBottom: "2px solid transparent",
+    paddingBottom: 4,
+  },
+  navLinkActive: { borderBottom: "2px solid rgba(40, 210, 120, 0.95)" },
+
+  centerWrap: { display: "flex", justifyContent: "center", padding: "42px 18px 60px" },
+  card: {
+    width: "min(760px, 100%)",
+    borderRadius: 18,
+    border: "1px solid rgba(255,255,255,0.10)",
+    background: "linear-gradient(180deg, rgba(10, 20, 40, 0.85), rgba(6, 10, 18, 0.88))",
+    boxShadow: "0 24px 70px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)",
+    padding: 28,
+  },
+  title: { fontSize: 32, fontWeight: 900, letterSpacing: 0.2 },
+  subtitle: { marginTop: 10, color: "rgba(233,238,247,0.72)", lineHeight: 1.45, fontSize: 14 },
+
+  label: { display: "block", marginTop: 14, marginBottom: 6, fontSize: 12, fontWeight: 800 },
+  input: {
+    width: "100%",
+    boxSizing: "border-box",
+    padding: "12px 12px",
+    borderRadius: 10,
+    border: "1px solid rgba(255,255,255,0.12)",
+    background: "rgba(0,0,0,0.22)",
+    color: "#e9eef7",
+    outline: "none",
+    fontSize: 14,
+  },
+  checkboxRow: { display: "flex", gap: 10, alignItems: "center", marginTop: 12 },
+  checkboxText: { fontSize: 13, fontWeight: 800, color: "rgba(233,238,247,0.88)" },
+
+  actions: { display: "flex", justifyContent: "flex-end", marginTop: 16 },
+  button: {
+    border: "none",
+    borderRadius: 999,
+    padding: "12px 18px",
+    fontWeight: 900,
+    fontSize: 14,
+    cursor: "pointer",
+    color: "#06120b",
+    background: "linear-gradient(180deg, rgba(45, 230, 130, 1), rgba(24, 180, 95, 1))",
+    boxShadow: "0 14px 30px rgba(0,0,0,0.45)",
+  },
+  buttonDisabled: { opacity: 0.55, cursor: "not-allowed" },
+};
