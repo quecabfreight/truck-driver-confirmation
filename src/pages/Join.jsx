@@ -4,13 +4,16 @@ import { supabase } from "../lib/supabaseClient";
 function onlyDigits(v = "") {
   return String(v).replace(/\D/g, "");
 }
+
 function formatUsPhone(v = "") {
   const d = onlyDigits(v).slice(0, 10);
   if (d.length <= 3) return d;
   if (d.length <= 6) return `${d.slice(0, 3)}-${d.slice(3)}`;
   return `${d.slice(0, 3)}-${d.slice(3, 6)}-${d.slice(6)}`;
 }
+
 function normalizeMc(v = "") {
+  // digits only, max 8
   return onlyDigits(v).slice(0, 8);
 }
 
@@ -19,7 +22,6 @@ export default function Join() {
   const [primaryContactName, setPrimaryContactName] = useState("");
   const [role, setRole] = useState("");
   const [mcNumber, setMcNumber] = useState("");
-  const [einTaxId, setEinTaxId] = useState("");
   const [businessPhone, setBusinessPhone] = useState("");
   const [businessEmail, setBusinessEmail] = useState("");
   const [betaAcknowledged, setBetaAcknowledged] = useState(false);
@@ -64,9 +66,8 @@ export default function Join() {
       const payload = {
         legal_business_name: legalBusinessName.trim(),
         primary_contact_name: primaryContactName.trim(),
-        role: role,
+        role,
         mc_number: normalizeMc(mcNumber),
-        ein_tax_id: einTaxId.trim() || null,
         business_phone: formatUsPhone(businessPhone),
         business_email: businessEmail.trim().toLowerCase(),
         beta_acknowledged: true,
@@ -84,15 +85,15 @@ export default function Join() {
 
       setStatus({
         type: "success",
-        message: "Request submitted successfully. We’ll contact you with next steps.",
+        message:
+          "Request received. QueCab AdbS will review and contact you with next steps.",
       });
 
-      // Clear after success (this IS by design)
+      // Clear form after success
       setLegalBusinessName("");
       setPrimaryContactName("");
       setRole("");
       setMcNumber("");
-      setEinTaxId("");
       setBusinessPhone("");
       setBusinessEmail("");
       setBetaAcknowledged(false);
@@ -108,7 +109,34 @@ export default function Join() {
 
   return (
     <div style={styles.page}>
-      <TopBar active="join" />
+      <div style={styles.topBar}>
+        <div style={styles.brand}>
+          <img
+            src="/qc-logo.png"
+            alt="QueCab AdbS"
+            style={styles.logo}
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+            }}
+          />
+          <div style={styles.brandText}>QueCab AdbS</div>
+        </div>
+
+        <div style={styles.nav}>
+          <a style={styles.navLink} href="#/">
+            Home
+          </a>
+          <a style={styles.navLink} href="#/how-it-works">
+            How It Works
+          </a>
+          <a style={styles.navLink} href="#/login">
+            Log In
+          </a>
+          <a style={{ ...styles.navLink, ...styles.navLinkActive }} href="#/join">
+            Request Access
+          </a>
+        </div>
+      </div>
 
       <div style={styles.centerWrap}>
         <div style={styles.card}>
@@ -120,27 +148,33 @@ export default function Join() {
           </div>
 
           <form onSubmit={handleSubmit}>
-            <label style={styles.label}>Legal Business Name <span style={styles.req}>*</span></label>
+            <label style={styles.label}>
+              Legal Business Name <span style={styles.req}>*</span>
+            </label>
             <input
               style={styles.input}
               value={legalBusinessName}
               onChange={(e) => setLegalBusinessName(e.target.value)}
-              placeholder="Exact name from paperwork"
+              placeholder="Exact name from FMCSA / paperwork"
               autoComplete="organization"
             />
 
-            <label style={styles.label}>Primary Contact Name <span style={styles.req}>*</span></label>
+            <label style={styles.label}>
+              Primary Contact Name <span style={styles.req}>*</span>
+            </label>
             <input
               style={styles.input}
               value={primaryContactName}
               onChange={(e) => setPrimaryContactName(e.target.value)}
-              placeholder="Who will manage access?"
+              placeholder="Who will manage AdbS access?"
               autoComplete="name"
             />
 
-            <label style={styles.label}>Role <span style={styles.req}>*</span></label>
+            <label style={styles.label}>
+              Role <span style={styles.req}>*</span>
+            </label>
             <select
-              style={styles.selectReadable}
+              style={styles.select}
               value={role}
               onChange={(e) => setRole(e.target.value)}
             >
@@ -151,31 +185,22 @@ export default function Join() {
 
             <div style={styles.row2}>
               <div style={styles.col}>
-                <label style={styles.label}>MC# <span style={styles.req}>*</span></label>
+                <label style={styles.label}>
+                  MC# <span style={styles.req}>*</span>
+                </label>
                 <input
                   style={styles.input}
                   value={mcNumber}
                   onChange={(e) => setMcNumber(normalizeMc(e.target.value))}
-                  placeholder="MC123456"
+                  placeholder="1234567"
                   inputMode="numeric"
                 />
               </div>
 
               <div style={styles.col}>
-                <label style={styles.label}>EIN / Tax ID (optional)</label>
-                <input
-                  style={styles.input}
-                  value={einTaxId}
-                  onChange={(e) => setEinTaxId(e.target.value)}
-                  placeholder="Optional"
-                  autoComplete="off"
-                />
-              </div>
-            </div>
-
-            <div style={styles.row2}>
-              <div style={styles.col}>
-                <label style={styles.label}>Business Phone <span style={styles.req}>*</span></label>
+                <label style={styles.label}>
+                  Business Phone <span style={styles.req}>*</span>
+                </label>
                 <input
                   style={styles.input}
                   value={businessPhone}
@@ -185,24 +210,26 @@ export default function Join() {
                   autoComplete="tel"
                 />
               </div>
-
-              <div style={styles.col}>
-                <label style={styles.label}>Business Email <span style={styles.req}>*</span></label>
-                <input
-                  style={styles.input}
-                  value={businessEmail}
-                  onChange={(e) => setBusinessEmail(e.target.value)}
-                  placeholder="name@yourbusiness.com"
-                  inputMode="email"
-                  autoComplete="email"
-                />
-              </div>
             </div>
+
+            <label style={styles.label}>
+              Business Email <span style={styles.req}>*</span>
+            </label>
+            <input
+              style={styles.input}
+              value={businessEmail}
+              onChange={(e) => setBusinessEmail(e.target.value)}
+              placeholder="name@yourbusiness.com"
+              inputMode="email"
+              autoComplete="email"
+            />
 
             <div style={styles.noticeBox}>
               <div style={styles.noticeTitle}>Beta Notice</div>
               <div style={styles.noticeText}>
-                This is beta software. Use it as part of your process — not as the only basis for releasing freight.
+                This is beta software. QueCab AdbS provides verification prompts and
+                alerts to support your fraud-prevention process; it does not guarantee
+                authenticity of any carrier, truck, driver, or shipment.
               </div>
 
               <label style={styles.checkboxRow}>
@@ -211,7 +238,9 @@ export default function Join() {
                   checked={betaAcknowledged}
                   onChange={(e) => setBetaAcknowledged(e.target.checked)}
                 />
-                <span style={styles.checkboxText}>I understand and accept the Beta Notice.</span>
+                <span style={styles.checkboxText}>
+                  I understand and accept the Beta Notice.
+                </span>
               </label>
             </div>
 
@@ -219,7 +248,9 @@ export default function Join() {
               <div
                 style={{
                   ...styles.status,
-                  ...(status.type === "success" ? styles.statusSuccess : styles.statusError),
+                  ...(status.type === "success"
+                    ? styles.statusSuccess
+                    : styles.statusError),
                 }}
               >
                 {status.message}
@@ -229,7 +260,10 @@ export default function Join() {
             <div style={styles.actions}>
               <button
                 type="submit"
-                style={{ ...styles.button, ...(submitting || !canSubmit ? styles.buttonDisabled : null) }}
+                style={{
+                  ...styles.button,
+                  ...(submitting || !canSubmit ? styles.buttonDisabled : null),
+                }}
                 disabled={submitting || !canSubmit}
               >
                 {submitting ? "Submitting…" : "Submit Request"}
@@ -237,24 +271,6 @@ export default function Join() {
             </div>
           </form>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function TopBar({ active }) {
-  return (
-    <div style={styles.topBar}>
-      <div style={styles.brand}>
-        <img src="/qc-logo.png" alt="QueCab AdbS" style={styles.logo} onError={(e) => (e.currentTarget.style.display = "none")} />
-        <div style={styles.brandText}>QueCab AdbS</div>
-      </div>
-
-      <div style={styles.nav}>
-        <a style={{ ...styles.navLink, ...(active === "home" ? styles.navLinkActive : null) }} href="#/">Home</a>
-        <a style={{ ...styles.navLink, ...(active === "how" ? styles.navLinkActive : null) }} href="#/how-it-works">How It Works</a>
-        <a style={{ ...styles.navLink, ...(active === "login" ? styles.navLinkActive : null) }} href="#/login">Log In</a>
-        <a style={{ ...styles.navLink, ...(active === "join" ? styles.navLinkActive : null) }} href="#/join">Request Access</a>
       </div>
     </div>
   );
@@ -282,9 +298,14 @@ const styles = {
     zIndex: 5,
   },
   brand: { display: "flex", alignItems: "center", gap: 12 },
-  logo: { width: 44, height: 44, objectFit: "contain", filter: "drop-shadow(0 6px 14px rgba(0,0,0,0.7))" },
-  brandText: { fontWeight: 800, letterSpacing: 0.2, fontSize: 18 },
-  nav: { display: "flex", gap: 18, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" },
+  logo: {
+    width: 44,
+    height: 44,
+    objectFit: "contain",
+    filter: "drop-shadow(0 6px 14px rgba(0,0,0,0.7))",
+  },
+  brandText: { fontWeight: 700, letterSpacing: 0.2, fontSize: 18 },
+  nav: { display: "flex", gap: 18, alignItems: "center", flexWrap: "wrap" },
   navLink: {
     color: "rgba(233, 238, 247, 0.92)",
     textDecoration: "none",
@@ -294,23 +315,28 @@ const styles = {
     paddingBottom: 4,
   },
   navLinkActive: { borderBottom: "2px solid rgba(40, 210, 120, 0.95)" },
-
   centerWrap: { display: "flex", justifyContent: "center", padding: "42px 18px 60px" },
   card: {
     width: "min(860px, 100%)",
     borderRadius: 18,
     border: "1px solid rgba(255,255,255,0.10)",
-    background: "linear-gradient(180deg, rgba(10, 20, 40, 0.85), rgba(6, 10, 18, 0.88))",
+    background:
+      "linear-gradient(180deg, rgba(10, 20, 40, 0.85), rgba(6, 10, 18, 0.88))",
     boxShadow: "0 24px 70px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)",
     padding: 26,
   },
   header: { marginBottom: 18 },
-  title: { fontSize: 30, fontWeight: 900, letterSpacing: 0.2 },
-  subtitle: { marginTop: 8, color: "rgba(233,238,247,0.72)", lineHeight: 1.4, fontSize: 14 },
-
-  label: { display: "block", marginTop: 12, marginBottom: 6, fontSize: 12, fontWeight: 800 },
+  title: { fontSize: 30, fontWeight: 900 },
+  subtitle: { marginTop: 8, color: "rgba(233,238,247,0.72)", fontSize: 14 },
+  label: {
+    display: "block",
+    marginTop: 12,
+    marginBottom: 6,
+    fontSize: 13,
+    fontWeight: 800,
+    color: "rgba(233,238,247,0.90)",
+  },
   req: { color: "rgba(255,120,120,0.95)", fontWeight: 900 },
-
   input: {
     width: "100%",
     boxSizing: "border-box",
@@ -320,26 +346,23 @@ const styles = {
     background: "rgba(0,0,0,0.22)",
     color: "#e9eef7",
     outline: "none",
-    fontSize: 14,
+    fontSize: 15,
   },
-
-  // THIS is the readability fix you asked for:
-  selectReadable: {
+  // IMPORTANT: dropdown text is black for readability
+  select: {
     width: "100%",
     boxSizing: "border-box",
     padding: "12px 12px",
     borderRadius: 10,
     border: "1px solid rgba(255,255,255,0.12)",
-    background: "rgba(235, 240, 248, 0.92)",
-    color: "#0b1220",
+    background: "rgba(255,255,255,0.92)",
+    color: "#0b0f16",
     outline: "none",
-    fontSize: 14,
-    fontWeight: 800,
+    fontSize: 15,
+    fontWeight: 700,
   },
-
   row2: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 4 },
   col: { minWidth: 0 },
-
   noticeBox: {
     marginTop: 16,
     padding: 14,
@@ -347,16 +370,21 @@ const styles = {
     border: "1px solid rgba(255,255,255,0.10)",
     background: "rgba(0,0,0,0.20)",
   },
-  noticeTitle: { fontWeight: 900, fontSize: 13, marginBottom: 6 },
-  noticeText: { color: "rgba(233,238,247,0.78)", fontSize: 12, lineHeight: 1.45 },
-
+  noticeTitle: { fontWeight: 900, fontSize: 14, marginBottom: 6 },
+  noticeText: { color: "rgba(233,238,247,0.78)", fontSize: 13, lineHeight: 1.45 },
   checkboxRow: { display: "flex", gap: 10, alignItems: "flex-start", marginTop: 10 },
-  checkboxText: { color: "rgba(233,238,247,0.92)", fontSize: 12, lineHeight: 1.35, fontWeight: 800 },
-
-  status: { marginTop: 14, padding: "10px 12px", borderRadius: 10, fontSize: 13, fontWeight: 900 },
-  statusSuccess: { border: "1px solid rgba(40, 210, 120, 0.45)", background: "rgba(40, 210, 120, 0.10)" },
-  statusError: { border: "1px solid rgba(255, 90, 90, 0.45)", background: "rgba(255, 90, 90, 0.10)" },
-
+  checkboxText: { color: "rgba(233,238,247,0.92)", fontSize: 13, fontWeight: 800 },
+  status: { marginTop: 14, padding: "10px 12px", borderRadius: 10, fontSize: 13, fontWeight: 800 },
+  statusSuccess: {
+    border: "1px solid rgba(40, 210, 120, 0.45)",
+    background: "rgba(40, 210, 120, 0.10)",
+    color: "rgba(200, 255, 225, 0.98)",
+  },
+  statusError: {
+    border: "1px solid rgba(255, 90, 90, 0.45)",
+    background: "rgba(255, 90, 90, 0.10)",
+    color: "rgba(255, 210, 210, 0.98)",
+  },
   actions: { display: "flex", justifyContent: "flex-end", marginTop: 14 },
   button: {
     border: "none",
