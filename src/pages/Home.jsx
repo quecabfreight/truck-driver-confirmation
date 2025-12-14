@@ -1,108 +1,130 @@
 import React from "react";
-import { Link } from "react-router-dom";
 
 export default function Home() {
   return (
-    <div
-      style={{
-        minHeight: "calc(100vh - 120px)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <div
-        style={{
-          maxWidth: "780px",
-          textAlign: "center",
-          padding: "40px 32px 46px",
-          background: "#020617",
-          borderRadius: "20px",
-          border: "1px solid rgba(148,163,184,0.5)",
-          boxShadow: "0 20px 60px rgba(0,0,0,0.7)",
-        }}
-      >
-        <img
-          src="/qc-logo.png"
-          alt="QueCab AdbS Logo"
-          style={{
-            width: "110px",
-            height: "110px",
-            objectFit: "contain",
-            marginBottom: "18px",
-          }}
-        />
-        <h1 style={{ fontSize: "30px", marginBottom: "10px" }}>
-          Secure Your Load With QueCab AdbS
-        </h1>
-        <p
-          style={{
-            fontSize: "18px",
-            opacity: 0.9,
-            marginBottom: "26px",
-          }}
-        >
-          The nation&apos;s first real-time <strong>Truck-Driver</strong>{" "}
-          authentication system. Designed for brokers, shippers, and loading-dock
-          personnel to kill double-brokering and identity fraud before it
-          reaches the dock.
-        </p>
+    <div style={styles.page}>
+      <TopBar active="home" />
 
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            gap: "18px",
-            marginBottom: "18px",
-          }}
-        >
-          <Link to="/join">
-            <button
-              type="button"
-              style={{
-                padding: "14px 26px",
-                borderRadius: "999px",
-                border: "none",
-                cursor: "pointer",
-                fontSize: "18px",
-                fontWeight: 600,
-                background:
-                  "linear-gradient(90deg, #22c55e 0%, #0ea5e9 50%, #22c55e 100%)",
-              }}
-            >
-              Request Access
-            </button>
-          </Link>
+      <div style={styles.centerWrap}>
+        <div style={styles.card}>
+          <div style={styles.title}>Home</div>
+          <div style={styles.subtitle}>
+            If this page shows but <b>Request Access</b> is white, the problem is inside{" "}
+            <b>Join.jsx</b>. If this is white too, the problem is earlier (index.html / main.jsx).
+          </div>
 
-          <Link to="/login">
-            <button
-              type="button"
-              style={{
-                padding: "14px 26px",
-                borderRadius: "999px",
-                border: "1px solid #38bdf8",
-                cursor: "pointer",
-                fontSize: "18px",
-                fontWeight: 600,
-                background: "transparent",
-                color: "white",
-              }}
-            >
-              Log In
-            </button>
-          </Link>
+          <div style={styles.actions}>
+            <a href="#/join" style={styles.button}>
+              Go to Request Access
+            </a>
+          </div>
         </div>
-
-        <p
-          style={{
-            fontSize: "14px",
-            opacity: 0.8,
-          }}
-        >
-          Demo environment only – production version connects to live QueCab
-          AdbS control lanes.
-        </p>
       </div>
     </div>
   );
 }
+
+function TopBar({ active }) {
+  return (
+    <div style={styles.topBar}>
+      <div style={styles.brand}>
+        <img
+          src="/qc-logo.png"
+          alt="QueCab AdbS"
+          style={styles.logo}
+          onError={(e) => (e.currentTarget.style.display = "none")}
+        />
+        <div style={styles.brandText}>QueCab AdbS</div>
+      </div>
+
+      <div style={styles.nav}>
+        <a style={{ ...styles.navLink, ...(active === "home" ? styles.navLinkActive : null) }} href="#/">
+          Home
+        </a>
+        <a
+          style={{ ...styles.navLink, ...(active === "how" ? styles.navLinkActive : null) }}
+          href="#/how-it-works"
+        >
+          How It Works
+        </a>
+        <a
+          style={{ ...styles.navLink, ...(active === "login" ? styles.navLinkActive : null) }}
+          href="#/login"
+        >
+          Log In
+        </a>
+        <a
+          style={{ ...styles.navLink, ...(active === "join" ? styles.navLinkActive : null) }}
+          href="#/join"
+        >
+          Request Access
+        </a>
+      </div>
+    </div>
+  );
+}
+
+const styles = {
+  page: {
+    minHeight: "100vh",
+    background:
+      "radial-gradient(1200px 700px at 50% 30%, rgba(22, 60, 110, 0.35), rgba(4, 10, 20, 1) 55%, rgba(0,0,0,1) 100%)",
+    color: "#e9eef7",
+    fontFamily:
+      'system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif',
+  },
+  topBar: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "18px 26px",
+    borderBottom: "1px solid rgba(255,255,255,0.08)",
+    background: "rgba(0,0,0,0.25)",
+    backdropFilter: "blur(6px)",
+    position: "sticky",
+    top: 0,
+    zIndex: 5,
+  },
+  brand: { display: "flex", alignItems: "center", gap: 12 },
+  logo: {
+    width: 44,
+    height: 44,
+    objectFit: "contain",
+    filter: "drop-shadow(0 6px 14px rgba(0,0,0,0.7))",
+  },
+  brandText: { fontWeight: 800, letterSpacing: 0.2, fontSize: 18 },
+  nav: { display: "flex", gap: 18, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" },
+  navLink: {
+    color: "rgba(233, 238, 247, 0.92)",
+    textDecoration: "none",
+    fontWeight: 700,
+    fontSize: 14,
+    borderBottom: "2px solid transparent",
+    paddingBottom: 4,
+  },
+  navLinkActive: { borderBottom: "2px solid rgba(40, 210, 120, 0.95)" },
+
+  centerWrap: { display: "flex", justifyContent: "center", padding: "52px 18px 60px" },
+  card: {
+    width: "min(900px, 100%)",
+    borderRadius: 18,
+    border: "1px solid rgba(255,255,255,0.10)",
+    background: "linear-gradient(180deg, rgba(10, 20, 40, 0.85), rgba(6, 10, 18, 0.88))",
+    boxShadow: "0 24px 70px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)",
+    padding: 28,
+  },
+  title: { fontSize: 32, fontWeight: 900, letterSpacing: 0.2 },
+  subtitle: { marginTop: 10, color: "rgba(233,238,247,0.78)", lineHeight: 1.45, fontSize: 14 },
+  actions: { marginTop: 18, display: "flex", gap: 12, flexWrap: "wrap" },
+  button: {
+    display: "inline-block",
+    borderRadius: 999,
+    padding: "12px 18px",
+    fontWeight: 900,
+    fontSize: 14,
+    color: "#06120b",
+    background: "linear-gradient(180deg, rgba(45, 230, 130, 1), rgba(24, 180, 95, 1))",
+    boxShadow: "0 14px 30px rgba(0,0,0,0.45)",
+    textDecoration: "none",
+  },
+};
