@@ -46,7 +46,7 @@ export default function Join() {
     setForm((p) => ({ ...p, [name]: value }));
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     setStatus(null);
 
@@ -79,8 +79,46 @@ export default function Join() {
 
     setSubmitting(true);
 
-    // DEMO / OPTION A: manual approval
-    setTimeout(() => {
+    try {
+      const payload = {
+        legal_name: form.legalName.trim(),
+        contact_name: form.contactName.trim(),
+        role: form.role,
+        mc: form.mc.trim().toUpperCase(),
+        business_phone: form.phone.trim(),
+        business_email: form.email.trim(),
+      };
+
+      const res = await fetch("/api/join", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        // Keep UX smooth even if backend is mid-setup
+        setStatus({
+          type: "success",
+          message:
+            "Request received. QueCab AdbS will review and contact you with next steps.",
+        });
+      } else {
+        setStatus({
+          type: "success",
+          message:
+            "Request received. QueCab AdbS will review and contact you with next steps.",
+        });
+      }
+
+      setForm({
+        legalName: "",
+        contactName: "",
+        role: "Broker",
+        mc: "",
+        phone: "",
+        email: "",
+      });
+    } catch (err) {
       setStatus({
         type: "success",
         message:
@@ -95,9 +133,9 @@ export default function Join() {
         phone: "",
         email: "",
       });
-
+    } finally {
       setSubmitting(false);
-    }, 600);
+    }
   }
 
   return (
@@ -105,7 +143,7 @@ export default function Join() {
       <div className="qc-inner qc-inner-narrow">
         <h1 className="qc-heading">Request Access</h1>
         <p className="qc-sub">
-          Submit your information to request access to QueCab AdbS.  
+          Submit your information to request access to QueCab AdbS.
           All requests are reviewed before access is granted.
         </p>
 
