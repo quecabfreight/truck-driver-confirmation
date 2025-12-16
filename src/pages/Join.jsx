@@ -16,8 +16,6 @@ function formatPhone(value) {
 }
 
 function normalizeMc(value) {
-  // Store digits only (you wanted: MC tag + digits only)
-  // User may type "MC123456" or "123456" — we keep digits.
   return onlyDigits(value).slice(0, 10);
 }
 
@@ -56,8 +54,7 @@ export default function Join() {
     if (!canSubmit) {
       setStatus({
         type: "error",
-        message:
-          "Please complete all required fields before submitting the request.",
+        message: "Please complete all required fields before submitting.",
       });
       return;
     }
@@ -69,28 +66,15 @@ export default function Join() {
       mc_number: normalizeMc(form.mc_number),
       business_phone: form.business_phone.trim(),
       business_email: form.business_email.trim().toLowerCase(),
-      // Option A: manual approval. We can still auto-generate a code later,
-      // but we do NOT auto-approve here.
       status: "pending",
-      created_at: new Date().toISOString(),
     };
 
     try {
       setSubmitting(true);
 
-      // If supabase isn’t configured or table missing, we show an error
-      // instead of blanking the page.
-      if (!supabase) {
-        throw new Error(
-          "Supabase client not available. Check src/utils/supabaseClient.js."
-        );
-      }
-
       const { error } = await supabase.from("beta_requests").insert([payload]);
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       setStatus({
         type: "success",
@@ -98,7 +82,6 @@ export default function Join() {
           "Request received. QueCab AdbS will review and contact you with next steps.",
       });
 
-      // Clear form after success
       setForm({
         legal_name: "",
         contact_name: "",
@@ -111,8 +94,8 @@ export default function Join() {
       setStatus({
         type: "error",
         message:
-          (err && err.message) ||
-          "Something went wrong while submitting. Please try again.",
+          err?.message ||
+          "Submission failed. Check Supabase table + env vars, then try again.",
       });
     } finally {
       setSubmitting(false);
@@ -245,7 +228,6 @@ export default function Join() {
         </div>
       </div>
 
-      {/* Minimal page styles so it looks right even if other CSS gets touched */}
       <style>{`
         .qc-shell{ width:100%; padding: 30px 16px 46px; }
         .qc-inner{ max-width: 980px; margin: 0 auto; }
@@ -257,9 +239,8 @@ export default function Join() {
           box-shadow: 0 18px 40px rgba(0,0,0,.35);
           backdrop-filter: blur(10px);
         }
-        .qc-heading{ margin:0 0 6px; font-size: 34px; font-weight: 900; letter-spacing:.2px; }
+        .qc-heading{ margin:0 0 6px; font-size: 34px; font-weight: 900; }
         .qc-sub{ margin:0 0 18px; opacity:.9; }
-        .qc-form{ margin-top: 10px; }
         .qc-grid{
           display:grid;
           grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -277,7 +258,6 @@ export default function Join() {
           color: #e9eefc;
           outline: none;
         }
-        .qc-input:focus{ border-color: rgba(120,160,255,.55); box-shadow: 0 0 0 3px rgba(120,160,255,.15); }
         .qc-help{ font-size: 12px; opacity: .75; }
         .qc-actions{ display:flex; justify-content:flex-end; margin-top: 16px; }
         .qc-btn{
