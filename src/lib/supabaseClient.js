@@ -1,14 +1,12 @@
 import { createClient } from "@supabase/supabase-js";
 
-const url = import.meta.env.VITE_SUPABASE_URL;
-const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-if (!url || !anonKey) {
-  // This prevents silent crashes -> gives a clear error in console
-  console.error("Missing Supabase environment variables", {
-    hasUrl: Boolean(url),
-    hasAnonKey: Boolean(anonKey),
-  });
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  console.warn(
+    "Supabase env vars missing. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to Vercel Environment Variables."
+  );
 }
 
-export const supabase = createClient(url, anonKey);
+export const supabase = createClient(SUPABASE_URL || "", SUPABASE_ANON_KEY || "");
