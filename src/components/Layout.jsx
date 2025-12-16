@@ -1,37 +1,53 @@
-import { Link } from "react-router-dom";
+import { Outlet, NavLink, useNavigate } from "react-router-dom";
 
-export default function Layout({ children }) {
+export default function Layout() {
+  const navigate = useNavigate();
+
+  function goHome(e) {
+    e.preventDefault();
+    navigate("/");
+    // fallback (HashRouter-safe)
+    window.location.hash = "#/";
+  }
+
   return (
-    <div className="qc-app">
-      {/* HEADER */}
-      <header className="qc-header">
-        <div className="qc-header-inner">
-          {/* LOGO → HOME */}
-          <Link to="/" className="qc-logo-link" aria-label="Go to homepage">
-            <img
-              src="/qc-logo.png"
-              alt="QueCab AdbS"
-              className="qc-logo"
-            />
-          </Link>
+    <div className="qc-shell">
+      <header className="qc-topbar">
+        <div className="qc-topbar-inner">
+          <a
+            href="#/"
+            onClick={goHome}
+            className="qc-brand"
+            aria-label="QueCab AdbS Home"
+            style={{ cursor: "pointer" }}
+          >
+            <img src="/qc-logo.png" alt="QueCab AdbS" className="qc-toplogo" />
+            <div className="qc-brand-text">
+              <div className="qc-brand-title">QueCab AdbS</div>
+              <div className="qc-brand-sub">Truck-Driver Confirmation</div>
+            </div>
+          </a>
 
-          {/* NAV */}
           <nav className="qc-nav">
-            <Link to="/" className="qc-nav-link">
+            <NavLink to="/" className="qc-nav-link">
               Home
-            </Link>
-            <Link to="/how-it-works" className="qc-nav-link">
+            </NavLink>
+            <NavLink to="/how-it-works" className="qc-nav-link">
               How It Works
-            </Link>
-            <Link to="/login" className="qc-nav-link">
+            </NavLink>
+            <NavLink to="/login" className="qc-nav-link">
               Log In
-            </Link>
+            </NavLink>
+            <NavLink to="/join" className="qc-nav-link qc-nav-cta">
+              Request Access
+            </NavLink>
           </nav>
         </div>
       </header>
 
-      {/* PAGE CONTENT */}
-      <main className="qc-main">{children}</main>
+      <main className="qc-inner">
+        <Outlet />
+      </main>
     </div>
   );
 }
