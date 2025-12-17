@@ -1,22 +1,19 @@
 import React, { useMemo, useState } from "react";
 import { supabase } from "../utils/supabaseClient";
 
-function onlyDigits(value) {
-  return (value || "").replace(/\D/g, "");
+function onlyDigits(v) {
+  return (v || "").replace(/\D/g, "");
 }
 
-function formatPhone(value) {
-  const d = onlyDigits(value).slice(0, 10);
-  const a = d.slice(0, 3);
-  const b = d.slice(3, 6);
-  const c = d.slice(6, 10);
-  if (d.length <= 3) return a;
-  if (d.length <= 6) return `${a}-${b}`;
-  return `${a}-${b}-${c}`;
+function formatPhone(v) {
+  const d = onlyDigits(v).slice(0, 10);
+  if (d.length <= 3) return d;
+  if (d.length <= 6) return `${d.slice(0, 3)}-${d.slice(3)}`;
+  return `${d.slice(0, 3)}-${d.slice(3, 6)}-${d.slice(6)}`;
 }
 
-function normalizeMc(value) {
-  return onlyDigits(value).slice(0, 10);
+function normalizeMc(v) {
+  return onlyDigits(v).slice(0, 10);
 }
 
 export default function Join() {
@@ -44,7 +41,7 @@ export default function Join() {
   }, [form]);
 
   function setField(name, value) {
-    setForm((prev) => ({ ...prev, [name]: value }));
+    setForm((p) => ({ ...p, [name]: value }));
   }
 
   async function handleSubmit(e) {
@@ -67,6 +64,7 @@ export default function Join() {
       business_phone: form.business_phone.trim(),
       business_email: form.business_email.trim().toLowerCase(),
       status: "pending",
+      created_at: new Date().toISOString(),
     };
 
     try {
@@ -95,7 +93,7 @@ export default function Join() {
         type: "error",
         message:
           err?.message ||
-          "Submission failed. Check Supabase table + env vars, then try again.",
+          "Submission failed. Check Supabase settings and try again.",
       });
     } finally {
       setSubmitting(false);
@@ -103,20 +101,38 @@ export default function Join() {
   }
 
   return (
-    <div className="qc-shell">
-      <div className="qc-inner">
-        <div className="qc-card">
-          <h1 className="qc-heading">Request Access</h1>
-          <p className="qc-sub">
+    <div className="qc-shell" style={{ padding: "30px 16px 46px" }}>
+      <div className="qc-inner" style={{ maxWidth: 980, margin: "0 auto" }}>
+        <div
+          style={{
+            background: "rgba(8,10,16,.55)",
+            border: "1px solid rgba(255,255,255,.10)",
+            borderRadius: 18,
+            padding: 22,
+            boxShadow: "0 18px 40px rgba(0,0,0,.35)",
+            backdropFilter: "blur(10px)",
+          }}
+        >
+          <h1 className="qc-heading" style={{ margin: "0 0 6px" }}>
+            Request Access
+          </h1>
+          <p className="qc-sub" style={{ margin: "0 0 18px", opacity: 0.9 }}>
             Submit your information to request access to QueCab AdbS. All
             requests are reviewed before access is granted.
           </p>
 
-          <form className="qc-form" onSubmit={handleSubmit}>
-            <div className="qc-grid">
-              <div className="qc-field">
-                <label className="qc-label">
-                  Legal Name / Legal Business Name <span className="qc-req">*</span>
+          <form onSubmit={handleSubmit}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                gap: "14px 16px",
+              }}
+            >
+              <div>
+                <label style={{ fontWeight: 800 }}>
+                  Legal Name / Legal Business Name{" "}
+                  <span style={{ color: "#ff5b5b" }}>*</span>
                 </label>
                 <input
                   className="qc-input"
@@ -127,9 +143,9 @@ export default function Join() {
                 />
               </div>
 
-              <div className="qc-field">
-                <label className="qc-label">
-                  Contact Name <span className="qc-req">*</span>
+              <div>
+                <label style={{ fontWeight: 800 }}>
+                  Contact Name <span style={{ color: "#ff5b5b" }}>*</span>
                 </label>
                 <input
                   className="qc-input"
@@ -140,9 +156,9 @@ export default function Join() {
                 />
               </div>
 
-              <div className="qc-field">
-                <label className="qc-label">
-                  Role <span className="qc-req">*</span>
+              <div>
+                <label style={{ fontWeight: 800 }}>
+                  Role <span style={{ color: "#ff5b5b" }}>*</span>
                 </label>
                 <select
                   className="qc-input"
@@ -154,9 +170,9 @@ export default function Join() {
                 </select>
               </div>
 
-              <div className="qc-field">
-                <label className="qc-label">
-                  MC# <span className="qc-req">*</span>
+              <div>
+                <label style={{ fontWeight: 800 }}>
+                  MC# <span style={{ color: "#ff5b5b" }}>*</span>
                 </label>
                 <input
                   className="qc-input"
@@ -165,12 +181,11 @@ export default function Join() {
                   placeholder="MC123456"
                   inputMode="numeric"
                 />
-                <div className="qc-help">Digits only are stored.</div>
               </div>
 
-              <div className="qc-field">
-                <label className="qc-label">
-                  Business Phone <span className="qc-req">*</span>
+              <div>
+                <label style={{ fontWeight: 800 }}>
+                  Business Phone <span style={{ color: "#ff5b5b" }}>*</span>
                 </label>
                 <input
                   className="qc-input"
@@ -184,9 +199,9 @@ export default function Join() {
                 />
               </div>
 
-              <div className="qc-field">
-                <label className="qc-label">
-                  Business Email <span className="qc-req">*</span>
+              <div>
+                <label style={{ fontWeight: 800 }}>
+                  Business Email <span style={{ color: "#ff5b5b" }}>*</span>
                 </label>
                 <input
                   className="qc-input"
@@ -201,27 +216,33 @@ export default function Join() {
 
             {status && (
               <div
-                className={
-                  status.type === "success"
-                    ? "qc-status qc-status-success"
-                    : "qc-status qc-status-error"
-                }
+                style={{
+                  marginTop: 14,
+                  padding: "12px 14px",
+                  borderRadius: 14,
+                  border: "1px solid rgba(255,255,255,.14)",
+                  fontWeight: 800,
+                  background:
+                    status.type === "success"
+                      ? "rgba(20,120,80,.18)"
+                      : "rgba(140,30,30,.18)",
+                }}
               >
                 {status.message}
               </div>
             )}
 
-            <div className="qc-actions">
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}>
               <button
                 type="submit"
-                className="qc-btn"
+                className="qc-navbtn"
                 disabled={!canSubmit || submitting}
               >
                 {submitting ? "Submitting..." : "Submit Request"}
               </button>
             </div>
 
-            <p className="qc-note">
+            <p style={{ marginTop: 14, opacity: 0.8, fontSize: 12 }}>
               Manual approval required. Access codes are issued after review.
             </p>
           </form>
@@ -229,69 +250,13 @@ export default function Join() {
       </div>
 
       <style>{`
-        .qc-shell{ width:100%; padding: 30px 16px 46px; }
-        .qc-inner{ max-width: 980px; margin: 0 auto; }
-        .qc-card{
-          background: rgba(8,10,16,.55);
-          border: 1px solid rgba(255,255,255,.10);
-          border-radius: 18px;
-          padding: 22px;
-          box-shadow: 0 18px 40px rgba(0,0,0,.35);
-          backdrop-filter: blur(10px);
-        }
-        .qc-heading{ margin:0 0 6px; font-size: 34px; font-weight: 900; }
-        .qc-sub{ margin:0 0 18px; opacity:.9; }
-        .qc-grid{
-          display:grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 14px 16px;
-        }
-        .qc-field{ display:flex; flex-direction:column; gap:6px; }
-        .qc-label{ font-weight: 800; }
-        .qc-req{ color: #ff5b5b; }
-        .qc-input{
-          width:100%;
-          padding: 12px 12px;
-          border-radius: 12px;
-          border: 1px solid rgba(255,255,255,.14);
-          background: rgba(0,0,0,.35);
-          color: #e9eefc;
-          outline: none;
-        }
-        .qc-help{ font-size: 12px; opacity: .75; }
-        .qc-actions{ display:flex; justify-content:flex-end; margin-top: 16px; }
-        .qc-btn{
-          padding: 12px 18px;
-          border-radius: 14px;
-          border: 1px solid rgba(255,255,255,.14);
-          background: linear-gradient(180deg, rgba(80,125,255,.45), rgba(18,28,56,.75));
-          color: #fff;
-          font-weight: 900;
-          cursor: pointer;
-          box-shadow: 0 14px 30px rgba(0,0,0,.35);
-        }
-        .qc-btn:disabled{ opacity:.55; cursor:not-allowed; }
-        .qc-status{
-          margin-top: 14px;
-          padding: 12px 14px;
-          border-radius: 14px;
-          border: 1px solid rgba(255,255,255,.14);
-          font-weight: 800;
-        }
-        .qc-status-success{
-          background: rgba(20,120,80,.18);
-          border-color: rgba(60,200,140,.28);
-        }
-        .qc-status-error{
-          background: rgba(140,30,30,.18);
-          border-color: rgba(255,90,90,.28);
-        }
-        .qc-note{ margin-top: 14px; opacity:.8; font-size: 12px; }
         @media (max-width: 760px){
-          .qc-grid{ grid-template-columns: 1fr; }
-          .qc-heading{ font-size: 30px; }
-          .qc-actions{ justify-content: stretch; }
-          .qc-btn{ width:100%; }
+          .qc-inner{ max-width: 980px !important; }
+          form > div[style*="grid-template-columns"]{
+            grid-template-columns: 1fr !important;
+          }
+          .qc-navbtn{ width:100%; }
+          div[style*="justify-content: flex-end"]{ justify-content: stretch !important; }
         }
       `}</style>
     </div>
