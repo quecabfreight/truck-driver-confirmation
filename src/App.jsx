@@ -13,7 +13,7 @@ export default function App() {
   return (
     <HashRouter>
       <Routes>
-        {/* Pages that should have the standard site shell */}
+        {/* Pages that use the standard site header/nav */}
         <Route element={<Layout />}>
           <Route path="/" element={<Home />} />
           <Route path="/how-it-works" element={<HowItWorks />} />
@@ -23,7 +23,7 @@ export default function App() {
           <Route path="*" element={<Home />} />
         </Route>
 
-        {/* Verify screen stays standalone (dock screen) */}
+        {/* Verify stays standalone if you want it later (optional) */}
         <Route path="/verify/:token" element={<VerifyDriver />} />
       </Routes>
     </HashRouter>
