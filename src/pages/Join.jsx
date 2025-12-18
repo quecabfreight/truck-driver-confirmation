@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState } from "react";
 import { supabase } from "../utils/supabaseClient";
 
 const onlyDigits = (s) => (s || "").replace(/\D+/g, "");
@@ -11,61 +11,38 @@ const formatPhone = (value) => {
 };
 
 export default function Join() {
-  // IMPORTANT: prevent Join from leaving global "white page" styles behind.
-  useEffect(() => {
-    const body = document.body;
-
-    // Remove any inline styles previously set by older Join versions
-    const prevBg = body.style.background;
-    const prevColor = body.style.color;
-    const prevOverflow = body.style.overflow;
-
-    body.style.background = "";
-    body.style.color = "";
-    body.style.overflow = "";
-
-    // Also remove any common "page-specific" body classes if they exist
-    body.classList.remove("join-page", "request-access-page", "light-page");
-
-    return () => {
-      // Restore what was there before (safe + minimal)
-      body.style.background = prevBg;
-      body.style.color = prevColor;
-      body.style.overflow = prevOverflow;
-    };
-  }, []);
-
   const [legalName, setLegalName] = useState("");
   const [contactName, setContactName] = useState("");
   const [role, setRole] = useState("Broker");
-  const [mc, setMc] = useState("");
+  const [mcDigits, setMcDigits] = useState("");
   const [ein, setEin] = useState("");
   const [businessPhone, setBusinessPhone] = useState("");
   const [businessEmail, setBusinessEmail] = useState("");
 
   const [submitting, setSubmitting] = useState(false);
-  const [successMsg, setSuccessMsg] = useState("");
-  const [errorMsg, setErrorMsg] = useState("");
+  const [status, setStatus] = useState({ type: "", message: "" });
 
-  const mcClean = useMemo(() => {
-    const digits = onlyDigits(mc);
+  const mcNumber = useMemo(() => {
+    const digits = onlyDigits(mcDigits);
     return digits ? `MC${digits}` : "";
-  }, [mc]);
+  }, [mcDigits]);
 
   const canSubmit =
     legalName.trim() &&
     contactName.trim() &&
     businessEmail.trim() &&
     businessPhone.trim() &&
-    mcClean;
+    mcNumber;
 
   async function onSubmit(e) {
     e.preventDefault();
-    setErrorMsg("");
-    setSuccessMsg("");
+    setStatus({ type: "", message: "" });
 
     if (!canSubmit) {
-      setErrorMsg("Please complete all required fields.");
+      setStatus({
+        type: "error",
+        message: "Please complete all required fields.",
+      });
       return;
     }
 
@@ -75,130 +52,174 @@ export default function Join() {
         legal_name: legalName.trim(),
         contact_name: contactName.trim(),
         role: role,
-        mc_number: mcClean, // stored as "MC123456"
+        mc_number: mcNumber, // e.g., "MC123456"
         ein: ein.trim() || null,
         business_phone: businessPhone.trim(),
         business_email: businessEmail.trim().toLowerCase(),
         status: "pending",
-        created_at: new Date().toISOString(),
       };
 
       const { error } = await supabase.from("beta_requests").insert([payload]);
-
       if (error) throw error;
 
-      setSuccessMsg(
-        "Request received. QueCab AdbS will review and contact you with next steps."
-      );
-
-      // Keep the form filled (or clear it) — leaving it filled is safest for now.
-      // If Q later wants auto-clear, we’ll do it then.
+      setStatus({
+        type: "success",
+        message:
+          "Request received. QueCab AdbS will review and contact you with next steps.",
+      });
     } catch (err) {
       console.error(err);
-      setErrorMsg(
-        err?.message ||
-          "Something went wrong submitting your request. Please try again."
-      );
+      setStatus({
+        type: "error",
+        message:
+          err?.message ||
+          "Submission failed. Please try again in a moment.",
+      });
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <div className="qc-page qc-join">
-      <div className="qc-card">
-        <h1 className="qc-title">Request Access</h1>
+    <div className="qc-form-shell qc-shell">
+      <div className="qc-form-inner qc-inner">
+        <div className="qc-form-card">
+          <h1 className="qc-form-heading">Request Access</h1>
+          <p className="qc-sub qc-form-sub">
+            Brokers & shippers: submit your onboarding details. QueCab AdbS will review and issue authorized access.
+          </p>
 
-        {successMsg ? (
-          <div className="qc-success">{successMsg}</div>
-        ) : (
-          <form onSubmit={onSubmit} className="qc-form">
-            <div className="qc-field">
-              <label className="qc-label">Legal Business Name</label>
-              <input
-                className="qc-input"
-                value={legalName}
-                onChange={(e) => setLegalName(e.target.value)}
-                autoComplete="organization"
-              />
+          <form className="qc-form" onSubmit={onSubmit}>
+            <div className="qc-form-grid">
+              <div className="qc-field">
+                <label className="qc-label">
+                  Legal Business Name <span className="qc-required">*</span>
+                </label>
+                <input
+                  className="qc-input"
+                  value={legalName}
+                  onChange={(e) => setLegalName(e.target.value)}
+                  autoComplete="organization"
+                />
+              </div>
+
+              <div className="qc-field">
+                <label className="qc-label">
+                  Contact Name <span className="qc-required">*</span>
+                </label>
+                <input
+                  className="qc-input"
+                  value={contactName}
+                  onChange={(e) => setContactName(e.target.value)}
+                  autoComplete="name"
+                />
+              </div>
+
+              <div className="qc-field">
+                <label className="qc-label">
+                  Role <span className="qc-required">*</span>
+                </label>
+                <div className="qc-radio-row">
+                  <label className="qc-radio">
+                    <input
+                      type="radio"
+                      name="role"
+                      checked={role === "Broker"}
+                      onChange={() => setRole("Broker")}
+                    />
+                    Broker
+                  </label>
+                  <label className="qc-radio">
+                    <input
+                      type="radio"
+                      name="role"
+                      checked={role === "Shipper"}
+                      onChange={() => setRole("Shipper")}
+                    />
+                    Shipper
+                  </label>
+                </div>
+              </div>
+
+              <div className="qc-field">
+                <label className="qc-label">
+                  MC# <span className="qc-required">*</span>
+                </label>
+                <div className="qc-mc-row">
+                  <div className="qc-mc-tag">MC</div>
+                  <input
+                    className="qc-input qc-input-mc"
+                    value={onlyDigits(mcDigits)}
+                    onChange={(e) => setMcDigits(onlyDigits(e.target.value))}
+                    inputMode="numeric"
+                    placeholder="Digits only"
+                  />
+                </div>
+              </div>
+
+              <div className="qc-field">
+                <label className="qc-label">EIN (Optional)</label>
+                <input
+                  className="qc-input"
+                  value={ein}
+                  onChange={(e) => setEin(e.target.value)}
+                  inputMode="numeric"
+                />
+              </div>
+
+              <div className="qc-field">
+                <label className="qc-label">
+                  Business Phone <span className="qc-required">*</span>
+                </label>
+                <input
+                  className="qc-input"
+                  value={businessPhone}
+                  onChange={(e) => setBusinessPhone(formatPhone(e.target.value))}
+                  inputMode="tel"
+                  placeholder="123-456-7890"
+                  autoComplete="tel"
+                />
+              </div>
+
+              <div className="qc-field" style={{ gridColumn: "1 / -1" }}>
+                <label className="qc-label">
+                  Business Email <span className="qc-required">*</span>
+                </label>
+                <input
+                  className="qc-input"
+                  value={businessEmail}
+                  onChange={(e) => setBusinessEmail(e.target.value)}
+                  inputMode="email"
+                  placeholder="name@company.com"
+                  autoComplete="email"
+                />
+              </div>
             </div>
 
-            <div className="qc-field">
-              <label className="qc-label">Contact Name</label>
-              <input
-                className="qc-input"
-                value={contactName}
-                onChange={(e) => setContactName(e.target.value)}
-                autoComplete="name"
-              />
-            </div>
-
-            <div className="qc-field">
-              <label className="qc-label">Role</label>
-              <select
-                className="qc-input"
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
+            {status.message ? (
+              <div
+                className={
+                  "qc-status " +
+                  (status.type === "success"
+                    ? "qc-status-success"
+                    : "qc-status-error")
+                }
               >
-                <option value="Broker">Broker</option>
-                <option value="Shipper">Shipper</option>
-              </select>
-            </div>
+                {status.message}
+              </div>
+            ) : null}
 
-            <div className="qc-field">
-              <label className="qc-label">MC#</label>
-              <input
-                className="qc-input"
-                value={mc}
-                onChange={(e) => setMc(e.target.value)}
-                placeholder="Digits only"
-                inputMode="numeric"
-              />
-            </div>
-
-            <div className="qc-field">
-              <label className="qc-label">EIN (Optional)</label>
-              <input
-                className="qc-input"
-                value={ein}
-                onChange={(e) => setEin(e.target.value)}
-                inputMode="numeric"
-              />
-            </div>
-
-            <div className="qc-field">
-              <label className="qc-label">Business Phone</label>
-              <input
-                className="qc-input"
-                value={businessPhone}
-                onChange={(e) => setBusinessPhone(formatPhone(e.target.value))}
-                placeholder="123-456-7890"
-                inputMode="tel"
-                autoComplete="tel"
-              />
-            </div>
-
-            <div className="qc-field">
-              <label className="qc-label">Business Email</label>
-              <input
-                className="qc-input"
-                value={businessEmail}
-                onChange={(e) => setBusinessEmail(e.target.value)}
-                placeholder="name@company.com"
-                inputMode="email"
-                autoComplete="email"
-              />
-            </div>
-
-            {errorMsg ? <div className="qc-error">{errorMsg}</div> : null}
-
-            <div className="qc-actions">
-              <button className="qc-btn" type="submit" disabled={submitting}>
+            <div className="qc-form-actions">
+              <button
+                className="qc-btn-primary qc-btn-wide"
+                type="submit"
+                disabled={submitting}
+              >
                 {submitting ? "Submitting..." : "Submit Request"}
               </button>
             </div>
           </form>
-        )}
+        </div>
       </div>
     </div>
   );
