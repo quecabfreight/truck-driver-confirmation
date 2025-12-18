@@ -37,7 +37,6 @@ export default function Layout() {
         </div>
       </header>
 
-      {/* THIS IS THE FIX: renders the current page */}
       <main className="qc-main">
         <Outlet />
       </main>
