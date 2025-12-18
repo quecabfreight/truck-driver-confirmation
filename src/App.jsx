@@ -13,17 +13,17 @@ export default function App() {
   return (
     <HashRouter>
       <Routes>
-        {/* Pages that use the standard site header/nav */}
-        <Route element={<Layout />}>
-          <Route path="/" element={<Home />} />
-          <Route path="/how-it-works" element={<HowItWorks />} />
-          <Route path="/join" element={<Join />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/control-center" element={<ControlCenter />} />
+        {/* Standard site pages (with header/nav) */}
+        <Route path="/" element={<Layout />}>
+          <Route index element={<Home />} />
+          <Route path="how-it-works" element={<HowItWorks />} />
+          <Route path="join" element={<Join />} />
+          <Route path="login" element={<Login />} />
+          <Route path="control-center" element={<ControlCenter />} />
           <Route path="*" element={<Home />} />
         </Route>
 
-        {/* Verify stays standalone if you want it later (optional) */}
+        {/* Verify stays standalone (no header/nav) */}
         <Route path="/verify/:token" element={<VerifyDriver />} />
       </Routes>
     </HashRouter>
