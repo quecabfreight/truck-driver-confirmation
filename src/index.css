@@ -13,27 +13,12 @@ body,
   height: 100%;
 }
 
-/* HARD SAFETY NET:
-   If any page ever tries to "go white", this prevents it. */
-html,
-body,
-#root,
-.qc-app {
-  background: radial-gradient(1400px 800px at 80% -10%, #232b4a, #050711);
-  color: #e9eef9;
-}
-
-/* Keep body typography consistent */
 body {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
-}
-
-/* Make sure images never explode outside their containers */
-img {
-  max-width: 100%;
-  height: auto;
+  background: radial-gradient(1400px 800px at 80% -10%, #232b4a, #050711);
+  color: #e9eef9;
 }
 
 /* App shell */
@@ -46,20 +31,10 @@ img {
 .qc-main {
   flex: 1;
   display: flex;
-  /* If a page doesn't paint its own background, it still won't go white */
-  background: transparent;
 }
 
-/* ============================================================
-   HEADER / NAV
-   You had styles for .qc-header / .qc-nav-link,
-   but your Layout.jsx uses .qc-topbar / .qc-navlink.
-   So we ALIAS them here (no visual redesign, just wiring).
-   ============================================================ */
-
-/* Old header class */
-.qc-header,
-.qc-topbar {
+/* Header */
+.qc-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -72,27 +47,39 @@ img {
   z-index: 20;
 }
 
-.qc-header-left,
-.qc-topbar-inner {
+.qc-header-left {
   display: flex;
   align-items: center;
   gap: 16px;
-  width: 100%;
 }
 
-.qc-logo-wrap,
-.qc-brand {
+.qc-logo-wrap {
   display: inline-flex;
   align-items: center;
-  text-decoration: none;
 }
 
-.qc-logo,
-.qc-brand-logo {
+.qc-logo {
   height: 64px;
   width: auto;
   object-fit: contain;
   filter: drop-shadow(0 12px 30px rgba(0, 0, 0, 0.8));
+}
+
+.qc-title-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.qc-title-main {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+}
+
+.qc-title-sub {
+  font-size: 14px;
+  color: #9ea6c5;
 }
 
 /* Nav */
@@ -100,11 +87,9 @@ img {
   display: flex;
   align-items: center;
   gap: 18px;
-  margin-left: auto;
 }
 
-.qc-nav-link,
-.qc-navlink {
+.qc-nav-link {
   text-decoration: none;
   font-size: 15px;
   font-weight: 600;
@@ -114,35 +99,20 @@ img {
   border: 1px solid transparent;
 }
 
-.qc-nav-link:hover,
-.qc-navlink:hover {
+.qc-nav-link:hover {
   border-color: rgba(154, 208, 255, 0.35);
   background: rgba(10, 18, 40, 0.9);
 }
 
-/* CTA button link */
-.qc-nav-link-cta,
-.qc-navbtn {
-  text-decoration: none;
-  font-size: 15px;
-  font-weight: 700;
-  color: #e9eef9;
-  padding: 8px 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(154, 208, 255, 0.6);
+.qc-nav-link-cta {
+  border-color: rgba(154, 208, 255, 0.6);
   background: linear-gradient(180deg, #1a2745, #10172a);
   box-shadow: 0 0 0 1px rgba(154, 208, 255, 0.4),
     0 12px 30px rgba(0, 0, 0, 0.85);
 }
 
-.qc-nav-link-cta:hover,
-.qc-navbtn:hover {
-  filter: brightness(1.08);
-}
-
 /* Active NavLink */
-.qc-nav-link.active,
-.qc-navlink-active {
+.qc-nav-link.active {
   border-color: rgba(214, 30, 43, 0.75);
   color: #ffffff;
 }
@@ -557,8 +527,7 @@ img {
 
 /* Responsive */
 @media (max-width: 900px) {
-  .qc-header,
-  .qc-topbar {
+  .qc-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 10px;
@@ -585,8 +554,7 @@ img {
 }
 
 @media (max-width: 600px) {
-  .qc-logo,
-  .qc-brand-logo {
+  .qc-logo {
     height: 52px;
   }
 
