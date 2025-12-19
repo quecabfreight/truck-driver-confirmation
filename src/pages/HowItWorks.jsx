@@ -38,3 +38,11 @@ export default function HowItWorks() {
               Request Access
             </Link>
             <Link to="/login" className="qc-btn-ghost">
+              Log In
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
