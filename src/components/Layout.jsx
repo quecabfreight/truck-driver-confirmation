@@ -1,6 +1,10 @@
 import React from "react";
 import { Link, NavLink, Outlet } from "react-router-dom";
 
+function navClass({ isActive }) {
+  return `qc-nav-link ${isActive ? "active" : ""}`;
+}
+
 export default function Layout() {
   return (
     <div className="qc-app">
@@ -17,13 +21,13 @@ export default function Layout() {
         </div>
 
         <nav className="qc-nav" aria-label="Primary navigation">
-          <NavLink to="/" className="qc-nav-link">
+          <NavLink to="/" className={navClass}>
             Home
           </NavLink>
-          <NavLink to="/how-it-works" className="qc-nav-link">
+          <NavLink to="/how-it-works" className={navClass}>
             How It Works
           </NavLink>
-          <NavLink to="/login" className="qc-nav-link">
+          <NavLink to="/login" className={navClass}>
             Log In
           </NavLink>
           <NavLink to="/join" className="qc-nav-link qc-nav-link-cta">
