@@ -7,8 +7,6 @@ export default function Login() {
 
   function onSubmit(e) {
     e.preventDefault();
-    // Phase 1 shell only: wiring comes later
-    // Keep this page stable and professional.
     alert("Login wiring is coming next. This is the professional shell.");
   }
 
@@ -17,9 +15,7 @@ export default function Login() {
       <div className="qc-form-inner qc-inner">
         <div className="qc-form-card">
           <h1 className="qc-form-heading">Log In</h1>
-          <p className="qc-sub qc-form-sub">
-            Authorized brokers/shippers only.
-          </p>
+          <p className="qc-sub qc-form-sub">Authorized brokers/shippers only.</p>
 
           <form className="qc-form" onSubmit={onSubmit}>
             <div className="qc-form-grid">
