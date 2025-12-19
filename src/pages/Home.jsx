@@ -11,7 +11,7 @@ export default function Home() {
             QueCab <span className="qc-hero-line">AdbS</span>
           </h1>
           <p className="qc-sub">
-            Issue secure links and verify the Truck-Driver before loading.
+            Issue secure links and verify the <strong>Truck-Driver</strong> before loading.
           </p>
 
           <div className="qc-hero-actions">
