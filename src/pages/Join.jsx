@@ -38,10 +38,7 @@ export default function Join() {
     setStatus({ type: "", message: "" });
 
     if (!canSubmit) {
-      setStatus({
-        type: "error",
-        message: "Please complete all required fields.",
-      });
+      setStatus({ type: "error", message: "Please complete all required fields." });
       return;
     }
 
@@ -69,9 +66,7 @@ export default function Join() {
       console.error(err);
       setStatus({
         type: "error",
-        message:
-          err?.message ||
-          "Submission failed. Please try again in a moment.",
+        message: err?.message || "Submission failed. Please try again in a moment.",
       });
     } finally {
       setSubmitting(false);
@@ -152,7 +147,6 @@ export default function Join() {
                 </div>
               </div>
 
-              {/* Business Phone (left) */}
               <div className="qc-field">
                 <label className="qc-label">
                   Business Phone <span className="qc-required">*</span>
@@ -167,7 +161,6 @@ export default function Join() {
                 />
               </div>
 
-              {/* Business Email (right) */}
               <div className="qc-field">
                 <label className="qc-label">
                   Business Email <span className="qc-required">*</span>
@@ -187,9 +180,7 @@ export default function Join() {
               <div
                 className={
                   "qc-status " +
-                  (status.type === "success"
-                    ? "qc-status-success"
-                    : "qc-status-error")
+                  (status.type === "success" ? "qc-status-success" : "qc-status-error")
                 }
               >
                 {status.message}
@@ -197,11 +188,7 @@ export default function Join() {
             ) : null}
 
             <div className="qc-form-actions">
-              <button
-                className="qc-btn-primary qc-btn-wide"
-                type="submit"
-                disabled={submitting}
-              >
+              <button className="qc-btn-primary qc-btn-wide" type="submit" disabled={submitting}>
                 {submitting ? "Submitting..." : "Submit Request"}
               </button>
             </div>
