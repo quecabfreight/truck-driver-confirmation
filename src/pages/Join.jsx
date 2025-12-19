@@ -152,6 +152,7 @@ export default function Join() {
                 </div>
               </div>
 
+              {/* Business Phone (left) */}
               <div className="qc-field">
                 <label className="qc-label">
                   Business Phone <span className="qc-required">*</span>
@@ -166,7 +167,8 @@ export default function Join() {
                 />
               </div>
 
-              <div className="qc-field" style={{ gridColumn: "1 / -1" }}>
+              {/* Business Email (right) */}
+              <div className="qc-field">
                 <label className="qc-label">
                   Business Email <span className="qc-required">*</span>
                 </label>
