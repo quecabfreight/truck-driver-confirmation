@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState } from "react";
 import { supabase } from "../utils/supabaseClient";
 
 const onlyDigits = (s) => (s || "").replace(/\D+/g, "");
@@ -11,12 +11,6 @@ const formatPhone = (value) => {
 };
 
 export default function Join() {
-  // DEBUG MARKER (no visual impact)
-  useEffect(() => {
-    document.title = "JOIN ✅ BUILD MARKER A";
-    console.log("JOIN ✅ BUILD MARKER A — Join.jsx is running");
-  }, []);
-
   const [legalName, setLegalName] = useState("");
   const [contactName, setContactName] = useState("");
   const [role, setRole] = useState("Broker");
@@ -45,10 +39,7 @@ export default function Join() {
     setStatus({ type: "", message: "" });
 
     if (!canSubmit) {
-      setStatus({
-        type: "error",
-        message: "Please complete all required fields.",
-      });
+      setStatus({ type: "error", message: "Please complete all required fields." });
       return;
     }
 
@@ -77,9 +68,7 @@ export default function Join() {
       console.error(err);
       setStatus({
         type: "error",
-        message:
-          err?.message ||
-          "Submission failed. Please try again in a moment.",
+        message: err?.message || "Submission failed. Please try again in a moment.",
       });
     } finally {
       setSubmitting(false);
@@ -92,7 +81,7 @@ export default function Join() {
         <div className="qc-form-card">
           <h1 className="qc-form-heading">Request Access</h1>
           <p className="qc-sub qc-form-sub">
-            Brokers & shippers: submit your onboarding details. QueCab AdbS will review and issue authorized access.
+            Brokers and shippers: submit your onboarding details. QueCab AdbS will review and issue authorized access.
           </p>
 
           <form className="qc-form" onSubmit={onSubmit}>
@@ -206,9 +195,7 @@ export default function Join() {
               <div
                 className={
                   "qc-status " +
-                  (status.type === "success"
-                    ? "qc-status-success"
-                    : "qc-status-error")
+                  (status.type === "success" ? "qc-status-success" : "qc-status-error")
                 }
               >
                 {status.message}
@@ -216,11 +203,7 @@ export default function Join() {
             ) : null}
 
             <div className="qc-form-actions">
-              <button
-                className="qc-btn-primary qc-btn-wide"
-                type="submit"
-                disabled={submitting}
-              >
+              <button className="qc-btn-primary qc-btn-wide" type="submit" disabled={submitting}>
                 {submitting ? "Submitting..." : "Submit Request"}
               </button>
             </div>
