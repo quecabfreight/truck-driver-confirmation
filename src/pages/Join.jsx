@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { supabase } from "../utils/supabaseClient";
 
 const onlyDigits = (s) => (s || "").replace(/\D+/g, "");
@@ -11,6 +11,12 @@ const formatPhone = (value) => {
 };
 
 export default function Join() {
+  // DEBUG MARKER (no visual impact)
+  useEffect(() => {
+    document.title = "JOIN ✅ BUILD MARKER A";
+    console.log("JOIN ✅ BUILD MARKER A — Join.jsx is running");
+  }, []);
+
   const [legalName, setLegalName] = useState("");
   const [contactName, setContactName] = useState("");
   const [role, setRole] = useState("Broker");
@@ -52,7 +58,7 @@ export default function Join() {
         legal_name: legalName.trim(),
         contact_name: contactName.trim(),
         role: role,
-        mc_number: mcNumber, // e.g., "MC123456"
+        mc_number: mcNumber,
         ein: ein.trim() || null,
         business_phone: businessPhone.trim(),
         business_email: businessEmail.trim().toLowerCase(),
