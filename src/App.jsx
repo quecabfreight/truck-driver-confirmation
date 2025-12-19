@@ -23,6 +23,7 @@ export default function App() {
           <Route path="*" element={<Home />} />
         </Route>
 
+        {/* standalone verify route */}
         <Route path="/verify/:token" element={<VerifyDriver />} />
       </Routes>
     </HashRouter>
