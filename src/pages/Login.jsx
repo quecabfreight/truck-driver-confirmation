@@ -1,66 +1,65 @@
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 
 export default function Login() {
   const [email, setEmail] = useState("");
-  const [accessCode, setAccessCode] = useState("");
+  const [code, setCode] = useState("");
   const [remember, setRemember] = useState(true);
 
-  const canSubmit = useMemo(() => {
-    return email.trim().includes("@") && accessCode.trim().length >= 4;
-  }, [email, accessCode]);
-
-  function handleSubmit(e) {
+  function onSubmit(e) {
     e.preventDefault();
-
-    // Phase 1 placeholder: we’ll wire magic link / access later
-    if (!canSubmit) return;
-
-    if (remember) {
-      localStorage.setItem("qc_remember_email", email.trim().toLowerCase());
-    } else {
-      localStorage.removeItem("qc_remember_email");
-    }
-
-    alert("Login wiring is Phase 2. You’re good — this screen is now in place.");
+    // Phase 1 shell only: wiring comes later
+    // Keep this page stable and professional.
+    alert("Login wiring is coming next. This is the professional shell.");
   }
 
   return (
-    <div style={styles.page}>
-      <TopBar active="login" />
+    <div className="qc-login-shell qc-shell">
+      <div className="qc-form-inner qc-inner">
+        <div className="qc-form-card">
+          <h1 className="qc-form-heading">Log In</h1>
+          <p className="qc-sub qc-form-sub">
+            Authorized brokers/shippers only.
+          </p>
 
-      <div style={styles.centerWrap}>
-        <div style={styles.card}>
-          <div style={styles.title}>Log In</div>
-          <div style={styles.subtitle}>
-            Authorized brokers/shippers only. (Wiring is coming next — this is the professional shell.)
-          </div>
+          <form className="qc-form" onSubmit={onSubmit}>
+            <div className="qc-form-grid">
+              <div className="qc-field" style={{ gridColumn: "1 / -1" }}>
+                <label className="qc-label">Business Email</label>
+                <input
+                  className="qc-input"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  inputMode="email"
+                  autoComplete="email"
+                  placeholder="name@company.com"
+                />
+              </div>
 
-          <form onSubmit={handleSubmit}>
-            <label style={styles.label}>Business Email</label>
-            <input
-              style={styles.input}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="name@company.com"
-              autoComplete="email"
-            />
+              <div className="qc-field" style={{ gridColumn: "1 / -1" }}>
+                <label className="qc-label">Access Code</label>
+                <input
+                  className="qc-input"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  autoComplete="one-time-code"
+                  placeholder="Enter access code"
+                />
+              </div>
 
-            <label style={styles.label}>Access Code</label>
-            <input
-              style={styles.input}
-              value={accessCode}
-              onChange={(e) => setAccessCode(e.target.value)}
-              placeholder="Enter access code"
-              autoComplete="one-time-code"
-            />
+              <div className="qc-field" style={{ gridColumn: "1 / -1" }}>
+                <label className="qc-remember-row">
+                  <input
+                    type="checkbox"
+                    checked={remember}
+                    onChange={(e) => setRemember(e.target.checked)}
+                  />
+                  Remember this device
+                </label>
+              </div>
+            </div>
 
-            <label style={styles.checkboxRow}>
-              <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
-              <span style={styles.checkboxText}>Remember this device</span>
-            </label>
-
-            <div style={styles.actions}>
-              <button type="submit" style={{ ...styles.button, ...(canSubmit ? null : styles.buttonDisabled) }} disabled={!canSubmit}>
+            <div className="qc-form-actions">
+              <button className="qc-btn-primary qc-btn-wide" type="submit">
                 Continue
               </button>
             </div>
@@ -70,106 +69,3 @@ export default function Login() {
     </div>
   );
 }
-
-function TopBar({ active }) {
-  return (
-    <div style={styles.topBar}>
-      <div style={styles.brand}>
-        <img src="/qc-logo.png" alt="QueCab AdbS" style={styles.logo} onError={(e) => (e.currentTarget.style.display = "none")} />
-        <div style={styles.brandText}>QueCab AdbS</div>
-      </div>
-
-      <div style={styles.nav}>
-        <a style={{ ...styles.navLink, ...(active === "home" ? styles.navLinkActive : null) }} href="#/">
-          Home
-        </a>
-        <a style={{ ...styles.navLink, ...(active === "how" ? styles.navLinkActive : null) }} href="#/how-it-works">
-          How It Works
-        </a>
-        <a style={{ ...styles.navLink, ...(active === "login" ? styles.navLinkActive : null) }} href="#/login">
-          Log In
-        </a>
-        <a style={{ ...styles.navLink, ...(active === "join" ? styles.navLinkActive : null) }} href="#/join">
-          Request Access
-        </a>
-      </div>
-    </div>
-  );
-}
-
-const styles = {
-  page: {
-    minHeight: "100vh",
-    background:
-      "radial-gradient(1200px 700px at 50% 30%, rgba(22, 60, 110, 0.35), rgba(4, 10, 20, 1) 55%, rgba(0,0,0,1) 100%)",
-    color: "#e9eef7",
-    fontFamily:
-      'system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif',
-  },
-  topBar: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: "18px 26px",
-    borderBottom: "1px solid rgba(255,255,255,0.08)",
-    background: "rgba(0,0,0,0.25)",
-    backdropFilter: "blur(6px)",
-    position: "sticky",
-    top: 0,
-    zIndex: 5,
-  },
-  brand: { display: "flex", alignItems: "center", gap: 12 },
-  logo: { width: 44, height: 44, objectFit: "contain", filter: "drop-shadow(0 6px 14px rgba(0,0,0,0.7))" },
-  brandText: { fontWeight: 800, letterSpacing: 0.2, fontSize: 18 },
-  nav: { display: "flex", gap: 18, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" },
-  navLink: {
-    color: "rgba(233, 238, 247, 0.92)",
-    textDecoration: "none",
-    fontWeight: 700,
-    fontSize: 14,
-    borderBottom: "2px solid transparent",
-    paddingBottom: 4,
-  },
-  navLinkActive: { borderBottom: "2px solid rgba(40, 210, 120, 0.95)" },
-
-  centerWrap: { display: "flex", justifyContent: "center", padding: "42px 18px 60px" },
-  card: {
-    width: "min(760px, 100%)",
-    borderRadius: 18,
-    border: "1px solid rgba(255,255,255,0.10)",
-    background: "linear-gradient(180deg, rgba(10, 20, 40, 0.85), rgba(6, 10, 18, 0.88))",
-    boxShadow: "0 24px 70px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)",
-    padding: 28,
-  },
-  title: { fontSize: 32, fontWeight: 900, letterSpacing: 0.2 },
-  subtitle: { marginTop: 10, color: "rgba(233,238,247,0.72)", lineHeight: 1.45, fontSize: 14 },
-
-  label: { display: "block", marginTop: 14, marginBottom: 6, fontSize: 12, fontWeight: 800 },
-  input: {
-    width: "100%",
-    boxSizing: "border-box",
-    padding: "12px 12px",
-    borderRadius: 10,
-    border: "1px solid rgba(255,255,255,0.12)",
-    background: "rgba(0,0,0,0.22)",
-    color: "#e9eef7",
-    outline: "none",
-    fontSize: 14,
-  },
-  checkboxRow: { display: "flex", gap: 10, alignItems: "center", marginTop: 12 },
-  checkboxText: { fontSize: 13, fontWeight: 800, color: "rgba(233,238,247,0.88)" },
-
-  actions: { display: "flex", justifyContent: "flex-end", marginTop: 16 },
-  button: {
-    border: "none",
-    borderRadius: 999,
-    padding: "12px 18px",
-    fontWeight: 900,
-    fontSize: 14,
-    cursor: "pointer",
-    color: "#06120b",
-    background: "linear-gradient(180deg, rgba(45, 230, 130, 1), rgba(24, 180, 95, 1))",
-    boxShadow: "0 14px 30px rgba(0,0,0,0.45)",
-  },
-  buttonDisabled: { opacity: 0.55, cursor: "not-allowed" },
-};
