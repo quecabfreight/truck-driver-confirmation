@@ -4,12 +4,15 @@ import { createClient } from "@supabase/supabase-js";
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// If env vars are missing, we still export something,
-// but we throw a clear error only when used.
-function missingEnvError() {
-  throw new Error(
-    "Supabase env vars missing. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in Vercel Project Settings → Environment Variables, then redeploy."
-  );
+// If env vars are missing, return a Supabase-like stub so the UI can still load.
+function envMissing() {
+  return {
+    error: {
+      message:
+        "Supabase env vars missing. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in Vercel Environment Variables, then redeploy.",
+    },
+    data: null,
+  };
 }
 
 export const supabase =
@@ -17,6 +20,11 @@ export const supabase =
     ? createClient(supabaseUrl, supabaseAnonKey)
     : {
         from() {
-          return missingEnvError();
+          return {
+            insert: async () => envMissing(),
+            select: async () => envMissing(),
+            update: async () => envMissing(),
+            delete: async () => envMissing(),
+          };
         },
       };
