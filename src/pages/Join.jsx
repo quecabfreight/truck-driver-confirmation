@@ -15,7 +15,6 @@ export default function Join() {
   const [contactName, setContactName] = useState("");
   const [role, setRole] = useState("Broker");
   const [mcDigits, setMcDigits] = useState("");
-  const [ein, setEin] = useState("");
   const [businessPhone, setBusinessPhone] = useState("");
   const [businessEmail, setBusinessEmail] = useState("");
 
@@ -53,7 +52,6 @@ export default function Join() {
         contact_name: contactName.trim(),
         role: role,
         mc_number: mcNumber,
-        ein: ein.trim() || null,
         business_phone: businessPhone.trim(),
         business_email: businessEmail.trim().toLowerCase(),
         status: "pending",
@@ -152,16 +150,6 @@ export default function Join() {
                     placeholder="Digits only"
                   />
                 </div>
-              </div>
-
-              <div className="qc-field">
-                <label className="qc-label">EIN (Optional)</label>
-                <input
-                  className="qc-input"
-                  value={ein}
-                  onChange={(e) => setEin(e.target.value)}
-                  inputMode="numeric"
-                />
               </div>
 
               <div className="qc-field">
