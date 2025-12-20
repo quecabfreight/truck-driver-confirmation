@@ -48,10 +48,7 @@ export default function Join() {
     setSubmitting(true);
     try {
       const payload = {
-        // IMPORTANT: matches your Supabase column name
         legal_business_name: legalName.trim(),
-
-        // these must match Supabase columns too
         contact_name: contactName.trim(),
         role: role,
         mc_number: mcNumber,
@@ -91,7 +88,7 @@ export default function Join() {
             <div className="qc-form-grid">
               <div className="qc-field">
                 <label className="qc-label">
-                  Legal Business Name <span className="qc-required">*</span>
+                  Name or Legal Business Name <span className="qc-required">*</span>
                 </label>
                 <input
                   className="qc-input"
