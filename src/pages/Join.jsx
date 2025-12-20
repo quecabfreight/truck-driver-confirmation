@@ -38,14 +38,20 @@ export default function Join() {
     setStatus({ type: "", message: "" });
 
     if (!canSubmit) {
-      setStatus({ type: "error", message: "Please complete all required fields." });
+      setStatus({
+        type: "error",
+        message: "Please complete all required fields.",
+      });
       return;
     }
 
     setSubmitting(true);
     try {
       const payload = {
-        legal_name: legalName.trim(),
+        // IMPORTANT: matches your Supabase column name
+        legal_business_name: legalName.trim(),
+
+        // these must match Supabase columns too
         contact_name: contactName.trim(),
         role: role,
         mc_number: mcNumber,
@@ -66,7 +72,9 @@ export default function Join() {
       console.error(err);
       setStatus({
         type: "error",
-        message: err?.message || "Submission failed. Please try again in a moment.",
+        message:
+          err?.message ||
+          "Submission failed. Please try again in a moment.",
       });
     } finally {
       setSubmitting(false);
@@ -180,7 +188,9 @@ export default function Join() {
               <div
                 className={
                   "qc-status " +
-                  (status.type === "success" ? "qc-status-success" : "qc-status-error")
+                  (status.type === "success"
+                    ? "qc-status-success"
+                    : "qc-status-error")
                 }
               >
                 {status.message}
@@ -188,7 +198,11 @@ export default function Join() {
             ) : null}
 
             <div className="qc-form-actions">
-              <button className="qc-btn-primary qc-btn-wide" type="submit" disabled={submitting}>
+              <button
+                className="qc-btn-primary qc-btn-wide"
+                type="submit"
+                disabled={submitting}
+              >
                 {submitting ? "Submitting..." : "Submit Request"}
               </button>
             </div>
