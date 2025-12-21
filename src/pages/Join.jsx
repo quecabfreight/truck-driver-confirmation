@@ -10,6 +10,19 @@ const formatPhone = (value) => {
   return `${d.slice(0, 3)}-${d.slice(3, 6)}-${d.slice(6)}`;
 };
 
+function generateAccessCode() {
+  // QC- + 6 digits (uses crypto when available)
+  try {
+    const arr = new Uint32Array(1);
+    window.crypto.getRandomValues(arr);
+    const n = arr[0] % 1000000; // 0..999999
+    return `QC-${String(n).padStart(6, "0")}`;
+  } catch {
+    const n = Math.floor(Math.random() * 1000000);
+    return `QC-${String(n).padStart(6, "0")}`;
+  }
+}
+
 export default function Join() {
   const [legalName, setLegalName] = useState("");
   const [contactName, setContactName] = useState("");
@@ -47,6 +60,8 @@ export default function Join() {
 
     setSubmitting(true);
     try {
+      const accessCode = generateAccessCode();
+
       const payload = {
         legal_business_name: legalName.trim(),
         contact_name: contactName.trim(),
@@ -54,7 +69,11 @@ export default function Join() {
         mc_number: mcNumber,
         business_phone: businessPhone.trim(),
         business_email: businessEmail.trim().toLowerCase(),
+
+        // Option A: auto-generate, still manual approval
+        access_code: accessCode,
         status: "pending",
+        beta_acknowledged: false,
       };
 
       const { error } = await supabase.from("beta_requests").insert([payload]);
@@ -65,13 +84,21 @@ export default function Join() {
         message:
           "Request received. QueCab AdbS will review and contact you with next steps.",
       });
+
+      // optional: clear form after success (keeps UI clean)
+      // Comment these out if you want the values to remain visible after submit.
+      setLegalName("");
+      setContactName("");
+      setRole("Broker");
+      setMcDigits("");
+      setBusinessPhone("");
+      setBusinessEmail("");
     } catch (err) {
       console.error(err);
       setStatus({
         type: "error",
         message:
-          err?.message ||
-          "Submission failed. Please try again in a moment.",
+          err?.message || "Submission failed. Please try again in a moment.",
       });
     } finally {
       setSubmitting(false);
