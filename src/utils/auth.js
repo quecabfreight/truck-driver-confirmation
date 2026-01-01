@@ -1,27 +1,49 @@
-// Centralized auth + role helpers (front-end only, beta)
-export const LS_EMAIL = "adbs_login_email";
-export const LS_CODE = "adbs_login_code";
-export const LS_REMEMBER = "adbs_login_remember";
-export const LS_ROLE = "adbs_role"; // BROKER | SHIPPER
+const KEY_LOCAL = "qc_adbs_auth_v1";
+const KEY_SESSION = "qc_adbs_auth_v1_session";
 
-export function getRoleFromCode(code = "") {
-  const c = (code || "").toUpperCase();
-  if (c.includes("-BRK-")) return "BROKER";
-  if (c.includes("-SHP-")) return "SHIPPER";
-  return ""; // unknown/none
+export function setAuthSession({ email, role }, rememberDevice) {
+  const payload = {
+    email,
+    role: role || "Broker",
+    ts: Date.now(),
+  };
+
+  if (rememberDevice) {
+    localStorage.setItem(KEY_LOCAL, JSON.stringify(payload));
+    sessionStorage.removeItem(KEY_SESSION);
+  } else {
+    sessionStorage.setItem(KEY_SESSION, JSON.stringify(payload));
+    localStorage.removeItem(KEY_LOCAL);
+  }
+}
+
+export function getAuthSession() {
+  const local = localStorage.getItem(KEY_LOCAL);
+  if (local) {
+    try {
+      return JSON.parse(local);
+    } catch {
+      localStorage.removeItem(KEY_LOCAL);
+    }
+  }
+
+  const sess = sessionStorage.getItem(KEY_SESSION);
+  if (sess) {
+    try {
+      return JSON.parse(sess);
+    } catch {
+      sessionStorage.removeItem(KEY_SESSION);
+    }
+  }
+
+  return null;
+}
+
+export function clearAuthSession() {
+  localStorage.removeItem(KEY_LOCAL);
+  sessionStorage.removeItem(KEY_SESSION);
 }
 
 export function isAuthed() {
-  const remembered = localStorage.getItem(LS_REMEMBER) === "true";
-  const email = (localStorage.getItem(LS_EMAIL) || "").trim();
-  const code = (localStorage.getItem(LS_CODE) || "").trim();
-  return remembered && !!email && !!code;
-}
-
-export function getRole() {
-  return localStorage.getItem(LS_ROLE) || "";
-}
-
-export function isBrokerOrShipper() {
-  return isAuthed() && (getRole() === "BROKER" || getRole() === "SHIPPER");
+  return !!getAuthSession();
 }
