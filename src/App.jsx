@@ -1,30 +1,22 @@
 import React from "react";
 import { HashRouter, Routes, Route } from "react-router-dom";
 
-import Layout from "./components/Layout.jsx";
-
 import Home from "./pages/Home.jsx";
-import HowItWorks from "./pages/HowItWorks.jsx";
-import Join from "./pages/Join.jsx";
 import Login from "./pages/Login.jsx";
-import ControlCenter from "./pages/ControlCenter.jsx";
-import VerifyDriver from "./pages/VerifyDriver.jsx";
+
+// Keep your existing pages if they already exist.
+// If you already have Join/About pages, keep their filenames the same and update imports here.
+import Join from "./pages/Join.jsx";
+import About from "./pages/About.jsx";
 
 export default function App() {
   return (
     <HashRouter>
       <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route index element={<Home />} />
-          <Route path="how-it-works" element={<HowItWorks />} />
-          <Route path="join" element={<Join />} />
-          <Route path="login" element={<Login />} />
-          <Route path="control-center" element={<ControlCenter />} />
-          <Route path="*" element={<Home />} />
-        </Route>
-
-        {/* standalone verify route */}
-        <Route path="/verify/:token" element={<VerifyDriver />} />
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/join" element={<Join />} />
+        <Route path="/about" element={<About />} />
       </Routes>
     </HashRouter>
   );
