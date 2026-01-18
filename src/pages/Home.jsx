@@ -1,11 +1,11 @@
 import React, { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { clearSession, getSession } from "../lib/session";
 import { supabase } from "../lib/supabaseClient";
+import { clearSession, getSession } from "../lib/session";
 
-function makeToken(length = 20) {
-  // URL-safe token, dock-friendly enough, hard to guess
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no I/O/1/0 confusion
+function makeToken(length = 22) {
+  // URL-safe, no confusing characters
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   const bytes = new Uint8Array(length);
   crypto.getRandomValues(bytes);
   let out = "";
@@ -14,7 +14,7 @@ function makeToken(length = 20) {
 }
 
 function toISOFromDateTimeLocal(value) {
-  // value: "YYYY-MM-DDTHH:MM" (local)
+  // "YYYY-MM-DDTHH:MM" (local) -> ISO string
   if (!value) return null;
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return null;
@@ -31,7 +31,6 @@ function ControlCenter() {
 
   const [expiryMode, setExpiryMode] = useState("auto"); // auto | manual | none
   const [manualExpiresAt, setManualExpiresAt] = useState("");
-  const [manualStartsAt, setManualStartsAt] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
@@ -62,20 +61,15 @@ function ControlCenter() {
     try {
       const token = makeToken(22);
 
-      let starts_at = null;
       let expires_at = null;
 
-      // Optional: starts_at (manual only)
-      if (manualStartsAt) {
-        starts_at = toISOFromDateTimeLocal(manualStartsAt);
-      }
-
       if (expiryMode === "auto") {
+        // Auto = 24 hours
         expires_at = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
       } else if (expiryMode === "manual") {
         expires_at = toISOFromDateTimeLocal(manualExpiresAt);
         if (!expires_at) {
-          setErr("Manual expiry selected — please choose an expiration date/time.");
+          setErr("Manual expiry selected — choose an expiration date/time.");
           setLoading(false);
           return;
         }
@@ -89,7 +83,6 @@ function ControlCenter() {
         plate_on_record: normalized.plate,
         driver_phone: normalized.phone || null,
         status: "active",
-        starts_at,
         expires_at,
       };
 
@@ -100,7 +93,7 @@ function ControlCenter() {
       setIssuedUrl(url);
     } catch (e) {
       console.error(e);
-      setErr("Could not issue link. Check Supabase policies / table names.");
+      setErr("Could not issue link. (Check table names + Supabase connection.)");
     } finally {
       setLoading(false);
     }
@@ -111,7 +104,7 @@ function ControlCenter() {
     try {
       await navigator.clipboard.writeText(issuedUrl);
     } catch {
-      // if clipboard blocked, no big deal
+      // clipboard can be blocked; ignore
     }
   }
 
@@ -126,7 +119,7 @@ function ControlCenter() {
 
       <div style={styles.sectionTitle}>Issue AdbS Truck-Driver Verify Link</div>
       <div style={styles.sectionSub}>
-        Enter what you have on record. Dock personnel will enter what they see on the truck.
+        Enter what you have on record. Dock staff will enter what they see on the truck.
       </div>
 
       <div style={styles.grid2}>
@@ -211,23 +204,6 @@ function ControlCenter() {
         </label>
       </div>
 
-      <div style={styles.hrSoft} />
-
-      <div style={styles.sectionTitle}>Optional Time Window</div>
-      <div style={styles.sectionSub}>
-        Optional: set a “not valid until” start time. Leave blank if you don’t need it.
-      </div>
-
-      <label style={styles.label}>
-        Starts At (optional)
-        <input
-          type="datetime-local"
-          value={manualStartsAt}
-          onChange={(e) => setManualStartsAt(e.target.value)}
-          style={styles.input}
-        />
-      </label>
-
       {err ? <div style={styles.error}>{err}</div> : null}
 
       <div style={styles.actionsRow}>
@@ -251,9 +227,11 @@ function ControlCenter() {
       {issuedUrl ? (
         <div style={styles.issuedBox}>
           <div style={styles.issuedTitle}>Issued Link</div>
+
           <a href={issuedUrl} style={styles.issuedLink}>
             {issuedUrl}
           </a>
+
           <div style={styles.issuedActions}>
             <button onClick={copyIssuedUrl} style={styles.buttonGhost}>
               Copy
@@ -262,8 +240,9 @@ function ControlCenter() {
               Open
             </a>
           </div>
+
           <div style={styles.issuedNote}>
-            Dock staff should open this link on their device at check-in.
+            Dock staff should open this link at check-in.
           </div>
         </div>
       ) : null}
@@ -294,8 +273,7 @@ function PublicHome() {
       </div>
 
       <div style={styles.footer}>
-        © {new Date().getFullYear()} QueCab AdbS — Professional verification for brokers &amp;
-        shippers.
+        © {new Date().getFullYear()} QueCab AdbS
       </div>
     </div>
   );
