@@ -4,31 +4,24 @@ import { HashRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home.jsx";
 import Login from "./pages/Login.jsx";
 import Join from "./pages/Join.jsx";
+import Verify from "./pages/Verify.jsx";
 
 function About() {
   return (
     <div style={styles.page}>
       <div style={styles.shell}>
         <a href="/#/" style={styles.brandLink} aria-label="Go Home">
-          <img
-            src="/qc-logo.png"
-            alt="QueCab AdbS"
-            style={styles.logo}
-            draggable="false"
-          />
+          <img src="/qc-logo.png" alt="QueCab AdbS" style={styles.logo} draggable="false" />
         </a>
 
         <div style={styles.card}>
           <div style={styles.cardTitle}>About QueCab AdbS</div>
           <div style={styles.cardText}>
-            QueCab AdbS is designed to help brokers and shippers verify the
-            Truck-Driver (truck + driver as a pair) at the dock and reduce
-            double-brokering risk through simple, fast confirmation steps.
+            QueCab AdbS helps brokers and shippers verify the Truck-Driver (truck + driver as a pair)
+            at the dock and reduce double-brokering risk through fast, human-clear confirmation steps.
           </div>
 
-          <div style={styles.footer}>
-            © {new Date().getFullYear()} QueCab AdbS
-          </div>
+          <div style={styles.footer}>© {new Date().getFullYear()} QueCab AdbS</div>
         </div>
       </div>
     </div>
@@ -43,6 +36,9 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/join" element={<Join />} />
         <Route path="/about" element={<About />} />
+
+        {/* Dock verification */}
+        <Route path="/verify/:token" element={<Verify />} />
       </Routes>
     </HashRouter>
   );
@@ -70,15 +66,6 @@ const styles = {
     boxShadow: "0 18px 60px rgba(0,0,0,0.45)",
   },
   cardTitle: { fontSize: 22, fontWeight: 900, marginBottom: 10 },
-  cardText: {
-    fontSize: 15,
-    lineHeight: 1.5,
-    color: "rgba(233, 238, 247, 0.85)",
-  },
-  footer: {
-    marginTop: 16,
-    fontSize: 12,
-    color: "rgba(233, 238, 247, 0.55)",
-    textAlign: "center",
-  },
+  cardText: { fontSize: 15, lineHeight: 1.5, color: "rgba(233, 238, 247, 0.85)" },
+  footer: { marginTop: 16, fontSize: 12, color: "rgba(233, 238, 247, 0.55)", textAlign: "center" },
 };
