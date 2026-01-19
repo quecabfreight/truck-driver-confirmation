@@ -19,7 +19,6 @@ export default function Login() {
   function normalizeCode(v) {
     const raw = (v || "").trim().toUpperCase();
     if (!raw) return "";
-    // If user types only digits, auto-prefix QC-
     if (/^\d+$/.test(raw)) return `QC-${raw}`;
     return raw;
   }
@@ -44,32 +43,29 @@ export default function Login() {
 
     setLoading(true);
     try {
-      // Case-insensitive email match
+      // Loose find: match anything containing the email text (catches trailing spaces, etc.)
       const { data, error } = await supabase
         .from("beta_requests")
         .select("id, business_email, approved, access_code, status, beta_acknowledged, created_at")
-        .ilike("business_email", email)
+        .ilike("business_email", `%${email}%`)
         .order("created_at", { ascending: false })
-        .limit(10);
+        .limit(25);
 
       if (error) throw error;
 
       const rows = Array.isArray(data) ? data : [];
-      if (rows.length === 0) {
+
+      // Now do strict matching in JS (trim + lowercase)
+      const strictEmailMatch = (r) => normalizeEmail(r?.business_email) === email;
+      const strictCodeMatch = (r) => normalizeCode(r?.access_code || "") === code;
+
+      const candidates = rows.filter((r) => strictEmailMatch(r));
+      if (candidates.length === 0) {
         setErrorMsg("Login failed. Check your email and access code.");
         return;
       }
 
-      // Find the best candidate row:
-      // 1) exact code match + approved
-      // 2) exact code match (even if status pending)
-      // (we’ll still require approved/ack/status-approved before allowing access)
-      const exactCodeMatch = (r) =>
-        normalizeEmail(r?.business_email) === email &&
-        normalizeCode(r?.access_code || "") === code;
-
-      const match = rows.find((r) => exactCodeMatch(r)) || null;
-
+      const match = candidates.find((r) => strictCodeMatch(r));
       if (!match) {
         setErrorMsg("Login failed. Check your email and access code.");
         return;
@@ -80,17 +76,10 @@ export default function Login() {
         return;
       }
 
-      const session = {
-        email,
-        at: new Date().toISOString(),
-        approved: true,
-      };
+      const session = { email, at: new Date().toISOString(), approved: true };
 
-      if (remember) {
-        localStorage.setItem("qc_session", JSON.stringify(session));
-      } else {
-        sessionStorage.setItem("qc_session", JSON.stringify(session));
-      }
+      if (remember) localStorage.setItem("qc_session", JSON.stringify(session));
+      else sessionStorage.setItem("qc_session", JSON.stringify(session));
 
       navigate("/", { replace: true });
     } catch (err) {
@@ -135,11 +124,7 @@ export default function Login() {
             </label>
 
             <label style={styles.checkRow}>
-              <input
-                type="checkbox"
-                checked={remember}
-                onChange={(e) => setRemember(e.target.checked)}
-              />
+              <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
               <span style={styles.checkText}>Remember this device</span>
             </label>
 
@@ -148,11 +133,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              style={{
-                ...styles.button,
-                opacity: loading ? 0.75 : 1,
-                cursor: loading ? "not-allowed" : "pointer",
-              }}
+              style={{ ...styles.button, opacity: loading ? 0.75 : 1, cursor: loading ? "not-allowed" : "pointer" }}
             >
               {loading ? "Signing in..." : "Log In"}
             </button>
@@ -213,8 +194,7 @@ const styles = {
     padding: "12px 14px",
     borderRadius: 12,
     border: "1px solid rgba(110, 160, 210, 0.28)",
-    background:
-      "linear-gradient(180deg, rgba(40, 90, 150, 0.95), rgba(18, 45, 80, 0.95))",
+    background: "linear-gradient(180deg, rgba(40, 90, 150, 0.95), rgba(18, 45, 80, 0.95))",
     color: "#e9eef7",
     fontWeight: 900,
     fontSize: 16,
