@@ -1,93 +1,101 @@
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
-import { setSession } from "../lib/session";
 
 export default function Login() {
   const navigate = useNavigate();
 
   const [businessEmail, setBusinessEmail] = useState("");
   const [accessCode, setAccessCode] = useState("");
-  const [rememberDevice, setRememberDevice] = useState(true);
+  const [remember, setRemember] = useState(true);
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  const normalizedEmail = useMemo(
-    () => businessEmail.trim().toLowerCase(),
-    [businessEmail]
-  );
+  function normalizeEmail(v) {
+    return (v || "").trim().toLowerCase();
+  }
 
-  async function onSubmit(e) {
+  function normalizeCode(v) {
+    const raw = (v || "").trim().toUpperCase();
+    if (!raw) return "";
+    // If user types only digits, auto-prefix QC-
+    if (/^\d+$/.test(raw)) return `QC-${raw}`;
+    return raw;
+  }
+
+  function isApprovedRow(row) {
+    const status = (row?.status || "").toString().trim().toLowerCase();
+    const approved = row?.approved === true;
+    const betaAck = row?.beta_acknowledged === true;
+    const statusApproved = status === "approved";
+    return approved || betaAck || statusApproved;
+  }
+
+  async function handleLogin(e) {
     e.preventDefault();
     setErrorMsg("");
 
-    if (!normalizedEmail) {
-      setErrorMsg("Please enter your business email.");
-      return;
-    }
-    if (!accessCode.trim()) {
-      setErrorMsg("Please enter your access code.");
-      return;
-    }
+    const email = normalizeEmail(businessEmail);
+    const code = normalizeCode(accessCode);
+
+    if (!email) return setErrorMsg("Enter your Business Email.");
+    if (!code) return setErrorMsg("Enter your Access Code.");
 
     setLoading(true);
     try {
-      // Find the applicant row by business email (case-insensitive).
-      // Using ilike avoids casing issues.
+      // Case-insensitive email match
       const { data, error } = await supabase
         .from("beta_requests")
-        .select("business_email, approved, access_code")
-        .ilike("business_email", normalizedEmail)
-        .limit(1);
+        .select("id, business_email, approved, access_code, status, beta_acknowledged, created_at")
+        .ilike("business_email", email)
+        .order("created_at", { ascending: false })
+        .limit(10);
 
       if (error) throw error;
 
-      const row = Array.isArray(data) && data.length ? data[0] : null;
-
-      // Keep errors generic (don’t leak whether email exists or approval state).
-      if (!row) {
+      const rows = Array.isArray(data) ? data : [];
+      if (rows.length === 0) {
         setErrorMsg("Login failed. Check your email and access code.");
         return;
       }
 
-      const approved = !!row.approved;
-      const dbCode = (row.access_code || "").trim();
-      const enteredCode = accessCode.trim();
+      // Find the best candidate row:
+      // 1) exact code match + approved
+      // 2) exact code match (even if status pending)
+      // (we’ll still require approved/ack/status-approved before allowing access)
+      const exactCodeMatch = (r) =>
+        normalizeEmail(r?.business_email) === email &&
+        normalizeCode(r?.access_code || "") === code;
 
-      if (!approved || !dbCode || dbCode !== enteredCode) {
+      const match = rows.find((r) => exactCodeMatch(r)) || null;
+
+      if (!match) {
         setErrorMsg("Login failed. Check your email and access code.");
         return;
       }
 
-      const sessionObj = {
-        email: normalizedEmail,
+      if (!isApprovedRow(match)) {
+        setErrorMsg("Access not approved yet. Please wait for review.");
+        return;
+      }
+
+      const session = {
+        email,
+        at: new Date().toISOString(),
         approved: true,
-        login_at: new Date().toISOString(),
       };
 
-      if (rememberDevice) {
-        setSession(sessionObj);
+      if (remember) {
+        localStorage.setItem("qc_session", JSON.stringify(session));
       } else {
-        // If they don’t want to remember, store it for this tab session only.
-        // (Still uses localStorage key pattern, but cleared on unload.)
-        setSession(sessionObj);
-        window.addEventListener(
-          "beforeunload",
-          () => {
-            try {
-              localStorage.removeItem("qc_session");
-            } catch {}
-          },
-          { once: true }
-        );
+        sessionStorage.setItem("qc_session", JSON.stringify(session));
       }
 
-      // Redirect to Home (smart home: shows Control Center when logged in)
       navigate("/", { replace: true });
     } catch (err) {
       console.error(err);
-      setErrorMsg("Login failed. Please try again.");
+      setErrorMsg("Login failed. Check your email and access code.");
     } finally {
       setLoading(false);
     }
@@ -96,58 +104,43 @@ export default function Login() {
   return (
     <div style={styles.page}>
       <div style={styles.shell}>
-        <div style={styles.brandRow}>
-          <a href="/#/" style={styles.brandLink} aria-label="Go Home">
-            <img
-              src="/qc-logo.png"
-              alt="QueCab AdbS"
-              style={styles.logo}
-              draggable="false"
-            />
-          </a>
-          <div style={styles.brandText}>
-            <div style={styles.brandTitle}>QueCab AdbS</div>
-            <div style={styles.brandSub}>
-              Authorized Access — Brokers &amp; Shippers Only
-            </div>
-          </div>
-        </div>
+        <a href="/#/" style={styles.brandLink} aria-label="Go Home">
+          <img src="/qc-logo.png" alt="QueCab AdbS" style={styles.logo} draggable="false" />
+        </a>
 
         <div style={styles.card}>
-          <div style={styles.cardTitle}>Log In</div>
+          <div style={styles.title}>Log In</div>
 
-          <form onSubmit={onSubmit} style={styles.form}>
+          <form onSubmit={handleLogin}>
             <label style={styles.label}>
               Business Email
               <input
-                type="email"
                 value={businessEmail}
                 onChange={(e) => setBusinessEmail(e.target.value)}
-                placeholder="name@company.com"
-                autoComplete="username"
+                placeholder="you@company.com"
                 style={styles.input}
+                autoComplete="email"
               />
             </label>
 
             <label style={styles.label}>
               Access Code
               <input
-                type="password"
                 value={accessCode}
                 onChange={(e) => setAccessCode(e.target.value)}
-                placeholder="Enter your access code"
-                autoComplete="current-password"
+                placeholder="QC-123456 (or just 123456)"
                 style={styles.input}
+                autoComplete="off"
               />
             </label>
 
-            <label style={styles.checkboxRow}>
+            <label style={styles.checkRow}>
               <input
                 type="checkbox"
-                checked={rememberDevice}
-                onChange={(e) => setRememberDevice(e.target.checked)}
+                checked={remember}
+                onChange={(e) => setRemember(e.target.checked)}
               />
-              <span style={styles.checkboxText}>Remember this device</span>
+              <span style={styles.checkText}>Remember this device</span>
             </label>
 
             {errorMsg ? <div style={styles.error}>{errorMsg}</div> : null}
@@ -161,22 +154,9 @@ export default function Login() {
                 cursor: loading ? "not-allowed" : "pointer",
               }}
             >
-              {loading ? "Checking..." : "Log In"}
+              {loading ? "Signing in..." : "Log In"}
             </button>
-
-            <div style={styles.helperRow}>
-              <a href="/#/" style={styles.linkButton}>
-                Back to Home
-              </a>
-              <a href="/#/join" style={styles.linkButton}>
-                Request Access
-              </a>
-            </div>
           </form>
-        </div>
-
-        <div style={styles.footer}>
-          © {new Date().getFullYear()} QueCab AdbS
         </div>
       </div>
     </div>
@@ -195,17 +175,8 @@ const styles = {
     padding: 18,
   },
   shell: { width: "100%", maxWidth: 560 },
-  brandRow: {
-    display: "flex",
-    gap: 14,
-    alignItems: "center",
-    marginBottom: 14,
-  },
-  brandLink: { display: "inline-flex", alignItems: "center" },
+  brandLink: { display: "inline-flex", alignItems: "center", marginBottom: 14 },
   logo: { width: 220, height: "auto" },
-  brandText: { lineHeight: 1.15 },
-  brandTitle: { fontSize: 22, fontWeight: 800, letterSpacing: 0.2 },
-  brandSub: { fontSize: 14, color: "rgba(233, 238, 247, 0.75)" },
   card: {
     background: "rgba(12, 18, 30, 0.82)",
     border: "1px solid rgba(110, 160, 210, 0.22)",
@@ -213,9 +184,8 @@ const styles = {
     padding: 18,
     boxShadow: "0 18px 60px rgba(0,0,0,0.45)",
   },
-  cardTitle: { fontSize: 20, fontWeight: 800, marginBottom: 12 },
-  form: { display: "flex", flexDirection: "column", gap: 12 },
-  label: { fontSize: 14, color: "rgba(233, 238, 247, 0.9)" },
+  title: { fontSize: 22, fontWeight: 900, marginBottom: 12 },
+  label: { display: "block", fontSize: 14, color: "rgba(233, 238, 247, 0.9)", marginBottom: 12 },
   input: {
     width: "100%",
     marginTop: 6,
@@ -227,14 +197,10 @@ const styles = {
     outline: "none",
     fontSize: 16,
   },
-  checkboxRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-    userSelect: "none",
-  },
-  checkboxText: { fontSize: 14, color: "rgba(233, 238, 247, 0.85)" },
+  checkRow: { display: "flex", alignItems: "center", gap: 10, margin: "6px 0 12px 0" },
+  checkText: { fontSize: 14, color: "rgba(233, 238, 247, 0.82)" },
   error: {
+    marginBottom: 12,
     padding: "10px 12px",
     borderRadius: 12,
     background: "rgba(170, 30, 30, 0.18)",
@@ -243,39 +209,14 @@ const styles = {
     fontSize: 14,
   },
   button: {
+    width: "100%",
     padding: "12px 14px",
     borderRadius: 12,
     border: "1px solid rgba(110, 160, 210, 0.28)",
     background:
       "linear-gradient(180deg, rgba(40, 90, 150, 0.95), rgba(18, 45, 80, 0.95))",
     color: "#e9eef7",
-    fontWeight: 800,
+    fontWeight: 900,
     fontSize: 16,
-  },
-  helperRow: {
-    display: "flex",
-    justifyContent: "space-between",
-    gap: 10,
-    marginTop: 4,
-  },
-  linkButton: {
-    display: "inline-flex",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: "10px 12px",
-    borderRadius: 12,
-    background: "rgba(14, 22, 38, 0.65)",
-    border: "1px solid rgba(110, 160, 210, 0.18)",
-    color: "rgba(233, 238, 247, 0.9)",
-    textDecoration: "none",
-    fontSize: 14,
-    fontWeight: 700,
-    flex: 1,
-  },
-  footer: {
-    marginTop: 14,
-    fontSize: 12,
-    color: "rgba(233, 238, 247, 0.55)",
-    textAlign: "center",
   },
 };
