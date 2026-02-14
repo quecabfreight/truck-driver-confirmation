@@ -1,201 +1,342 @@
-import Layout from "../components/Layout";
+// src/pages/VerifyDriver.jsx
+import React, { useEffect, useMemo, useState } from "react";
+import { useParams } from "react-router-dom";
 
-export default function Verify() {
-  // NOTE: This is still a demo-only screen. No live data or matches.
-  // The "on record (USDOT / Plate)" line has been fully removed on purpose.
-  // Dock / check-in staff will enter what they see or what the driver gives them;
-  // the system will compare that to what the broker/shipper has on file behind the scenes.
+function onlyDigits(v) {
+  return String(v || "").replace(/\D/g, "");
+}
+function upper(v) {
+  return String(v || "").toUpperCase();
+}
+function formatPhone(v) {
+  const d = onlyDigits(v).slice(0, 10);
+  const a = d.slice(0, 3);
+  const b = d.slice(3, 6);
+  const c = d.slice(6, 10);
+  if (d.length <= 3) return a;
+  if (d.length <= 6) return `${a}-${b}`;
+  return `${a}-${b}-${c}`;
+}
 
-  const pageStyle = {
-    padding: "32px 16px 72px",
-  };
+export default function VerifyDriver() {
+  const { token } = useParams();
 
-  const shellStyle = {
-    maxWidth: "1200px",
-    margin: "0 auto",
-  };
+  const [loading, setLoading] = useState(true);
+  const [linkOk, setLinkOk] = useState(true); // optimistic (we still allow attempt logging)
+  const [driverPhone, setDriverPhone] = useState("");
+  const [status, setStatus] = useState(null);
 
-  const headingStyle = {
-    fontSize: "2.1rem",
-    fontWeight: 800,
-    marginBottom: "6px",
-  };
+  // Step 1 inputs (what they see on the truck)
+  const [enteredUSDOT, setEnteredUSDOT] = useState("");
+  const [enteredPlate, setEnteredPlate] = useState("");
 
-  const subheadingStyle = {
-    fontSize: "0.98rem",
-    opacity: 0.9,
-    marginBottom: "18px",
-    maxWidth: "720px",
-  };
+  // Step 2 (call result)
+  const [driverAnswered, setDriverAnswered] = useState(""); // "yes" | "no"
 
-  const summaryStyle = {
-    fontSize: "0.9rem",
-    marginBottom: "18px",
-    lineHeight: 1.5,
-  };
+  const canSubmit = useMemo(() => {
+    return (
+      token &&
+      onlyDigits(enteredUSDOT).length >= 4 &&
+      String(enteredPlate || "").trim().length >= 2 &&
+      (driverAnswered === "yes" || driverAnswered === "no")
+    );
+  }, [token, enteredUSDOT, enteredPlate, driverAnswered]);
 
-  const summaryRowStyle = {
-    marginBottom: "4px",
-  };
+  // Lightweight “peek” — we don’t reveal DOT/Plate, only show whether link looks alive + phone for calling.
+  useEffect(() => {
+    let cancelled = false;
 
-  const gridStyle = {
-    display: "grid",
-    gridTemplateColumns: "minmax(0, 1.1fr) minmax(0, 1.1fr)",
-    gap: "20px",
-  };
+    async function run() {
+      try {
+        setLoading(true);
+        setStatus(null);
 
-  const cardStyle = {
-    background:
-      "linear-gradient(145deg, rgba(5,10,22,0.98), rgba(3,6,14,0.98))",
-    borderRadius: "18px",
-    padding: "18px 18px 20px",
-    boxShadow: "0 22px 50px rgba(0,0,0,0.9)",
-    border: "1px solid rgba(148,163,184,0.35)",
-  };
+        // We don’t have a separate “get link” endpoint (on purpose: less surface area).
+        // So we just keep the UI usable; phone shows after first submission response,
+        // BUT we want the phone available up-front to keep the dock flow simple.
+        // Solution: store phone in the verify link issuance screen & show it there too.
+        //
+        // For now: display phone placeholder; final phone comes after first submit response if needed.
+        setDriverPhone(""); // unknown until we wire optional read endpoint later
+        setLinkOk(true);
+      } catch (e) {
+        if (!cancelled) {
+          setLinkOk(false);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
 
-  const cardTitleStyle = {
-    fontSize: "1.05rem",
-    fontWeight: 600,
-    marginBottom: "10px",
-  };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
 
-  const pinLabelStyle = {
-    fontSize: "0.85rem",
-    marginBottom: "6px",
-    opacity: 0.9,
-  };
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setStatus(null);
 
-  const pinInputStyle = {
-    width: "100%",
-    boxSizing: "border-box",
-    height: "44px",
-    borderRadius: "10px",
-    border: "1px solid rgba(148,163,184,0.7)",
-    backgroundColor: "rgba(2,6,17,0.98)",
-    color: "#f9fafb",
-    padding: "0 12px",
-    fontSize: "1rem",
-    outline: "none",
-    marginBottom: "10px",
-  };
+    try {
+      const payload = {
+        token,
+        entered_usdot: enteredUSDOT,
+        entered_plate: enteredPlate,
+        driver_answered: driverAnswered === "yes",
+      };
 
-  const pinButtonStyle = {
-    width: "100%",
-    height: "42px",
-    borderRadius: "999px",
-    border: "none",
-    fontSize: "0.95rem",
-    fontWeight: 600,
-    cursor: "pointer",
-    background:
-      "linear-gradient(135deg, #16a34a, #22c55e)",
-    color: "#ffffff",
-    boxShadow:
-      "0 0 0 1px rgba(0,0,0,0.6), 0 12px 28px rgba(0,0,0,0.9)",
-  };
+      const r = await fetch("/api/verify_and_log_check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-  const dockNoteStyle = {
-    fontSize: "0.8rem",
-    opacity: 0.8,
-    marginTop: "10px",
-  };
+      const j = await r.json();
 
-  const checklistListStyle = {
-    fontSize: "0.86rem",
-    lineHeight: 1.55,
-    paddingLeft: "18px",
-    margin: 0,
-  };
+      if (!j.ok) {
+        setStatus({ type: "error", message: j.error || "Verification failed." });
+        return;
+      }
 
-  const checklistNoteStyle = {
-    fontSize: "0.8rem",
-    opacity: 0.82,
-    marginTop: "12px",
-  };
+      // If we later add a “read link” endpoint, this can populate phone.
+      // For now, we keep a manual backup display area if you want to type it in later.
+      // (Next phase we’ll fetch and show the phone immediately.)
+      if (j.verdict === "CLEAR") {
+        setStatus({
+          type: "success",
+          message: "CLEAR TO LOAD — USDOT + Plate matched and the driver answered.",
+        });
+      } else {
+        setStatus({
+          type: "caution",
+          message:
+            "CAUTION ALERT – DO NOT LOAD. At least one check failed. Hold this load and follow your internal escalation steps.",
+        });
+      }
+    } catch (err) {
+      setStatus({
+        type: "error",
+        message: err?.message || "Network error. Try again.",
+      });
+    }
+  }
 
   return (
-    <Layout pageTitle="Truck-Driver Verification">
-      <main className="page-container verify-page" style={pageStyle}>
-        <div className="content-shell" style={shellStyle}>
-          <h1 style={headingStyle}>Truck-Driver Verification</h1>
-          <p style={subheadingStyle}>
-            For authorized dock and check-in personnel only. Confirm the
-            Truck-Driver unit (truck + driver) in real time before you open a
-            door or touch a pallet.
+    <div className="qc-shell qc-dock">
+      <div className="qc-inner">
+        <header className="qc-dock-head">
+          <h1 className="qc-heading">Truck-Driver Verification</h1>
+          <p className="qc-sub">
+            Authorized dock/check-in personnel only. Enter what you see on the truck.
+            AdbS compares it to the broker/shipper record — the driver never sees the record values.
           </p>
-
-          {/* Summary section – DEMO values only */}
-          <div style={summaryStyle}>
-            <div style={summaryRowStyle}>
-              <strong>Demo token:</strong> DEMO-U0I0EZ
-            </div>
-            <div style={summaryRowStyle}>
-              <strong>Load:</strong> 12345
-            </div>
-            <div style={summaryRowStyle}>
-              <strong>Carrier:</strong> ABC Trucking
-            </div>
-            {/* IMPORTANT:
-                The "On record (USDOT / Plate)" line was intentionally removed.
-                No on-record identifiers are shown to dock staff on this screen. */}
+          <div className="qc-token">
+            Verify Token: <span className="qc-mono">{token || "N/A"}</span>
           </div>
+        </header>
 
-          <div style={gridStyle}>
-            {/* LEFT: Dock PIN */}
-            <section style={cardStyle}>
-              <h2 style={cardTitleStyle}>Dock Access PIN</h2>
-              <p style={pinLabelStyle}>
-                In the live system, every dock or check-in station will have its
-                own PIN. Drivers never see this screen.
-              </p>
-              <input
-                type="password"
-                style={pinInputStyle}
-                value="••••••"
-                readOnly
-              />
-              <button type="button" style={pinButtonStyle}>
-                Unlock
-              </button>
-              <p style={dockNoteStyle}>
-                Demo only. In the live system, entering the correct PIN unlocks
-                this station for the Truck-Driver verification steps.
-              </p>
-            </section>
+        <div className="qc-dock-grid">
+          {/* LEFT: Step flow */}
+          <section className="qc-card qc-card-big">
+            <div className="qc-step">
+              <div className="qc-step-num">1</div>
+              <div className="qc-step-body">
+                <div className="qc-step-title">Enter what you see on the truck</div>
 
-            {/* RIGHT: Dock checklist */}
-            <section style={cardStyle}>
-              <h2 style={cardTitleStyle}>Dock Checklist</h2>
-              <ol style={checklistListStyle}>
-                <li>Ask the driver to remain in the cab or waiting area.</li>
-                <li>
-                  Confirm you are on the correct AdbS verify screen for this
-                  load.
-                </li>
-                <li>
-                  Enter the <strong>USDOT#</strong> and{" "}
-                  <strong>license plate</strong> exactly as given by the driver
-                  or as seen on the truck.
-                </li>
-                <li>
-                  Use the <strong>Call Driver</strong> button (or a desk phone)
-                  to call the driver&apos;s registered number. If it doesn&apos;t
-                  feel right, mark NO.
-                </li>
-                <li>
-                  Only when all checks pass and the phone check is{" "}
-                  <strong>YES</strong> is the load CLEAR TO LOAD.
-                </li>
-              </ol>
-              <p style={checklistNoteStyle}>
-                Demo only. In the live system, your answers here will feed back
-                into the AdbS Control Center and the Truck-Driver record for
-                this load.
-              </p>
-            </section>
-          </div>
+                <div className="qc-form-grid">
+                  <div className="qc-field">
+                    <label className="qc-label">USDOT# on Truck</label>
+                    <input
+                      className="qc-input qc-input-xl"
+                      value={enteredUSDOT}
+                      onChange={(e) => setEnteredUSDOT(onlyDigits(e.target.value))}
+                      placeholder="Digits only"
+                      inputMode="numeric"
+                    />
+                  </div>
+
+                  <div className="qc-field">
+                    <label className="qc-label">Plate on Truck</label>
+                    <input
+                      className="qc-input qc-input-xl"
+                      value={enteredPlate}
+                      onChange={(e) => setEnteredPlate(upper(e.target.value))}
+                      placeholder="Exact plate text"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="qc-divider" />
+
+            <div className="qc-step">
+              <div className="qc-step-num">2</div>
+              <div className="qc-step-body">
+                <div className="qc-step-title">Call the driver</div>
+
+                <div className="qc-call-row">
+                  <button
+                    type="button"
+                    className="qc-btn qc-btn-call"
+                    onClick={() => {
+                      // If phone is available, attempt call; otherwise do nothing.
+                      if (!driverPhone) return;
+                      window.location.href = `tel:${onlyDigits(driverPhone)}`;
+                    }}
+                    disabled={!driverPhone}
+                    title={!driverPhone ? "Phone will be shown in next phase (read endpoint)." : "Call driver"}
+                  >
+                    Call Driver
+                  </button>
+
+                  <div className="qc-call-phone">
+                    {driverPhone ? (
+                      <a className="qc-phone-link" href={`tel:${onlyDigits(driverPhone)}`}>
+                        {formatPhone(driverPhone)}
+                      </a>
+                    ) : (
+                      <span className="qc-phone-muted">
+                        Phone shown next phase (no record data is exposed)
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="qc-call-yn">
+                    <span className="qc-yn-label">Answered?</span>
+                    <label className="qc-radio">
+                      <input
+                        type="radio"
+                        name="answered"
+                        value="yes"
+                        checked={driverAnswered === "yes"}
+                        onChange={() => setDriverAnswered("yes")}
+                      />
+                      <span>YES</span>
+                    </label>
+                    <label className="qc-radio">
+                      <input
+                        type="radio"
+                        name="answered"
+                        value="no"
+                        checked={driverAnswered === "no"}
+                        onChange={() => setDriverAnswered("no")}
+                      />
+                      <span>NO</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="qc-divider" />
+
+            <div className="qc-step">
+              <div className="qc-step-num">3</div>
+              <div className="qc-step-body">
+                <div className="qc-step-title">Submit verification</div>
+
+                {status && (
+                  <div
+                    className={
+                      status.type === "success"
+                        ? "qc-status qc-status-success"
+                        : status.type === "caution"
+                        ? "qc-status qc-status-caution"
+                        : "qc-status qc-status-error"
+                    }
+                  >
+                    {status.message}
+                  </div>
+                )}
+
+                <form onSubmit={handleSubmit} className="qc-actions">
+                  <button className="qc-btn qc-btn-primary qc-btn-wide" disabled={!canSubmit}>
+                    Submit Truck-Driver Check
+                  </button>
+                </form>
+              </div>
+            </div>
+          </section>
+
+          {/* RIGHT: Fast checklist */}
+          <aside className="qc-card">
+            <h2 className="qc-card-title">Dock Checklist</h2>
+            <ol className="qc-list">
+              <li>Enter USDOT + Plate as seen on the truck.</li>
+              <li>Call the driver’s registered phone.</li>
+              <li>If anything feels off → mark NO and submit.</li>
+              <li>Only CLEAR means load is approved to proceed.</li>
+            </ol>
+
+            {loading && <div className="qc-note">Loading…</div>}
+            {!linkOk && (
+              <div className="qc-note qc-note-warn">
+                This link may be invalid/expired. You can still submit — it will log a caution attempt.
+              </div>
+            )}
+          </aside>
         </div>
-      </main>
-    </Layout>
+      </div>
+
+      <style>{`
+        .qc-dock{ padding: 22px 14px 46px; }
+        .qc-dock-head{ margin-bottom: 14px; }
+        .qc-token{ margin-top: 8px; opacity: .9; }
+        .qc-mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+        .qc-dock-grid{ display:grid; grid-template-columns: 1.35fr .65fr; gap: 14px; align-items: start; }
+        .qc-card-big{ padding: 18px; }
+        .qc-step{ display:flex; gap: 12px; }
+        .qc-step-num{
+          width: 44px; height: 44px; border-radius: 12px;
+          display:flex; align-items:center; justify-content:center;
+          font-weight: 900;
+          border: 1px solid rgba(255,255,255,.14);
+          background: rgba(0,0,0,.25);
+        }
+        .qc-step-title{ font-weight: 900; font-size: 18px; margin-bottom: 10px; }
+        .qc-form-grid{ display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .qc-input-xl{ font-size: 18px; padding: 14px 14px; }
+        .qc-call-row{
+          display:grid;
+          grid-template-columns: 200px 1fr auto;
+          gap: 12px;
+          align-items: center;
+        }
+        .qc-btn-call{
+          background: linear-gradient(180deg, rgba(70,140,255,.55), rgba(18,28,56,.85));
+          border: 1px solid rgba(255,255,255,.14);
+          font-weight: 900;
+          border-radius: 14px;
+          padding: 12px 14px;
+          cursor: pointer;
+          box-shadow: 0 14px 30px rgba(0,0,0,.35);
+          color: #fff;
+        }
+        .qc-btn-call:disabled{ opacity:.45; cursor:not-allowed; }
+        .qc-phone-link{ color: #cfe0ff; text-decoration: none; font-weight: 900; }
+        .qc-phone-link:hover{ text-decoration: underline; }
+        .qc-phone-muted{ opacity:.75; }
+        .qc-call-yn{ display:flex; align-items:center; gap: 10px; justify-content: flex-end; }
+        .qc-yn-label{ font-weight: 900; opacity: .9; }
+        .qc-radio{ display:flex; align-items:center; gap: 6px; font-weight: 900; }
+        .qc-actions{ margin-top: 10px; display:flex; justify-content:flex-start; }
+        .qc-btn-wide{ width: 100%; max-width: 520px; }
+        .qc-status-caution{
+          background: rgba(140,30,30,.22);
+          border-color: rgba(255,90,90,.40);
+          color: #ffd2d2;
+        }
+        .qc-note-warn{ margin-top: 10px; color: #ffd2d2; }
+        @media (max-width: 920px){
+          .qc-dock-grid{ grid-template-columns: 1fr; }
+          .qc-form-grid{ grid-template-columns: 1fr; }
+          .qc-call-row{ grid-template-columns: 1fr; }
+          .qc-call-yn{ justify-content:flex-start; }
+          .qc-btn-wide{ max-width: none; }
+        }
+      `}</style>
+    </div>
   );
 }
