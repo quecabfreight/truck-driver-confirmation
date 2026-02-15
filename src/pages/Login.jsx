@@ -23,6 +23,11 @@ export default function Login() {
     return raw;
   }
 
+  function liveCodeInput(v) {
+    // "Selfish good look" mode: uppercase immediately + strip spaces
+    return (v || "").toUpperCase().replace(/\s+/g, "");
+  }
+
   function isApprovedRow(row) {
     const status = (row?.status || "").toString().trim().toLowerCase();
     const approved = row?.approved === true;
@@ -116,10 +121,13 @@ export default function Login() {
               Access Code
               <input
                 value={accessCode}
-                onChange={(e) => setAccessCode(e.target.value)}
+                onChange={(e) => setAccessCode(liveCodeInput(e.target.value))}
+                onBlur={() => setAccessCode(normalizeCode(accessCode))}
                 placeholder="QC-123456 (or just 123456)"
-                style={styles.input}
+                style={{ ...styles.input, textTransform: "uppercase", letterSpacing: 1 }}
                 autoComplete="off"
+                spellCheck={false}
+                inputMode="text"
               />
             </label>
 
