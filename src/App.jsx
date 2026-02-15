@@ -5,6 +5,7 @@ import Home from "./pages/Home.jsx";
 import Login from "./pages/Login.jsx";
 import Join from "./pages/Join.jsx";
 import Verify from "./pages/Verify.jsx";
+import Admin from "./pages/Admin.jsx";
 
 function About() {
   return (
@@ -36,6 +37,9 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/join" element={<Join />} />
         <Route path="/about" element={<About />} />
+
+        {/* Admin approval */}
+        <Route path="/admin" element={<Admin />} />
 
         {/* Dock verification */}
         <Route path="/verify/:token" element={<Verify />} />
