@@ -1,62 +1,74 @@
-// /api/admin_list_beta_requests.js
-// POST { admin_key } -> returns latest beta_requests rows (admin-only)
+export const config = { runtime: "nodejs" };
 
-export default async function handler(req, res) {
+function json(status, obj) {
+  return new Response(JSON.stringify(obj), {
+    status,
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "no-store",
+    },
+  });
+}
+
+function getEnv(name) {
+  const v = process.env[name];
+  return (v || "").trim();
+}
+
+function safeEq(a, b) {
+  return String(a || "").trim() === String(b || "").trim();
+}
+
+export async function GET() {
+  return json(405, { ok: false, error: "Use POST." });
+}
+
+export async function POST(request) {
   try {
-    if (req.method !== "POST") return json(res, 405, { ok: false, error: "Use POST." });
+    const ADBS_ADMIN_KEY = getEnv("ADBS_ADMIN_KEY");
+    const SUPABASE_URL = getEnv("SUPABASE_URL");
+    const SUPABASE_SERVICE_ROLE_KEY = getEnv("SUPABASE_SERVICE_ROLE_KEY");
 
-    const body = await readJson(req);
-    const adminKey = String(body?.admin_key || "").trim();
+    if (!ADBS_ADMIN_KEY) return json(500, { ok: false, error: "Missing env: ADBS_ADMIN_KEY" });
+    if (!SUPABASE_URL) return json(500, { ok: false, error: "Missing env: SUPABASE_URL" });
+    if (!SUPABASE_SERVICE_ROLE_KEY) return json(500, { ok: false, error: "Missing env: SUPABASE_SERVICE_ROLE_KEY" });
 
-    if (!adminKey || adminKey !== String(process.env.ADBS_ADMIN_KEY || "")) {
-      return json(res, 401, { ok: false, error: "Unauthorized" });
+    const body = await request.json().catch(() => ({}));
+    const admin_key = (body?.admin_key || "").toString().trim();
+
+    if (!safeEq(admin_key, ADBS_ADMIN_KEY)) {
+      return json(401, { ok: false, error: "Unauthorized (bad admin key)." });
     }
 
-    const SUPABASE_URL = process.env.SUPABASE_URL;
-    const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!SUPABASE_URL || !SERVICE_KEY) {
-      return json(res, 500, { ok: false, error: "Missing env SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY" });
-    }
-
+    // Pull latest 50 beta requests
     const url =
       `${SUPABASE_URL}/rest/v1/beta_requests` +
-      `?select=*` +
+      `?select=id,created_at,business_email,status,approved,access_code,name,legal_name,legal_business_name,business_name,role,business_phone,phone` +
       `&order=created_at.desc` +
       `&limit=50`;
 
     const r = await fetch(url, {
       method: "GET",
-      headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` },
+      headers: {
+        apikey: SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      },
     });
 
-    const t = await r.text();
-    if (!r.ok) return json(res, 500, { ok: false, error: "Supabase fetch failed", status: r.status, detail: safeJson(t) });
+    const text = await r.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = text;
+    }
 
-    return json(res, 200, { ok: true, rows: safeJson(t) });
-  } catch (e) {
-    return json(res, 500, { ok: false, error: "Server error", detail: String(e?.message || e) });
+    if (!r.ok) {
+      return json(500, { ok: false, error: "Supabase error (list).", details: data });
+    }
+
+    return json(200, { ok: true, rows: Array.isArray(data) ? data : [] });
+  } catch (err) {
+    return json(500, { ok: false, error: "Server error (list).", details: String(err?.message || err) });
   }
-}
-
-function json(res, code, obj) {
-  res.status(code);
-  res.setHeader("Content-Type", "application/json; charset=utf-8");
-  res.setHeader("Cache-Control", "no-store");
-  res.end(JSON.stringify(obj));
-}
-
-async function readJson(req) {
-  try {
-    let raw = "";
-    for await (const chunk of req) raw += chunk;
-    if (!raw) return null;
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
-}
-
-function safeJson(text) {
-  try { return JSON.parse(text); } catch { return text; }
 }
