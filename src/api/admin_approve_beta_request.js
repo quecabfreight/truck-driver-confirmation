@@ -1,64 +1,55 @@
-// /api/admin_approve_beta_request.js
-// POST { admin_key, id } -> sets status='approved', writes access_code, approved_at
-
 export default async function handler(req, res) {
   try {
     if (req.method !== "POST") return json(res, 405, { ok: false, error: "Use POST." });
 
-    const body = await readJson(req);
-    const adminKey = String(body?.admin_key || "").trim();
-    const id = String(body?.id || "").trim();
+    const { admin_key, id } = readJson(req) || {};
+    const ADBS_ADMIN_KEY = (process.env.ADBS_ADMIN_KEY || "").trim();
 
-    if (!adminKey || adminKey !== String(process.env.ADBS_ADMIN_KEY || "")) {
-      return json(res, 401, { ok: false, error: "Unauthorized" });
+    if (!ADBS_ADMIN_KEY) return json(res, 500, { ok: false, error: "Missing env: ADBS_ADMIN_KEY" });
+    if ((String(admin_key || "").trim() !== ADBS_ADMIN_KEY)) {
+      return json(res, 401, { ok: false, error: "Unauthorized (bad admin key)." });
     }
-    if (!id) return json(res, 400, { ok: false, error: "Missing id" });
 
-    const SUPABASE_URL = process.env.SUPABASE_URL;
-    const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const SUPABASE_URL = (process.env.SUPABASE_URL || "").trim();
+    const SRK = (process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
 
-    if (!SUPABASE_URL || !SERVICE_KEY) {
-      return json(res, 500, { ok: false, error: "Missing env SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY" });
-    }
+    if (!SUPABASE_URL) return json(res, 500, { ok: false, error: "Missing env: SUPABASE_URL" });
+    if (!SRK) return json(res, 500, { ok: false, error: "Missing env: SUPABASE_SERVICE_ROLE_KEY" });
+
+    const rid = String(id || "").trim();
+    if (!rid) return json(res, 400, { ok: false, error: "Missing id." });
 
     const access_code = makeCode();
-    const approved_at = new Date().toISOString();
 
-    const patchUrl = `${SUPABASE_URL}/rest/v1/beta_requests?id=eq.${encodeURIComponent(id)}`;
+    const url = `${SUPABASE_URL}/rest/v1/beta_requests?id=eq.${encodeURIComponent(rid)}`;
 
-    const r = await fetch(patchUrl, {
+    const r = await fetch(url, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
-        apikey: SERVICE_KEY,
-        Authorization: `Bearer ${SERVICE_KEY}`,
+        apikey: SRK,
+        Authorization: `Bearer ${SRK}`,
         Prefer: "return=representation",
       },
-      body: JSON.stringify({
-        status: "approved",
-        access_code,
-        approved_at,
-        approved: true,
-      }),
+      body: JSON.stringify({ approved: true, status: "approved", access_code }),
     });
 
-    const t = await r.text();
-    if (!r.ok) return json(res, 500, { ok: false, error: "Supabase update failed", status: r.status, detail: safeJson(t) });
+    const text = await r.text();
+    let data;
+    try { data = JSON.parse(text); } catch { data = text; }
 
-    return json(res, 200, { ok: true, access_code, updated: safeJson(t) });
+    if (!r.ok) return json(res, 500, { ok: false, error: "Supabase error (approve).", details: data });
+
+    return json(res, 200, { ok: true, access_code, updated: data });
   } catch (e) {
-    return json(res, 500, { ok: false, error: "Server error", detail: String(e?.message || e) });
+    return json(res, 500, { ok: false, error: "Server error (approve).", details: String(e?.message || e) });
   }
 }
 
 function makeCode() {
-  // readable, avoids confusing chars (O/0, I/1)
-  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  const bytes = new Uint8Array(8);
-  crypto.getRandomValues(bytes);
-  let out = "QC-";
-  for (let i = 0; i < bytes.length; i++) out += alphabet[bytes[i] % alphabet.length];
-  return out;
+  // readable digits only
+  const n = Math.floor(100000 + Math.random() * 900000);
+  return `QC-${n}`;
 }
 
 function json(res, code, obj) {
@@ -68,17 +59,11 @@ function json(res, code, obj) {
   res.end(JSON.stringify(obj));
 }
 
-async function readJson(req) {
+function readJson(req) {
   try {
-    let raw = "";
-    for await (const chunk of req) raw += chunk;
-    if (!raw) return null;
-    return JSON.parse(raw);
+    if (req.body && typeof req.body === "object") return req.body;
+    return null;
   } catch {
     return null;
   }
-}
-
-function safeJson(text) {
-  try { return JSON.parse(text); } catch { return text; }
 }
