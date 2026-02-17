@@ -23,11 +23,6 @@ export default function Login() {
     return raw;
   }
 
-  function liveCodeInput(v) {
-    // "Selfish good look" mode: uppercase immediately + strip spaces
-    return (v || "").toUpperCase().replace(/\s+/g, "");
-  }
-
   function isApprovedRow(row) {
     const status = (row?.status || "").toString().trim().toLowerCase();
     const approved = row?.approved === true;
@@ -48,7 +43,6 @@ export default function Login() {
 
     setLoading(true);
     try {
-      // Loose find: match anything containing the email text (catches trailing spaces, etc.)
       const { data, error } = await supabase
         .from("beta_requests")
         .select("id, business_email, approved, access_code, status, beta_acknowledged, created_at")
@@ -60,7 +54,6 @@ export default function Login() {
 
       const rows = Array.isArray(data) ? data : [];
 
-      // Now do strict matching in JS (trim + lowercase)
       const strictEmailMatch = (r) => normalizeEmail(r?.business_email) === email;
       const strictCodeMatch = (r) => normalizeCode(r?.access_code || "") === code;
 
@@ -81,12 +74,13 @@ export default function Login() {
         return;
       }
 
-      const session = { email, at: new Date().toISOString(), approved: true };
+      // ✅ store code for issuing verify links
+      const session = { email, code, at: new Date().toISOString(), approved: true };
 
       if (remember) localStorage.setItem("qc_session", JSON.stringify(session));
       else sessionStorage.setItem("qc_session", JSON.stringify(session));
 
-      navigate("/", { replace: true });
+      navigate("/control", { replace: true });
     } catch (err) {
       console.error(err);
       setErrorMsg("Login failed. Check your email and access code.");
@@ -121,13 +115,10 @@ export default function Login() {
               Access Code
               <input
                 value={accessCode}
-                onChange={(e) => setAccessCode(liveCodeInput(e.target.value))}
-                onBlur={() => setAccessCode(normalizeCode(accessCode))}
+                onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
                 placeholder="QC-123456 (or just 123456)"
-                style={{ ...styles.input, textTransform: "uppercase", letterSpacing: 1 }}
+                style={styles.input}
                 autoComplete="off"
-                spellCheck={false}
-                inputMode="text"
               />
             </label>
 
