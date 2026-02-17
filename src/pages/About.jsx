@@ -1,103 +1,184 @@
 import React from "react";
-import { HashRouter as Router, Routes, Route, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
-import Home from "./pages/Home.jsx";
-import HowItWorks from "./pages/HowItWorks.jsx";
-import Login from "./pages/Login.jsx";
-import Join from "./pages/Join.jsx";
-import ControlCenter from "./pages/ControlCenter.jsx";
-import VerifyDriver from "./pages/VerifyDriver.jsx";
-import DriverLink from "./pages/DriverLink.jsx";
+export default function About() {
+  const nav = useNavigate();
 
-const navLinkStyle = {
-  color: "white",
-  textDecoration: "none",
-};
-
-export default function App() {
   return (
-    <Router>
+    <div style={{ background: "#0f1722", color: "#e6edf5", minHeight: "100vh" }}>
+      {/* Top Bar (simple, realistic, public) */}
       <div
         style={{
-          minHeight: "100vh",
-          background:
-            "linear-gradient(180deg, #050814 0%, #0b0f19 40%, #131e33 100%)",
-          color: "white",
+          borderBottom: "1px solid rgba(120,160,210,0.18)",
+          background: "rgba(10,16,26,0.65)",
+          backdropFilter: "blur(6px)",
         }}
       >
-        {/* TOP NAV BAR */}
-        <header
+        <div
           style={{
-            padding: "18px 48px",
-            borderBottom: "1px solid rgba(148,163,184,0.35)",
+            maxWidth: 1200,
+            margin: "0 auto",
+            padding: "18px 20px",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
+            gap: 16,
+            flexWrap: "wrap",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            {/* If you have /public/qc-logo.png, this will show; otherwise it just leaves space */}
             <img
               src="/qc-logo.png"
-              alt="QueCab AdbS Logo"
-              style={{ width: "54px", height: "54px", objectFit: "contain" }}
+              alt="QueCab AdbS"
+              style={{ width: 56, height: 56, objectFit: "contain" }}
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+              }}
             />
-            <span style={{ fontSize: "22px", fontWeight: 700 }}>
-              QueCab AdbS
-            </span>
+            <div style={{ lineHeight: 1.1 }}>
+              <div style={{ fontWeight: 900, letterSpacing: 0.3 }}>QueCab AdbS</div>
+              <div style={{ opacity: 0.7, fontSize: 13 }}>Freight Risk Control Layer</div>
+            </div>
           </div>
 
-          <nav
-            style={{
-              display: "flex",
-              gap: "26px",
-              fontSize: "18px",
-              fontWeight: 500,
-            }}
-          >
-            <Link to="/" style={navLinkStyle}>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <button
+              onClick={() => nav("/")}
+              style={btn("ghost")}
+            >
               Home
-            </Link>
-            <Link to="/how-it-works" style={navLinkStyle}>
+            </button>
+            <button
+              onClick={() => nav("/how-it-works")}
+              style={btn("ghost")}
+            >
               How It Works
-            </Link>
-            <Link to="/login" style={navLinkStyle}>
+            </button>
+            <button
+              onClick={() => nav("/login")}
+              style={btn("outline")}
+            >
               Log In
-            </Link>
-            <Link to="/join" style={navLinkStyle}>
+            </button>
+            <button
+              onClick={() => nav("/join")}
+              style={btn("primary")}
+            >
               Request Access
-            </Link>
-          </nav>
-        </header>
-
-        {/* PAGE CONTENT */}
-        <main style={{ padding: "32px 24px 48px" }}>
-          <Routes>
-            {/* HOME */}
-            <Route path="/" element={<Home />} />
-
-            {/* HOW IT WORKS */}
-            <Route path="/how-it-works" element={<HowItWorks />} />
-
-            {/* LOGIN */}
-            <Route path="/login" element={<Login />} />
-
-            {/* REQUEST ACCESS */}
-            <Route path="/join" element={<Join />} />
-
-            {/* CONTROL CENTER */}
-            <Route path="/control-center" element={<ControlCenter />} />
-
-            {/* DOCK TRUCK-DRIVER VERIFICATION */}
-            <Route path="/verify/:token" element={<VerifyDriver />} />
-
-            {/* DRIVER LINK (NEW) */}
-            <Route path="/driver/:token" element={<DriverLink />} />
-
-            {/* FALLBACK */}
-            <Route path="*" element={<Home />} />
-          </Routes>
-        </main>
+            </button>
+          </div>
+        </div>
       </div>
-    </Router>
+
+      {/* Content */}
+      <div style={{ maxWidth: 900, margin: "0 auto", padding: "48px 20px 70px" }}>
+        <h1 style={{ fontSize: 40, fontWeight: 900, margin: "0 0 12px", letterSpacing: -0.4 }}>
+          About QueCab AdbS
+        </h1>
+
+        <p style={{ fontSize: 18, opacity: 0.82, marginTop: 0, lineHeight: 1.55 }}>
+          QueCab AdbS is a freight risk control layer built to reduce exposure to double brokering
+          and unauthorized pickups. It adds a verification decision point before freight moves.
+        </p>
+
+        <div style={card()}>
+          <div style={cardTitle()}>What AdbS verifies</div>
+          <ul style={ul()}>
+            <li style={li()}>
+              <b>Carrier</b> — the legal entity operating under an MC# / USDOT#
+            </li>
+            <li style={li()}>
+              <b>truck driver</b> — the individual person operating the truck
+            </li>
+            <li style={li()}>
+              <b>Truck-Driver</b> — the verified pair: truck + driver together (what gets cleared to load)
+            </li>
+          </ul>
+        </div>
+
+        <div style={card()}>
+          <div style={cardTitle()}>Why it matters</div>
+          <ul style={ul()}>
+            <li style={li()}>Fraud can look legitimate until the freight is gone.</li>
+            <li style={li()}>The dock is the last safe decision point.</li>
+            <li style={li()}>AdbS creates a clear “load / don’t load” outcome with an audit trail.</li>
+          </ul>
+        </div>
+
+        <div style={{ marginTop: 28, display: "flex", gap: 12, flexWrap: "wrap" }}>
+          <button onClick={() => nav("/join")} style={btn("primary")}>
+            Request Access
+          </button>
+          <button onClick={() => nav("/login")} style={btn("outline")}>
+            Log In
+          </button>
+        </div>
+
+        <div style={{ marginTop: 26, opacity: 0.6, fontSize: 13 }}>
+          © {new Date().getFullYear()} QueCab AdbS. All rights reserved.
+        </div>
+      </div>
+    </div>
   );
+}
+
+function btn(type) {
+  const base = {
+    padding: "12px 14px",
+    fontSize: 15,
+    fontWeight: 800,
+    borderRadius: 10,
+    cursor: "pointer",
+    letterSpacing: 0.2,
+  };
+
+  if (type === "primary") {
+    return {
+      ...base,
+      background: "rgba(30, 90, 160, 0.75)",
+      border: "1px solid rgba(120,180,255,0.45)",
+      color: "#ffffff",
+    };
+  }
+
+  if (type === "outline") {
+    return {
+      ...base,
+      background: "transparent",
+      border: "1px solid rgba(120,180,255,0.35)",
+      color: "#e6edf5",
+    };
+  }
+
+  // ghost
+  return {
+    ...base,
+    background: "transparent",
+    border: "1px solid rgba(120,160,210,0.18)",
+    color: "rgba(230,237,245,0.88)",
+  };
+}
+
+function card() {
+  return {
+    marginTop: 18,
+    padding: 18,
+    borderRadius: 14,
+    border: "1px solid rgba(120,160,210,0.18)",
+    background: "rgba(0,0,0,0.22)",
+    boxShadow: "0 10px 22px rgba(0,0,0,0.25)",
+  };
+}
+
+function cardTitle() {
+  return { fontWeight: 900, fontSize: 18, marginBottom: 10 };
+}
+
+function ul() {
+  return { margin: 0, paddingLeft: 18, lineHeight: 1.65, opacity: 0.88 };
+}
+
+function li() {
+  return { margin: "6px 0" };
 }
