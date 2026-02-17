@@ -4,7 +4,6 @@ import PublicHeader from "../components/PublicHeader";
 function normEmail(v) {
   return String(v || "").trim().toLowerCase();
 }
-
 function normCode(v) {
   return String(v || "").trim();
 }
@@ -46,7 +45,6 @@ export default function Login() {
         return;
       }
 
-      // Persist authorized device (lightweight for now)
       if (remember) {
         localStorage.setItem(
           "adbs_auth",
@@ -61,8 +59,8 @@ export default function Login() {
         localStorage.removeItem("adbs_auth");
       }
 
-      // ✅ Always go to Control Center after login
-      window.location.hash = "#/dashboard";
+      // ✅ HARD redirect (no router weirdness)
+      window.location.href = `${window.location.origin}/#/dashboard`;
       return;
     } catch (err) {
       setError(err?.message || "Login failed");
@@ -187,7 +185,6 @@ const styles = {
     background: "linear-gradient(180deg, rgba(40,110,200,0.85), rgba(20,70,140,0.75))",
     border: "1px solid rgba(140,190,255,0.42)",
     boxShadow: "0 10px 22px rgba(0,0,0,0.28)",
-    opacity: 1,
   },
   note: { marginTop: 10, fontSize: 13, opacity: 0.62 },
 };
