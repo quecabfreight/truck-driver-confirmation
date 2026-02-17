@@ -1,97 +1,98 @@
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 
-// PUBLIC SITE PAGES (you already have these)
+/**
+ * BUILD-SAFE ROUTER
+ * - Hard-import only the core pages we need right now
+ * - Lazy-load everything else so one bad export doesn't break deploy
+ * - HashRouter preserved
+ */
+
+// Core (hard imports)
 import PublicHome from "./pages/PublicHome";
-import HowItWorks from "./pages/HowItWorks";
-import About from "./pages/About";
 import Login from "./pages/Login";
 import Join from "./pages/Join";
-
-// PLATFORM / APP PAGES (you already have these)
+import About from "./pages/About";
+import HowItWorks from "./pages/HowItWorks";
 import Home from "./pages/Home";
 import ControlCenter from "./pages/ControlCenter";
 import Admin from "./pages/Admin";
-
-// VERIFY / DOCK FLOW (you already have these)
 import Verify from "./pages/Verify";
-import VerifyDriver from "./pages/VerifyDriver";
-import CheckIn from "./pages/CheckIn";
-import DriverCheckIn from "./pages/DriverCheckIn";
-import DriverScreen from "./pages/DriverScreen";
-import DriverLink from "./pages/DriverLink";
-import DriverPing from "./pages/DriverPing";
 
-// LEGACY / UTIL (you already have these)
-import SmartLink from "./pages/SmartLink";
-import PublicSite from "./pages/PublicSite";
-import Site from "./pages/Site";
-import SiteLanding from "./pages/SiteLanding";
-import Website from "./pages/Website";
-import LoginScreen from "./pages/LoginScreen";
+// Non-core (lazy imports) — won’t break the build unless visited
+const VerifyDriver = lazy(() => import("./pages/VerifyDriver"));
+const CheckIn = lazy(() => import("./pages/CheckIn"));
+const DriverCheckIn = lazy(() => import("./pages/DriverCheckIn"));
+const DriverScreen = lazy(() => import("./pages/DriverScreen"));
+const DriverLink = lazy(() => import("./pages/DriverLink"));
+const DriverPing = lazy(() => import("./pages/DriverPing"));
+const SmartLink = lazy(() => import("./pages/SmartLink"));
+const PublicSite = lazy(() => import("./pages/PublicSite"));
+const Site = lazy(() => import("./pages/Site"));
+const SiteLanding = lazy(() => import("./pages/SiteLanding"));
+const Website = lazy(() => import("./pages/Website"));
+const LoginScreen = lazy(() => import("./pages/LoginScreen"));
+
+function LoadingScreen() {
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "#0f1722",
+        color: "#e6edf5",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: 18,
+        fontWeight: 700,
+      }}
+    >
+      Loading…
+    </div>
+  );
+}
 
 export default function App() {
   return (
     <HashRouter>
-      <Routes>
-        {/* =========================
-            PUBLIC LAYER (MARKETING)
-            Default: PublicHome
-        ========================== */}
-        <Route path="/" element={<PublicHome />} />
-        <Route path="/how-it-works" element={<HowItWorks />} />
-        <Route path="/about" element={<About />} />
+      <Suspense fallback={<LoadingScreen />}>
+        <Routes>
+          {/* PUBLIC LAYER */}
+          <Route path="/" element={<PublicHome />} />
+          <Route path="/how-it-works" element={<HowItWorks />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/join" element={<Join />} />
 
-        {/* Keep these public entry points */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/join" element={<Join />} />
+          {/* PLATFORM LAYER */}
+          <Route path="/home" element={<Home />} />
+          <Route path="/control-center" element={<ControlCenter />} />
+          <Route path="/dashboard" element={<Navigate to="/control-center" replace />} />
+          <Route path="/admin" element={<Admin />} />
 
-        {/* =========================
-            PLATFORM LAYER (APP)
-            After login you should redirect to /control-center (we’ll wire that in Login.jsx next)
-        ========================== */}
-        <Route path="/home" element={<Home />} />
+          {/* VERIFY / DOCK */}
+          <Route path="/verify/:token" element={<Verify />} />
+          <Route path="/verify-driver/:token" element={<VerifyDriver />} />
 
-        {/* Main operational landing (Issue Verify Link / Control Center) */}
-        <Route path="/control-center" element={<ControlCenter />} />
+          {/* OTHER EXISTING PAGES (kept, but lazy) */}
+          <Route path="/checkin" element={<CheckIn />} />
+          <Route path="/driver-checkin" element={<DriverCheckIn />} />
+          <Route path="/driver-screen" element={<DriverScreen />} />
+          <Route path="/driver-link" element={<DriverLink />} />
+          <Route path="/driver-ping" element={<DriverPing />} />
 
-        {/* Back-compat: if anything points to dashboard, send it to Control Center */}
-        <Route path="/dashboard" element={<Navigate to="/control-center" replace />} />
+          {/* LEGACY / OLD SITE ROUTES (kept, but lazy) */}
+          <Route path="/smartlink" element={<SmartLink />} />
+          <Route path="/publicsite" element={<PublicSite />} />
+          <Route path="/site" element={<Site />} />
+          <Route path="/site-landing" element={<SiteLanding />} />
+          <Route path="/website" element={<Website />} />
+          <Route path="/loginscreen" element={<LoginScreen />} />
 
-        {/* Admin */}
-        <Route path="/admin" element={<Admin />} />
-
-        {/* =========================
-            VERIFY / DOCK ROUTES
-        ========================== */}
-        <Route path="/verify/:token" element={<Verify />} />
-
-        {/* Back-compat / alternate verify page you already have */}
-        <Route path="/verify-driver/:token" element={<VerifyDriver />} />
-
-        {/* Other operational pages you already have */}
-        <Route path="/checkin" element={<CheckIn />} />
-        <Route path="/driver-checkin" element={<DriverCheckIn />} />
-        <Route path="/driver-screen" element={<DriverScreen />} />
-        <Route path="/driver-link" element={<DriverLink />} />
-        <Route path="/driver-ping" element={<DriverPing />} />
-
-        {/* =========================
-            LEGACY / OLD SITE ROUTES
-            (Kept so nothing breaks)
-        ========================== */}
-        <Route path="/smartlink" element={<SmartLink />} />
-        <Route path="/publicsite" element={<PublicSite />} />
-        <Route path="/site" element={<Site />} />
-        <Route path="/site-landing" element={<SiteLanding />} />
-        <Route path="/website" element={<Website />} />
-        <Route path="/loginscreen" element={<LoginScreen />} />
-
-        {/* =========================
-            FALLBACK
-        ========================== */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+          {/* FALLBACK */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
     </HashRouter>
   );
 }
