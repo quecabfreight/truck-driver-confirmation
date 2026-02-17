@@ -12,7 +12,6 @@ export default function PublicHome() {
       {/* HERO */}
       <section style={styles.hero}>
         <div style={styles.heroInner}>
-          {/* subtle “steel light” wash */}
           <div style={styles.heroGlow} aria-hidden="true" />
 
           <div style={styles.heroGrid}>
