@@ -1,16 +1,26 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import PublicHeader from "../components/PublicHeader";
 
 export default function PublicHome() {
   const nav = useNavigate();
 
+  useEffect(() => {
+    // If already authorized, jump straight to Control Center
+    try {
+      const raw = localStorage.getItem("adbs_auth");
+      const j = raw ? JSON.parse(raw) : null;
+      if (j?.ok) nav("/dashboard");
+    } catch {
+      // ignore
+    }
+  }, [nav]);
+
   return (
     <div style={styles.page}>
       <PublicHeader />
       <div style={styles.bg} aria-hidden="true" />
 
-      {/* HERO */}
       <section style={styles.hero}>
         <div style={styles.inner}>
           <div style={styles.kicker}>Anti-Double Brokering System</div>
@@ -34,7 +44,6 @@ export default function PublicHome() {
         </div>
       </section>
 
-      {/* PROOF */}
       <section style={styles.proof}>
         <div style={styles.innerWide}>
           <div style={styles.sectionTitle}>Dock Verification Outcome</div>
@@ -75,7 +84,6 @@ export default function PublicHome() {
         </div>
       </section>
 
-      {/* FOOTER */}
       <footer style={styles.footer}>
         <div style={styles.innerWide}>
           <div style={{ opacity: 0.55, fontSize: 13 }}>
@@ -103,13 +111,13 @@ const styles = {
     inset: 0,
     pointerEvents: "none",
     zIndex: 0,
+    opacity: 0.9,
     background: [
       "radial-gradient(1200px 600px at 18% 10%, rgba(90,150,240,0.18), rgba(0,0,0,0))",
       "radial-gradient(1000px 520px at 85% 15%, rgba(255,255,255,0.06), rgba(0,0,0,0))",
       "linear-gradient(180deg, rgba(0,0,0,0.0), rgba(0,0,0,0.30))",
       steelNoise(),
     ].join(", "),
-    opacity: 0.9,
   },
 
   hero: { position: "relative", zIndex: 1, padding: "70px 0 40px" },
@@ -150,8 +158,7 @@ const styles = {
     cursor: "pointer",
     letterSpacing: 0.2,
     color: "#fff",
-    background:
-      "linear-gradient(180deg, rgba(40,110,200,0.85), rgba(20,70,140,0.75))",
+    background: "linear-gradient(180deg, rgba(40,110,200,0.85), rgba(20,70,140,0.75))",
     border: "1px solid rgba(140,190,255,0.42)",
     boxShadow: "0 10px 22px rgba(0,0,0,0.28)",
   },
@@ -212,22 +219,26 @@ const styles = {
     fontWeight: 950,
     letterSpacing: 0.7,
     textTransform: "uppercase",
-    fontFamily:
-      'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
   },
   v: {
     fontSize: 13,
     fontWeight: 950,
     letterSpacing: 0.6,
-    fontFamily:
-      'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
   },
   vBad: { color: "rgba(255,170,170,0.92)" },
   verdict: { fontSize: 15, fontWeight: 950, marginTop: 2 },
   foot: { marginTop: 6, fontSize: 13, opacity: 0.6 },
   bottomLine: { marginTop: 14, textAlign: "center", fontSize: 14, opacity: 0.75 },
 
-  footer: { position: "relative", zIndex: 1, padding: "22px 0", borderTop: "1px solid rgba(140,190,255,0.12)", background: "rgba(0,0,0,0.18)" },
+  footer: {
+    position: "relative",
+    zIndex: 1,
+    padding: "22px 0",
+    borderTop: "1px solid rgba(140,190,255,0.12)",
+    background: "rgba(0,0,0,0.18)",
+  },
 };
 
 function steelNoise() {
