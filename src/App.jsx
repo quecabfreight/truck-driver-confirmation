@@ -6,6 +6,7 @@ import Login from "./pages/Login.jsx";
 import Join from "./pages/Join.jsx";
 import Verify from "./pages/Verify.jsx";
 import Admin from "./pages/Admin.jsx";
+import ControlCenter from "./pages/ControlCenter.jsx";
 
 function About() {
   return (
@@ -38,8 +39,9 @@ export default function App() {
         <Route path="/join" element={<Join />} />
         <Route path="/about" element={<About />} />
 
-        {/* Admin approval */}
+        {/* Admin + Control Center */}
         <Route path="/admin" element={<Admin />} />
+        <Route path="/control" element={<ControlCenter />} />
 
         {/* Dock verification */}
         <Route path="/verify/:token" element={<Verify />} />
