@@ -9,7 +9,9 @@ import HowItWorks from "./pages/HowItWorks";
 
 import Admin from "./pages/Admin";
 import Verify from "./pages/Verify";
-import Dashboard from "./pages/Dashboard";
+
+// ✅ Your repo has ControlCenter.jsx (not Dashboard.jsx)
+import ControlCenter from "./pages/ControlCenter";
 
 export default function App() {
   return (
@@ -27,7 +29,7 @@ export default function App() {
         {/* =========================
             PLATFORM LAYER (SECURE)
         ========================== */}
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/dashboard" element={<ControlCenter />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/verify/:token" element={<Verify />} />
 
