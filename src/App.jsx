@@ -6,7 +6,7 @@ import Login from "./pages/Login";
 import Join from "./pages/Join";
 import Admin from "./pages/Admin";
 import Verify from "./pages/Verify";
-import Dashboard from "./pages/Dashboard"; // Issue Verify Link page (Control Center)
+import Home from "./pages/Home"; // Using existing Home as Dashboard
 
 export default function App() {
   return (
@@ -22,10 +22,10 @@ export default function App() {
         <Route path="/join" element={<Join />} />
 
         {/* =========================
-            PLATFORM LAYER (SECURE)
+            PLATFORM LAYER
         ========================== */}
 
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/dashboard" element={<Home />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/verify/:token" element={<Verify />} />
 
