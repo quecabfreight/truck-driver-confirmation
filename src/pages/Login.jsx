@@ -1,270 +1,126 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useMemo, useState } from "react";
+import PublicHeader from "../components/PublicHeader";
 
-/**
- * QueCab AdbS — Login
- * Goals:
- * - Realistic, professional dark/steel look
- * - Business Email + Access Code + Remember Device
- * - On success: redirect to /control-center
- * - Avoid breaking existing backend: try multiple known API endpoints (first one that works wins)
- *
- * Storage:
- * - If "Remember device" is checked -> localStorage
- * - else -> sessionStorage
- */
-
-const STORAGE_KEY = "adbs_auth_v1";
-
-function safeJsonParse(s) {
-  try {
-    return JSON.parse(s);
-  } catch {
-    return null;
-  }
+function normEmail(v) {
+  return String(v || "").trim().toLowerCase();
 }
 
-function setStoredAuth(remember, payload) {
-  const store = remember ? localStorage : sessionStorage;
-  store.setItem(STORAGE_KEY, JSON.stringify(payload));
-}
-
-function getStoredAuth() {
-  const a = safeJsonParse(localStorage.getItem(STORAGE_KEY));
-  const b = safeJsonParse(sessionStorage.getItem(STORAGE_KEY));
-  return a || b || null;
-}
-
-async function postJson(url, body) {
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body || {}),
-  });
-
-  // Some endpoints may return empty body or non-JSON on error
-  const text = await res.text();
-  let data = null;
-  try {
-    data = text ? JSON.parse(text) : null;
-  } catch {
-    data = { raw: text };
-  }
-
-  return { ok: res.ok, status: res.status, data };
+function normCode(v) {
+  return String(v || "").trim();
 }
 
 export default function Login() {
-  const nav = useNavigate();
-
   const [email, setEmail] = useState("");
-  const [code, setCode] = useState("");
+  const [accessCode, setAccessCode] = useState("");
   const [remember, setRemember] = useState(true);
 
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState("");
-  const [note, setNote] = useState("");
-
-  // If already logged in, go to control center
-  useEffect(() => {
-    const existing = getStoredAuth();
-    if (existing?.ok && existing?.email) {
-      nav("/control-center", { replace: true });
-    }
-  }, [nav]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const canSubmit = useMemo(() => {
-    return email.trim().length > 3 && code.trim().length > 1 && !busy;
-  }, [email, code, busy]);
+    return normEmail(email).length > 3 && normCode(accessCode).length > 2 && !loading;
+  }, [email, accessCode, loading]);
 
-  async function handleSubmit(e) {
+  async function onSubmit(e) {
     e.preventDefault();
-    setErr("");
-    setNote("");
-
-    const emailTrim = email.trim();
-    const codeTrim = code.trim();
-
-    if (!emailTrim || !codeTrim) {
-      setErr("Enter your Business Email and Access Code.");
-      return;
-    }
-
-    setBusy(true);
-
-    // Try a few likely endpoints (first to return ok:true wins)
-    // This avoids breaking your existing working backend if the endpoint name differs.
-    const candidates = [
-      "/api/login",
-      "/api/auth_login",
-      "/api/access_login",
-      "/api/login_check",
-      "/api/beta_login",
-    ];
+    setError("");
+    setLoading(true);
 
     try {
-      let last = null;
+      const payload = {
+        email: normEmail(email),
+        access_code: normCode(accessCode),
+      };
 
-      for (const url of candidates) {
-        const r = await postJson(url, { email: emailTrim, access_code: codeTrim });
-        last = r;
+      const r = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-        // If endpoint doesn't exist, Vercel returns 404; try next
-        if (r.status === 404) continue;
+      const j = await r.json().catch(() => ({}));
 
-        // If endpoint exists and says ok, accept it
-        if (r.ok && (r.data?.ok === true || r.data?.authorized === true)) {
-          const payload = {
-            ok: true,
-            email: emailTrim,
-            // store minimal info; do NOT store secrets like service keys
-            ts: Date.now(),
-            source: url,
-            role: r.data?.role || null,
-          };
-          setStoredAuth(remember, payload);
-          nav("/control-center", { replace: true });
-          return;
-        }
-
-        // If endpoint exists but rejects, stop early with its message (don’t spam endpoints)
-        if (r.status === 401 || r.status === 403) {
-          setErr(r.data?.error || "Access denied. Check your email and access code.");
-          setBusy(false);
-          return;
-        }
-
-        // If endpoint exists but errors, show message and stop
-        if (r.status >= 400 && r.status !== 404) {
-          setErr(r.data?.error || `Login failed (${r.status}).`);
-          setBusy(false);
-          return;
-        }
+      if (!r.ok || !j?.ok) {
+        setError(j?.error || "Login failed");
+        setLoading(false);
+        return;
       }
 
-      // No endpoint matched (all 404)
-      setErr(
-        "Login endpoint not found. The site is missing a login API route. We can fix this by adding a single /api/login endpoint that validates Business Email + Access Code."
-      );
-      if (last?.data?.raw) setNote(String(last.data.raw).slice(0, 2000));
-    } catch (ex) {
-      setErr(ex?.message || "Login failed.");
-    } finally {
-      setBusy(false);
+      // Persist authorized device (lightweight for now)
+      if (remember) {
+        localStorage.setItem(
+          "adbs_auth",
+          JSON.stringify({
+            ok: true,
+            email: payload.email,
+            role: j?.role || "authorized",
+            ts: Date.now(),
+          })
+        );
+      } else {
+        localStorage.removeItem("adbs_auth");
+      }
+
+      // ✅ Always go to Control Center after login
+      window.location.hash = "#/dashboard";
+      return;
+    } catch (err) {
+      setError(err?.message || "Login failed");
+      setLoading(false);
     }
   }
 
   return (
-    <div style={{ background: "#0f1722", color: "#e6edf5", minHeight: "100vh" }}>
-      {/* Top Bar (public look) */}
-      <div
-        style={{
-          borderBottom: "1px solid rgba(120,160,210,0.18)",
-          background: "rgba(10,16,26,0.65)",
-          backdropFilter: "blur(6px)",
-        }}
-      >
-        <div
-          style={{
-            maxWidth: 1200,
-            margin: "0 auto",
-            padding: "18px 20px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 16,
-            flexWrap: "wrap",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <img
-              src="/qc-logo.png"
-              alt="QueCab AdbS"
-              style={{ width: 56, height: 56, objectFit: "contain" }}
-              onError={(e) => {
-                e.currentTarget.style.display = "none";
-              }}
-            />
-            <div style={{ lineHeight: 1.1 }}>
-              <div style={{ fontWeight: 900, letterSpacing: 0.3 }}>QueCab AdbS</div>
-              <div style={{ opacity: 0.7, fontSize: 13 }}>Freight Risk Control Layer</div>
-            </div>
+    <div style={styles.page}>
+      <PublicHeader />
+      <div style={styles.bg} aria-hidden="true" />
+
+      <div style={styles.inner}>
+        <div style={styles.card}>
+          <div style={styles.title}>Log In</div>
+          <div style={styles.subtitle}>
+            Authorized brokers and shippers only. Enter your Business Email and Access Code.
           </div>
 
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <button onClick={() => nav("/")} style={btn("ghost")}>Home</button>
-            <button onClick={() => nav("/how-it-works")} style={btn("ghost")}>How It Works</button>
-            <button onClick={() => nav("/join")} style={btn("outline")}>Request Access</button>
-          </div>
-        </div>
-      </div>
-
-      {/* Body */}
-      <div style={{ maxWidth: 720, margin: "0 auto", padding: "48px 20px 70px" }}>
-        <h1 style={{ fontSize: 40, fontWeight: 900, margin: "0 0 8px", letterSpacing: -0.4 }}>
-          Log In
-        </h1>
-        <p style={{ margin: "0 0 22px", opacity: 0.78, fontSize: 17, lineHeight: 1.5 }}>
-          Authorized brokers and shippers only. Enter your Business Email and Access Code.
-        </p>
-
-        <div style={card()}>
-          <form onSubmit={handleSubmit}>
-            <div style={label()}>Business Email</div>
+          <form onSubmit={onSubmit}>
+            <label style={styles.label}>Business Email</label>
             <input
+              style={styles.input}
+              type="email"
+              autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="name@company.com"
-              autoComplete="email"
-              spellCheck={false}
-              style={input()}
             />
 
-            <div style={{ height: 12 }} />
-
-            <div style={label()}>Access Code</div>
+            <label style={{ ...styles.label, marginTop: 12 }}>Access Code</label>
             <input
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              placeholder="Enter your code"
+              style={styles.input}
+              type="text"
               autoComplete="one-time-code"
-              spellCheck={false}
-              style={input()}
+              value={accessCode}
+              onChange={(e) => setAccessCode(e.target.value)}
+              placeholder="QC-XXXXXX"
             />
 
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 16 }}>
-              <input
-                type="checkbox"
-                checked={remember}
-                onChange={(e) => setRemember(e.target.checked)}
-                style={{ transform: "scale(1.2)" }}
-              />
-              <div style={{ opacity: 0.85, fontSize: 15 }}>
-                Remember this device
-              </div>
+            <div style={styles.row}>
+              <label style={styles.checkboxRow}>
+                <input
+                  type="checkbox"
+                  checked={remember}
+                  onChange={(e) => setRemember(e.target.checked)}
+                />
+                <span style={{ marginLeft: 10 }}>Remember this device</span>
+              </label>
             </div>
 
-            {err ? (
-              <div style={alertBox()}>
-                <div style={{ fontWeight: 900, marginBottom: 6 }}>Login failed</div>
-                <div style={{ opacity: 0.9 }}>{err}</div>
-                {note ? <div style={{ marginTop: 10, opacity: 0.7, fontSize: 12 }}>{note}</div> : null}
-              </div>
-            ) : null}
+            {error ? <div style={styles.error}>{error}</div> : null}
 
-            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 18 }}>
-              <button type="submit" disabled={!canSubmit} style={btn("primary", !canSubmit)}>
-                {busy ? "Signing in…" : "Sign In"}
-              </button>
+            <button style={styles.btn} disabled={!canSubmit} type="submit">
+              {loading ? "Signing in…" : "Log In"}
+            </button>
 
-              <button type="button" onClick={() => nav("/join")} style={btn("outline")}>
-                Request Access
-              </button>
-            </div>
-
-            <div style={{ marginTop: 14, opacity: 0.6, fontSize: 13, lineHeight: 1.4 }}>
-              After login you will be taken directly to the Control Center.
-            </div>
+            <div style={styles.note}>After login you will be taken directly to the Control Center.</div>
           </form>
         </div>
       </div>
@@ -272,75 +128,82 @@ export default function Login() {
   );
 }
 
-function btn(type, disabled = false) {
-  const base = {
-    padding: "14px 16px",
-    fontSize: 16,
-    fontWeight: 900,
-    borderRadius: 12,
-    cursor: disabled ? "not-allowed" : "pointer",
-    letterSpacing: 0.2,
-    opacity: disabled ? 0.6 : 1,
-    userSelect: "none",
-  };
+const styles = {
+  page: { minHeight: "100vh", background: "#0f1722", color: "#e6edf5", position: "relative" },
+  bg: {
+    position: "fixed",
+    inset: 0,
+    pointerEvents: "none",
+    zIndex: 0,
+    opacity: 0.9,
+    background: [
+      "radial-gradient(1200px 600px at 18% 10%, rgba(90,150,240,0.18), rgba(0,0,0,0))",
+      "radial-gradient(1000px 520px at 85% 15%, rgba(255,255,255,0.06), rgba(0,0,0,0))",
+      "linear-gradient(180deg, rgba(0,0,0,0.0), rgba(0,0,0,0.30))",
+      steelNoise(),
+    ].join(", "),
+  },
+  inner: { position: "relative", zIndex: 1, maxWidth: 1200, margin: "0 auto", padding: "46px 20px 70px" },
 
-  if (type === "primary") {
-    return {
-      ...base,
-      background: "rgba(30, 90, 160, 0.75)",
-      border: "1px solid rgba(120,180,255,0.45)",
-      color: "#ffffff",
-    };
-  }
-  if (type === "outline") {
-    return {
-      ...base,
-      background: "transparent",
-      border: "1px solid rgba(120,180,255,0.35)",
-      color: "#e6edf5",
-    };
-  }
-  return {
-    ...base,
-    background: "transparent",
-    border: "1px solid rgba(120,160,210,0.18)",
-    color: "rgba(230,237,245,0.88)",
-  };
-}
-
-function card() {
-  return {
-    padding: 20,
-    borderRadius: 16,
-    border: "1px solid rgba(120,160,210,0.18)",
+  card: {
+    maxWidth: 620,
+    border: "1px solid rgba(140,190,255,0.14)",
     background: "rgba(0,0,0,0.22)",
-    boxShadow: "0 12px 26px rgba(0,0,0,0.28)",
-  };
-}
+    boxShadow: "0 16px 34px rgba(0,0,0,0.30)",
+    borderRadius: 14,
+    padding: 22,
+  },
+  title: { fontSize: 34, fontWeight: 950, letterSpacing: -0.3, marginBottom: 6 },
+  subtitle: { opacity: 0.78, lineHeight: 1.5, marginBottom: 18 },
 
-function label() {
-  return { fontWeight: 900, fontSize: 14, opacity: 0.85, marginBottom: 8 };
-}
-
-function input() {
-  return {
+  label: { display: "block", fontSize: 13, fontWeight: 900, opacity: 0.78, letterSpacing: 0.6, textTransform: "uppercase" },
+  input: {
     width: "100%",
+    marginTop: 8,
     padding: "14px 14px",
-    fontSize: 18,
-    borderRadius: 12,
-    border: "1px solid rgba(120,160,210,0.28)",
-    background: "rgba(0,0,0,0.28)",
+    borderRadius: 10,
+    border: "1px solid rgba(140,190,255,0.18)",
+    background: "rgba(10,16,26,0.55)",
     color: "#e6edf5",
     outline: "none",
-  };
-}
+    fontSize: 16,
+    fontWeight: 750,
+  },
+  row: { marginTop: 14, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" },
+  checkboxRow: { display: "flex", alignItems: "center", opacity: 0.9, fontWeight: 750 },
 
-function alertBox() {
-  return {
-    marginTop: 16,
-    padding: 14,
-    borderRadius: 14,
-    border: "1px solid rgba(255,90,90,0.35)",
-    background: "rgba(160,40,40,0.18)",
-  };
+  error: { marginTop: 12, padding: "10px 12px", borderRadius: 10, border: "1px solid rgba(255,120,120,0.35)", background: "rgba(120,0,0,0.16)", color: "rgba(255,200,200,0.95)", fontWeight: 850 },
+
+  btn: {
+    width: "100%",
+    marginTop: 14,
+    padding: "16px 16px",
+    borderRadius: 10,
+    cursor: "pointer",
+    fontSize: 16,
+    fontWeight: 950,
+    letterSpacing: 0.2,
+    color: "#fff",
+    background: "linear-gradient(180deg, rgba(40,110,200,0.85), rgba(20,70,140,0.75))",
+    border: "1px solid rgba(140,190,255,0.42)",
+    boxShadow: "0 10px 22px rgba(0,0,0,0.28)",
+    opacity: 1,
+  },
+  note: { marginTop: 10, fontSize: 13, opacity: 0.62 },
+};
+
+function steelNoise() {
+  const svg = encodeURIComponent(`
+  <svg xmlns="http://www.w3.org/2000/svg" width="220" height="220">
+    <filter id="n">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch"/>
+      <feColorMatrix type="matrix" values="
+        0 0 0 0 0.35
+        0 0 0 0 0.50
+        0 0 0 0 0.70
+        0 0 0 0.12 0"/>
+    </filter>
+    <rect width="220" height="220" filter="url(#n)" opacity="0.45"/>
+  </svg>`);
+  return `url("data:image/svg+xml,${svg}")`;
 }
