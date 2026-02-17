@@ -1,31 +1,17 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
-/**
- * QueCab AdbS — Dock Verify Screen
- * Requirements:
- * - DOT + Plate inputs MUST auto-uppercase while typing
- * - Plate matching is case-insensitive
- * - USDOT compare is digits-only (entered vs on-record)
- * - Big, readable, realistic (no cartoony styling)
- * - Debug hidden by default (toggle only)
- * - Avoid heavy re-renders
- */
+const BUILD_TAG = "VERIFY-UPPERCASE-RESTORE-01";
 
 function onlyDigits(s) {
   return String(s || "").replace(/\D+/g, "");
 }
-
 function toUpperClean(s) {
   return String(s || "").toUpperCase();
 }
-
 function normalizePlate(s) {
-  // Case-insensitive for matching; also strip spaces for safer matching
-  // (Keeps user’s typed hyphens/spaces visually, but compare normalized.)
   return toUpperClean(s).replace(/\s+/g, "");
 }
-
 function fmtPhoneUS(s) {
   const d = onlyDigits(s);
   const a = d.slice(0, 3);
@@ -35,7 +21,6 @@ function fmtPhoneUS(s) {
   if (d.length <= 6) return `${a}-${b}`;
   return `${a}-${b}-${c}`;
 }
-
 function isoToLocal(iso) {
   if (!iso) return "";
   const dt = new Date(iso);
@@ -47,30 +32,22 @@ export default function Verify() {
   const { token } = useParams();
   const nav = useNavigate();
 
-  // Remote data (verify_links record)
   const [loading, setLoading] = useState(true);
   const [link, setLink] = useState(null);
   const [loadErr, setLoadErr] = useState("");
 
-  // Inputs
   const [enteredUsdot, setEnteredUsdot] = useState("");
   const [enteredPlate, setEnteredPlate] = useState("");
   const [driverAnswered, setDriverAnswered] = useState(""); // "YES" | "NO" | ""
 
-  // Result
   const [submitting, setSubmitting] = useState(false);
   const [submitErr, setSubmitErr] = useState("");
   const [verdict, setVerdict] = useState(""); // "CLEAR" | "CAUTION" | ""
 
-  // Debug
   const [showDebug, setShowDebug] = useState(false);
 
-  // Refs (avoid re-renders for small things)
   const flashTimerRef = useRef(null);
-  const audioRef = useRef(null);
 
-  // Fetch verify link record (keep endpoint name stable-ish)
-  // If your repo uses a different endpoint, adjust ONLY the URL string.
   useEffect(() => {
     let cancelled = false;
 
@@ -93,9 +70,7 @@ export default function Verify() {
           throw new Error(data?.error || `Load failed (${res.status})`);
         }
 
-        if (!cancelled) {
-          setLink(data.link || null);
-        }
+        if (!cancelled) setLink(data.link || null);
       } catch (e) {
         if (!cancelled) setLoadErr(e?.message || "Failed to load verify link.");
       } finally {
@@ -118,7 +93,6 @@ export default function Verify() {
     };
   }, [token]);
 
-  // Memo comparisons (cheap + stable)
   const onRecordUsdotDigits = useMemo(() => onlyDigits(link?.usdot_on_record || ""), [link?.usdot_on_record]);
   const onRecordPlateNorm = useMemo(() => normalizePlate(link?.plate_on_record || ""), [link?.plate_on_record]);
 
@@ -139,21 +113,18 @@ export default function Verify() {
     return Boolean(enteredUsdotDigits && enteredPlateNorm && (driverAnswered === "YES" || driverAnswered === "NO"));
   }, [enteredUsdotDigits, enteredPlateNorm, driverAnswered]);
 
-  // ✅ REQUIRED: auto-uppercase WHILE TYPING (input-level)
+  // ✅ REQUIRED: auto-uppercase WHILE TYPING
   const onChangeUsdot = useCallback((e) => {
-    // Keep the visible field uppercase for any letters (even though we compare digits-only)
-    const raw = e.target.value || "";
-    setEnteredUsdot(toUpperClean(raw));
+    const raw = e.target.value ?? "";
+    setEnteredUsdot(String(raw).toUpperCase());
   }, []);
 
   const onChangePlate = useCallback((e) => {
-    const raw = e.target.value || "";
-    setEnteredPlate(toUpperClean(raw));
+    const raw = e.target.value ?? "";
+    setEnteredPlate(String(raw).toUpperCase());
   }, []);
 
   const playCautionSound = useCallback(() => {
-    // Subtle, professional beep (generated in-browser; no external file needed)
-    // If browser blocks autoplay, user interaction (click submit) will allow it.
     try {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       if (!AudioCtx) return;
@@ -163,8 +134,8 @@ export default function Verify() {
       const g = ctx.createGain();
 
       o.type = "sine";
-      o.frequency.value = 660; // neutral tone
-      g.gain.value = 0.06;     // subtle volume
+      o.frequency.value = 660;
+      g.gain.value = 0.06;
 
       o.connect(g);
       g.connect(ctx.destination);
@@ -242,8 +213,6 @@ export default function Verify() {
     playCautionSound,
   ]);
 
-  // Basic realistic styling (inline + minimal)
-  // NOTE: If your project uses a shared CSS file, keep it. This adds only the flash class safely.
   useEffect(() => {
     const id = "qc-verify-flash-style";
     if (document.getElementById(id)) return;
@@ -254,11 +223,12 @@ export default function Verify() {
       .qc-card { background: rgba(10, 18, 32, 0.85); border: 1px solid rgba(120,160,210,0.25); border-radius: 16px; padding: 18px; box-shadow: 0 10px 24px rgba(0,0,0,0.35); }
       .qc-title { font-size: 28px; font-weight: 800; letter-spacing: 0.5px; margin: 0 0 10px; }
       .qc-sub { margin: 0 0 14px; color: rgba(233,238,246,0.78); font-size: 16px; }
+      .qc-tag { display:inline-block; margin: 0 0 12px; padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(120,160,210,0.35); background: rgba(0,0,0,0.22); font-weight: 900; font-size: 14px; letter-spacing: 0.8px; }
       .qc-bigq { font-size: 22px; font-weight: 800; margin: 14px 0 6px; text-transform: uppercase; }
       .qc-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
       .qc-field { flex: 1; min-width: 240px; }
       .qc-label { font-size: 14px; color: rgba(233,238,246,0.8); margin: 10px 0 6px; }
-      .qc-input { width: 100%; padding: 14px 14px; font-size: 20px; border-radius: 12px; border: 1px solid rgba(120,160,210,0.28); background: rgba(0,0,0,0.28); color: #e9eef6; outline: none; }
+      .qc-input { width: 100%; padding: 14px 14px; font-size: 20px; border-radius: 12px; border: 1px solid rgba(120,160,210,0.28); background: rgba(0,0,0,0.28); color: #e9eef6; outline: none; text-transform: uppercase; }
       .qc-input:focus { border-color: rgba(140,190,255,0.55); box-shadow: 0 0 0 3px rgba(80,140,220,0.18); }
       .qc-pill { display: inline-flex; align-items: center; justify-content: center; min-width: 90px; padding: 10px 12px; border-radius: 999px; font-weight: 800; letter-spacing: 0.5px; border: 1px solid rgba(120,160,210,0.28); }
       .qc-pill.yes { background: rgba(40, 140, 90, 0.18); border-color: rgba(60, 190, 120, 0.35); }
@@ -274,16 +244,8 @@ export default function Verify() {
       .qc-hr { height: 1px; background: rgba(120,160,210,0.18); margin: 14px 0; border: 0; }
       .qc-toggle { background: transparent; border: 1px solid rgba(120,160,210,0.28); color: rgba(233,238,246,0.85); padding: 8px 10px; border-radius: 10px; cursor: pointer; font-weight: 700; }
       .qc-debug { margin-top: 10px; background: rgba(0,0,0,0.25); border: 1px solid rgba(120,160,210,0.20); padding: 10px; border-radius: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 12px; color: rgba(233,238,246,0.85); white-space: pre-wrap; word-break: break-word; }
-
-      /* Flash effect for CAUTION — professional, subtle */
-      .qc-caution-flash {
-        animation: qcFlash 0.18s linear 0s 6;
-      }
-      @keyframes qcFlash {
-        0% { filter: none; }
-        50% { filter: saturate(1.2) brightness(1.15); }
-        100% { filter: none; }
-      }
+      .qc-caution-flash { animation: qcFlash 0.18s linear 0s 6; }
+      @keyframes qcFlash { 0% { filter:none; } 50% { filter:saturate(1.2) brightness(1.15); } 100% { filter:none; } }
     `;
     document.head.appendChild(style);
   }, []);
@@ -318,6 +280,8 @@ export default function Verify() {
   return (
     <div className="qc-wrap">
       <div className="qc-card">
+        <div className="qc-tag">BUILD TAG: {BUILD_TAG}</div>
+
         <div className="qc-title">AdbS Dock Verification</div>
         <p className="qc-sub">
           Both checks must be <b>YES</b> to clear the <b>Truck-Driver</b> for loading.
@@ -442,6 +406,7 @@ export default function Verify() {
 {JSON.stringify(
   {
     token,
+    build_tag: BUILD_TAG,
     on_record: {
       usdot_on_record: link?.usdot_on_record,
       plate_on_record: link?.plate_on_record,
