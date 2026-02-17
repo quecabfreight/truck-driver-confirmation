@@ -1,10 +1,10 @@
 // /api/login.js
 // POST { email, access_code } -> { ok: true, email, role }
 //
-// Server-side login validation against Supabase table: beta_requests
+// Robust login validation against Supabase table: beta_requests
+// - DOES NOT assume column names beyond access_code
+// - Pulls full row (select("*")) and checks any common email fields
 // Uses SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY
-//
-// This version uses supabase-js (more reliable than raw REST calls).
 
 import { createClient } from "@supabase/supabase-js";
 
@@ -18,8 +18,59 @@ function json(res, code, obj) {
 function normEmail(v) {
   return String(v || "").trim().toLowerCase();
 }
+
 function normCode(v) {
   return String(v || "").trim();
+}
+
+function pickEmail(row) {
+  if (!row || typeof row !== "object") return "";
+
+  // Try common candidates without assuming your schema
+  const candidates = [
+    row.business_email,
+    row.email,
+    row.contact_email,
+    row.user_email,
+    row.company_email,
+    row.owner_email,
+  ]
+    .map((x) => String(x || "").trim().toLowerCase())
+    .filter(Boolean);
+
+  return candidates[0] || "";
+}
+
+function isApproved(row) {
+  if (!row || typeof row !== "object") return true;
+
+  const status = String(row.status || "").trim().toLowerCase();
+
+  const approvedBool =
+    row.approved === true ||
+    row.is_approved === true ||
+    row.isApproved === true;
+
+  const approvedAt =
+    !!row.approved_at ||
+    !!row.approvedAt;
+
+  // If none of these exist, default allow (manual beta codes)
+  const hasSignals =
+    ("approved" in row) ||
+    ("is_approved" in row) ||
+    ("approved_at" in row) ||
+    ("status" in row);
+
+  if (!hasSignals) return true;
+
+  return (
+    approvedBool ||
+    approvedAt ||
+    status === "approved" ||
+    status === "active" ||
+    status === "authorized"
+  );
 }
 
 export default async function handler(req, res) {
@@ -57,18 +108,14 @@ export default async function handler(req, res) {
     auth: { persistSession: false },
   });
 
-  // We try a safe lookup strategy:
-  // 1) Find rows matching email (either email or business_email).
-  // 2) Validate access_code locally (case-insensitive).
-  // This avoids hard dependency on filter quirks and keeps behavior stable.
-  const selectCols =
-    "id,created_at,email,business_email,access_code,status,approved,approved_at,is_approved,role";
+  // Case-insensitive match on access_code (so QC-123 works no matter how stored)
+  const codeUpper = access_code.toUpperCase();
 
   const { data, error } = await supabase
     .from("beta_requests")
-    .select(selectCols)
-    .or(`email.ilike.${email},business_email.ilike.${email}`)
-    .limit(10);
+    .select("*")
+    .ilike("access_code", codeUpper)
+    .limit(5);
 
   if (error) {
     return json(res, 500, {
@@ -76,7 +123,7 @@ export default async function handler(req, res) {
       error: "Supabase query failed",
       supabase_error: error.message || String(error),
       hint:
-        "If this used to work, check Vercel Production env vars: SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY. Also confirm table name beta_requests exists.",
+        "If this used to work, likely schema changed or beta_requests table is not accessible by service role (rare).",
     });
   }
 
@@ -84,41 +131,21 @@ export default async function handler(req, res) {
     return json(res, 401, { ok: false, error: "Access denied" });
   }
 
-  const codeUpper = access_code.toUpperCase();
+  // If multiple rows somehow match, take the one with exact code (case-insensitive)
+  const match =
+    data.find((r) => String(r?.access_code || "").trim().toUpperCase() === codeUpper) ||
+    data[0];
 
-  const match = data.find((row) => {
-    const rowCode = String(row?.access_code || "").trim().toUpperCase();
-    return rowCode && rowCode === codeUpper;
-  });
+  // Validate email against whichever email field exists on the row
+  const rowEmail = pickEmail(match);
 
-  if (!match) {
+  // If the row has an email value, enforce it. If not stored, allow (but that’s unusual).
+  if (rowEmail && rowEmail !== email) {
     return json(res, 401, { ok: false, error: "Access denied" });
   }
 
-  // Approval logic:
-  // If approval markers exist, enforce them. Otherwise allow code-match (manual beta codes).
-  const hasApprovalSignals =
-    ("approved" in match) ||
-    ("approved_at" in match) ||
-    ("is_approved" in match) ||
-    ("status" in match);
-
-  let approved = true;
-
-  if (hasApprovalSignals) {
-    const status = String(match?.status || "").toLowerCase();
-    const approvedBool = match?.approved === true || match?.is_approved === true;
-    const approvedAt = !!match?.approved_at;
-
-    approved =
-      approvedBool ||
-      approvedAt ||
-      status === "approved" ||
-      status === "active" ||
-      status === "authorized";
-  }
-
-  if (!approved) {
+  // Enforce approval if your table contains approval fields
+  if (!isApproved(match)) {
     return json(res, 403, { ok: false, error: "Not approved yet" });
   }
 
