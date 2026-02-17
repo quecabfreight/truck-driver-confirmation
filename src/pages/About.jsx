@@ -59,7 +59,7 @@ export default function About() {
             <ul style={styles.ul}>
               <li>Fraud can look legitimate until the freight is gone.</li>
               <li>The dock is the last safe decision point.</li>
-              <li>AdbS provides a clear verdict before releasing freight.</li>
+              <li>QueCab AdbS provides a clear verdict before releasing freight.</li>
               <li>Each verification produces a recorded audit trail.</li>
             </ul>
 
