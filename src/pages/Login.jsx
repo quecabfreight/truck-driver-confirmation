@@ -59,9 +59,8 @@ export default function Login() {
         localStorage.removeItem("adbs_auth");
       }
 
-      // ✅ HARD redirect (no router weirdness)
-      window.location.href = `${window.location.origin}/#/dashboard`;
-      return;
+      // ✅ Guaranteed redirect to Control Center
+      window.location.replace(`${window.location.origin}/#/dashboard`);
     } catch (err) {
       setError(err?.message || "Login failed");
       setLoading(false);
@@ -167,10 +166,18 @@ const styles = {
     fontSize: 16,
     fontWeight: 750,
   },
-  row: { marginTop: 14, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" },
+  row: { marginTop: 14, display: "flex", gap: 10, flexWrap: "wrap" },
   checkboxRow: { display: "flex", alignItems: "center", opacity: 0.9, fontWeight: 750 },
 
-  error: { marginTop: 12, padding: "10px 12px", borderRadius: 10, border: "1px solid rgba(255,120,120,0.35)", background: "rgba(120,0,0,0.16)", color: "rgba(255,200,200,0.95)", fontWeight: 850 },
+  error: {
+    marginTop: 12,
+    padding: "10px 12px",
+    borderRadius: 10,
+    border: "1px solid rgba(255,120,120,0.35)",
+    background: "rgba(120,0,0,0.16)",
+    color: "rgba(255,200,200,0.95)",
+    fontWeight: 850,
+  },
 
   btn: {
     width: "100%",
