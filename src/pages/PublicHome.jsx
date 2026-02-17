@@ -1,26 +1,55 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import PublicHeader from "../components/PublicHeader";
 
 export default function PublicHome() {
   const nav = useNavigate();
+  const [hasAuth, setHasAuth] = useState(false);
 
   useEffect(() => {
-    // If already authorized, jump straight to Control Center
     try {
       const raw = localStorage.getItem("adbs_auth");
       const j = raw ? JSON.parse(raw) : null;
-      if (j?.ok) nav("/dashboard");
+      setHasAuth(!!j?.ok);
     } catch {
-      // ignore
+      setHasAuth(false);
     }
-  }, [nav]);
+  }, []);
 
   return (
     <div style={styles.page}>
       <PublicHeader />
       <div style={styles.bg} aria-hidden="true" />
 
+      {/* Logged-in banner (NO forced redirect) */}
+      {hasAuth ? (
+        <div style={styles.bannerWrap}>
+          <div style={styles.banner}>
+            <div style={styles.bannerLeft}>
+              <div style={styles.bannerTitle}>You’re already logged in.</div>
+              <div style={styles.bannerSub}>
+                Continue to the Control Center or log out on this device.
+              </div>
+            </div>
+            <div style={styles.bannerBtns}>
+              <button style={styles.btnPrimarySmall} onClick={() => nav("/dashboard")}>
+                Continue
+              </button>
+              <button
+                style={styles.btnOutlineSmall}
+                onClick={() => {
+                  localStorage.removeItem("adbs_auth");
+                  setHasAuth(false);
+                }}
+              >
+                Log out
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* HERO */}
       <section style={styles.hero}>
         <div style={styles.inner}>
           <div style={styles.kicker}>Anti-Double Brokering System</div>
@@ -44,6 +73,7 @@ export default function PublicHome() {
         </div>
       </section>
 
+      {/* PROOF */}
       <section style={styles.proof}>
         <div style={styles.innerWide}>
           <div style={styles.sectionTitle}>Dock Verification Outcome</div>
@@ -84,6 +114,7 @@ export default function PublicHome() {
         </div>
       </section>
 
+      {/* FOOTER */}
       <footer style={styles.footer}>
         <div style={styles.innerWide}>
           <div style={{ opacity: 0.55, fontSize: 13 }}>
@@ -118,6 +149,50 @@ const styles = {
       "linear-gradient(180deg, rgba(0,0,0,0.0), rgba(0,0,0,0.30))",
       steelNoise(),
     ].join(", "),
+  },
+
+  bannerWrap: { position: "relative", zIndex: 2, padding: "14px 20px 0" },
+  banner: {
+    maxWidth: 1200,
+    margin: "0 auto",
+    border: "1px solid rgba(140,190,255,0.18)",
+    background: "rgba(0,0,0,0.22)",
+    boxShadow: "0 16px 34px rgba(0,0,0,0.30)",
+    borderRadius: 14,
+    padding: 14,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+    flexWrap: "wrap",
+  },
+  bannerLeft: { minWidth: 260 },
+  bannerTitle: { fontWeight: 950, letterSpacing: 0.2 },
+  bannerSub: { marginTop: 4, opacity: 0.72, fontSize: 13 },
+  bannerBtns: { display: "flex", gap: 10, flexWrap: "wrap" },
+
+  btnPrimarySmall: {
+    padding: "10px 12px",
+    fontSize: 14,
+    fontWeight: 950,
+    borderRadius: 10,
+    cursor: "pointer",
+    letterSpacing: 0.2,
+    color: "#fff",
+    background: "linear-gradient(180deg, rgba(40,110,200,0.85), rgba(20,70,140,0.75))",
+    border: "1px solid rgba(140,190,255,0.42)",
+    boxShadow: "0 10px 22px rgba(0,0,0,0.28)",
+  },
+  btnOutlineSmall: {
+    padding: "10px 12px",
+    fontSize: 14,
+    fontWeight: 950,
+    borderRadius: 10,
+    cursor: "pointer",
+    letterSpacing: 0.2,
+    color: "#e6edf5",
+    background: "rgba(0,0,0,0.18)",
+    border: "1px solid rgba(140,190,255,0.28)",
   },
 
   hero: { position: "relative", zIndex: 1, padding: "70px 0 40px" },
