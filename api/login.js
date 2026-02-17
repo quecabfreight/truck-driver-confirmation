@@ -1,6 +1,10 @@
 // /api/login.js
 // POST { email, access_code }  -> { ok: true, role, email }
 // Uses server-side SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY (bypasses RLS safely on server)
+//
+// This version adds SAFE diagnostics:
+// - returns supabase_status and a short supabase_error snippet on failure
+// - avoids complex OR filters; queries by access_code first (more reliable)
 
 function json(res, code, obj) {
   res.statusCode = code;
@@ -12,9 +16,13 @@ function json(res, code, obj) {
 function normEmail(v) {
   return String(v || "").trim().toLowerCase();
 }
-
 function normCode(v) {
   return String(v || "").trim();
+}
+
+function safeSnippet(s, max = 500) {
+  const t = String(s || "");
+  return t.length > max ? t.slice(0, max) + "…" : t;
 }
 
 export default async function handler(req, res) {
@@ -29,15 +37,16 @@ export default async function handler(req, res) {
     return json(res, 500, {
       ok: false,
       error: "Server missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY",
+      has_SUPABASE_URL: !!SUPABASE_URL,
+      has_SUPABASE_SERVICE_ROLE_KEY: !!SUPABASE_SERVICE_ROLE_KEY,
     });
   }
 
   let body = req.body;
   try {
-    // Vercel usually parses JSON body for us, but keep this safe.
     if (typeof body === "string") body = JSON.parse(body);
   } catch {
-    body = req.body;
+    // ignore
   }
 
   const email = normEmail(body?.email);
@@ -47,12 +56,17 @@ export default async function handler(req, res) {
     return json(res, 400, { ok: false, error: "Missing email or access_code" });
   }
 
-  // Query beta_requests directly via Supabase REST (service role bypasses RLS)
-  // We select broad fields so this endpoint survives column name changes.
+  // Query by access_code (simple and robust).
+  // Then validate that the email matches either `email` or `business_email` if present.
+  const codeUpper = access_code.toUpperCase();
+
+  const select =
+    "id,created_at,email,business_email,access_code,status,approved,approved_at,is_approved,role";
+
   const url =
     `${SUPABASE_URL}/rest/v1/beta_requests` +
-    `?select=id,email,business_email,access_code,status,approved,approved_at,is_approved,role` +
-    `&or=(email.ilike.${encodeURIComponent(email)},business_email.ilike.${encodeURIComponent(email)})` +
+    `?select=${encodeURIComponent(select)}` +
+    `&access_code=eq.${encodeURIComponent(access_code)}` +
     `&limit=5`;
 
   try {
@@ -77,16 +91,56 @@ export default async function handler(req, res) {
       return json(res, 500, {
         ok: false,
         error: "Supabase query failed",
-        status: r.status,
+        supabase_status: r.status,
+        // Safe snippet only; no secrets included
+        supabase_error: safeSnippet(text, 800),
+        hint:
+          "If status is 401/403, env keys are wrong or missing. If 404, SUPABASE_URL is wrong. If 400, query/table/columns mismatch.",
       });
+    }
+
+    // If exact-case match failed, try uppercase code match (common when codes are stored uppercase)
+    if (!Array.isArray(rows) || rows.length === 0) {
+      const url2 =
+        `${SUPABASE_URL}/rest/v1/beta_requests` +
+        `?select=${encodeURIComponent(select)}` +
+        `&access_code=eq.${encodeURIComponent(codeUpper)}` +
+        `&limit=5`;
+
+      const r2 = await fetch(url2, {
+        method: "GET",
+        headers: {
+          apikey: SUPABASE_SERVICE_ROLE_KEY,
+          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      const text2 = await r2.text();
+      let rows2 = [];
+      try {
+        rows2 = text2 ? JSON.parse(text2) : [];
+      } catch {
+        rows2 = [];
+      }
+
+      if (!r2.ok) {
+        return json(res, 500, {
+          ok: false,
+          error: "Supabase query failed",
+          supabase_status: r2.status,
+          supabase_error: safeSnippet(text2, 800),
+        });
+      }
+
+      rows = rows2;
     }
 
     if (!Array.isArray(rows) || rows.length === 0) {
       return json(res, 401, { ok: false, error: "Access denied" });
     }
 
-    // Find a matching row by access code (case-insensitive compare)
-    const codeUpper = access_code.toUpperCase();
+    // Find row where code matches (case-insensitive)
     const match = rows.find((row) => {
       const rowCode = String(row?.access_code || "").trim().toUpperCase();
       return rowCode && rowCode === codeUpper;
@@ -96,9 +150,21 @@ export default async function handler(req, res) {
       return json(res, 401, { ok: false, error: "Access denied" });
     }
 
+    // Email match rules:
+    // - If table has email/business_email: require one matches.
+    // - If neither column exists/filled, allow (but that would be unusual).
+    const rowEmail = String(match?.email || "").trim().toLowerCase();
+    const rowBizEmail = String(match?.business_email || "").trim().toLowerCase();
+
+    const hasAnyEmail = !!rowEmail || !!rowBizEmail;
+    const emailOk = !hasAnyEmail || rowEmail === email || rowBizEmail === email;
+
+    if (!emailOk) {
+      return json(res, 401, { ok: false, error: "Access denied" });
+    }
+
     // Approval logic:
-    // If your table has approval markers, require them.
-    // If not present, we still allow code-match (because you manually issue codes).
+    // If approval markers exist, enforce them. Otherwise allow code-match.
     const hasApprovalSignals =
       ("approved" in match) ||
       ("approved_at" in match) ||
@@ -109,13 +175,9 @@ export default async function handler(req, res) {
 
     if (hasApprovalSignals) {
       const status = String(match?.status || "").toLowerCase();
-      const approvedBool =
-        match?.approved === true ||
-        match?.is_approved === true;
+      const approvedBool = match?.approved === true || match?.is_approved === true;
+      const approvedAt = !!match?.approved_at;
 
-      const approvedAt = match?.approved_at ? true : false;
-
-      // Accept common patterns
       approved =
         approvedBool ||
         approvedAt ||
