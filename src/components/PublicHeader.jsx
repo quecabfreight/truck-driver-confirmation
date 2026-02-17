@@ -46,15 +46,22 @@ export default function PublicHeader() {
             <div style={{ fontWeight: 950, letterSpacing: 0.3, fontSize: 16 }}>
               QueCab AdbS
             </div>
-            <div style={{ opacity: 0.68, fontSize: 13 }}>
-              Freight Risk Control Layer
+            <div style={{ opacity: 0.72, fontSize: 13 }}>
+              Anti-Double Brokering System
+            </div>
+            <div style={{ opacity: 0.58, fontSize: 12, marginTop: 3 }}>
+              Verification happens before freight moves.
             </div>
           </div>
         </div>
 
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
           <NavBtn text="Home" onClick={() => nav("/")} active={active("/")} />
-          <NavBtn text="How It Works" onClick={() => nav("/how-it-works")} active={active("/how-it-works")} />
+          <NavBtn
+            text="How It Works"
+            onClick={() => nav("/how-it-works")}
+            active={active("/how-it-works")}
+          />
           <NavBtn text="About" onClick={() => nav("/about")} active={active("/about")} />
           <button onClick={() => nav("/login")} style={btn("outline")}>
             Log In
