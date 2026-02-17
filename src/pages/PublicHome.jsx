@@ -8,12 +8,11 @@ export default function PublicHome() {
   return (
     <div style={styles.page}>
       <PublicHeader />
+      <div style={styles.bg} aria-hidden="true" />
 
       {/* HERO */}
       <section style={styles.hero}>
-        <div style={styles.heroInner}>
-          <div style={styles.heroGlow} aria-hidden="true" />
-
+        <div style={styles.inner}>
           <div style={styles.kicker}>Anti-Double Brokering System</div>
 
           <h1 style={styles.h1}>Stop double brokering before the truck gets loaded.</h1>
@@ -36,248 +35,181 @@ export default function PublicHome() {
       </section>
 
       {/* PROOF */}
-      <section style={styles.proofSection}>
-        <div style={styles.sectionInner}>
+      <section style={styles.proof}>
+        <div style={styles.innerWide}>
           <div style={styles.sectionTitle}>Dock Verification Outcome</div>
 
           <div style={styles.cards}>
-            {/* CLEAR */}
             <div style={{ ...styles.card, ...styles.cardClear }}>
-              <div style={styles.cardTopRow}>
-                <div style={{ ...styles.statusPill, ...styles.pillClear }}>CLEAR</div>
+              <div style={styles.cardTop}>
+                <div style={{ ...styles.pill, ...styles.pillClear }}>CLEAR</div>
                 <div style={styles.cardTitleClear}>CLEAR TO LOAD</div>
               </div>
-
-              <div style={styles.cardDivider} />
-
-              <div style={styles.kvRow}>
-                <div style={styles.k}>USDOT#</div>
-                <div style={styles.v}>MATCHED</div>
-              </div>
-              <div style={styles.kvRow}>
-                <div style={styles.k}>PLATE</div>
-                <div style={styles.v}>MATCHED</div>
-              </div>
-              <div style={styles.kvRow}>
-                <div style={styles.k}>DRIVER PHONE</div>
-                <div style={styles.v}>CONFIRMED</div>
-              </div>
-
-              <div style={styles.cardDivider} />
-
-              <div style={styles.cardVerdict}>All checks passed. Clear to load.</div>
-              <div style={styles.cardFoot}>Audit trail recorded.</div>
+              <div style={styles.rule} />
+              <Row k="USDOT#" v="MATCHED" />
+              <Row k="PLATE" v="MATCHED" />
+              <Row k="DRIVER PHONE" v="CONFIRMED" />
+              <div style={styles.rule} />
+              <div style={styles.verdict}>All checks passed. Clear to load.</div>
+              <div style={styles.foot}>Audit trail recorded.</div>
             </div>
 
-            {/* CAUTION */}
             <div style={{ ...styles.card, ...styles.cardCaution }}>
-              <div style={styles.cardTopRow}>
-                <div style={{ ...styles.statusPill, ...styles.pillCaution }}>CAUTION</div>
+              <div style={styles.cardTop}>
+                <div style={{ ...styles.pill, ...styles.pillCaution }}>CAUTION</div>
                 <div style={styles.cardTitleCaution}>DO NOT LOAD</div>
               </div>
-
-              <div style={styles.cardDivider} />
-
-              <div style={styles.kvRow}>
-                <div style={styles.k}>USDOT#</div>
-                <div style={{ ...styles.v, ...styles.vBad }}>MISMATCH</div>
-              </div>
-              <div style={styles.kvRow}>
-                <div style={styles.k}>PLATE</div>
-                <div style={{ ...styles.v, ...styles.vBad }}>MISMATCH</div>
-              </div>
-              <div style={styles.kvRow}>
-                <div style={styles.k}>DRIVER PHONE</div>
-                <div style={{ ...styles.v, ...styles.vBad }}>NOT CONFIRMED</div>
-              </div>
-
-              <div style={styles.cardDivider} />
-
-              <div style={styles.cardVerdict}>Verification failed. Do not release freight.</div>
-              <div style={styles.cardFoot}>Escalate before loading.</div>
+              <div style={styles.rule} />
+              <Row k="USDOT#" v="MISMATCH" bad />
+              <Row k="PLATE" v="MISMATCH" bad />
+              <Row k="DRIVER PHONE" v="NOT CONFIRMED" bad />
+              <div style={styles.rule} />
+              <div style={styles.verdict}>Verification failed. Do not release freight.</div>
+              <div style={styles.foot}>Escalate before loading.</div>
             </div>
           </div>
 
-          <div style={styles.proofBottomLine}>
+          <div style={styles.bottomLine}>
             Verification happens <b>before</b> freight moves.
-          </div>
-        </div>
-      </section>
-
-      {/* HOW IT WORKS (tight) */}
-      <section style={styles.hiw}>
-        <div style={styles.sectionInner}>
-          <div style={styles.hiwTitle}>How It Works</div>
-
-          <div style={styles.hiwGrid}>
-            <Step n="1" title="Issue Verify Link" desc="Broker/shipper generates a secure link for a load." />
-            <Step n="2" title="Dock Enters USDOT & Plate" desc="Check-in uses what’s visible on the truck." />
-            <Step n="3" title="Driver Phone Confirmed" desc="A required phone confirmation step is recorded." />
-            <Step n="4" title="System Returns Verdict" desc="CLEAR TO LOAD or CAUTION — DO NOT LOAD." />
-          </div>
-
-          <div style={styles.hiwCtas}>
-            <button style={styles.btnPrimary} onClick={() => nav("/join")}>
-              Request Access
-            </button>
-            <button style={styles.btnOutline} onClick={() => nav("/how-it-works")}>
-              View Details
-            </button>
           </div>
         </div>
       </section>
 
       {/* FOOTER */}
       <footer style={styles.footer}>
-        <div style={styles.sectionInner}>
-          <div style={styles.footerLine}>© {new Date().getFullYear()} QueCab AdbS. All rights reserved.</div>
+        <div style={styles.innerWide}>
+          <div style={{ opacity: 0.55, fontSize: 13 }}>
+            © {new Date().getFullYear()} QueCab AdbS. All rights reserved.
+          </div>
         </div>
       </footer>
     </div>
   );
 }
 
-function Step({ n, title, desc }) {
+function Row({ k, v, bad }) {
   return (
-    <div style={styles.stepCard}>
-      <div style={styles.stepTop}>
-        <div style={styles.stepNum}>{n}</div>
-        <div style={styles.stepTitle}>{title}</div>
-      </div>
-      <div style={styles.stepDesc}>{desc}</div>
+    <div style={styles.row}>
+      <div style={styles.k}>{k}</div>
+      <div style={{ ...styles.v, ...(bad ? styles.vBad : null) }}>{v}</div>
     </div>
   );
 }
 
 const styles = {
-  page: { minHeight: "100vh", background: "#0f1722", color: "#e6edf5" },
-
-  hero: {
-    position: "relative",
-    padding: "84px 0 64px",
-    borderBottom: "1px solid rgba(120,160,210,0.14)",
-    background:
-      "radial-gradient(1200px 500px at 20% 20%, rgba(60,110,180,0.20), rgba(0,0,0,0))",
-  },
-  heroInner: { maxWidth: 1200, margin: "0 auto", padding: "0 20px", position: "relative" },
-  heroGlow: {
-    position: "absolute",
+  page: { minHeight: "100vh", background: "#0f1722", color: "#e6edf5", position: "relative" },
+  bg: {
+    position: "fixed",
     inset: 0,
     pointerEvents: "none",
-    background:
-      "radial-gradient(700px 300px at 70% 0%, rgba(120,180,255,0.14), rgba(0,0,0,0))",
+    zIndex: 0,
+    background: [
+      "radial-gradient(1200px 600px at 18% 10%, rgba(90,150,240,0.18), rgba(0,0,0,0))",
+      "radial-gradient(1000px 520px at 85% 15%, rgba(255,255,255,0.06), rgba(0,0,0,0))",
+      "linear-gradient(180deg, rgba(0,0,0,0.0), rgba(0,0,0,0.30))",
+      steelNoise(),
+    ].join(", "),
     opacity: 0.9,
   },
 
+  hero: { position: "relative", zIndex: 1, padding: "70px 0 40px" },
+  inner: {
+    maxWidth: 980,
+    margin: "0 auto",
+    padding: "0 20px",
+    border: "1px solid rgba(140,190,255,0.14)",
+    background: "rgba(0,0,0,0.22)",
+    boxShadow: "0 16px 34px rgba(0,0,0,0.30)",
+    borderRadius: 14,
+    paddingTop: 26,
+    paddingBottom: 26,
+  },
+  innerWide: { position: "relative", zIndex: 1, maxWidth: 1200, margin: "0 auto", padding: "0 20px" },
+
   kicker: {
-    position: "relative",
     display: "inline-block",
     padding: "8px 10px",
-    borderRadius: 999,
-    border: "1px solid rgba(120,160,210,0.22)",
+    borderRadius: 10,
+    border: "1px solid rgba(140,190,255,0.20)",
     background: "rgba(0,0,0,0.22)",
     fontSize: 13,
-    fontWeight: 900,
-    letterSpacing: 0.6,
-    opacity: 0.9,
-    marginBottom: 14,
-    textTransform: "uppercase",
-  },
-  h1: {
-    position: "relative",
-    fontSize: 54,
     fontWeight: 950,
-    letterSpacing: -0.6,
-    margin: "0 0 14px",
-    lineHeight: 1.03,
-    maxWidth: 980,
+    letterSpacing: 0.7,
+    textTransform: "uppercase",
+    opacity: 0.88,
+    marginBottom: 12,
   },
-  sub: {
-    position: "relative",
-    fontSize: 20,
-    opacity: 0.82,
-    margin: "0 0 24px",
-    lineHeight: 1.45,
-    maxWidth: 740,
-  },
-  ctaRow: { position: "relative", display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" },
+  h1: { fontSize: 50, fontWeight: 950, letterSpacing: -0.6, margin: "0 0 12px", lineHeight: 1.04 },
+  sub: { fontSize: 20, opacity: 0.82, margin: "0 0 18px", lineHeight: 1.5, maxWidth: 820 },
+  ctaRow: { display: "flex", gap: 12, flexWrap: "wrap" },
   btnPrimary: {
     padding: "16px 18px",
     fontSize: 16,
     fontWeight: 950,
-    letterSpacing: 0.2,
-    borderRadius: 14,
+    borderRadius: 10,
     cursor: "pointer",
+    letterSpacing: 0.2,
     color: "#fff",
-    background: "rgba(30, 90, 160, 0.75)",
-    border: "1px solid rgba(120,180,255,0.45)",
-    boxShadow: "0 10px 22px rgba(0,0,0,0.22)",
+    background:
+      "linear-gradient(180deg, rgba(40,110,200,0.85), rgba(20,70,140,0.75))",
+    border: "1px solid rgba(140,190,255,0.42)",
+    boxShadow: "0 10px 22px rgba(0,0,0,0.28)",
   },
   btnOutline: {
     padding: "16px 18px",
     fontSize: 16,
     fontWeight: 950,
-    letterSpacing: 0.2,
-    borderRadius: 14,
+    borderRadius: 10,
     cursor: "pointer",
+    letterSpacing: 0.2,
     color: "#e6edf5",
-    background: "transparent",
-    border: "1px solid rgba(120,180,255,0.35)",
+    background: "rgba(0,0,0,0.18)",
+    border: "1px solid rgba(140,190,255,0.28)",
   },
-  micro: { position: "relative", marginTop: 14, fontSize: 13, opacity: 0.62 },
+  micro: { marginTop: 12, fontSize: 13, opacity: 0.62 },
 
-  proofSection: {
-    padding: "54px 0 70px",
-    background: "#0c1420",
-    borderBottom: "1px solid rgba(120,160,210,0.14)",
-  },
-  sectionInner: { maxWidth: 1200, margin: "0 auto", padding: "0 20px" },
+  proof: { position: "relative", zIndex: 1, padding: "26px 0 52px" },
   sectionTitle: {
     textAlign: "center",
-    fontWeight: 900,
-    letterSpacing: 0.3,
-    opacity: 0.78,
-    marginBottom: 22,
+    fontWeight: 950,
+    letterSpacing: 0.7,
+    opacity: 0.72,
     textTransform: "uppercase",
     fontSize: 13,
+    marginBottom: 16,
   },
-  cards: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 },
+  cards: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 },
   card: {
-    borderRadius: 18,
-    padding: 22,
-    border: "1px solid rgba(120,160,210,0.18)",
+    border: "1px solid rgba(140,190,255,0.14)",
     background: "rgba(0,0,0,0.22)",
-    boxShadow: "0 14px 28px rgba(0,0,0,0.28)",
+    boxShadow: "0 16px 34px rgba(0,0,0,0.30)",
+    borderRadius: 14,
+    padding: 18,
   },
-  cardClear: {
-    borderColor: "rgba(80,190,120,0.35)",
-    boxShadow: "0 14px 28px rgba(0,0,0,0.28), 0 0 0 1px rgba(80,190,120,0.10) inset",
-  },
-  cardCaution: {
-    borderColor: "rgba(255,90,90,0.35)",
-    boxShadow: "0 14px 28px rgba(0,0,0,0.28), 0 0 0 1px rgba(255,90,90,0.10) inset",
-  },
-  cardTopRow: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" },
-  statusPill: {
+  cardClear: { borderColor: "rgba(80,190,120,0.30)" },
+  cardCaution: { borderColor: "rgba(255,90,90,0.30)" },
+  cardTop: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" },
+  pill: {
     padding: "7px 10px",
-    borderRadius: 999,
+    borderRadius: 10,
     fontSize: 12,
     fontWeight: 950,
     letterSpacing: 0.7,
-    border: "1px solid rgba(120,160,210,0.18)",
-    background: "rgba(0,0,0,0.22)",
     textTransform: "uppercase",
+    background: "rgba(0,0,0,0.22)",
+    border: "1px solid rgba(140,190,255,0.14)",
   },
-  pillClear: { borderColor: "rgba(80,190,120,0.35)", color: "rgba(110,255,170,0.92)" },
-  pillCaution: { borderColor: "rgba(255,90,90,0.35)", color: "rgba(255,120,120,0.92)" },
-  cardTitleClear: { fontSize: 22, fontWeight: 950, letterSpacing: 0.2, color: "rgba(150,255,200,0.9)" },
-  cardTitleCaution: { fontSize: 22, fontWeight: 950, letterSpacing: 0.2, color: "rgba(255,150,150,0.92)" },
-  cardDivider: { height: 1, background: "rgba(120,160,210,0.16)", margin: "16px 0" },
-  kvRow: { display: "flex", justifyContent: "space-between", gap: 12, padding: "10px 0", borderBottom: "1px dashed rgba(120,160,210,0.14)" },
+  pillClear: { borderColor: "rgba(80,190,120,0.30)", color: "rgba(120,255,190,0.92)" },
+  pillCaution: { borderColor: "rgba(255,90,90,0.30)", color: "rgba(255,140,140,0.92)" },
+  cardTitleClear: { fontSize: 22, fontWeight: 950, color: "rgba(170,255,220,0.90)" },
+  cardTitleCaution: { fontSize: 22, fontWeight: 950, color: "rgba(255,170,170,0.92)" },
+
+  rule: { height: 1, background: "rgba(140,190,255,0.12)", margin: "14px 0" },
+  row: { display: "flex", justifyContent: "space-between", gap: 12, padding: "10px 0", borderBottom: "1px dashed rgba(140,190,255,0.10)" },
   k: {
     fontSize: 12,
     opacity: 0.72,
-    fontWeight: 900,
+    fontWeight: 950,
     letterSpacing: 0.7,
     textTransform: "uppercase",
     fontFamily:
@@ -291,36 +223,25 @@ const styles = {
       'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
   },
   vBad: { color: "rgba(255,170,170,0.92)" },
-  cardVerdict: { fontSize: 15, fontWeight: 950, letterSpacing: 0.2, marginTop: 2 },
-  cardFoot: { marginTop: 6, fontSize: 13, opacity: 0.6 },
-  proofBottomLine: { marginTop: 18, textAlign: "center", fontSize: 14, opacity: 0.75 },
+  verdict: { fontSize: 15, fontWeight: 950, marginTop: 2 },
+  foot: { marginTop: 6, fontSize: 13, opacity: 0.6 },
+  bottomLine: { marginTop: 14, textAlign: "center", fontSize: 14, opacity: 0.75 },
 
-  hiw: { padding: "56px 0 72px", background: "#0f1722" },
-  hiwTitle: { fontSize: 32, fontWeight: 950, letterSpacing: -0.3, margin: "0 0 18px" },
-  hiwGrid: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 },
-  stepCard: {
-    borderRadius: 16,
-    border: "1px solid rgba(120,160,210,0.18)",
-    background: "rgba(0,0,0,0.20)",
-    padding: 16,
-    boxShadow: "0 12px 24px rgba(0,0,0,0.22)",
-  },
-  stepTop: { display: "flex", alignItems: "center", gap: 10, marginBottom: 10 },
-  stepNum: {
-    width: 30,
-    height: 30,
-    borderRadius: 10,
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontWeight: 950,
-    border: "1px solid rgba(120,160,210,0.22)",
-    background: "rgba(10,16,26,0.55)",
-  },
-  stepTitle: { fontWeight: 950, fontSize: 15, letterSpacing: 0.1 },
-  stepDesc: { opacity: 0.74, fontSize: 13, lineHeight: 1.45 },
-  hiwCtas: { marginTop: 18, display: "flex", gap: 12, flexWrap: "wrap" },
-
-  footer: { padding: "22px 0", borderTop: "1px solid rgba(120,160,210,0.14)", background: "#0c1420" },
-  footerLine: { opacity: 0.6, fontSize: 13 },
+  footer: { position: "relative", zIndex: 1, padding: "22px 0", borderTop: "1px solid rgba(140,190,255,0.12)", background: "rgba(0,0,0,0.18)" },
 };
+
+function steelNoise() {
+  const svg = encodeURIComponent(`
+  <svg xmlns="http://www.w3.org/2000/svg" width="220" height="220">
+    <filter id="n">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch"/>
+      <feColorMatrix type="matrix" values="
+        0 0 0 0 0.35
+        0 0 0 0 0.50
+        0 0 0 0 0.70
+        0 0 0 0.12 0"/>
+    </filter>
+    <rect width="220" height="220" filter="url(#n)" opacity="0.45"/>
+  </svg>`);
+  return `url("data:image/svg+xml,${svg}")`;
+}
