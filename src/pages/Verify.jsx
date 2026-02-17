@@ -1,246 +1,185 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
-import { supabase } from "../lib/supabaseClient";
 
-function norm(s) {
-  return (s || "").trim().toUpperCase();
+function fmtPhone(raw) {
+  const d = String(raw || "").replace(/\D/g, "").slice(0, 10);
+  const a = d.slice(0, 3);
+  const b = d.slice(3, 6);
+  const c = d.slice(6, 10);
+  if (d.length <= 3) return a;
+  if (d.length <= 6) return `${a}-${b}`;
+  return `${a}-${b}-${c}`;
 }
 
-function fmtDateTime(iso) {
-  if (!iso) return "";
-  try {
-    const d = new Date(iso);
-    return d.toLocaleString();
-  } catch {
-    return "";
-  }
+function digitsOnly(v) {
+  return String(v || "").replace(/\D/g, "");
 }
 
 export default function Verify() {
   const { token } = useParams();
 
+  const [link, setLink] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [linkRow, setLinkRow] = useState(null);
   const [err, setErr] = useState("");
 
   const [enteredUsdot, setEnteredUsdot] = useState("");
   const [enteredPlate, setEnteredPlate] = useState("");
-  const [driverAnswered, setDriverAnswered] = useState(null); // true | false | null
+  const [driverAnswered, setDriverAnswered] = useState(""); // "YES" | "NO" | ""
 
   const [submitting, setSubmitting] = useState(false);
-  const [result, setResult] = useState(""); // "clear" | "caution" | ""
+  const [result, setResult] = useState(null); // { verdict, message }
 
-  // Load verify_links row by token
+  // Load verify link details (expects an existing endpoint in your build)
   useEffect(() => {
-    let alive = true;
+    let cancelled = false;
 
-    async function load() {
+    async function run() {
       setLoading(true);
       setErr("");
-      setLinkRow(null);
-      setResult("");
+      setResult(null);
 
       try {
-        const t = (token || "").trim();
-        if (!t) {
-          setErr("Invalid verification link.");
-          setLoading(false);
+        const r = await fetch(`/api/get_verify_link?token=${encodeURIComponent(token || "")}`, {
+          method: "GET",
+        });
+
+        const text = await r.text();
+        let data = null;
+        try {
+          data = JSON.parse(text);
+        } catch {
+          data = null;
+        }
+
+        if (!r.ok || !data?.ok) {
+          const msg = data?.error ? String(data.error) : `Unable to load link (HTTP ${r.status}).`;
+          if (!cancelled) setErr(msg);
+          if (!cancelled) setLoading(false);
           return;
         }
 
-        const { data, error } = await supabase
-          .from("verify_links")
-          .select("token, usdot_on_record, plate_on_record, driver_phone, status, starts_at, expires_at, created_at")
-          .eq("token", t)
-          .limit(1);
-
-        if (error) throw error;
-
-        const row = Array.isArray(data) && data.length ? data[0] : null;
-        if (!row) {
-          setErr("Verification link not found.");
+        if (!cancelled) {
+          setLink(data.link || null);
           setLoading(false);
-          return;
         }
-
-        if (!alive) return;
-        setLinkRow(row);
       } catch (e) {
-        console.error(e);
-        if (!alive) return;
-        setErr("Could not load verification link.");
-      } finally {
-        if (alive) setLoading(false);
+        if (!cancelled) {
+          setErr(`Unable to load link. ${String(e?.message || e)}`);
+          setLoading(false);
+        }
       }
     }
 
-    load();
+    run();
     return () => {
-      alive = false;
+      cancelled = true;
     };
   }, [token]);
 
-  const computed = useMemo(() => {
-    if (!linkRow) return null;
+  const usdotMatch = useMemo(() => {
+    const onRecord = digitsOnly(link?.usdot_on_record || "");
+    const entered = digitsOnly(enteredUsdot);
+    if (!onRecord || !entered) return "";
+    return onRecord === entered ? "YES" : "NO";
+  }, [link, enteredUsdot]);
 
-    const recordUsdot = norm(linkRow.usdot_on_record);
-    const recordPlate = norm(linkRow.plate_on_record);
+  const plateMatch = useMemo(() => {
+    // Compare case-insensitive, but we DISPLAY uppercase because dock people like it that way.
+    const onRecord = String(link?.plate_on_record || "").trim().toUpperCase();
+    const entered = String(enteredPlate || "").trim().toUpperCase();
+    if (!onRecord || !entered) return "";
+    return onRecord === entered ? "YES" : "NO";
+  }, [link, enteredPlate]);
 
-    const enteredU = norm(enteredUsdot);
-    const enteredP = norm(enteredPlate);
+  const canSubmit = useMemo(() => {
+    return (
+      !loading &&
+      !err &&
+      token &&
+      digitsOnly(enteredUsdot).length > 0 &&
+      String(enteredPlate || "").trim().length > 0 &&
+      (driverAnswered === "YES" || driverAnswered === "NO")
+    );
+  }, [loading, err, token, enteredUsdot, enteredPlate, driverAnswered]);
 
-    const usdotMatch = !!recordUsdot && !!enteredU && recordUsdot === enteredU;
-    const plateMatch = !!recordPlate && !!enteredP && recordPlate === enteredP;
-
-    const startsAtMs = linkRow.starts_at ? new Date(linkRow.starts_at).getTime() : null;
-    const expiresAtMs = linkRow.expires_at ? new Date(linkRow.expires_at).getTime() : null;
-    const nowMs = Date.now();
-
-    const notStarted = startsAtMs !== null && nowMs < startsAtMs;
-    const isExpired = expiresAtMs !== null && nowMs > expiresAtMs;
-
-    const status = (linkRow.status || "").toLowerCase();
-    const statusBlocks = status && status !== "active";
-
-    return {
-      recordUsdot,
-      recordPlate,
-      enteredU,
-      enteredP,
-      usdotMatch,
-      plateMatch,
-      notStarted,
-      isExpired,
-      status,
-      statusBlocks,
-      startsAtText: fmtDateTime(linkRow.starts_at),
-      expiresAtText: fmtDateTime(linkRow.expires_at),
-    };
-  }, [linkRow, enteredUsdot, enteredPlate]);
-
-  async function submitVerification() {
-    setErr("");
-    setResult("");
-
-    if (!linkRow || !computed) return;
-
-    // Hard blocks
-    if (computed.statusBlocks) {
-      setResult("caution");
-      return;
-    }
-    if (computed.notStarted) {
-      setResult("caution");
-      return;
-    }
-    if (computed.isExpired) {
-      // Mark expired (best effort)
-      try {
-        await supabase.from("verify_links").update({ status: "expired" }).eq("token", linkRow.token);
-      } catch {}
-      setResult("caution");
-      return;
-    }
-
-    if (!computed.enteredU || !computed.enteredP) {
-      setErr("Enter BOTH USDOT# and Plate.");
-      return;
-    }
-
-    if (driverAnswered !== true && driverAnswered !== false) {
-      setErr("Select whether the driver answered their phone.");
-      return;
-    }
-
-    const finalResult =
-      computed.usdotMatch && computed.plateMatch && driverAnswered === true ? "clear" : "caution";
-
+  async function submit() {
     setSubmitting(true);
+    setResult(null);
+
     try {
-      // Log to verify_checks
-      const payload = {
-        token: linkRow.token,
-        entered_usdot: computed.enteredU,
-        entered_plate: computed.enteredP,
-        driver_answered: driverAnswered, // nullable allowed, but we require choice in UI
-        result: finalResult,
-        // checked_at will default to now() in DB
-      };
+      const r = await fetch("/api/verify_and_log_check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token,
+          entered_usdot: digitsOnly(enteredUsdot),
+          entered_plate: String(enteredPlate || "").trim(), // backend can compare case-insensitive
+          driver_answered: driverAnswered === "YES",
+        }),
+      });
 
-      const { error: insErr } = await supabase.from("verify_checks").insert([payload]);
-      if (insErr) throw insErr;
-
-      // Mark used (best effort)
+      const text = await r.text();
+      let data = null;
       try {
-        await supabase.from("verify_links").update({ status: "used" }).eq("token", linkRow.token);
-      } catch {}
+        data = JSON.parse(text);
+      } catch {
+        data = null;
+      }
 
-      setResult(finalResult);
+      if (!r.ok || !data?.ok) {
+        setResult({
+          verdict: "error",
+          message: data?.error ? String(data.error) : `Submit failed (HTTP ${r.status}).`,
+        });
+        setSubmitting(false);
+        return;
+      }
+
+      setResult({
+        verdict: String(data.result || "").toLowerCase() === "clear" ? "clear" : "caution",
+        message:
+          String(data.result || "").toLowerCase() === "clear"
+            ? "Truck-Driver verification passed."
+            : "Caution conditions detected. Do not load until resolved.",
+      });
     } catch (e) {
-      console.error(e);
-      setErr("Could not save verification result.");
+      setResult({ verdict: "error", message: `Submit failed. ${String(e?.message || e)}` });
     } finally {
       setSubmitting(false);
     }
   }
 
-  const verdict =
-    result === "clear"
-      ? { title: "CLEAR TO LOAD", tone: "clear" }
-      : result === "caution"
-      ? { title: "CAUTION ALERT — DO NOT LOAD", tone: "caution" }
-      : null;
-
-  const phone = (linkRow?.driver_phone || "").trim();
+  const driverPhone = fmtPhone(link?.driver_phone || "");
 
   return (
     <div style={styles.page}>
       <div style={styles.shell}>
-        <div style={styles.topRow}>
-          <a href="/#/" style={styles.brandLink} aria-label="Go Home">
-            <img src="/qc-logo.png" alt="QueCab AdbS" style={styles.logo} draggable="false" />
-          </a>
-        </div>
+        <a href="/#/" style={styles.brandLink} aria-label="Go Home">
+          <img src="/qc-logo.png" alt="QueCab AdbS" style={styles.logo} draggable="false" />
+        </a>
 
         <div style={styles.card}>
-          <div style={styles.bigTitle}>DOES THE USDOT# ON THE TRUCK MATCH?</div>
-          <div style={styles.bigTitle}>DID THE DRIVER ANSWER THEIR PHONE?</div>
-          <div style={styles.subText}>
-            Both must be <b>YES</b> to clear the Truck-Driver for loading.
-          </div>
+          <div style={styles.bigQ}>DOES THE USDOT# ON THE TRUCK MATCH?</div>
+          <div style={styles.bigQ}>DID THE DRIVER ANSWER THEIR PHONE?</div>
+          <div style={styles.note}>Both must be YES to clear the Truck-Driver for loading.</div>
 
-          {loading ? <div style={styles.notice}>Loading…</div> : null}
+          {loading ? <div style={styles.status}>Loading…</div> : null}
           {err ? <div style={styles.error}>{err}</div> : null}
 
-          {!loading && linkRow && computed ? (
+          {!loading && !err ? (
             <>
-              {/* Status / timing banners */}
-              {computed.statusBlocks ? (
-                <div style={styles.error}>
-                  Link status is <b>{computed.status}</b>. Treat as CAUTION.
-                </div>
-              ) : null}
-
-              {computed.notStarted ? (
-                <div style={styles.error}>
-                  Link not active yet. Starts: <b>{computed.startsAtText || "N/A"}</b>
-                </div>
-              ) : null}
-
-              {computed.isExpired ? (
-                <div style={styles.error}>
-                  Link expired: <b>{computed.expiresAtText || "N/A"}</b>
-                </div>
-              ) : null}
-
-              <div style={styles.grid2}>
+              <div style={styles.grid}>
                 <label style={styles.label}>
                   Enter USDOT#
                   <input
                     value={enteredUsdot}
-                    onChange={(e) => setEnteredUsdot(e.target.value)}
-                    placeholder="USDOT1234567"
-                    style={styles.inputBig}
+                    onChange={(e) => setEnteredUsdot(e.target.value.toUpperCase())} // ✅ auto-uppercase
+                    placeholder="ABC123456 (or 123456)"
+                    style={styles.input}
+                    inputMode="text"
+                    autoCapitalize="characters"
+                    autoCorrect="off"
+                    spellCheck={false}
                   />
                 </label>
 
@@ -248,91 +187,109 @@ export default function Verify() {
                   Enter Plate
                   <input
                     value={enteredPlate}
-                    onChange={(e) => setEnteredPlate(e.target.value)}
+                    onChange={(e) => setEnteredPlate(e.target.value.toUpperCase())} // ✅ auto-uppercase
                     placeholder="ABC1234"
-                    style={styles.inputBig}
+                    style={styles.input}
+                    autoCapitalize="characters"
+                    autoCorrect="off"
+                    spellCheck={false}
                   />
                 </label>
               </div>
 
               <div style={styles.matchRow}>
-                <div style={styles.matchChip(computed.usdotMatch ? "good" : "bad")}>
-                  USDOT Match: {computed.usdotMatch ? "YES" : "NO"}
+                <div style={styles.matchPill}>
+                  <span style={styles.matchLabel}>USDOT Match:</span>{" "}
+                  <span style={styles.matchValue}>{usdotMatch || "—"}</span>
                 </div>
-                <div style={styles.matchChip(computed.plateMatch ? "good" : "bad")}>
-                  Plate Match: {computed.plateMatch ? "YES" : "NO"}
+                <div style={styles.matchPill}>
+                  <span style={styles.matchLabel}>Plate Match:</span>{" "}
+                  <span style={styles.matchValue}>{plateMatch || "—"}</span>
                 </div>
               </div>
 
-              <div style={styles.hr} />
+              <div style={styles.driverBlock}>
+                <div style={styles.driverTitle}>Driver Answered Phone?</div>
 
-              <div style={styles.sectionTitle}>Driver Answered Phone?</div>
-              <div style={styles.radioRowWrap}>
-                <label style={styles.radioRow}>
-                  <input
-                    type="radio"
-                    name="driverAnswered"
-                    checked={driverAnswered === true}
-                    onChange={() => setDriverAnswered(true)}
-                  />
-                  <span style={styles.radioText}>YES</span>
-                </label>
+                <div style={styles.ynRow}>
+                  <button
+                    type="button"
+                    onClick={() => setDriverAnswered("YES")}
+                    style={{
+                      ...styles.ynBtn,
+                      ...(driverAnswered === "YES" ? styles.ynOnYes : {}),
+                    }}
+                  >
+                    YES
+                  </button>
 
-                <label style={styles.radioRow}>
-                  <input
-                    type="radio"
-                    name="driverAnswered"
-                    checked={driverAnswered === false}
-                    onChange={() => setDriverAnswered(false)}
-                  />
-                  <span style={styles.radioText}>NO</span>
-                </label>
-              </div>
+                  <button
+                    type="button"
+                    onClick={() => setDriverAnswered("NO")}
+                    style={{
+                      ...styles.ynBtn,
+                      ...(driverAnswered === "NO" ? styles.ynOnNo : {}),
+                    }}
+                  >
+                    NO
+                  </button>
+                </div>
 
-              {phone ? (
-                <div style={styles.callBox}>
-                  <div style={styles.callTitle}>Driver Phone</div>
-                  <div style={styles.callPhone}>{phone}</div>
-                  <div style={styles.callActions}>
-                    <a href={`tel:${phone}`} style={styles.buttonGhostLink}>
-                      Call Now
-                    </a>
+                <div style={styles.phoneRow}>
+                  <div>
+                    <div style={styles.phoneLabel}>Driver Phone</div>
+                    <div style={styles.phoneValue}>{driverPhone || "—"}</div>
                   </div>
-                  <div style={styles.callNote}>Visible for authorized dock/check-in personnel.</div>
-                </div>
-              ) : (
-                <div style={styles.notice}>Driver phone not provided for this link.</div>
-              )}
 
-              <div style={styles.hr} />
+                  <a
+                    href={driverPhone ? `tel:${driverPhone}` : undefined}
+                    style={{
+                      ...styles.callBtn,
+                      opacity: driverPhone ? 1 : 0.55,
+                      pointerEvents: driverPhone ? "auto" : "none",
+                    }}
+                  >
+                    Call Now
+                  </a>
+                </div>
+
+                <div style={styles.smallNote}>Visible for authorized dock/check-in personnel.</div>
+              </div>
 
               <button
-                onClick={submitVerification}
-                disabled={submitting || computed.notStarted || computed.isExpired || computed.statusBlocks}
+                onClick={submit}
+                disabled={!canSubmit || submitting}
                 style={{
-                  ...styles.buttonPrimary,
-                  opacity: submitting ? 0.75 : 1,
-                  cursor: submitting ? "not-allowed" : "pointer",
+                  ...styles.submitBtn,
+                  opacity: !canSubmit || submitting ? 0.6 : 1,
+                  cursor: !canSubmit || submitting ? "not-allowed" : "pointer",
                 }}
               >
                 {submitting ? "Submitting…" : "Submit Verification"}
               </button>
 
-              {verdict ? (
-                <div style={styles.verdictBox(verdict.tone)}>
-                  <div style={styles.verdictTitle(verdict.tone)}>{verdict.title}</div>
-                  <div style={styles.verdictSub}>
-                    {verdict.tone === "clear"
-                      ? "Truck-Driver verification passed."
-                      : "Truck-Driver verification failed. Escalate before loading."}
+              {result ? (
+                <div
+                  style={{
+                    ...styles.verdictBox,
+                    ...(result.verdict === "clear" ? styles.verdictClear : {}),
+                    ...(result.verdict === "caution" ? styles.verdictCaution : {}),
+                    ...(result.verdict === "error" ? styles.verdictError : {}),
+                  }}
+                >
+                  <div style={styles.verdictTitle}>
+                    {result.verdict === "clear"
+                      ? "CLEAR TO LOAD"
+                      : result.verdict === "caution"
+                      ? "CAUTION ALERT — DO NOT LOAD"
+                      : "ERROR"}
                   </div>
+                  <div style={styles.verdictText}>{result.message}</div>
                 </div>
               ) : null}
             </>
           ) : null}
         </div>
-
-        <div style={styles.footer}>© {new Date().getFullYear()} QueCab AdbS</div>
       </div>
     </div>
   );
@@ -349,9 +306,8 @@ const styles = {
     justifyContent: "center",
     padding: 18,
   },
-  shell: { width: "100%", maxWidth: 980 },
-  topRow: { display: "flex", justifyContent: "flex-start", marginBottom: 14 },
-  brandLink: { display: "inline-flex", alignItems: "center" },
+  shell: { width: "100%", maxWidth: 860 },
+  brandLink: { display: "inline-flex", alignItems: "center", marginBottom: 14 },
   logo: { width: 220, height: "auto" },
 
   card: {
@@ -362,122 +318,120 @@ const styles = {
     boxShadow: "0 18px 60px rgba(0,0,0,0.45)",
   },
 
-  bigTitle: { fontSize: 22, fontWeight: 950, letterSpacing: 0.3, marginBottom: 6 },
-  subText: { fontSize: 14, color: "rgba(233, 238, 247, 0.78)", marginBottom: 14 },
+  bigQ: { fontSize: 22, fontWeight: 900, letterSpacing: 0.2, marginBottom: 6 },
+  note: { fontSize: 14, opacity: 0.85, marginBottom: 14 },
 
-  sectionTitle: { fontSize: 16, fontWeight: 900, marginBottom: 8 },
-
-  grid2: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 },
-  label: { fontSize: 14, color: "rgba(233, 238, 247, 0.9)" },
-  inputBig: {
-    width: "100%",
-    marginTop: 6,
-    padding: "14px 12px",
-    borderRadius: 12,
-    border: "1px solid rgba(110, 160, 210, 0.25)",
-    background: "rgba(8, 12, 20, 0.75)",
-    color: "#e9eef7",
-    outline: "none",
-    fontSize: 18,
-    fontWeight: 900,
-  },
-
-  matchRow: { display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap" },
-  matchChip: (tone) => ({
-    padding: "10px 12px",
-    borderRadius: 12,
-    background: tone === "good" ? "rgba(40, 120, 70, 0.18)" : "rgba(170, 30, 30, 0.18)",
-    border:
-      tone === "good"
-        ? "1px solid rgba(80, 220, 140, 0.28)"
-        : "1px solid rgba(255, 80, 80, 0.28)",
-    color: "#e9eef7",
-    fontWeight: 950,
-    fontSize: 14,
-  }),
-
-  radioRowWrap: { display: "flex", gap: 18, alignItems: "center" },
-  radioRow: { display: "flex", gap: 10, alignItems: "center" },
-  radioText: { fontSize: 16, fontWeight: 900 },
-
-  callBox: {
-    marginTop: 12,
-    padding: 14,
-    borderRadius: 14,
-    background: "rgba(40, 90, 150, 0.12)",
-    border: "1px solid rgba(110, 160, 210, 0.20)",
-  },
-  callTitle: { fontSize: 13, fontWeight: 900, marginBottom: 6 },
-  callPhone: { fontSize: 20, fontWeight: 950, letterSpacing: 0.3 },
-  callActions: { marginTop: 10 },
-  buttonGhostLink: {
-    padding: "10px 12px",
-    borderRadius: 12,
-    background: "rgba(14, 22, 38, 0.65)",
-    border: "1px solid rgba(110, 160, 210, 0.18)",
-    color: "rgba(233, 238, 247, 0.95)",
-    fontWeight: 900,
-    textDecoration: "none",
-    display: "inline-flex",
-    alignItems: "center",
-  },
-  callNote: { marginTop: 10, fontSize: 12, color: "rgba(233, 238, 247, 0.70)" },
-
-  hr: { height: 1, background: "rgba(110, 160, 210, 0.18)", margin: "14px 0" },
-
-  buttonPrimary: {
-    width: "100%",
-    padding: "14px 14px",
-    borderRadius: 12,
-    border: "1px solid rgba(110, 160, 210, 0.28)",
-    background:
-      "linear-gradient(180deg, rgba(40, 90, 150, 0.95), rgba(18, 45, 80, 0.95))",
-    color: "#e9eef7",
-    fontWeight: 950,
-    fontSize: 18,
-  },
-
-  verdictBox: (tone) => ({
-    marginTop: 14,
-    padding: 14,
-    borderRadius: 14,
-    background: tone === "clear" ? "rgba(40, 120, 70, 0.18)" : "rgba(170, 30, 30, 0.18)",
-    border:
-      tone === "clear"
-        ? "1px solid rgba(80, 220, 140, 0.28)"
-        : "1px solid rgba(255, 80, 80, 0.28)",
-  }),
-  verdictTitle: (tone) => ({
-    fontSize: 22,
-    fontWeight: 990,
-    letterSpacing: 0.4,
-    color: tone === "clear" ? "#d9ffe8" : "#ffd7d7",
-  }),
-  verdictSub: { marginTop: 6, fontSize: 13, color: "rgba(233, 238, 247, 0.85)" },
-
-  notice: {
-    padding: "10px 12px",
-    borderRadius: 12,
-    background: "rgba(40, 90, 150, 0.14)",
-    border: "1px solid rgba(110, 160, 210, 0.18)",
-    color: "rgba(233, 238, 247, 0.9)",
-    fontSize: 14,
-    marginBottom: 10,
-  },
+  status: { padding: "10px 12px", opacity: 0.9 },
   error: {
+    marginBottom: 12,
     padding: "10px 12px",
     borderRadius: 12,
     background: "rgba(170, 30, 30, 0.18)",
     border: "1px solid rgba(255, 80, 80, 0.28)",
     color: "#ffd7d7",
     fontSize: 14,
-    marginBottom: 10,
   },
 
-  footer: {
+  grid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12 },
+  label: { display: "block", fontSize: 14, opacity: 0.92 },
+  input: {
+    width: "100%",
+    marginTop: 6,
+    padding: "12px 12px",
+    borderRadius: 12,
+    border: "1px solid rgba(110, 160, 210, 0.25)",
+    background: "rgba(8, 12, 20, 0.75)",
+    color: "#e9eef7",
+    outline: "none",
+    fontSize: 18,
+  },
+
+  matchRow: { marginTop: 12, display: "flex", gap: 10, flexWrap: "wrap" },
+  matchPill: {
+    padding: "10px 12px",
+    borderRadius: 12,
+    border: "1px solid rgba(255,255,255,0.14)",
+    background: "rgba(10, 14, 22, 0.35)",
+    display: "inline-flex",
+    gap: 8,
+    alignItems: "baseline",
+  },
+  matchLabel: { fontSize: 14, opacity: 0.8, fontWeight: 900 },
+  matchValue: { fontSize: 16, fontWeight: 900 },
+
+  driverBlock: {
     marginTop: 14,
-    fontSize: 12,
-    color: "rgba(233, 238, 247, 0.55)",
-    textAlign: "center",
+    borderRadius: 14,
+    border: "1px solid rgba(120, 190, 255, 0.22)",
+    background: "rgba(20, 35, 60, 0.55)",
+    padding: 14,
+  },
+  driverTitle: { fontSize: 16, fontWeight: 900, marginBottom: 10 },
+
+  ynRow: { display: "flex", gap: 10, marginBottom: 12, flexWrap: "wrap" },
+  ynBtn: {
+    padding: "12px 14px",
+    borderRadius: 12,
+    border: "1px solid rgba(255,255,255,0.18)",
+    background: "rgba(10, 14, 22, 0.35)",
+    color: "#e9eef7",
+    fontSize: 16,
+    fontWeight: 900,
+    minWidth: 120,
+    cursor: "pointer",
+  },
+  ynOnYes: { background: "rgba(20, 130, 80, 0.85)" },
+  ynOnNo: { background: "rgba(170, 30, 30, 0.75)" },
+
+  phoneRow: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" },
+  phoneLabel: { fontSize: 12, opacity: 0.8, fontWeight: 900 },
+  phoneValue: { fontSize: 18, fontWeight: 900, letterSpacing: 0.6 },
+
+  callBtn: {
+    padding: "12px 14px",
+    borderRadius: 12,
+    border: "1px solid rgba(255,255,255,0.18)",
+    background: "rgba(36, 110, 210, 0.85)",
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: 900,
+    textDecoration: "none",
+  },
+
+  smallNote: { marginTop: 10, fontSize: 12, opacity: 0.82 },
+
+  submitBtn: {
+    marginTop: 14,
+    width: "100%",
+    padding: "14px 14px",
+    borderRadius: 12,
+    border: "1px solid rgba(110, 160, 210, 0.28)",
+    background: "linear-gradient(180deg, rgba(40, 90, 150, 0.95), rgba(18, 45, 80, 0.95))",
+    color: "#e9eef7",
+    fontWeight: 900,
+    fontSize: 18,
+  },
+
+  verdictBox: {
+    marginTop: 14,
+    borderRadius: 14,
+    border: "1px solid rgba(255,255,255,0.14)",
+    background: "rgba(10, 14, 22, 0.35)",
+    padding: 14,
+  },
+  verdictTitle: { fontSize: 20, fontWeight: 900, marginBottom: 6 },
+  verdictText: { fontSize: 14, opacity: 0.9 },
+
+  verdictClear: {
+    border: "1px solid rgba(80, 255, 160, 0.22)",
+    background: "rgba(20, 130, 80, 0.18)",
+  },
+  verdictCaution: {
+    border: "1px solid rgba(255, 80, 80, 0.28)",
+    background: "rgba(170, 30, 30, 0.18)",
+  },
+  verdictError: {
+    border: "1px solid rgba(255, 210, 80, 0.28)",
+    background: "rgba(180, 120, 20, 0.18)",
   },
 };
