@@ -1,9 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Header from "../components/Header";
-import SmartLink from "./SmartLink";
-import DriverLink from "./DriverLink";
 
-const BUILD_TAG = "CONTROL-CENTER-WIRE-ISSUE-01";
+const BUILD_TAG = "CONTROL-CENTER-SAFE-01";
 
 function readAuth() {
   try {
@@ -17,7 +15,6 @@ function readAuth() {
 
 export default function ControlCenter() {
   const [auth, setAuth] = useState(null);
-  const [mode, setMode] = useState("smart"); // "smart" | "driver"
 
   useEffect(() => {
     setAuth(readAuth());
@@ -25,16 +22,12 @@ export default function ControlCenter() {
 
   const email = useMemo(() => auth?.email || "", [auth]);
 
-  // If not logged in, send to login (no blank states)
-  useEffect(() => {
-    if (!auth) return;
-  }, [auth]);
-
   if (!auth) {
     return (
       <div style={styles.page}>
         <Header />
         <div style={styles.bg} aria-hidden="true" />
+
         <div style={styles.innerCenter}>
           <div style={styles.card}>
             <div style={styles.title}>Control Center</div>
@@ -82,39 +75,34 @@ export default function ControlCenter() {
         </div>
 
         <div style={styles.panel}>
-          <div style={styles.panelTop}>
-            <div style={styles.panelTitle}>Issue Verify Link</div>
-
-            <div style={styles.switchRow}>
-              <button
-                style={{
-                  ...styles.switchBtn,
-                  ...(mode === "smart" ? styles.switchBtnActive : null),
-                }}
-                onClick={() => setMode("smart")}
-                title="Primary issuer UI"
-              >
-                SmartLink
-              </button>
-
-              <button
-                style={{
-                  ...styles.switchBtn,
-                  ...(mode === "driver" ? styles.switchBtnActive : null),
-                }}
-                onClick={() => setMode("driver")}
-                title="Backup issuer UI"
-              >
-                DriverLink
-              </button>
-            </div>
-          </div>
-
+          <div style={styles.panelTitle}>Issue Verify Link</div>
           <div style={styles.rule} />
 
-          {/* Existing issuer UIs embedded here */}
-          <div style={styles.embedWrap}>
-            {mode === "smart" ? <SmartLink /> : <DriverLink />}
+          <div style={styles.body}>
+            <div style={styles.bodyText}>
+              Your issuer screens already exist in the project. Use the buttons below to open them.
+              Next step is embedding the correct one back into this panel once we confirm the working issuer file.
+            </div>
+
+            <div style={styles.btnRow}>
+              <button
+                style={styles.btnPrimary}
+                onClick={() => (window.location.href = `${window.location.origin}/#/smartlink`)}
+              >
+                Open SmartLink Issuer
+              </button>
+
+              <button
+                style={styles.btnOutline}
+                onClick={() => (window.location.href = `${window.location.origin}/#/driverlink`)}
+              >
+                Open DriverLink Issuer
+              </button>
+            </div>
+
+            <div style={styles.smallNote}>
+              If either route 404s, we’ll add the route in <span style={styles.mono}>src/App.jsx</span> next.
+            </div>
           </div>
 
           <div style={styles.rule} />
@@ -127,6 +115,7 @@ export default function ControlCenter() {
 
 const styles = {
   page: { minHeight: "100vh", background: "#0f1722", color: "#e6edf5", position: "relative" },
+
   bg: {
     position: "fixed",
     inset: 0,
@@ -164,6 +153,7 @@ const styles = {
 
   title: { fontSize: 38, fontWeight: 950, letterSpacing: -0.4, lineHeight: 1.1 },
   sub: { marginTop: 6, opacity: 0.78, fontSize: 14, lineHeight: 1.45 },
+
   mono: {
     fontWeight: 950,
     letterSpacing: 0.2,
@@ -191,49 +181,22 @@ const styles = {
     padding: 18,
   },
 
-  panelTop: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-    flexWrap: "wrap",
-  },
-
   panelTitle: { fontSize: 16, fontWeight: 950, letterSpacing: 0.1 },
-
-  switchRow: { display: "flex", gap: 8, flexWrap: "wrap" },
-
-  switchBtn: {
-    padding: "10px 12px",
-    borderRadius: 10,
-    cursor: "pointer",
-    fontSize: 13,
-    fontWeight: 950,
-    letterSpacing: 0.2,
-    color: "rgba(230,237,245,0.92)",
-    background: "rgba(0,0,0,0.18)",
-    border: "1px solid rgba(140,190,255,0.16)",
-  },
-
-  switchBtnActive: {
-    border: "1px solid rgba(140,190,255,0.42)",
-    background: "linear-gradient(180deg, rgba(40,110,200,0.22), rgba(0,0,0,0.22))",
-  },
 
   rule: { height: 1, background: "rgba(140,190,255,0.12)", margin: "14px 0" },
 
-  embedWrap: {
-    // Keeps embedded pages from hugging the edges
-    padding: "8px 2px",
-  },
+  body: { padding: "6px 2px 2px" },
+  bodyText: { fontSize: 14, opacity: 0.82, lineHeight: 1.65, maxWidth: 980 },
+
+  btnRow: { marginTop: 14, display: "flex", gap: 12, flexWrap: "wrap" },
+
+  smallNote: { marginTop: 12, fontSize: 13, opacity: 0.62 },
 
   btnPrimary: {
-    width: "100%",
-    marginTop: 14,
-    padding: "16px 16px",
+    padding: "14px 16px",
     borderRadius: 10,
     cursor: "pointer",
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 950,
     letterSpacing: 0.2,
     color: "#fff",
@@ -243,7 +206,7 @@ const styles = {
   },
 
   btnOutline: {
-    padding: "12px 14px",
+    padding: "14px 16px",
     borderRadius: 10,
     cursor: "pointer",
     fontSize: 14,
