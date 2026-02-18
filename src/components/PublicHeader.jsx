@@ -1,19 +1,45 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+
+function readAuthOk() {
+  try {
+    const raw = localStorage.getItem("adbs_auth");
+    const j = raw ? JSON.parse(raw) : null;
+    return !!j?.ok;
+  } catch {
+    return false;
+  }
+}
 
 export default function PublicHeader() {
   const nav = useNavigate();
   const loc = useLocation();
+  const [authed, setAuthed] = useState(false);
 
-  const items = [
-    { label: "Home", path: "/" },
-    { label: "How It Works", path: "/how-it-works" },
-    { label: "Log In", path: "/login" },
-    { label: "Request Access", path: "/join" },
-  ];
+  useEffect(() => {
+    setAuthed(readAuthOk());
+
+    // Keep header in sync if login/logout happens in another tab.
+    function onStorage(e) {
+      if (e.key === "adbs_auth") setAuthed(readAuthOk());
+    }
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
+  const items = authed
+    ? [
+        { label: "Control Center", path: "/dashboard" },
+        { label: "How It Works", path: "/how-it-works" },
+      ]
+    : [
+        { label: "Home", path: "/" },
+        { label: "How It Works", path: "/how-it-works" },
+        { label: "Log In", path: "/login" },
+        { label: "Request Access", path: "/join" },
+      ];
 
   function isActive(path) {
-    // Treat "/" as active only on exact root
     if (path === "/") return loc.pathname === "/";
     return loc.pathname.startsWith(path);
   }
@@ -47,6 +73,19 @@ export default function PublicHeader() {
               {it.label}
             </button>
           ))}
+
+          {authed ? (
+            <button
+              style={{ ...styles.navBtn, ...styles.navBtnDanger }}
+              onClick={() => {
+                localStorage.removeItem("adbs_auth");
+                setAuthed(false);
+                nav("/");
+              }}
+            >
+              Log Out
+            </button>
+          ) : null}
         </nav>
       </div>
     </header>
@@ -84,7 +123,7 @@ const styles = {
     padding: 0,
     textAlign: "left",
   },
-  logo: { width: 220, height: "auto" }, // keep your size rule
+  logo: { width: 220, height: "auto" },
   brandText: { lineHeight: 1.1 },
   brandTop: { fontWeight: 950, letterSpacing: 0.2, opacity: 0.95 },
   brandSub: { marginTop: 4, opacity: 0.72, fontWeight: 800, fontSize: 13 },
@@ -104,5 +143,9 @@ const styles = {
   navBtnActive: {
     border: "1px solid rgba(140,190,255,0.42)",
     background: "linear-gradient(180deg, rgba(40,110,200,0.22), rgba(0,0,0,0.22))",
+  },
+  navBtnDanger: {
+    border: "1px solid rgba(255,120,120,0.30)",
+    background: "rgba(120,0,0,0.16)",
   },
 };
