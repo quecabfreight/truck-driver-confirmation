@@ -17,11 +17,7 @@ export default function Login() {
   const [error, setError] = useState("");
 
   const canSubmit = useMemo(() => {
-    return (
-      normEmail(email).length > 3 &&
-      normCode(accessCode).length > 2 &&
-      !loading
-    );
+    return normEmail(email).length > 3 && normCode(accessCode).length > 2 && !loading;
   }, [email, accessCode, loading]);
 
   async function onSubmit(e) {
@@ -30,10 +26,7 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const payload = {
-        email: normEmail(email),
-        access_code: normCode(accessCode),
-      };
+      const payload = { email: normEmail(email), access_code: normCode(accessCode) };
 
       const r = await fetch("/api/login", {
         method: "POST",
@@ -52,12 +45,7 @@ export default function Login() {
       if (remember) {
         localStorage.setItem(
           "adbs_auth",
-          JSON.stringify({
-            ok: true,
-            email: payload.email,
-            role: j?.role || "authorized",
-            ts: Date.now(),
-          })
+          JSON.stringify({ ok: true, email: payload.email, role: j?.role || "authorized", ts: Date.now() })
         );
       }
 
@@ -91,9 +79,7 @@ export default function Login() {
               placeholder="name@company.com"
             />
 
-            <label style={{ ...styles.label, marginTop: 14 }}>
-              Access Code
-            </label>
+            <label style={{ ...styles.label, marginTop: 14 }}>Access Code</label>
             <input
               style={styles.input}
               type="text"
@@ -104,12 +90,24 @@ export default function Login() {
             />
 
             <div style={styles.checkboxRow}>
-              <input
-                type="checkbox"
-                checked={remember}
-                onChange={(e) => setRemember(e.target.checked)}
-              />
+              <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
               <span style={{ marginLeft: 10 }}>Remember this device</span>
+            </div>
+
+            <div style={styles.helpRow}>
+              <a
+                style={styles.helpLink}
+                href="mailto:quecabadbs@gmail.com?subject=QueCab%20AdbS%20Help%20-%20Forgot%20Access%20Code&body=Hi%20QueCab%20AdbS%20Support,%0D%0A%0D%0AI%20need%20help%20recovering%20my%20Access%20Code.%0D%0A%0D%0ABusiness%20Email:%20%0D%0ACompany/Legal%20Name:%20%0D%0ARole%20(Broker/Shipper):%20%0D%0A%0D%0AThanks."
+              >
+                Forgot Access Code?
+              </a>
+
+              <a
+                style={styles.helpLink}
+                href="mailto:quecabadbs@gmail.com?subject=QueCab%20AdbS%20Help%20-%20Forgot%20Business%20Email&body=Hi%20QueCab%20AdbS%20Support,%0D%0A%0D%0AI%20need%20help%20finding%20the%20Business%20Email%20used%20for%20my%20account.%0D%0A%0D%0ACompany/Legal%20Name:%20%0D%0AContact%20Name:%20%0D%0APhone:%20%0D%0A%0D%0AThanks."
+              >
+                Forgot Business Email?
+              </a>
             </div>
 
             {error && <div style={styles.error}>{error}</div>}
@@ -118,9 +116,7 @@ export default function Login() {
               {loading ? "Signing in…" : "Log In"}
             </button>
 
-            <div style={styles.note}>
-              After login you will be taken directly to the Control Center.
-            </div>
+            <div style={styles.note}>After login you will be taken directly to the Control Center.</div>
           </form>
         </div>
       </div>
@@ -129,13 +125,7 @@ export default function Login() {
 }
 
 const styles = {
-  page: {
-    minHeight: "100vh",
-    background: "#0f1722",
-    color: "#e6edf5",
-    position: "relative",
-  },
-
+  page: { minHeight: "100vh", background: "#0f1722", color: "#e6edf5", position: "relative" },
   bg: {
     position: "fixed",
     inset: 0,
@@ -170,17 +160,8 @@ const styles = {
     padding: 24,
   },
 
-  title: {
-    fontSize: 34,
-    fontWeight: 950,
-    marginBottom: 8,
-  },
-
-  subtitle: {
-    opacity: 0.78,
-    lineHeight: 1.5,
-    marginBottom: 20,
-  },
+  title: { fontSize: 34, fontWeight: 950, marginBottom: 8 },
+  subtitle: { opacity: 0.78, lineHeight: 1.5, marginBottom: 20 },
 
   label: {
     display: "block",
@@ -204,12 +185,21 @@ const styles = {
     fontWeight: 700,
   },
 
-  checkboxRow: {
-    marginTop: 16,
+  checkboxRow: { marginTop: 16, display: "flex", alignItems: "center", opacity: 0.9, fontWeight: 700 },
+
+  helpRow: {
+    marginTop: 12,
     display: "flex",
-    alignItems: "center",
-    opacity: 0.9,
-    fontWeight: 700,
+    justifyContent: "space-between",
+    gap: 12,
+    flexWrap: "wrap",
+  },
+  helpLink: {
+    color: "rgba(170,210,255,0.92)",
+    fontWeight: 850,
+    textDecoration: "none",
+    borderBottom: "1px dotted rgba(170,210,255,0.35)",
+    paddingBottom: 2,
   },
 
   error: {
@@ -232,18 +222,12 @@ const styles = {
     fontWeight: 950,
     letterSpacing: 0.2,
     color: "#fff",
-    background:
-      "linear-gradient(180deg, rgba(40,110,200,0.85), rgba(20,70,140,0.75))",
+    background: "linear-gradient(180deg, rgba(40,110,200,0.85), rgba(20,70,140,0.75))",
     border: "1px solid rgba(140,190,255,0.42)",
     boxShadow: "0 10px 22px rgba(0,0,0,0.28)",
   },
 
-  note: {
-    marginTop: 12,
-    fontSize: 13,
-    opacity: 0.6,
-    textAlign: "center",
-  },
+  note: { marginTop: 12, fontSize: 13, opacity: 0.6, textAlign: "center" },
 };
 
 function steelNoise() {
