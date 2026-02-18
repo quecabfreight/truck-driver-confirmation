@@ -1,59 +1,17 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import PublicHeader from "../components/PublicHeader";
 
 export default function PublicHome() {
   const nav = useNavigate();
-  const [hasAuth, setHasAuth] = useState(false);
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem("adbs_auth");
-      const j = raw ? JSON.parse(raw) : null;
-      setHasAuth(!!j?.ok);
-    } catch {
-      setHasAuth(false);
-    }
-  }, []);
 
   return (
     <div style={styles.page}>
       <PublicHeader />
       <div style={styles.bg} aria-hidden="true" />
 
-      {/* Logged-in banner (NO forced redirect) */}
-      {hasAuth ? (
-        <div style={styles.bannerWrap}>
-          <div style={styles.banner}>
-            <div style={styles.bannerLeft}>
-              <div style={styles.bannerTitle}>You’re already logged in.</div>
-              <div style={styles.bannerSub}>
-                Continue to the Control Center or log out on this device.
-              </div>
-            </div>
-            <div style={styles.bannerBtns}>
-              <button style={styles.btnPrimarySmall} onClick={() => nav("/dashboard")}>
-                Continue
-              </button>
-              <button
-                style={styles.btnOutlineSmall}
-                onClick={() => {
-                  localStorage.removeItem("adbs_auth");
-                  setHasAuth(false);
-                }}
-              >
-                Log out
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      {/* HERO */}
       <section style={styles.hero}>
         <div style={styles.inner}>
-          <div style={styles.kicker}>Anti-Double Brokering System</div>
-
           <h1 style={styles.h1}>Stop double brokering before the truck gets loaded.</h1>
 
           <p style={styles.sub}>
@@ -69,11 +27,12 @@ export default function PublicHome() {
             </button>
           </div>
 
-          <div style={styles.micro}>Verification happens before freight moves.</div>
+          <div style={styles.micro}>
+            Built for brokers & shippers who need a dock-level control point before freight moves.
+          </div>
         </div>
       </section>
 
-      {/* PROOF */}
       <section style={styles.proof}>
         <div style={styles.innerWide}>
           <div style={styles.sectionTitle}>Dock Verification Outcome</div>
@@ -114,7 +73,6 @@ export default function PublicHome() {
         </div>
       </section>
 
-      {/* FOOTER */}
       <footer style={styles.footer}>
         <div style={styles.innerWide}>
           <div style={{ opacity: 0.55, fontSize: 13 }}>
@@ -151,77 +109,18 @@ const styles = {
     ].join(", "),
   },
 
-  bannerWrap: { position: "relative", zIndex: 2, padding: "14px 20px 0" },
-  banner: {
-    maxWidth: 1200,
-    margin: "0 auto",
-    border: "1px solid rgba(140,190,255,0.18)",
-    background: "rgba(0,0,0,0.22)",
-    boxShadow: "0 16px 34px rgba(0,0,0,0.30)",
-    borderRadius: 14,
-    padding: 14,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-    flexWrap: "wrap",
-  },
-  bannerLeft: { minWidth: 260 },
-  bannerTitle: { fontWeight: 950, letterSpacing: 0.2 },
-  bannerSub: { marginTop: 4, opacity: 0.72, fontSize: 13 },
-  bannerBtns: { display: "flex", gap: 10, flexWrap: "wrap" },
-
-  btnPrimarySmall: {
-    padding: "10px 12px",
-    fontSize: 14,
-    fontWeight: 950,
-    borderRadius: 10,
-    cursor: "pointer",
-    letterSpacing: 0.2,
-    color: "#fff",
-    background: "linear-gradient(180deg, rgba(40,110,200,0.85), rgba(20,70,140,0.75))",
-    border: "1px solid rgba(140,190,255,0.42)",
-    boxShadow: "0 10px 22px rgba(0,0,0,0.28)",
-  },
-  btnOutlineSmall: {
-    padding: "10px 12px",
-    fontSize: 14,
-    fontWeight: 950,
-    borderRadius: 10,
-    cursor: "pointer",
-    letterSpacing: 0.2,
-    color: "#e6edf5",
-    background: "rgba(0,0,0,0.18)",
-    border: "1px solid rgba(140,190,255,0.28)",
-  },
-
-  hero: { position: "relative", zIndex: 1, padding: "70px 0 40px" },
+  hero: { position: "relative", zIndex: 1, padding: "56px 0 34px" },
   inner: {
     maxWidth: 980,
     margin: "0 auto",
-    padding: "0 20px",
+    padding: "22px 20px",
     border: "1px solid rgba(140,190,255,0.14)",
     background: "rgba(0,0,0,0.22)",
     boxShadow: "0 16px 34px rgba(0,0,0,0.30)",
     borderRadius: 14,
-    paddingTop: 26,
-    paddingBottom: 26,
   },
   innerWide: { position: "relative", zIndex: 1, maxWidth: 1200, margin: "0 auto", padding: "0 20px" },
 
-  kicker: {
-    display: "inline-block",
-    padding: "8px 10px",
-    borderRadius: 10,
-    border: "1px solid rgba(140,190,255,0.20)",
-    background: "rgba(0,0,0,0.22)",
-    fontSize: 13,
-    fontWeight: 950,
-    letterSpacing: 0.7,
-    textTransform: "uppercase",
-    opacity: 0.88,
-    marginBottom: 12,
-  },
   h1: { fontSize: 50, fontWeight: 950, letterSpacing: -0.6, margin: "0 0 12px", lineHeight: 1.04 },
   sub: { fontSize: 20, opacity: 0.82, margin: "0 0 18px", lineHeight: 1.5, maxWidth: 820 },
   ctaRow: { display: "flex", gap: 12, flexWrap: "wrap" },
@@ -250,7 +149,7 @@ const styles = {
   },
   micro: { marginTop: 12, fontSize: 13, opacity: 0.62 },
 
-  proof: { position: "relative", zIndex: 1, padding: "26px 0 52px" },
+  proof: { position: "relative", zIndex: 1, padding: "22px 0 52px" },
   sectionTitle: {
     textAlign: "center",
     fontWeight: 950,
