@@ -15,8 +15,6 @@ import Home from "./pages/Home";
 import SmartLink from "./pages/SmartLink";
 import DriverLink from "./pages/DriverLink";
 
-import PublicScaffold from "./components/PublicScaffold";
-
 export default function App() {
   return (
     <HashRouter>
@@ -26,14 +24,7 @@ export default function App() {
         <Route path="/how-it-works" element={<HowItWorks />} />
         <Route path="/about" element={<About />} />
         <Route path="/login" element={<Login />} />
-        <Route
-          path="/join"
-          element={
-            <PublicScaffold>
-              <Join />
-            </PublicScaffold>
-          }
-        />
+        <Route path="/join" element={<Join />} />
 
         {/* LEGACY SAFETY NET */}
         <Route path="/home" element={<Home />} />
