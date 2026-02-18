@@ -17,7 +17,11 @@ export default function Login() {
   const [error, setError] = useState("");
 
   const canSubmit = useMemo(() => {
-    return normEmail(email).length > 3 && normCode(accessCode).length > 2 && !loading;
+    return (
+      normEmail(email).length > 3 &&
+      normCode(accessCode).length > 2 &&
+      !loading
+    );
   }, [email, accessCode, loading]);
 
   async function onSubmit(e) {
@@ -55,11 +59,8 @@ export default function Login() {
             ts: Date.now(),
           })
         );
-      } else {
-        localStorage.removeItem("adbs_auth");
       }
 
-      // ✅ Guaranteed redirect to Control Center
       window.location.replace(`${window.location.origin}/#/dashboard`);
     } catch (err) {
       setError(err?.message || "Login failed");
@@ -72,7 +73,7 @@ export default function Login() {
       <PublicHeader />
       <div style={styles.bg} aria-hidden="true" />
 
-      <div style={styles.inner}>
+      <div style={styles.centerWrap}>
         <div style={styles.card}>
           <div style={styles.title}>Log In</div>
           <div style={styles.subtitle}>
@@ -90,7 +91,9 @@ export default function Login() {
               placeholder="name@company.com"
             />
 
-            <label style={{ ...styles.label, marginTop: 12 }}>Access Code</label>
+            <label style={{ ...styles.label, marginTop: 14 }}>
+              Access Code
+            </label>
             <input
               style={styles.input}
               type="text"
@@ -100,24 +103,24 @@ export default function Login() {
               placeholder="QC-XXXXXX"
             />
 
-            <div style={styles.row}>
-              <label style={styles.checkboxRow}>
-                <input
-                  type="checkbox"
-                  checked={remember}
-                  onChange={(e) => setRemember(e.target.checked)}
-                />
-                <span style={{ marginLeft: 10 }}>Remember this device</span>
-              </label>
+            <div style={styles.checkboxRow}>
+              <input
+                type="checkbox"
+                checked={remember}
+                onChange={(e) => setRemember(e.target.checked)}
+              />
+              <span style={{ marginLeft: 10 }}>Remember this device</span>
             </div>
 
-            {error ? <div style={styles.error}>{error}</div> : null}
+            {error && <div style={styles.error}>{error}</div>}
 
-            <button style={styles.btn} disabled={!canSubmit} type="submit">
+            <button style={styles.btnPrimary} disabled={!canSubmit}>
               {loading ? "Signing in…" : "Log In"}
             </button>
 
-            <div style={styles.note}>After login you will be taken directly to the Control Center.</div>
+            <div style={styles.note}>
+              After login you will be taken directly to the Control Center.
+            </div>
           </form>
         </div>
       </div>
@@ -126,7 +129,13 @@ export default function Login() {
 }
 
 const styles = {
-  page: { minHeight: "100vh", background: "#0f1722", color: "#e6edf5", position: "relative" },
+  page: {
+    minHeight: "100vh",
+    background: "#0f1722",
+    color: "#e6edf5",
+    position: "relative",
+  },
+
   bg: {
     position: "fixed",
     inset: 0,
@@ -140,20 +149,48 @@ const styles = {
       steelNoise(),
     ].join(", "),
   },
-  inner: { position: "relative", zIndex: 1, maxWidth: 1200, margin: "0 auto", padding: "46px 20px 70px" },
+
+  centerWrap: {
+    position: "relative",
+    zIndex: 1,
+    minHeight: "calc(100vh - 90px)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "40px 20px",
+  },
 
   card: {
+    width: "100%",
     maxWidth: 620,
     border: "1px solid rgba(140,190,255,0.14)",
-    background: "rgba(0,0,0,0.22)",
+    background: "rgba(0,0,0,0.24)",
     boxShadow: "0 16px 34px rgba(0,0,0,0.30)",
     borderRadius: 14,
-    padding: 22,
+    padding: 24,
   },
-  title: { fontSize: 34, fontWeight: 950, letterSpacing: -0.3, marginBottom: 6 },
-  subtitle: { opacity: 0.78, lineHeight: 1.5, marginBottom: 18 },
 
-  label: { display: "block", fontSize: 13, fontWeight: 900, opacity: 0.78, letterSpacing: 0.6, textTransform: "uppercase" },
+  title: {
+    fontSize: 34,
+    fontWeight: 950,
+    marginBottom: 8,
+  },
+
+  subtitle: {
+    opacity: 0.78,
+    lineHeight: 1.5,
+    marginBottom: 20,
+  },
+
+  label: {
+    display: "block",
+    fontSize: 13,
+    fontWeight: 900,
+    opacity: 0.75,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+  },
+
   input: {
     width: "100%",
     marginTop: 8,
@@ -164,24 +201,30 @@ const styles = {
     color: "#e6edf5",
     outline: "none",
     fontSize: 16,
-    fontWeight: 750,
+    fontWeight: 700,
   },
-  row: { marginTop: 14, display: "flex", gap: 10, flexWrap: "wrap" },
-  checkboxRow: { display: "flex", alignItems: "center", opacity: 0.9, fontWeight: 750 },
+
+  checkboxRow: {
+    marginTop: 16,
+    display: "flex",
+    alignItems: "center",
+    opacity: 0.9,
+    fontWeight: 700,
+  },
 
   error: {
-    marginTop: 12,
+    marginTop: 14,
     padding: "10px 12px",
     borderRadius: 10,
     border: "1px solid rgba(255,120,120,0.35)",
     background: "rgba(120,0,0,0.16)",
     color: "rgba(255,200,200,0.95)",
-    fontWeight: 850,
+    fontWeight: 800,
   },
 
-  btn: {
+  btnPrimary: {
     width: "100%",
-    marginTop: 14,
+    marginTop: 18,
     padding: "16px 16px",
     borderRadius: 10,
     cursor: "pointer",
@@ -189,11 +232,18 @@ const styles = {
     fontWeight: 950,
     letterSpacing: 0.2,
     color: "#fff",
-    background: "linear-gradient(180deg, rgba(40,110,200,0.85), rgba(20,70,140,0.75))",
+    background:
+      "linear-gradient(180deg, rgba(40,110,200,0.85), rgba(20,70,140,0.75))",
     border: "1px solid rgba(140,190,255,0.42)",
     boxShadow: "0 10px 22px rgba(0,0,0,0.28)",
   },
-  note: { marginTop: 10, fontSize: 13, opacity: 0.62 },
+
+  note: {
+    marginTop: 12,
+    fontSize: 13,
+    opacity: 0.6,
+    textAlign: "center",
+  },
 };
 
 function steelNoise() {
