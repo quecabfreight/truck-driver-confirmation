@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
-import PublicHeader from "../components/PublicHeader";
+import Header from "../components/Header";
+import SmartLink from "./SmartLink";
+import DriverLink from "./DriverLink";
 
-const BUILD_TAG = "CONTROL-CENTER-LIVE-02";
+const BUILD_TAG = "CONTROL-CENTER-WIRE-ISSUE-01";
 
 function readAuth() {
   try {
@@ -15,6 +17,7 @@ function readAuth() {
 
 export default function ControlCenter() {
   const [auth, setAuth] = useState(null);
+  const [mode, setMode] = useState("smart"); // "smart" | "driver"
 
   useEffect(() => {
     setAuth(readAuth());
@@ -22,18 +25,20 @@ export default function ControlCenter() {
 
   const email = useMemo(() => auth?.email || "", [auth]);
 
+  // If not logged in, send to login (no blank states)
+  useEffect(() => {
+    if (!auth) return;
+  }, [auth]);
+
   if (!auth) {
     return (
       <div style={styles.page}>
-        <PublicHeader />
+        <Header />
         <div style={styles.bg} aria-hidden="true" />
-
         <div style={styles.innerCenter}>
           <div style={styles.card}>
             <div style={styles.title}>Control Center</div>
-            <div style={styles.sub}>
-              You’re not logged in on this device.
-            </div>
+            <div style={styles.sub}>You’re not logged in on this device.</div>
 
             <button
               style={styles.btnPrimary}
@@ -51,7 +56,7 @@ export default function ControlCenter() {
 
   return (
     <div style={styles.page}>
-      <PublicHeader />
+      <Header />
       <div style={styles.bg} aria-hidden="true" />
 
       <div style={styles.inner}>
@@ -77,12 +82,39 @@ export default function ControlCenter() {
         </div>
 
         <div style={styles.panel}>
-          <div style={styles.panelTitle}>Issue Verify Link</div>
+          <div style={styles.panelTop}>
+            <div style={styles.panelTitle}>Issue Verify Link</div>
+
+            <div style={styles.switchRow}>
+              <button
+                style={{
+                  ...styles.switchBtn,
+                  ...(mode === "smart" ? styles.switchBtnActive : null),
+                }}
+                onClick={() => setMode("smart")}
+                title="Primary issuer UI"
+              >
+                SmartLink
+              </button>
+
+              <button
+                style={{
+                  ...styles.switchBtn,
+                  ...(mode === "driver" ? styles.switchBtnActive : null),
+                }}
+                onClick={() => setMode("driver")}
+                title="Backup issuer UI"
+              >
+                DriverLink
+              </button>
+            </div>
+          </div>
+
           <div style={styles.rule} />
 
-          <div style={styles.placeholder}>
-            This is the Control Center landing screen. Next we wire your existing “Issue Verify Link”
-            workflow back into this panel (without changing the established layout).
+          {/* Existing issuer UIs embedded here */}
+          <div style={styles.embedWrap}>
+            {mode === "smart" ? <SmartLink /> : <DriverLink />}
           </div>
 
           <div style={styles.rule} />
@@ -108,6 +140,7 @@ const styles = {
       steelNoise(),
     ].join(", "),
   },
+
   inner: { position: "relative", zIndex: 1, maxWidth: 1200, margin: "0 auto", padding: "46px 20px 70px" },
 
   innerCenter: {
@@ -157,10 +190,42 @@ const styles = {
     borderRadius: 14,
     padding: 18,
   },
+
+  panelTop: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+    flexWrap: "wrap",
+  },
+
   panelTitle: { fontSize: 16, fontWeight: 950, letterSpacing: 0.1 },
+
+  switchRow: { display: "flex", gap: 8, flexWrap: "wrap" },
+
+  switchBtn: {
+    padding: "10px 12px",
+    borderRadius: 10,
+    cursor: "pointer",
+    fontSize: 13,
+    fontWeight: 950,
+    letterSpacing: 0.2,
+    color: "rgba(230,237,245,0.92)",
+    background: "rgba(0,0,0,0.18)",
+    border: "1px solid rgba(140,190,255,0.16)",
+  },
+
+  switchBtnActive: {
+    border: "1px solid rgba(140,190,255,0.42)",
+    background: "linear-gradient(180deg, rgba(40,110,200,0.22), rgba(0,0,0,0.22))",
+  },
+
   rule: { height: 1, background: "rgba(140,190,255,0.12)", margin: "14px 0" },
 
-  placeholder: { fontSize: 14, opacity: 0.82, lineHeight: 1.65, maxWidth: 980 },
+  embedWrap: {
+    // Keeps embedded pages from hugging the edges
+    padding: "8px 2px",
+  },
 
   btnPrimary: {
     width: "100%",
@@ -200,7 +265,7 @@ function steelNoise() {
       <feColorMatrix type="matrix" values="
         0 0 0 0 0.35
         0 0 0 0 0.50
-        0 0 0 0.70
+        0 0 0 0 0.70
         0 0 0 0.12 0"/>
     </filter>
     <rect width="220" height="220" filter="url(#n)" opacity="0.45"/>
