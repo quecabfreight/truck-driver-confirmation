@@ -1,3 +1,4 @@
+
 import React from "react";
 import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 
@@ -9,33 +10,36 @@ import HowItWorks from "./pages/HowItWorks";
 
 import Admin from "./pages/Admin";
 import Verify from "./pages/Verify";
-
-// ✅ Your repo has ControlCenter.jsx (not Dashboard.jsx)
 import ControlCenter from "./pages/ControlCenter";
+
+import PublicScaffold from "./components/PublicScaffold";
 
 export default function App() {
   return (
     <HashRouter>
       <Routes>
-        {/* =========================
-            PUBLIC LAYER
-        ========================== */}
+        {/* PUBLIC */}
         <Route path="/" element={<PublicHome />} />
         <Route path="/how-it-works" element={<HowItWorks />} />
         <Route path="/about" element={<About />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/join" element={<Join />} />
 
-        {/* =========================
-            PLATFORM LAYER (SECURE)
-        ========================== */}
+        {/* Wrap Join so it ALWAYS has header/tabs */}
+        <Route
+          path="/join"
+          element={
+            <PublicScaffold>
+              <Join />
+            </PublicScaffold>
+          }
+        />
+
+        {/* PLATFORM */}
         <Route path="/dashboard" element={<ControlCenter />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/verify/:token" element={<Verify />} />
 
-        {/* =========================
-            FALLBACK
-        ========================== */}
+        {/* FALLBACK */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </HashRouter>
