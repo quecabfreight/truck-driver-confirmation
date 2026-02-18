@@ -4,69 +4,52 @@ import { useLocation, useNavigate } from "react-router-dom";
 export default function PublicHeader() {
   const nav = useNavigate();
   const loc = useLocation();
-  const active = (path) => loc.pathname === path;
+
+  const items = [
+    { label: "Home", path: "/" },
+    { label: "How It Works", path: "/how-it-works" },
+    { label: "Log In", path: "/login" },
+    { label: "Request Access", path: "/join" },
+  ];
+
+  function isActive(path) {
+    // Treat "/" as active only on exact root
+    if (path === "/") return loc.pathname === "/";
+    return loc.pathname.startsWith(path);
+  }
 
   return (
-    <div style={styles.wrap}>
-      {/* steel texture + light sweep */}
-      <div style={styles.bg} aria-hidden="true" />
+    <header style={styles.wrap}>
       <div style={styles.inner}>
-        <div style={styles.brand} onClick={() => nav("/")}>
+        <button style={styles.brandBtn} onClick={() => nav("/")}>
           <img
             src="/qc-logo.png"
             alt="QueCab AdbS"
             style={styles.logo}
-            onError={(e) => {
-              e.currentTarget.style.display = "none";
-            }}
+            draggable={false}
           />
-          <div style={{ lineHeight: 1.05 }}>
-            <div style={styles.title}>QueCab AdbS</div>
-            <div style={styles.sub}>Anti-Double Brokering System</div>
-            <div style={styles.sub2}>Verification happens before freight moves.</div>
+          <div style={styles.brandText}>
+            <div style={styles.brandTop}>Anti-Double Brokering System</div>
+            <div style={styles.brandSub}>Verification happens before freight moves.</div>
           </div>
-        </div>
+        </button>
 
-        <div style={styles.nav}>
-          <NavBtn text="Home" onClick={() => nav("/")} active={active("/")} />
-          <NavBtn
-            text="How It Works"
-            onClick={() => nav("/how-it-works")}
-            active={active("/how-it-works")}
-          />
-          <NavBtn text="About" onClick={() => nav("/about")} active={active("/about")} />
-          <button onClick={() => nav("/login")} style={styles.btnOutline}>
-            Log In
-          </button>
-          <button onClick={() => nav("/join")} style={styles.btnPrimary}>
-            Request Access
-          </button>
-        </div>
+        <nav style={styles.nav}>
+          {items.map((it) => (
+            <button
+              key={it.path}
+              style={{
+                ...styles.navBtn,
+                ...(isActive(it.path) ? styles.navBtnActive : null),
+              }}
+              onClick={() => nav(it.path)}
+            >
+              {it.label}
+            </button>
+          ))}
+        </nav>
       </div>
-    </div>
-  );
-}
-
-function NavBtn({ text, onClick, active }) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        padding: "12px 12px",
-        fontSize: 15,
-        fontWeight: 900,
-        borderRadius: 10, // less “pill”
-        cursor: "pointer",
-        letterSpacing: 0.2,
-        background: active ? "rgba(140,190,255,0.10)" : "rgba(0,0,0,0.18)",
-        border: active
-          ? "1px solid rgba(140,190,255,0.38)"
-          : "1px solid rgba(120,160,210,0.20)",
-        color: "rgba(230,237,245,0.92)",
-      }}
-    >
-      {text}
-    </button>
+    </header>
   );
 }
 
@@ -75,84 +58,51 @@ const styles = {
     position: "sticky",
     top: 0,
     zIndex: 50,
-    borderBottom: "1px solid rgba(140,190,255,0.16)",
-    background: "rgba(10,14,22,0.76)",
+    background: "rgba(9, 13, 20, 0.72)",
     backdropFilter: "blur(10px)",
-  },
-  bg: {
-    position: "absolute",
-    inset: 0,
-    pointerEvents: "none",
-    opacity: 0.55,
-    background: [
-      "radial-gradient(900px 260px at 20% 0%, rgba(120,180,255,0.20), rgba(0,0,0,0))",
-      "radial-gradient(700px 220px at 80% 0%, rgba(255,255,255,0.07), rgba(0,0,0,0))",
-      steelNoise(),
-    ].join(", "),
+    borderBottom: "1px solid rgba(140,190,255,0.12)",
   },
   inner: {
-    position: "relative",
     maxWidth: 1200,
     margin: "0 auto",
-    padding: "16px 20px",
+    padding: "14px 18px",
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: 16,
+    gap: 14,
     flexWrap: "wrap",
   },
-  brand: {
+
+  brandBtn: {
     display: "flex",
     alignItems: "center",
     gap: 12,
+    border: "none",
+    background: "transparent",
+    color: "inherit",
     cursor: "pointer",
-    userSelect: "none",
+    padding: 0,
+    textAlign: "left",
   },
-  logo: { width: 60, height: 60, objectFit: "contain" },
-  title: { fontWeight: 950, letterSpacing: 0.3, fontSize: 16 },
-  sub: { opacity: 0.74, fontSize: 13, marginTop: 2 },
-  sub2: { opacity: 0.58, fontSize: 12, marginTop: 3 },
-  nav: { display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" },
+  logo: { width: 220, height: "auto" }, // keep your size rule
+  brandText: { lineHeight: 1.1 },
+  brandTop: { fontWeight: 950, letterSpacing: 0.2, opacity: 0.95 },
+  brandSub: { marginTop: 4, opacity: 0.72, fontWeight: 800, fontSize: 13 },
 
-  btnPrimary: {
-    padding: "12px 14px",
-    fontSize: 15,
-    fontWeight: 950,
+  nav: { display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" },
+  navBtn: {
+    padding: "10px 12px",
     borderRadius: 10,
     cursor: "pointer",
-    letterSpacing: 0.2,
-    color: "#fff",
-    background:
-      "linear-gradient(180deg, rgba(40,110,200,0.85), rgba(20,70,140,0.75))",
-    border: "1px solid rgba(140,190,255,0.42)",
-    boxShadow: "0 10px 22px rgba(0,0,0,0.28)",
-  },
-  btnOutline: {
-    padding: "12px 14px",
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: 950,
-    borderRadius: 10,
-    cursor: "pointer",
     letterSpacing: 0.2,
-    color: "#e6edf5",
+    color: "rgba(230,237,245,0.92)",
     background: "rgba(0,0,0,0.18)",
-    border: "1px solid rgba(140,190,255,0.28)",
+    border: "1px solid rgba(140,190,255,0.16)",
+  },
+  navBtnActive: {
+    border: "1px solid rgba(140,190,255,0.42)",
+    background: "linear-gradient(180deg, rgba(40,110,200,0.22), rgba(0,0,0,0.22))",
   },
 };
-
-function steelNoise() {
-  // Tiny inline SVG noise for “steel grain” (no external assets needed)
-  const svg = encodeURIComponent(`
-  <svg xmlns="http://www.w3.org/2000/svg" width="180" height="180">
-    <filter id="n">
-      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/>
-      <feColorMatrix type="matrix" values="
-        0 0 0 0 0.40
-        0 0 0 0 0.55
-        0 0 0 0 0.75
-        0 0 0 0.10 0"/>
-    </filter>
-    <rect width="180" height="180" filter="url(#n)" opacity="0.45"/>
-  </svg>`);
-  return `url("data:image/svg+xml,${svg}")`;
-}
