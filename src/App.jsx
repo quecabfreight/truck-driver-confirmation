@@ -12,6 +12,9 @@ import Verify from "./pages/Verify";
 import ControlCenter from "./pages/ControlCenter";
 import Home from "./pages/Home";
 
+import SmartLink from "./pages/SmartLink";
+import DriverLink from "./pages/DriverLink";
+
 import PublicScaffold from "./components/PublicScaffold";
 
 export default function App() {
@@ -38,6 +41,12 @@ export default function App() {
         {/* PLATFORM */}
         <Route path="/dashboard" element={<ControlCenter />} />
         <Route path="/admin" element={<Admin />} />
+
+        {/* ISSUER SCREENS (EXISTING PAGES) */}
+        <Route path="/smartlink" element={<SmartLink />} />
+        <Route path="/driverlink" element={<DriverLink />} />
+
+        {/* VERIFY */}
         <Route path="/verify/:token" element={<Verify />} />
 
         {/* FALLBACK */}
