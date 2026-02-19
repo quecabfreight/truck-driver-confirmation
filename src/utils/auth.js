@@ -1,21 +1,35 @@
 // src/utils/auth.js
-// Central auth helpers for QueCab AdbS
-// Storage-based auth (Phase 1 / Beta). Server validates at login; client stores session-ish marker.
+// QueCab AdbS auth helpers (client-side session marker for Phase 1 / Beta)
+//
+// IMPORTANT:
+// - Must be ESM exports (Vite/Rollup).
+// - Provide BOTH named exports and default export for compatibility.
 
 export const AUTH_STORAGE_KEY = "adbs_auth";
 
-/**
- * Read auth object from localStorage.
- * Expected shape:
- * { ok: true, email: string, role?: string, ts?: number }
- */
 export function readAuth() {
   try {
     const raw = localStorage.getItem(AUTH_STORAGE_KEY);
     const j = raw ? JSON.parse(raw) : null;
-    return j?.ok ? j : null;
+    return j && j.ok ? j : null;
   } catch {
     return null;
+  }
+}
+
+export function writeAuth(obj) {
+  try {
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(obj));
+  } catch {
+    // ignore
+  }
+}
+
+export function clearAuth() {
+  try {
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+  } catch {
+    // ignore
   }
 }
 
@@ -27,50 +41,38 @@ export function getAuthEmail() {
   return readAuth()?.email || "";
 }
 
-export function clearAuth() {
-  try {
-    localStorage.removeItem(AUTH_STORAGE_KEY);
-  } catch {
-    // ignore
-  }
-}
-
 /**
- * Determine whether the current session belongs to an authorized Broker/Shipper user.
- * In this Phase 1 build, successful login implies authorized Broker/Shipper access.
- * If role is present, we treat "broker", "shipper", or "authorized" as valid.
+ * SmartLink expects this named export.
+ * In Phase 1, a successful login implies broker/shipper authorization.
+ * If role exists, we accept broker/shipper/authorized.
  */
 export function isBrokerOrShipper() {
   const a = readAuth();
   if (!a) return false;
 
-  const role = String(a.role || "authorized").toLowerCase();
+  const role = String(a.role || "authorized").toLowerCase().trim();
 
-  // Accept common role strings, but default to true when role is missing
-  // because the login endpoint already gates access.
+  // If role missing, treat as authorized (server already gated it)
   if (!role) return true;
 
   return role === "broker" || role === "shipper" || role === "authorized";
 }
 
-/**
- * Optional: platform admin detection (if role is set to admin).
- * (Platform master key is handled server-side; client role is informational.)
- */
 export function isAdmin() {
   const a = readAuth();
   if (!a) return false;
-  const role = String(a.role || "").toLowerCase();
+  const role = String(a.role || "").toLowerCase().trim();
   return role === "admin" || role === "platform_admin";
 }
 
-/**
- * Convenience: write auth (used by login flows).
- */
-export function writeAuth(authObj) {
-  try {
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authObj));
-  } catch {
-    // ignore
-  }
-}
+// Default export for any older code that imports auth as a default object
+export default {
+  AUTH_STORAGE_KEY,
+  readAuth,
+  writeAuth,
+  clearAuth,
+  isLoggedIn,
+  getAuthEmail,
+  isBrokerOrShipper,
+  isAdmin,
+};
