@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Header from "../components/Header";
 
-const BUILD_TAG = "CONTROL-CENTER-SAFE-01";
+const BUILD_TAG = "CONTROL-CENTER-SMARTLINK-ONLY-01";
 
 function readAuth() {
   try {
@@ -80,8 +80,8 @@ export default function ControlCenter() {
 
           <div style={styles.body}>
             <div style={styles.bodyText}>
-              Your issuer screens already exist in the project. Use the buttons below to open them.
-              Next step is embedding the correct one back into this panel once we confirm the working issuer file.
+              Issue links from the SmartLink issuer. (We removed the duplicate issuer option to keep
+              the workflow clean.)
             </div>
 
             <div style={styles.btnRow}>
@@ -91,17 +91,10 @@ export default function ControlCenter() {
               >
                 Open SmartLink Issuer
               </button>
-
-              <button
-                style={styles.btnOutline}
-                onClick={() => (window.location.href = `${window.location.origin}/#/driverlink`)}
-              >
-                Open DriverLink Issuer
-              </button>
             </div>
 
             <div style={styles.smallNote}>
-              If either route 404s, we’ll add the route in <span style={styles.mono}>src/App.jsx</span> next.
+              Next: embed the SmartLink issuer directly into this panel (so it feels like one screen).
             </div>
           </div>
 
@@ -206,7 +199,7 @@ const styles = {
   },
 
   btnOutline: {
-    padding: "14px 16px",
+    padding: "12px 14px",
     borderRadius: 10,
     cursor: "pointer",
     fontSize: 14,
