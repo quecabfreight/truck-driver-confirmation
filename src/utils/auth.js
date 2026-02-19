@@ -1,12 +1,20 @@
 // src/utils/auth.js
-// Minimal, build-proof ES module auth helpers for QueCab AdbS
+// Build-proof ES module auth helpers for QueCab AdbS
+// SmartLink expects certain named exports from this module.
 
-export const AUTH_STORAGE_KEY = "adbs_auth";
-export const AUTH_BUILD_TAG = "AUTH-NAMED-EXPORT-LOCK-01";
+export const AUTH_BUILD_TAG = "AUTH-SMARTLINK-COMPAT-01";
+
+// Storage keys (SmartLink may import these)
+export const LS_AUTH = "adbs_auth";
+export const LS_EMAIL = "adbs_email";
+export const LS_ROLE = "adbs_role";
+
+// Backward-compat alias
+export const AUTH_STORAGE_KEY = LS_AUTH;
 
 export function readAuth() {
   try {
-    const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+    const raw = localStorage.getItem(LS_AUTH);
     const j = raw ? JSON.parse(raw) : null;
     return j && j.ok ? j : null;
   } catch {
@@ -19,13 +27,21 @@ export function isLoggedIn() {
 }
 
 export function getAuthEmail() {
+  // Prefer structured auth object, fall back to legacy email key
   const a = readAuth();
-  return a?.email || "";
+  if (a?.email) return a.email;
+  try {
+    return String(localStorage.getItem(LS_EMAIL) || "");
+  } catch {
+    return "";
+  }
 }
 
 export function clearAuth() {
   try {
-    localStorage.removeItem(AUTH_STORAGE_KEY);
+    localStorage.removeItem(LS_AUTH);
+    localStorage.removeItem(LS_EMAIL);
+    localStorage.removeItem(LS_ROLE);
   } catch {
     // ignore
   }
@@ -33,15 +49,14 @@ export function clearAuth() {
 
 /**
  * REQUIRED BY: src/pages/SmartLink.jsx
- * SmartLink imports this as a NAMED export.
- * Phase 1 rule: if you're logged in, you're considered an authorized broker/shipper.
- * If role exists, we accept broker/shipper/authorized.
+ * In Phase 1, successful login implies authorized broker/shipper.
+ * If role exists, accept broker/shipper/authorized.
  */
 export function isBrokerOrShipper() {
   const a = readAuth();
   if (!a) return false;
 
-  const role = String(a.role || "authorized").toLowerCase().trim();
+  const role = String(a.role || a.user_role || "authorized").toLowerCase().trim();
   if (!role) return true;
 
   return role === "broker" || role === "shipper" || role === "authorized";
@@ -50,6 +65,6 @@ export function isBrokerOrShipper() {
 export function isAdmin() {
   const a = readAuth();
   if (!a) return false;
-  const role = String(a.role || "").toLowerCase().trim();
+  const role = String(a.role || a.user_role || "").toLowerCase().trim();
   return role === "admin" || role === "platform_admin";
 }
