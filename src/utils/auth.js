@@ -1,13 +1,8 @@
-export const AUTH_BUILD_TAG = "AUTH-EXPORT-FIX-03";
-export function isBrokerOrShipper() { return true; }
 // src/utils/auth.js
-// QueCab AdbS auth helpers (client-side session marker for Phase 1 / Beta)
-//
-// IMPORTANT:
-// - Must be ESM exports (Vite/Rollup).
-// - Provide BOTH named exports and default export for compatibility.
+// Minimal, build-proof ES module auth helpers for QueCab AdbS
 
 export const AUTH_STORAGE_KEY = "adbs_auth";
+export const AUTH_BUILD_TAG = "AUTH-NAMED-EXPORT-LOCK-01";
 
 export function readAuth() {
   try {
@@ -19,12 +14,13 @@ export function readAuth() {
   }
 }
 
-export function writeAuth(obj) {
-  try {
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(obj));
-  } catch {
-    // ignore
-  }
+export function isLoggedIn() {
+  return !!readAuth();
+}
+
+export function getAuthEmail() {
+  const a = readAuth();
+  return a?.email || "";
 }
 
 export function clearAuth() {
@@ -35,17 +31,10 @@ export function clearAuth() {
   }
 }
 
-export function isLoggedIn() {
-  return !!readAuth();
-}
-
-export function getAuthEmail() {
-  return readAuth()?.email || "";
-}
-
 /**
- * SmartLink expects this named export.
- * In Phase 1, a successful login implies broker/shipper authorization.
+ * REQUIRED BY: src/pages/SmartLink.jsx
+ * SmartLink imports this as a NAMED export.
+ * Phase 1 rule: if you're logged in, you're considered an authorized broker/shipper.
  * If role exists, we accept broker/shipper/authorized.
  */
 export function isBrokerOrShipper() {
@@ -53,8 +42,6 @@ export function isBrokerOrShipper() {
   if (!a) return false;
 
   const role = String(a.role || "authorized").toLowerCase().trim();
-
-  // If role missing, treat as authorized (server already gated it)
   if (!role) return true;
 
   return role === "broker" || role === "shipper" || role === "authorized";
@@ -66,15 +53,3 @@ export function isAdmin() {
   const role = String(a.role || "").toLowerCase().trim();
   return role === "admin" || role === "platform_admin";
 }
-
-// Default export for any older code that imports auth as a default object
-export default {
-  AUTH_STORAGE_KEY,
-  readAuth,
-  writeAuth,
-  clearAuth,
-  isLoggedIn,
-  getAuthEmail,
-  isBrokerOrShipper,
-  isAdmin,
-};
