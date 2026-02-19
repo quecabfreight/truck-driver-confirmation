@@ -1,3 +1,5 @@
+export const AUTH_BUILD_TAG = "AUTH-EXPORT-FIX-03";
+export function isBrokerOrShipper() { return true; }
 // src/utils/auth.js
 // QueCab AdbS auth helpers (client-side session marker for Phase 1 / Beta)
 //
