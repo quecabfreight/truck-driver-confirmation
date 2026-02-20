@@ -3,12 +3,31 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import Header from "../components/Header.jsx";
-import { getAuthEmail, isBrokerOrShipper } from "../utils/auth.js";
+import { LS_EMAIL, getAuthEmail, isBrokerOrShipper } from "../utils/auth.js";
+
+function looksLikeEmail(v) {
+  const s = String(v || "").trim();
+  return s.includes("@") && s.includes(".");
+}
+
+function scanStorageEmails(store) {
+  const found = [];
+  try {
+    for (let i = 0; i < store.length; i++) {
+      const k = store.key(i);
+      if (!k) continue;
+      const v = (store.getItem(k) || "").trim();
+      if (looksLikeEmail(v)) found.push({ key: k, value: v });
+    }
+  } catch {}
+  return found;
+}
 
 export default function Home() {
   const nav = useNavigate();
 
   const [email, setEmail] = useState(() => getAuthEmail());
+  const [showDebug, setShowDebug] = useState(false);
 
   // Same-tab sync (storage event doesn't fire in the same tab)
   useEffect(() => {
@@ -21,19 +40,15 @@ export default function Home() {
     };
 
     tick();
-    const id = setInterval(tick, 500); // slightly faster sync without being heavy
+    const id = setInterval(tick, 500);
 
     const onVis = () => {
       if (document.visibilityState === "visible") tick();
     };
     document.addEventListener("visibilitychange", onVis);
 
-    // Cross-tab sync (still helpful)
-    const onStorage = (e) => {
-      if (!e) return;
-      // If anything auth-ish changes, refresh from storage
-      tick();
-    };
+    // Cross-tab sync
+    const onStorage = () => tick();
     window.addEventListener("storage", onStorage);
 
     return () => {
@@ -44,11 +59,40 @@ export default function Home() {
     };
   }, []);
 
-  // ✅ Single source of truth: the email state we display
+  // Use the email we display as the truth for this page
   const authorized = useMemo(() => {
     const e = String(email || "").trim();
     return !!e && isBrokerOrShipper(e);
   }, [email]);
+
+  // Debug payload (computed only when debug is shown)
+  const debug = useMemo(() => {
+    if (!showDebug) return null;
+
+    const lsEmail = (() => {
+      try {
+        return (localStorage.getItem(LS_EMAIL) || "").trim();
+      } catch {
+        return "";
+      }
+    })();
+
+    const detected = getAuthEmail();
+
+    const lsFound = scanStorageEmails(localStorage);
+    let ssFound = [];
+    try {
+      ssFound = scanStorageEmails(sessionStorage);
+    } catch {}
+
+    return {
+      detected_email: detected || "(none)",
+      ls_primary_qc_email: lsEmail || "(none)",
+      authorized_on_home: authorized ? "YES" : "NO",
+      localStorage_email_values_found: lsFound,
+      sessionStorage_email_values_found: ssFound,
+    };
+  }, [showDebug, authorized]);
 
   const page = { minHeight: "100vh", background: "transparent" };
   const wrap = { maxWidth: 1100, margin: "0 auto", padding: "18px 16px 48px" };
@@ -117,6 +161,18 @@ export default function Home() {
     fontSize: 14,
     cursor: "pointer",
     whiteSpace: "nowrap",
+  };
+
+  const debugBtn = {
+    padding: "8px 10px",
+    borderRadius: 10,
+    border: "1px solid rgba(255,255,255,0.16)",
+    background: "rgba(255,255,255,0.04)",
+    color: "inherit",
+    fontSize: 12,
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+    opacity: 0.75,
   };
 
   return (
@@ -205,7 +261,7 @@ export default function Home() {
             )}
           </div>
 
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
             <button
               style={linkBtn}
               onClick={() => nav(authorized ? "/dashboard" : "/login")}
@@ -223,8 +279,32 @@ export default function Home() {
             <button style={linkBtn} onClick={() => nav("/how-it-works")} title="How It Works">
               How It Works
             </button>
+
+            <button style={debugBtn} onClick={() => setShowDebug((v) => !v)} title="Auth Debug">
+              Auth Debug
+            </button>
           </div>
         </div>
+
+        {showDebug && debug ? (
+          <div
+            style={{
+              marginTop: 10,
+              border: "1px solid rgba(255,255,255,0.14)",
+              background: "rgba(0,0,0,0.25)",
+              borderRadius: 12,
+              padding: 12,
+              fontSize: 12,
+              lineHeight: 1.35,
+              opacity: 0.9,
+            }}
+          >
+            <div style={{ fontWeight: 900, marginBottom: 8 }}>Auth Debug (Home)</div>
+            <pre style={{ margin: 0, whiteSpace: "pre-wrap" }}>
+{JSON.stringify(debug, null, 2)}
+            </pre>
+          </div>
+        ) : null}
       </div>
     </div>
   );
