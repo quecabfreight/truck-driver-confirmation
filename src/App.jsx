@@ -12,9 +12,6 @@ import Verify from "./pages/Verify";
 import ControlCenter from "./pages/ControlCenter";
 import Home from "./pages/Home";
 
-import SmartLink from "./pages/SmartLink";
-import DriverLink from "./pages/DriverLink";
-
 export default function App() {
   return (
     <HashRouter>
@@ -33,9 +30,9 @@ export default function App() {
         <Route path="/dashboard" element={<ControlCenter />} />
         <Route path="/admin" element={<Admin />} />
 
-        {/* ISSUER SCREENS (EXISTING PAGES) */}
-        <Route path="/smartlink" element={<SmartLink />} />
-        <Route path="/driverlink" element={<DriverLink />} />
+        {/* LEGACY ISSUER ROUTES (DO NOT EXPOSE UI) */}
+        <Route path="/smartlink" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/driverlink" element={<Navigate to="/dashboard" replace />} />
 
         {/* VERIFY */}
         <Route path="/verify/:token" element={<Verify />} />
