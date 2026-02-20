@@ -1,230 +1,508 @@
-import React, { useEffect, useMemo, useState } from "react";
-import Header from "../components/Header";
+// /src/pages/ControlCenter.jsx
+import React, { useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-const BUILD_TAG = "CONTROL-CENTER-SMARTLINK-ONLY-01";
+import Header from "../components/Header.jsx";
+import { LS_EMAIL, isBrokerOrShipper } from "../utils/auth.js";
 
-function readAuth() {
+function onlyDigits(s) {
+  return String(s || "").replace(/\D+/g, "");
+}
+
+function toUpperClean(s) {
+  return String(s || "").toUpperCase();
+}
+
+// Formats as 123-456-7890 while typing (digits only under the hood)
+function formatPhoneHyphen(s) {
+  const d = onlyDigits(s).slice(0, 10);
+  const a = d.slice(0, 3);
+  const b = d.slice(3, 6);
+  const c = d.slice(6, 10);
+  if (d.length <= 3) return a;
+  if (d.length <= 6) return `${a}-${b}`;
+  return `${a}-${b}-${c}`;
+}
+
+async function safeCopy(text) {
   try {
-    const raw = localStorage.getItem("adbs_auth");
-    const j = raw ? JSON.parse(raw) : null;
-    return j?.ok ? j : null;
+    await navigator.clipboard.writeText(text);
+    return true;
   } catch {
-    return null;
+    // Fallback for older/locked clipboard contexts
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
+      ta.style.top = "-9999px";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      const ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+      return ok;
+    } catch {
+      return false;
+    }
   }
 }
 
+function nowLocalDatetime() {
+  // datetime-local expects "YYYY-MM-DDTHH:mm"
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  const mm = pad(d.getMonth() + 1);
+  const dd = pad(d.getDate());
+  const hh = pad(d.getHours());
+  const mi = pad(d.getMinutes());
+  return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
+}
+
+function plusHoursLocalDatetime(hours) {
+  const d = new Date(Date.now() + hours * 60 * 60 * 1000);
+  const pad = (n) => String(n).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  const mm = pad(d.getMonth() + 1);
+  const dd = pad(d.getDate());
+  const hh = pad(d.getHours());
+  const mi = pad(d.getMinutes());
+  return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
+}
+
 export default function ControlCenter() {
-  const [auth, setAuth] = useState(null);
+  const nav = useNavigate();
 
-  useEffect(() => {
-    setAuth(readAuth());
-  }, []);
+  const email = (localStorage.getItem(LS_EMAIL) || "").trim();
+  const authorized = !!email && isBrokerOrShipper(email);
 
-  const email = useMemo(() => auth?.email || "", [auth]);
-
-  if (!auth) {
-    return (
-      <div style={styles.page}>
-        <Header />
-        <div style={styles.bg} aria-hidden="true" />
-
-        <div style={styles.innerCenter}>
-          <div style={styles.card}>
-            <div style={styles.title}>Control Center</div>
-            <div style={styles.sub}>You’re not logged in on this device.</div>
-
-            <button
-              style={styles.btnPrimary}
-              onClick={() => (window.location.href = `${window.location.origin}/#/login`)}
-            >
-              Go to Log In
-            </button>
-
-            <div style={styles.build}>Build: {BUILD_TAG}</div>
-          </div>
-        </div>
-      </div>
-    );
+  // If someone hits this page without auth, bounce them.
+  // (No offense. Just… this is a paid room.)
+  if (!authorized) {
+    nav("/login", { replace: true });
+    return null;
   }
 
-  return (
-    <div style={styles.page}>
-      <Header />
-      <div style={styles.bg} aria-hidden="true" />
+  // Form state (keep local — helps performance)
+  const [usdotOnRecord, setUsdotOnRecord] = useState("");
+  const [plateOnRecord, setPlateOnRecord] = useState("");
+  const [driverPhone, setDriverPhone] = useState("");
 
-      <div style={styles.inner}>
-        <div style={styles.topRow}>
+  const [startsAt, setStartsAt] = useState(() => nowLocalDatetime());
+  const [expiresAt, setExpiresAt] = useState(() => plusHoursLocalDatetime(24));
+
+  const [statusMsg, setStatusMsg] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const [issued, setIssued] = useState(null); // { token, verify_url, expires_at, ... }
+
+  const abortRef = useRef(null);
+
+  const normalized = useMemo(() => {
+    const usdot_digits = onlyDigits(usdotOnRecord);
+    const plate_upper = toUpperClean(plateOnRecord);
+    const phone_digits = onlyDigits(driverPhone);
+    return { usdot_digits, plate_upper, phone_digits };
+  }, [usdotOnRecord, plateOnRecord, driverPhone]);
+
+  function logout() {
+    try {
+      localStorage.removeItem(LS_EMAIL);
+      // Optional common keys (don’t rely on exports that might not exist)
+      localStorage.removeItem("qc_access_code");
+      localStorage.removeItem("qc_role");
+      localStorage.removeItem("access_code");
+      localStorage.removeItem("role");
+    } catch {}
+    nav("/login", { replace: true });
+  }
+
+  async function issueLink() {
+    setErrorMsg("");
+    setStatusMsg("");
+    setIssued(null);
+
+    const usdot_digits = normalized.usdot_digits;
+    const plate_upper = normalized.plate_upper;
+    const phone_digits = normalized.phone_digits;
+
+    if (!usdot_digits) {
+      setErrorMsg("Enter USDOT# (digits).");
+      return;
+    }
+    if (!plate_upper) {
+      setErrorMsg("Enter Plate.");
+      return;
+    }
+    if (phone_digits.length !== 10) {
+      setErrorMsg("Enter Driver Phone (10 digits).");
+      return;
+    }
+    if (!startsAt || !expiresAt) {
+      setErrorMsg("Start/Expire times are required.");
+      return;
+    }
+
+    // Cancel any previous request to avoid piling up and freezing.
+    try {
+      if (abortRef.current) abortRef.current.abort();
+    } catch {}
+    const ac = new AbortController();
+    abortRef.current = ac;
+
+    setLoading(true);
+
+    try {
+      const payload = {
+        usdot_on_record: usdot_digits,
+        plate_on_record: plate_upper,
+        driver_phone: formatPhoneHyphen(phone_digits),
+        starts_at: startsAt,
+        expires_at: expiresAt,
+      };
+
+      const res = await fetch("/api/issue_verify_link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: ac.signal,
+        body: JSON.stringify(payload),
+      });
+
+      const text = await res.text();
+      let data = null;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = { raw: text };
+      }
+
+      if (!res.ok) {
+        const msg =
+          (data && (data.error || data.message)) ||
+          `Issuer failed (${res.status}).`;
+        setErrorMsg(msg);
+        setLoading(false);
+        return;
+      }
+
+      // Accept a few possible shapes without breaking.
+      const token =
+        data.token || data.verify_token || (data.data && data.data.token) || "";
+      const verify_url =
+        data.verify_url ||
+        data.url ||
+        data.link ||
+        (data.data && data.data.verify_url) ||
+        "";
+
+      const expires =
+        data.expires_at || (data.data && data.data.expires_at) || expiresAt;
+
+      setIssued({
+        token,
+        verify_url,
+        expires_at: expires,
+        usdot_on_record: usdot_digits,
+        plate_on_record: plate_upper,
+        driver_phone: formatPhoneHyphen(phone_digits),
+      });
+
+      setStatusMsg("Verify link issued.");
+    } catch (e) {
+      if (String(e?.name) === "AbortError") {
+        // No need to show anything — user triggered another issue request.
+      } else {
+        setErrorMsg("Network error issuing link.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const cardStyle = {
+    border: "1px solid rgba(255,255,255,0.12)",
+    background: "rgba(12, 18, 28, 0.72)",
+    borderRadius: 16,
+    padding: 18,
+    boxShadow: "0 12px 28px rgba(0,0,0,0.35)",
+  };
+
+  const labelStyle = { fontSize: 14, opacity: 0.92, marginBottom: 6 };
+  const inputStyle = {
+    width: "100%",
+    padding: "12px 12px",
+    borderRadius: 12,
+    border: "1px solid rgba(255,255,255,0.16)",
+    background: "rgba(255,255,255,0.04)",
+    color: "inherit",
+    fontSize: 16,
+    outline: "none",
+  };
+
+  const btnStyle = (primary) => ({
+    width: "100%",
+    padding: "12px 14px",
+    borderRadius: 12,
+    border: primary
+      ? "1px solid rgba(120,180,255,0.45)"
+      : "1px solid rgba(255,255,255,0.16)",
+    background: primary ? "rgba(40, 110, 190, 0.35)" : "rgba(255,255,255,0.06)",
+    color: "inherit",
+    fontSize: 16,
+    cursor: "pointer",
+  });
+
+  return (
+    <div style={{ minHeight: "100vh" }}>
+      <Header />
+
+      <div
+        style={{
+          maxWidth: 1100,
+          margin: "0 auto",
+          padding: "18px 16px 48px",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-end",
+            justifyContent: "space-between",
+            gap: 12,
+            flexWrap: "wrap",
+            marginBottom: 14,
+          }}
+        >
           <div>
-            <div style={styles.title}>Control Center</div>
-            <div style={styles.sub}>
-              Authorized access: <span style={styles.mono}>{email}</span>
+            <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: 0.2 }}>
+              Control Center
+            </div>
+            <div style={{ opacity: 0.85, marginTop: 6, fontSize: 15 }}>
+              Authorized: <span style={{ fontWeight: 700 }}>{email}</span>
             </div>
           </div>
 
-          <div style={styles.actions}>
-            <button
-              style={styles.btnOutline}
-              onClick={() => {
-                localStorage.removeItem("adbs_auth");
-                window.location.href = `${window.location.origin}/#/`;
-              }}
-            >
+          <div style={{ display: "flex", gap: 10 }}>
+            <button onClick={logout} style={btnStyle(false)}>
               Log Out
             </button>
           </div>
         </div>
 
-        <div style={styles.panel}>
-          <div style={styles.panelTitle}>Issue Verify Link</div>
-          <div style={styles.rule} />
-
-          <div style={styles.body}>
-            <div style={styles.bodyText}>
-              Issue links from the SmartLink issuer. (We removed the duplicate issuer option to keep
-              the workflow clean.)
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1.05fr 0.95fr",
+            gap: 16,
+          }}
+        >
+          {/* Left: Issue Verify Link */}
+          <div style={cardStyle}>
+            <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 10 }}>
+              Issue Verify Link
             </div>
 
-            <div style={styles.btnRow}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 12,
+              }}
+            >
+              <div>
+                <div style={labelStyle}>USDOT# on record</div>
+                <input
+                  style={inputStyle}
+                  value={usdotOnRecord}
+                  onChange={(e) => {
+                    // show what user types, but normalize comparison later
+                    setUsdotOnRecord(toUpperClean(e.target.value));
+                  }}
+                  placeholder="123456"
+                  inputMode="text"
+                  autoComplete="off"
+                />
+                <div style={{ opacity: 0.7, fontSize: 12, marginTop: 6 }}>
+                  Compared digits-only.
+                </div>
+              </div>
+
+              <div>
+                <div style={labelStyle}>Plate on record</div>
+                <input
+                  style={inputStyle}
+                  value={plateOnRecord}
+                  onChange={(e) => setPlateOnRecord(toUpperClean(e.target.value))}
+                  placeholder="ABC1234"
+                  inputMode="text"
+                  autoComplete="off"
+                />
+                <div style={{ opacity: 0.7, fontSize: 12, marginTop: 6 }}>
+                  Auto-uppercase while typing.
+                </div>
+              </div>
+
+              <div>
+                <div style={labelStyle}>Driver Phone</div>
+                <input
+                  style={inputStyle}
+                  value={driverPhone}
+                  onChange={(e) => setDriverPhone(formatPhoneHyphen(e.target.value))}
+                  placeholder="123-456-7890"
+                  inputMode="tel"
+                  autoComplete="off"
+                />
+                <div style={{ opacity: 0.7, fontSize: 12, marginTop: 6 }}>
+                  Auto-formats 123-456-7890.
+                </div>
+              </div>
+
+              <div>
+                <div style={labelStyle}>Start / Expire</div>
+                <div style={{ display: "grid", gap: 8 }}>
+                  <input
+                    style={inputStyle}
+                    type="datetime-local"
+                    value={startsAt}
+                    onChange={(e) => setStartsAt(e.target.value)}
+                  />
+                  <input
+                    style={inputStyle}
+                    type="datetime-local"
+                    value={expiresAt}
+                    onChange={(e) => setExpiresAt(e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div style={{ marginTop: 14, display: "grid", gap: 10 }}>
               <button
-                style={styles.btnPrimary}
-                onClick={() => (window.location.href = `${window.location.origin}/#/smartlink`)}
+                onClick={issueLink}
+                style={btnStyle(true)}
+                disabled={loading}
+                title={loading ? "Issuing..." : "Issue Verify Link"}
               >
-                Open SmartLink Issuer
+                {loading ? "Issuing..." : "Issue Verify Link"}
               </button>
+
+              {errorMsg ? (
+                <div
+                  style={{
+                    border: "1px solid rgba(255,80,80,0.35)",
+                    background: "rgba(255,80,80,0.08)",
+                    padding: 12,
+                    borderRadius: 12,
+                    fontSize: 14,
+                  }}
+                >
+                  <b style={{ letterSpacing: 0.2 }}>Error:</b> {errorMsg}
+                </div>
+              ) : null}
+
+              {statusMsg ? (
+                <div
+                  style={{
+                    border: "1px solid rgba(120,180,255,0.30)",
+                    background: "rgba(120,180,255,0.08)",
+                    padding: 12,
+                    borderRadius: 12,
+                    fontSize: 14,
+                  }}
+                >
+                  {statusMsg}
+                </div>
+              ) : null}
             </div>
 
-            <div style={styles.smallNote}>
-              Next: embed the SmartLink issuer directly into this panel (so it feels like one screen).
-            </div>
+            {issued ? (
+              <div style={{ marginTop: 14, ...cardStyle, padding: 14 }}>
+                <div style={{ fontSize: 16, fontWeight: 900, marginBottom: 8 }}>
+                  Issued
+                </div>
+
+                <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 10 }}>
+                  Expires:{" "}
+                  <span style={{ fontWeight: 800 }}>{issued.expires_at}</span>
+                </div>
+
+                <div style={{ display: "grid", gap: 10 }}>
+                  <div>
+                    <div style={labelStyle}>Verify URL</div>
+                    <input
+                      style={inputStyle}
+                      value={issued.verify_url || ""}
+                      readOnly
+                    />
+                    <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+                      <button
+                        style={btnStyle(false)}
+                        onClick={async () => {
+                          const ok = await safeCopy(issued.verify_url || "");
+                          setStatusMsg(ok ? "Link copied." : "Copy failed.");
+                        }}
+                      >
+                        Copy Link
+                      </button>
+
+                      <button
+                        style={btnStyle(false)}
+                        onClick={async () => {
+                          const ok = await safeCopy(issued.token || "");
+                          setStatusMsg(ok ? "Token copied." : "Copy failed.");
+                        }}
+                      >
+                        Copy Token
+                      </button>
+                    </div>
+                  </div>
+
+                  <div
+                    style={{
+                      opacity: 0.75,
+                      fontSize: 12,
+                      lineHeight: 1.35,
+                    }}
+                  >
+                    Note: This panel is the production-facing issuer UI. The legacy
+                    /smartlink page stays blocked.
+                  </div>
+                </div>
+              </div>
+            ) : null}
           </div>
 
-          <div style={styles.rule} />
-          <div style={styles.build}>Build: {BUILD_TAG}</div>
+          {/* Right: Quick info (kept minimal; no heavy debug by default) */}
+          <div style={cardStyle}>
+            <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 10 }}>
+              Status
+            </div>
+
+            <div style={{ fontSize: 14, opacity: 0.9, lineHeight: 1.45 }}>
+              <div style={{ marginBottom: 10 }}>
+                <b>Issuer UI:</b> Control Center (paid look) ✅
+              </div>
+              <div style={{ marginBottom: 10 }}>
+                <b>Legacy routes:</b> /smartlink and /driverlink should redirect to
+                /dashboard ✅
+              </div>
+              <div style={{ marginBottom: 10 }}>
+                <b>Formatting:</b> Phone auto-hyphenates; USDOT/Plate uppercase ✅
+              </div>
+              <div style={{ opacity: 0.75 }}>
+                Next: CAUTION ALERT polish (flash + sound) after issuer is stable.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ marginTop: 16, opacity: 0.65, fontSize: 12 }}>
+          QueCab AdbS — Truck-Driver verification system. Paid-subscription UI standards
+          enforced.
         </div>
       </div>
     </div>
   );
-}
-
-const styles = {
-  page: { minHeight: "100vh", background: "#0f1722", color: "#e6edf5", position: "relative" },
-
-  bg: {
-    position: "fixed",
-    inset: 0,
-    pointerEvents: "none",
-    zIndex: 0,
-    opacity: 0.9,
-    background: [
-      "radial-gradient(1200px 600px at 18% 10%, rgba(90,150,240,0.18), rgba(0,0,0,0))",
-      "radial-gradient(1000px 520px at 85% 15%, rgba(255,255,255,0.06), rgba(0,0,0,0))",
-      "linear-gradient(180deg, rgba(0,0,0,0.0), rgba(0,0,0,0.30))",
-      steelNoise(),
-    ].join(", "),
-  },
-
-  inner: { position: "relative", zIndex: 1, maxWidth: 1200, margin: "0 auto", padding: "46px 20px 70px" },
-
-  innerCenter: {
-    position: "relative",
-    zIndex: 1,
-    minHeight: "calc(100vh - 90px)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "40px 20px",
-  },
-
-  topRow: {
-    display: "flex",
-    alignItems: "flex-end",
-    justifyContent: "space-between",
-    gap: 12,
-    flexWrap: "wrap",
-    marginBottom: 14,
-  },
-
-  title: { fontSize: 38, fontWeight: 950, letterSpacing: -0.4, lineHeight: 1.1 },
-  sub: { marginTop: 6, opacity: 0.78, fontSize: 14, lineHeight: 1.45 },
-
-  mono: {
-    fontWeight: 950,
-    letterSpacing: 0.2,
-    fontFamily:
-      'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-  },
-
-  actions: { display: "flex", gap: 10, flexWrap: "wrap" },
-
-  card: {
-    width: "100%",
-    maxWidth: 640,
-    border: "1px solid rgba(140,190,255,0.14)",
-    background: "rgba(0,0,0,0.22)",
-    boxShadow: "0 16px 34px rgba(0,0,0,0.30)",
-    borderRadius: 14,
-    padding: 22,
-  },
-
-  panel: {
-    border: "1px solid rgba(140,190,255,0.14)",
-    background: "rgba(0,0,0,0.22)",
-    boxShadow: "0 16px 34px rgba(0,0,0,0.30)",
-    borderRadius: 14,
-    padding: 18,
-  },
-
-  panelTitle: { fontSize: 16, fontWeight: 950, letterSpacing: 0.1 },
-
-  rule: { height: 1, background: "rgba(140,190,255,0.12)", margin: "14px 0" },
-
-  body: { padding: "6px 2px 2px" },
-  bodyText: { fontSize: 14, opacity: 0.82, lineHeight: 1.65, maxWidth: 980 },
-
-  btnRow: { marginTop: 14, display: "flex", gap: 12, flexWrap: "wrap" },
-
-  smallNote: { marginTop: 12, fontSize: 13, opacity: 0.62 },
-
-  btnPrimary: {
-    padding: "14px 16px",
-    borderRadius: 10,
-    cursor: "pointer",
-    fontSize: 14,
-    fontWeight: 950,
-    letterSpacing: 0.2,
-    color: "#fff",
-    background: "linear-gradient(180deg, rgba(40,110,200,0.85), rgba(20,70,140,0.75))",
-    border: "1px solid rgba(140,190,255,0.42)",
-    boxShadow: "0 10px 22px rgba(0,0,0,0.28)",
-  },
-
-  btnOutline: {
-    padding: "12px 14px",
-    borderRadius: 10,
-    cursor: "pointer",
-    fontSize: 14,
-    fontWeight: 950,
-    letterSpacing: 0.2,
-    color: "#e6edf5",
-    background: "rgba(0,0,0,0.18)",
-    border: "1px solid rgba(140,190,255,0.28)",
-  },
-
-  build: { marginTop: 10, fontSize: 12, opacity: 0.55 },
-};
-
-function steelNoise() {
-  const svg = encodeURIComponent(`
-  <svg xmlns="http://www.w3.org/2000/svg" width="220" height="220">
-    <filter id="n">
-      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch"/>
-      <feColorMatrix type="matrix" values="
-        0 0 0 0 0.35
-        0 0 0 0 0.50
-        0 0 0 0 0.70
-        0 0 0 0.12 0"/>
-    </filter>
-    <rect width="220" height="220" filter="url(#n)" opacity="0.45"/>
-  </svg>`);
-  return `url("data:image/svg+xml,${svg}")`;
 }
