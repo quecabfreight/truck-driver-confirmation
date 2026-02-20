@@ -1,36 +1,44 @@
 // /src/pages/Home.jsx
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import Header from "../components/Header.jsx";
-import { LS_EMAIL, isBrokerOrShipper } from "../utils/auth.js";
-
-function readEmail() {
-  try {
-    return (localStorage.getItem(LS_EMAIL) || "").trim();
-  } catch {
-    return "";
-  }
-}
+import { getAuthEmail, isAuthorized } from "../utils/auth.js";
 
 export default function Home() {
   const nav = useNavigate();
 
-  const email = readEmail();
-  const authorized = useMemo(() => {
-    return !!email && isBrokerOrShipper(email);
-  }, [email]);
+  const [email, setEmail] = useState(() => getAuthEmail());
 
-  const page = {
-    minHeight: "100vh",
-    background: "transparent",
-  };
+  // Same-tab sync (storage event doesn't fire in the same tab)
+  useEffect(() => {
+    let alive = true;
 
-  const wrap = {
-    maxWidth: 1100,
-    margin: "0 auto",
-    padding: "18px 16px 48px",
-  };
+    const tick = () => {
+      if (!alive) return;
+      const current = getAuthEmail();
+      setEmail((prev) => (prev === current ? prev : current));
+    };
+
+    tick();
+    const id = setInterval(tick, 1000);
+
+    const onVis = () => {
+      if (document.visibilityState === "visible") tick();
+    };
+    document.addEventListener("visibilitychange", onVis);
+
+    return () => {
+      alive = false;
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, []);
+
+  const authorized = useMemo(() => isAuthorized(), [email]);
+
+  const page = { minHeight: "100vh", background: "transparent" };
+  const wrap = { maxWidth: 1100, margin: "0 auto", padding: "18px 16px 48px" };
 
   const hero = {
     border: "1px solid rgba(255,255,255,0.12)",
@@ -114,7 +122,7 @@ export default function Home() {
           <div style={{ marginTop: 10, fontSize: 14, opacity: 0.85 }}>
             {authorized ? (
               <>
-                Signed in as <b>{email}</b>. Your authorized tools are ready.
+                Signed in as <b>{email}</b>.
               </>
             ) : (
               <>
@@ -124,15 +132,12 @@ export default function Home() {
           </div>
         </div>
 
-        {/* 3-row layout: Request Access / Log In / About (per your standard Home structure) */}
         <div style={grid}>
-          {/* Left: Request Access */}
           <div style={card}>
             <h3 style={cardTitle}>Request Access</h3>
             <div style={cardText}>
               Beta access for brokers and shippers. Submit your business details and we’ll review.
             </div>
-
             <div style={btnRow}>
               <button style={btn(false)} onClick={() => nav("/join")}>
                 Request Access
@@ -140,17 +145,15 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Middle: Auth / Login */}
           <div style={card}>
             <h3 style={cardTitle}>Already Authorized?</h3>
             <div style={cardText}>
               If you have your business email and access code, log in to reach the Control Center.
             </div>
-
             <div style={btnRow}>
               {authorized ? (
                 <button style={btn(true)} onClick={() => nav("/dashboard")}>
-                  Go to Control Center
+                  Control Center
                 </button>
               ) : (
                 <button style={btn(true)} onClick={() => nav("/login")}>
@@ -160,14 +163,11 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Right: About / How it works */}
           <div style={card}>
             <h3 style={cardTitle}>How It Works</h3>
             <div style={cardText}>
-              Issue a verify link → driver presents it at check-in → dock confirms USDOT + plate +
-              phone verification to clear the Truck-Driver for loading.
+              Learn how the QueCab AdbS verification flow works.
             </div>
-
             <div style={btnRow}>
               <button style={btn(false)} onClick={() => nav("/how-it-works")}>
                 How It Works
@@ -179,12 +179,11 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Bottom section: MUST stay in sync with top */}
         <div style={footer}>
           <div>
             {authorized ? (
               <>
-                Status: <b>Authorized</b> — use Control Center for issuing and verification.
+                Status: <b>Authorized</b>.
               </>
             ) : (
               <>
