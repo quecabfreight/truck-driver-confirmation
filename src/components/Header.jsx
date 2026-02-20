@@ -1,83 +1,54 @@
 // /src/components/Header.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { LS_EMAIL, isBrokerOrShipper } from "../utils/auth.js";
-
-function readEmail() {
-  try {
-    return (localStorage.getItem(LS_EMAIL) || "").trim();
-  } catch {
-    return "";
-  }
-}
+import { LS_EMAIL, getAuthEmail, isAuthorized, clearAuth } from "../utils/auth.js";
 
 export default function Header() {
   const nav = useNavigate();
   const loc = useLocation();
 
-  const [email, setEmail] = useState(() => readEmail());
+  const [email, setEmail] = useState(() => getAuthEmail());
 
-  // Route-change sync (cheap)
-  useEffect(() => {
-    setEmail(readEmail());
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loc.pathname]);
-
-  // Cross-tab sync (only fires in OTHER tabs)
-  useEffect(() => {
-    function onStorage(e) {
-      if (!e) return;
-      if (e.key === LS_EMAIL || e.key == null) setEmail(readEmail());
-    }
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
-  }, []);
-
-  // Same-tab sync (this is the missing piece)
-  // Some components clear/set LS_EMAIL without changing route.
-  // The storage event won’t fire in the same tab, so we re-check periodically.
+  // Same-tab sync (storage event won't fire in same tab)
   useEffect(() => {
     let alive = true;
 
     const tick = () => {
       if (!alive) return;
-      const current = readEmail();
-      // Only update state if it actually changed (prevents re-render spam)
+      const current = getAuthEmail();
       setEmail((prev) => (prev === current ? prev : current));
     };
 
-    // Run once immediately, then keep it light (1x/sec)
     tick();
-    const id = setInterval(tick, 1000);
+    const id = setInterval(tick, 500);
 
-    // Also sync instantly when tab becomes active again
     const onVis = () => {
       if (document.visibilityState === "visible") tick();
     };
     document.addEventListener("visibilitychange", onVis);
 
+    // Cross-tab
+    const onStorage = (e) => {
+      if (!e) return;
+      if (e.key === LS_EMAIL || e.key == null) tick();
+    };
+    window.addEventListener("storage", onStorage);
+
     return () => {
       alive = false;
       clearInterval(id);
       document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("storage", onStorage);
     };
-  }, []);
+  }, [loc.pathname]);
 
   const authorized = useMemo(() => {
-    return !!email && isBrokerOrShipper(email);
-  }, [email]);
+    // Use the shared truth (not local guesses)
+    return isAuthorized();
+  }, [email, loc.pathname]);
 
   function logout() {
-    try {
-      localStorage.removeItem(LS_EMAIL);
-      localStorage.removeItem("qc_access_code");
-      localStorage.removeItem("qc_role");
-      localStorage.removeItem("access_code");
-      localStorage.removeItem("role");
-      localStorage.removeItem("remember_device");
-    } catch {}
-
-    // Force immediate same-tab UI sync
+    clearAuth();
     setEmail("");
     nav("/login", { replace: true });
   }
@@ -165,7 +136,7 @@ export default function Header() {
                 Request Access
               </button>
               <button style={btn(true)} onClick={() => nav("/login")}>
-                Login
+                Log In
               </button>
             </>
           )}
