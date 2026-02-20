@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import Header from "../components/Header.jsx";
-import { getAuthEmail, isAuthorized } from "../utils/auth.js";
+import { getAuthEmail, isBrokerOrShipper } from "../utils/auth.js";
 
 export default function Home() {
   const nav = useNavigate();
@@ -21,21 +21,34 @@ export default function Home() {
     };
 
     tick();
-    const id = setInterval(tick, 1000);
+    const id = setInterval(tick, 500); // slightly faster sync without being heavy
 
     const onVis = () => {
       if (document.visibilityState === "visible") tick();
     };
     document.addEventListener("visibilitychange", onVis);
 
+    // Cross-tab sync (still helpful)
+    const onStorage = (e) => {
+      if (!e) return;
+      // If anything auth-ish changes, refresh from storage
+      tick();
+    };
+    window.addEventListener("storage", onStorage);
+
     return () => {
       alive = false;
       clearInterval(id);
       document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("storage", onStorage);
     };
   }, []);
 
-  const authorized = useMemo(() => isAuthorized(), [email]);
+  // ✅ Single source of truth: the email state we display
+  const authorized = useMemo(() => {
+    const e = String(email || "").trim();
+    return !!e && isBrokerOrShipper(e);
+  }, [email]);
 
   const page = { minHeight: "100vh", background: "transparent" };
   const wrap = { maxWidth: 1100, margin: "0 auto", padding: "18px 16px 48px" };
