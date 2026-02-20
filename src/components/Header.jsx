@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { LS_EMAIL, isBrokerOrShipper } from "../utils/auth.js";
 
-function getAuthEmail() {
+function readEmail() {
   try {
     return (localStorage.getItem(LS_EMAIL) || "").trim();
   } catch {
@@ -15,24 +15,52 @@ export default function Header() {
   const nav = useNavigate();
   const loc = useLocation();
 
-  const [email, setEmail] = useState(() => getAuthEmail());
+  const [email, setEmail] = useState(() => readEmail());
 
-  // Keep header in sync with localStorage + route changes
+  // Route-change sync (cheap)
   useEffect(() => {
-    setEmail(getAuthEmail());
+    setEmail(readEmail());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loc.pathname]);
 
-  // Sync across tabs/windows too
+  // Cross-tab sync (only fires in OTHER tabs)
   useEffect(() => {
     function onStorage(e) {
       if (!e) return;
-      if (e.key === LS_EMAIL || e.key == null) {
-        setEmail(getAuthEmail());
-      }
+      if (e.key === LS_EMAIL || e.key == null) setEmail(readEmail());
     }
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
+  // Same-tab sync (this is the missing piece)
+  // Some components clear/set LS_EMAIL without changing route.
+  // The storage event won’t fire in the same tab, so we re-check periodically.
+  useEffect(() => {
+    let alive = true;
+
+    const tick = () => {
+      if (!alive) return;
+      const current = readEmail();
+      // Only update state if it actually changed (prevents re-render spam)
+      setEmail((prev) => (prev === current ? prev : current));
+    };
+
+    // Run once immediately, then keep it light (1x/sec)
+    tick();
+    const id = setInterval(tick, 1000);
+
+    // Also sync instantly when tab becomes active again
+    const onVis = () => {
+      if (document.visibilityState === "visible") tick();
+    };
+    document.addEventListener("visibilitychange", onVis);
+
+    return () => {
+      alive = false;
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", onVis);
+    };
   }, []);
 
   const authorized = useMemo(() => {
@@ -42,8 +70,6 @@ export default function Header() {
   function logout() {
     try {
       localStorage.removeItem(LS_EMAIL);
-
-      // Clear common auth leftovers (safe even if unused)
       localStorage.removeItem("qc_access_code");
       localStorage.removeItem("qc_role");
       localStorage.removeItem("access_code");
@@ -51,6 +77,7 @@ export default function Header() {
       localStorage.removeItem("remember_device");
     } catch {}
 
+    // Force immediate same-tab UI sync
     setEmail("");
     nav("/login", { replace: true });
   }
@@ -106,13 +133,11 @@ export default function Header() {
           onClick={() => nav(authorized ? "/dashboard" : "/", { replace: false })}
           title="QueCab AdbS"
         >
-          {/* Optional logo: if you have /public/qc-logo.png this will show it */}
           <img
             src="/qc-logo.png"
             alt="QueCab AdbS"
             style={{ width: 34, height: 34, objectFit: "contain" }}
             onError={(e) => {
-              // If logo missing, hide the broken image icon cleanly
               e.currentTarget.style.display = "none";
             }}
           />
