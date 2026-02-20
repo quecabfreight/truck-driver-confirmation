@@ -1,141 +1,151 @@
-import React, { useEffect, useState } from "react";
+// /src/components/Header.jsx
+import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { LS_EMAIL, isBrokerOrShipper } from "../utils/auth.js";
 
-function isAuthed() {
+function getAuthEmail() {
   try {
-    const raw = localStorage.getItem("adbs_auth");
-    const j = raw ? JSON.parse(raw) : null;
-    return !!j?.ok;
+    return (localStorage.getItem(LS_EMAIL) || "").trim();
   } catch {
-    return false;
+    return "";
   }
 }
 
 export default function Header() {
   const nav = useNavigate();
   const loc = useLocation();
-  const [authed, setAuthed] = useState(false);
 
+  const [email, setEmail] = useState(() => getAuthEmail());
+
+  // Keep header in sync with localStorage + route changes
   useEffect(() => {
-    setAuthed(isAuthed());
+    setEmail(getAuthEmail());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loc.pathname]);
+
+  // Sync across tabs/windows too
+  useEffect(() => {
     function onStorage(e) {
-      if (e.key === "adbs_auth") setAuthed(isAuthed());
+      if (!e) return;
+      if (e.key === LS_EMAIL || e.key == null) {
+        setEmail(getAuthEmail());
+      }
     }
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  const items = authed
-    ? [
-        { label: "Control Center", path: "/dashboard" },
-        { label: "Admin", path: "/admin" },
-      ]
-    : [
-        { label: "Home", path: "/" },
-        { label: "How It Works", path: "/how-it-works" },
-        { label: "Log In", path: "/login" },
-        { label: "Request Access", path: "/join" },
-      ];
+  const authorized = useMemo(() => {
+    return !!email && isBrokerOrShipper(email);
+  }, [email]);
 
-  function isActive(path) {
-    if (path === "/") return loc.pathname === "/";
-    return loc.pathname.startsWith(path);
+  function logout() {
+    try {
+      localStorage.removeItem(LS_EMAIL);
+
+      // Clear common auth leftovers (safe even if unused)
+      localStorage.removeItem("qc_access_code");
+      localStorage.removeItem("qc_role");
+      localStorage.removeItem("access_code");
+      localStorage.removeItem("role");
+      localStorage.removeItem("remember_device");
+    } catch {}
+
+    setEmail("");
+    nav("/login", { replace: true });
   }
 
-  return (
-    <header style={styles.wrap}>
-      <div style={styles.inner}>
-        <button style={styles.brandBtn} onClick={() => nav("/")}>
-          <img src="/qc-logo.png" alt="QueCab AdbS" style={styles.logo} draggable={false} />
-          <div style={styles.brandText}>
-            <div style={styles.brandTop}>Anti-Double Brokering System</div>
-            <div style={styles.brandSub}>Verification happens before freight moves.</div>
-          </div>
-        </button>
-
-        <nav style={styles.nav}>
-          {items.map((it) => (
-            <button
-              key={it.path}
-              style={{ ...styles.navBtn, ...(isActive(it.path) ? styles.navBtnActive : null) }}
-              onClick={() => nav(it.path)}
-            >
-              {it.label}
-            </button>
-          ))}
-
-          {authed ? (
-            <button
-              style={{ ...styles.navBtn, ...styles.navBtnDanger }}
-              onClick={() => {
-                localStorage.removeItem("adbs_auth");
-                setAuthed(false);
-                nav("/");
-              }}
-            >
-              Log Out
-            </button>
-          ) : null}
-        </nav>
-      </div>
-    </header>
-  );
-}
-
-const styles = {
-  wrap: {
+  const wrap = {
     position: "sticky",
     top: 0,
     zIndex: 50,
-    background: "rgba(9, 13, 20, 0.72)",
     backdropFilter: "blur(10px)",
-    borderBottom: "1px solid rgba(140,190,255,0.12)",
-  },
-  inner: {
-    maxWidth: 1200,
+    background: "rgba(8, 12, 18, 0.78)",
+    borderBottom: "1px solid rgba(255,255,255,0.10)",
+  };
+
+  const inner = {
+    maxWidth: 1100,
     margin: "0 auto",
-    padding: "14px 18px",
+    padding: "12px 16px",
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: 14,
-    flexWrap: "wrap",
-  },
+    gap: 12,
+  };
 
-  brandBtn: {
+  const brand = {
     display: "flex",
     alignItems: "center",
     gap: 12,
-    border: "none",
-    background: "transparent",
-    color: "inherit",
     cursor: "pointer",
-    padding: 0,
-    textAlign: "left",
-  },
-  logo: { width: 220, height: "auto" },
-  brandText: { lineHeight: 1.1 },
-  brandTop: { fontWeight: 950, letterSpacing: 0.2, opacity: 0.95 },
-  brandSub: { marginTop: 4, opacity: 0.72, fontWeight: 800, fontSize: 13 },
+    userSelect: "none",
+  };
 
-  nav: { display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" },
-  navBtn: {
+  const title = { fontWeight: 900, letterSpacing: 0.2, fontSize: 16 };
+  const sub = { fontSize: 12, opacity: 0.72, marginTop: 2 };
+
+  const btn = (primary) => ({
     padding: "10px 12px",
-    borderRadius: 10,
-    cursor: "pointer",
+    borderRadius: 12,
+    border: primary
+      ? "1px solid rgba(120,180,255,0.45)"
+      : "1px solid rgba(255,255,255,0.16)",
+    background: primary ? "rgba(40, 110, 190, 0.35)" : "rgba(255,255,255,0.06)",
+    color: "inherit",
     fontSize: 14,
-    fontWeight: 950,
-    letterSpacing: 0.2,
-    color: "rgba(230,237,245,0.92)",
-    background: "rgba(0,0,0,0.18)",
-    border: "1px solid rgba(140,190,255,0.16)",
-  },
-  navBtnActive: {
-    border: "1px solid rgba(140,190,255,0.42)",
-    background: "linear-gradient(180deg, rgba(40,110,200,0.22), rgba(0,0,0,0.22))",
-  },
-  navBtnDanger: {
-    border: "1px solid rgba(255,120,120,0.30)",
-    background: "rgba(120,0,0,0.16)",
-  },
-};
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+  });
+
+  return (
+    <div style={wrap}>
+      <div style={inner}>
+        <div
+          style={brand}
+          onClick={() => nav(authorized ? "/dashboard" : "/", { replace: false })}
+          title="QueCab AdbS"
+        >
+          {/* Optional logo: if you have /public/qc-logo.png this will show it */}
+          <img
+            src="/qc-logo.png"
+            alt="QueCab AdbS"
+            style={{ width: 34, height: 34, objectFit: "contain" }}
+            onError={(e) => {
+              // If logo missing, hide the broken image icon cleanly
+              e.currentTarget.style.display = "none";
+            }}
+          />
+          <div>
+            <div style={title}>QueCab AdbS</div>
+            <div style={sub}>
+              {authorized ? "Authorized Control Center" : "Truck-Driver verification system"}
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {authorized ? (
+            <>
+              <button style={btn(false)} onClick={() => nav("/dashboard")}>
+                Control Center
+              </button>
+              <button style={btn(true)} onClick={logout}>
+                Log Out
+              </button>
+            </>
+          ) : (
+            <>
+              <button style={btn(false)} onClick={() => nav("/join")}>
+                Request Access
+              </button>
+              <button style={btn(true)} onClick={() => nav("/login")}>
+                Login
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
