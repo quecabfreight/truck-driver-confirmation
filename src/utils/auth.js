@@ -1,67 +1,114 @@
 // /src/utils/auth.js
+// Single source of truth for reading "who is logged in" across legacy + current pages.
+// Goal: eliminate "top says Log Out, bottom says Log In" caused by mismatched storage keys.
 
-// NOTE: This file intentionally provides a single source of truth for auth display logic.
-// It reads from multiple possible keys to prevent "top says logged-in, bottom says logged-out".
-
-// Primary storage key used across the app (per handoff)
 export const LS_EMAIL = "qc_email";
 
-// Common fallback keys seen in older iterations / pages
+// Common legacy / alternate keys seen in iterations
 export const LS_EMAIL_FALLBACKS = [
   "email",
   "user_email",
   "auth_email",
   "qc_user_email",
+  "qcEmail",
+  "qc_email_address",
   "qcAuthorizedEmail",
   "authorized_email",
   "login_email",
+  "authorizedEmail",
 ];
 
-// Other common keys (keep if your project already uses them)
+// Other common keys (kept for compatibility)
 export const LS_ACCESS_CODE = "qc_access_code";
 export const LS_ROLE = "qc_role";
 
-// Helper: safely read localStorage
-function safeGet(key) {
+function safeGet(store, key) {
   try {
-    return (localStorage.getItem(key) || "").trim();
+    return (store.getItem(key) || "").trim();
   } catch {
     return "";
   }
 }
 
-// Public helper: get the best available email from storage
-export function getAuthEmail() {
-  const primary = safeGet(LS_EMAIL);
-  if (primary) return primary;
+function looksLikeEmail(v) {
+  const s = String(v || "").trim();
+  if (s.length < 5) return false;
+  // Very basic email-ish check (fast, safe)
+  return s.includes("@") && s.includes(".");
+}
 
+// Brute scan: find any localStorage value that looks like an email.
+// This fixes split-brain UI when some page writes a different key than expected.
+function bruteScanEmail() {
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (!k) continue;
+      const v = (localStorage.getItem(k) || "").trim();
+      if (looksLikeEmail(v)) return v;
+    }
+  } catch {}
+  return "";
+}
+
+export function getAuthEmail() {
+  // 1) Primary key
+  const primary = safeGet(localStorage, LS_EMAIL);
+  if (looksLikeEmail(primary)) return primary;
+
+  // 2) Known fallbacks
   for (const k of LS_EMAIL_FALLBACKS) {
-    const v = safeGet(k);
-    if (v) return v;
+    const v = safeGet(localStorage, k);
+    if (looksLikeEmail(v)) return v;
   }
 
-  // Some builds used sessionStorage for "remember device" experiments
-  try {
-    const s = (sessionStorage.getItem(LS_EMAIL) || "").trim();
-    if (s) return s;
-  } catch {}
+  // 3) SessionStorage fallbacks (some builds used this)
+  const sPrimary = safeGet(sessionStorage, LS_EMAIL);
+  if (looksLikeEmail(sPrimary)) return sPrimary;
+
+  for (const k of LS_EMAIL_FALLBACKS) {
+    const v = safeGet(sessionStorage, k);
+    if (looksLikeEmail(v)) return v;
+  }
+
+  // 4) Last resort: brute scan localStorage
+  const brute = bruteScanEmail();
+  if (looksLikeEmail(brute)) return brute;
 
   return "";
 }
 
-// Your authorization rule (existing behavior should remain)
+// Keep this export because App/Header use it.
+// If your project has stricter rules elsewhere, we can tighten later.
 export function isBrokerOrShipper(email) {
-  // If you already had logic here before, KEEP it.
-  // This default is permissive-ish but still requires a real-looking email.
-  // If your project has role-based auth elsewhere, this function should match it.
-  const e = String(email || "").trim().toLowerCase();
-  if (!e) return false;
-  if (!e.includes("@") || !e.includes(".")) return false;
+  const e = String(email || "").trim();
+  if (!looksLikeEmail(e)) return false;
   return true;
 }
 
-// Single “truth” boolean for UI gating
 export function isAuthorized() {
   const email = getAuthEmail();
   return !!email && isBrokerOrShipper(email);
+}
+
+// Optional helpers (won’t break anything if unused)
+export function setAuthEmail(email) {
+  const e = String(email || "").trim();
+  try {
+    localStorage.setItem(LS_EMAIL, e);
+  } catch {}
+  return e;
+}
+
+export function clearAuth() {
+  try {
+    localStorage.removeItem(LS_EMAIL);
+    localStorage.removeItem(LS_ACCESS_CODE);
+    localStorage.removeItem(LS_ROLE);
+
+    // common leftovers
+    localStorage.removeItem("access_code");
+    localStorage.removeItem("role");
+    localStorage.removeItem("remember_device");
+  } catch {}
 }
