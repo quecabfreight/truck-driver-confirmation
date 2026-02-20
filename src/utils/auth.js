@@ -1,10 +1,10 @@
 // /src/utils/auth.js
 // Single source of truth for auth identity (email).
-// IMPORTANT: Do NOT "scan" storage for random values — demo objects can look like identity and break UI.
+// Fixes split-brain UI where some pages store JSON session blobs and others store plain email.
 
 export const LS_EMAIL = "qc_email";
 
-// Keep fallbacks minimal + explicit. Add to this list only when you KNOW a page writes that key.
+// Explicit known fallbacks ONLY (no "scan for anything")
 export const LS_EMAIL_FALLBACKS = [
   "qc_user_email",
   "authorized_email",
@@ -31,24 +31,78 @@ function isJsonishString(v) {
 function looksLikeEmail(v) {
   const s = String(v || "").trim();
   if (!s) return false;
-  if (isJsonishString(s)) return false; // ✅ never accept JSON payloads as identity
-  if (s.length > 120) return false;
-  // Basic email-ish check
+  if (isJsonishString(s)) return false; // never accept raw JSON as email
+  if (s.length > 160) return false;
   return s.includes("@") && s.includes(".");
 }
 
+function extractEmailFromJsonString(jsonStr) {
+  const s = String(jsonStr || "").trim();
+  if (!s || !isJsonishString(s)) return "";
+
+  // Avoid heavy parsing of huge blobs
+  if (s.length > 8000) return "";
+
+  try {
+    const obj = JSON.parse(s);
+    if (!obj || typeof obj !== "object") return "";
+
+    // Common field names we’ve seen in your flows
+    const candidates = [
+      obj.email,
+      obj.businessEmail,
+      obj.userEmail,
+      obj.authorizedEmail,
+      obj.sendEmail, // <-- your demo blob had this
+      obj.contactEmail,
+      obj.ownerEmail,
+    ];
+
+    for (const c of candidates) {
+      if (looksLikeEmail(c)) return String(c).trim();
+    }
+
+    // Sometimes nested
+    if (obj.user && looksLikeEmail(obj.user.email)) return String(obj.user.email).trim();
+    if (obj.profile && looksLikeEmail(obj.profile.email)) return String(obj.profile.email).trim();
+
+    return "";
+  } catch {
+    return "";
+  }
+}
+
+function findEmailInsideStoredJson(store) {
+  try {
+    for (let i = 0; i < store.length; i++) {
+      const k = store.key(i);
+      if (!k) continue;
+      const v = (store.getItem(k) || "").trim();
+      if (!isJsonishString(v)) continue;
+
+      const extracted = extractEmailFromJsonString(v);
+      if (looksLikeEmail(extracted)) return extracted;
+    }
+  } catch {}
+  return "";
+}
+
 export function getAuthEmail() {
-  // 1) Primary key
+  // 1) Primary
   const primary = safeGet(localStorage, LS_EMAIL);
   if (looksLikeEmail(primary)) return primary;
 
-  // 2) Explicit fallbacks (localStorage)
+  // 2) Explicit fallbacks
   for (const k of LS_EMAIL_FALLBACKS) {
     const v = safeGet(localStorage, k);
     if (looksLikeEmail(v)) return v;
   }
 
-  // 3) SessionStorage equivalents (if used)
+  // 3) Try extracting from JSON session blobs stored in localStorage
+  const fromJson = findEmailInsideStoredJson(localStorage);
+  if (looksLikeEmail(fromJson)) return fromJson;
+
+  // 4) SessionStorage equivalents (if used)
   const sPrimary = safeGet(sessionStorage, LS_EMAIL);
   if (looksLikeEmail(sPrimary)) return sPrimary;
 
@@ -57,12 +111,15 @@ export function getAuthEmail() {
     if (looksLikeEmail(v)) return v;
   }
 
+  const sFromJson = findEmailInsideStoredJson(sessionStorage);
+  if (looksLikeEmail(sFromJson)) return sFromJson;
+
   return "";
 }
 
-// Your authorization rule — keep simple and stable
+// Keep your auth rule simple and stable
 export function isBrokerOrShipper(email) {
-  const e = String(email || "").trim().toLowerCase();
+  const e = String(email || "").trim();
   if (!looksLikeEmail(e)) return false;
   return true;
 }
