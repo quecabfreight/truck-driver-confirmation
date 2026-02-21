@@ -115,7 +115,9 @@ export default function Header() {
           />
           <div>
             <div style={title}>QueCab AdbS</div>
-            <div style={sub}>{authorized ? "Control Center" : "Public"} • Truck-Driver verification</div>
+            <div style={sub}>
+              {authorized ? "Control Center" : "Public"} • Truck-Driver verification
+            </div>
           </div>
         </div>
 
@@ -125,9 +127,15 @@ export default function Header() {
               <button style={btn(true)} onClick={() => nav("/dashboard")}>
                 Control Center
               </button>
+
+              <button style={btn(false)} onClick={() => nav("/admin")}>
+                Admin
+              </button>
+
               <button style={btn(false)} onClick={() => nav("/how-it-works")}>
                 How It Works
               </button>
+
               <button style={btn(false)} onClick={logout}>
                 Log Out
               </button>
@@ -137,12 +145,15 @@ export default function Header() {
               <button style={btn(true)} onClick={() => nav("/")}>
                 Home
               </button>
+
               <button style={btn(false)} onClick={() => nav("/how-it-works")}>
                 How It Works
               </button>
+
               <button style={btn(false)} onClick={() => nav("/login")}>
                 Log In
               </button>
+
               <button style={btn(false)} onClick={() => nav("/join")}>
                 Request Access
               </button>
