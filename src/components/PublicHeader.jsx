@@ -1,8 +1,7 @@
 // /src/components/PublicHeader.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-
-import { LS_EMAIL, getAuthEmail, isBrokerOrShipper, clearAuth } from "../utils/auth.js";
+import { getAuthEmail, isBrokerOrShipper, clearAuth } from "../utils/auth.js";
 
 export default function PublicHeader() {
   const nav = useNavigate();
@@ -10,7 +9,7 @@ export default function PublicHeader() {
 
   const [email, setEmail] = useState(() => getAuthEmail());
 
-  // Keep header synced in the SAME tab (storage event doesn't fire in the same tab)
+  // Keep in sync in the SAME tab + other tabs
   useEffect(() => {
     let alive = true;
 
@@ -23,10 +22,7 @@ export default function PublicHeader() {
     tick();
     const id = setInterval(tick, 500);
 
-    const onStorage = (e) => {
-      if (!e) return;
-      if (e.key === LS_EMAIL || e.key == null) tick();
-    };
+    const onStorage = () => tick();
     window.addEventListener("storage", onStorage);
 
     const onVis = () => {
@@ -53,11 +49,11 @@ export default function PublicHeader() {
     nav("/login", { replace: true });
   }
 
-  const wrap = {
+  const bar = {
     position: "sticky",
     top: 0,
-    zIndex: 60,
-    background: "rgba(8, 12, 18, 0.78)",
+    zIndex: 100,
+    background: "rgba(8, 12, 18, 0.82)",
     backdropFilter: "blur(10px)",
     borderBottom: "1px solid rgba(140,190,255,0.12)",
   };
@@ -81,15 +77,10 @@ export default function PublicHeader() {
     userSelect: "none",
   };
 
-  const title = { fontSize: 15, fontWeight: 950, letterSpacing: 0.2 };
+  const title = { fontSize: 15, fontWeight: 950, letterSpacing: 0.2, margin: 0 };
   const sub = { fontSize: 12, opacity: 0.72, marginTop: 2 };
 
-  const navRow = {
-    display: "flex",
-    gap: 10,
-    alignItems: "center",
-    flexWrap: "wrap",
-  };
+  const row = { display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" };
 
   const btn = (primary) => ({
     padding: "10px 12px",
@@ -108,49 +99,53 @@ export default function PublicHeader() {
     whiteSpace: "nowrap",
   });
 
-  const link = (label, onClick, primary = false) => (
-    <button key={label} style={btn(primary)} onClick={onClick}>
-      {label}
-    </button>
-  );
-
   return (
-    <div style={wrap}>
+    <div style={bar}>
       <div style={inner}>
         <div
           style={brand}
-          onClick={() => nav(authorized ? "/dashboard" : "/", { replace: false })}
+          onClick={() => nav(authorized ? "/dashboard" : "/")}
           title="QueCab AdbS"
         >
           <img
             src="/qc-logo.png"
             alt="QueCab AdbS"
             style={{ width: 34, height: 34, objectFit: "contain" }}
-            onError={(e) => {
-              e.currentTarget.style.display = "none";
-            }}
+            onError={(e) => (e.currentTarget.style.display = "none")}
           />
           <div>
             <div style={title}>QueCab AdbS</div>
-            <div style={sub}>
-              {authorized ? "Authorized" : "Public"} • Truck-Driver verification
-            </div>
+            <div style={sub}>{authorized ? "Authorized" : "Public"} • Truck-Driver verification</div>
           </div>
         </div>
 
-        <div style={navRow}>
+        <div style={row}>
           {authorized ? (
             <>
-              {link("Control Center", () => nav("/dashboard"), true)}
-              {link("How It Works", () => nav("/how-it-works"))}
-              {link("Log Out", logout)}
+              <button style={btn(true)} onClick={() => nav("/dashboard")}>
+                Control Center
+              </button>
+              <button style={btn(false)} onClick={() => nav("/how-it-works")}>
+                How It Works
+              </button>
+              <button style={btn(false)} onClick={logout}>
+                Log Out
+              </button>
             </>
           ) : (
             <>
-              {link("Home", () => nav("/"), true)}
-              {link("How It Works", () => nav("/how-it-works"))}
-              {link("Log In", () => nav("/login"))}
-              {link("Request Access", () => nav("/join"))}
+              <button style={btn(true)} onClick={() => nav("/")}>
+                Home
+              </button>
+              <button style={btn(false)} onClick={() => nav("/how-it-works")}>
+                How It Works
+              </button>
+              <button style={btn(false)} onClick={() => nav("/login")}>
+                Log In
+              </button>
+              <button style={btn(false)} onClick={() => nav("/join")}>
+                Request Access
+              </button>
             </>
           )}
         </div>
