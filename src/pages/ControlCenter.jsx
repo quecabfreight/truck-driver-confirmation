@@ -241,6 +241,17 @@ export default function ControlCenter() {
     outline: "none",
   };
 
+  // BULLETPROOF INPUT INTERACTION (prevents “can’t click/type” caused by overlays)
+  const dtInputStyle = {
+    ...inputStyle,
+    position: "relative",
+    zIndex: 5,
+    pointerEvents: "auto",
+    WebkitUserSelect: "auto",
+    userSelect: "auto",
+    touchAction: "manipulation",
+  };
+
   const btnStyle = (primary) => ({
     width: "100%",
     padding: "12px 14px",
@@ -253,6 +264,17 @@ export default function ControlCenter() {
     fontSize: 16,
     cursor: "pointer",
   });
+
+  const tinyBtn = {
+    padding: "10px 12px",
+    borderRadius: 12,
+    border: "1px solid rgba(255,255,255,0.16)",
+    background: "rgba(255,255,255,0.06)",
+    color: "inherit",
+    fontSize: 13,
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+  };
 
   return (
     <div style={{ minHeight: "100vh" }}>
@@ -317,7 +339,6 @@ export default function ControlCenter() {
                   style={inputStyle}
                   value={usdotOnRecord}
                   onChange={(e) => {
-                    // show what user types, but normalize comparison later
                     setUsdotOnRecord(toUpperClean(e.target.value));
                   }}
                   placeholder="123456"
@@ -361,19 +382,53 @@ export default function ControlCenter() {
 
               <div>
                 <div style={labelStyle}>Start / Expire</div>
+
+                {/* Buttons to guarantee control even if a picker misbehaves */}
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 8 }}>
+                  <button
+                    type="button"
+                    style={tinyBtn}
+                    onClick={() => {
+                      const n = nowLocalDatetime();
+                      setStartsAt(n);
+                      setStatusMsg("Start reset to now.");
+                    }}
+                  >
+                    Reset Start = Now
+                  </button>
+
+                  <button
+                    type="button"
+                    style={tinyBtn}
+                    onClick={() => {
+                      const x = plusHoursLocalDatetime(24);
+                      setExpiresAt(x);
+                      setStatusMsg("Expire reset to +24h.");
+                    }}
+                  >
+                    Reset Expire = +24h
+                  </button>
+                </div>
+
                 <div style={{ display: "grid", gap: 8 }}>
                   <input
-                    style={inputStyle}
+                    style={dtInputStyle}
                     type="datetime-local"
                     value={startsAt}
                     onChange={(e) => setStartsAt(e.target.value)}
+                    onFocus={() => setStatusMsg("")}
                   />
                   <input
-                    style={inputStyle}
+                    style={dtInputStyle}
                     type="datetime-local"
                     value={expiresAt}
                     onChange={(e) => setExpiresAt(e.target.value)}
+                    onFocus={() => setStatusMsg("")}
                   />
+                </div>
+
+                <div style={{ opacity: 0.7, fontSize: 12, marginTop: 6 }}>
+                  Tip: click the field and type, or use the picker.
                 </div>
               </div>
             </div>
@@ -431,11 +486,7 @@ export default function ControlCenter() {
                 <div style={{ display: "grid", gap: 10 }}>
                   <div>
                     <div style={labelStyle}>Verify URL</div>
-                    <input
-                      style={inputStyle}
-                      value={issued.verify_url || ""}
-                      readOnly
-                    />
+                    <input style={inputStyle} value={issued.verify_url || ""} readOnly />
                     <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
                       <button
                         style={btnStyle(false)}
@@ -459,13 +510,7 @@ export default function ControlCenter() {
                     </div>
                   </div>
 
-                  <div
-                    style={{
-                      opacity: 0.75,
-                      fontSize: 12,
-                      lineHeight: 1.35,
-                    }}
-                  >
+                  <div style={{ opacity: 0.75, fontSize: 12, lineHeight: 1.35 }}>
                     Note: This panel is the production-facing issuer UI. The legacy
                     /smartlink page stays blocked.
                   </div>
