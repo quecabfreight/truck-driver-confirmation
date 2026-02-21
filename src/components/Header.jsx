@@ -1,7 +1,7 @@
 // /src/components/Header.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { LS_EMAIL, getAuthEmail, isAuthorized, clearAuth } from "../utils/auth.js";
+import { getAuthEmail, isBrokerOrShipper, clearAuth } from "../utils/auth.js";
 
 export default function Header() {
   const nav = useNavigate();
@@ -9,7 +9,7 @@ export default function Header() {
 
   const [email, setEmail] = useState(() => getAuthEmail());
 
-  // Same-tab sync (storage event won't fire in same tab)
+  // Keep header synced (same tab + cross-tab)
   useEffect(() => {
     let alive = true;
 
@@ -22,30 +22,26 @@ export default function Header() {
     tick();
     const id = setInterval(tick, 500);
 
+    const onStorage = () => tick();
+    window.addEventListener("storage", onStorage);
+
     const onVis = () => {
       if (document.visibilityState === "visible") tick();
     };
     document.addEventListener("visibilitychange", onVis);
 
-    // Cross-tab
-    const onStorage = (e) => {
-      if (!e) return;
-      if (e.key === LS_EMAIL || e.key == null) tick();
-    };
-    window.addEventListener("storage", onStorage);
-
     return () => {
       alive = false;
       clearInterval(id);
-      document.removeEventListener("visibilitychange", onVis);
       window.removeEventListener("storage", onStorage);
+      document.removeEventListener("visibilitychange", onVis);
     };
   }, [loc.pathname]);
 
   const authorized = useMemo(() => {
-    // Use the shared truth (not local guesses)
-    return isAuthorized();
-  }, [email, loc.pathname]);
+    const e = String(email || "").trim();
+    return !!e && isBrokerOrShipper(e);
+  }, [email]);
 
   function logout() {
     clearAuth();
@@ -53,13 +49,13 @@ export default function Header() {
     nav("/login", { replace: true });
   }
 
-  const wrap = {
+  const bar = {
     position: "sticky",
     top: 0,
-    zIndex: 50,
+    zIndex: 100,
+    background: "rgba(8, 12, 18, 0.82)",
     backdropFilter: "blur(10px)",
-    background: "rgba(8, 12, 18, 0.78)",
-    borderBottom: "1px solid rgba(255,255,255,0.10)",
+    borderBottom: "1px solid rgba(140,190,255,0.12)",
   };
 
   const inner = {
@@ -70,6 +66,7 @@ export default function Header() {
     alignItems: "center",
     justifyContent: "space-between",
     gap: 12,
+    flexWrap: "wrap",
   };
 
   const brand = {
@@ -80,63 +77,74 @@ export default function Header() {
     userSelect: "none",
   };
 
-  const title = { fontWeight: 900, letterSpacing: 0.2, fontSize: 16 };
+  const title = { fontSize: 15, fontWeight: 950, letterSpacing: 0.2, margin: 0 };
   const sub = { fontSize: 12, opacity: 0.72, marginTop: 2 };
+
+  const row = { display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" };
 
   const btn = (primary) => ({
     padding: "10px 12px",
     borderRadius: 12,
     border: primary
-      ? "1px solid rgba(120,180,255,0.45)"
-      : "1px solid rgba(255,255,255,0.16)",
-    background: primary ? "rgba(40, 110, 190, 0.35)" : "rgba(255,255,255,0.06)",
-    color: "inherit",
+      ? "1px solid rgba(140,190,255,0.42)"
+      : "1px solid rgba(140,190,255,0.20)",
+    background: primary
+      ? "linear-gradient(180deg, rgba(40,110,200,0.85), rgba(20,70,140,0.75))"
+      : "rgba(0,0,0,0.18)",
+    color: "#e6edf5",
     fontSize: 14,
+    fontWeight: 900,
     cursor: "pointer",
+    letterSpacing: 0.2,
     whiteSpace: "nowrap",
   });
 
   return (
-    <div style={wrap}>
+    <div style={bar}>
       <div style={inner}>
         <div
           style={brand}
-          onClick={() => nav(authorized ? "/dashboard" : "/", { replace: false })}
+          onClick={() => nav(authorized ? "/dashboard" : "/")}
           title="QueCab AdbS"
         >
           <img
             src="/qc-logo.png"
             alt="QueCab AdbS"
             style={{ width: 34, height: 34, objectFit: "contain" }}
-            onError={(e) => {
-              e.currentTarget.style.display = "none";
-            }}
+            onError={(e) => (e.currentTarget.style.display = "none")}
           />
           <div>
             <div style={title}>QueCab AdbS</div>
-            <div style={sub}>
-              {authorized ? "Authorized Control Center" : "Truck-Driver verification system"}
-            </div>
+            <div style={sub}>{authorized ? "Control Center" : "Public"} • Truck-Driver verification</div>
           </div>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={row}>
           {authorized ? (
             <>
-              <button style={btn(false)} onClick={() => nav("/dashboard")}>
+              <button style={btn(true)} onClick={() => nav("/dashboard")}>
                 Control Center
               </button>
-              <button style={btn(true)} onClick={logout}>
+              <button style={btn(false)} onClick={() => nav("/how-it-works")}>
+                How It Works
+              </button>
+              <button style={btn(false)} onClick={logout}>
                 Log Out
               </button>
             </>
           ) : (
             <>
+              <button style={btn(true)} onClick={() => nav("/")}>
+                Home
+              </button>
+              <button style={btn(false)} onClick={() => nav("/how-it-works")}>
+                How It Works
+              </button>
+              <button style={btn(false)} onClick={() => nav("/login")}>
+                Log In
+              </button>
               <button style={btn(false)} onClick={() => nav("/join")}>
                 Request Access
-              </button>
-              <button style={btn(true)} onClick={() => nav("/login")}>
-                Log In
               </button>
             </>
           )}
