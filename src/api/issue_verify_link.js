@@ -1,150 +1,104 @@
+// /api/issue_verify_link.js
+import { createClient } from "@supabase/supabase-js";
+
+function json(res, code, obj) {
+  res.status(code);
+  res.setHeader("Content-Type", "application/json; charset=utf-8");
+  res.setHeader("Cache-Control", "no-store");
+  res.end(JSON.stringify(obj));
+}
+
+function onlyDigits(s) {
+  return String(s || "").replace(/\D+/g, "");
+}
+
+function toUpperClean(s) {
+  return String(s || "").toUpperCase().trim();
+}
+
 export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    return json(res, 405, { ok: false, error: "Method not allowed" });
+  }
+
   try {
-    if (req.method !== "POST") {
-      return json(res, 405, { ok: false, error: "Use POST." });
+    const SUPABASE_URL = process.env.SUPABASE_URL;
+    const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      return json(res, 500, { ok: false, error: "Server missing Supabase env vars." });
     }
 
-    // Safe body parsing
-    let body = {};
-    try {
-      if (typeof req.body === "object") body = req.body;
-      else body = JSON.parse(req.body || "{}");
-    } catch {
-      body = {};
-    }
-
-    const business_email = String(body.business_email || "").trim().toLowerCase();
-    const access_code = String(body.access_code || "").trim().toUpperCase();
-
-    const usdot_on_record = digitsOnly(body.usdot_on_record);
-    const plate_on_record = String(body.plate_on_record || "").trim();
-    const driver_phone = String(body.driver_phone || "").trim();
-
-    const SUPABASE_URL = (process.env.SUPABASE_URL || "").trim();
-    const SRK = (process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
-
-    if (!SUPABASE_URL) return json(res, 500, { ok: false, error: "Missing env: SUPABASE_URL" });
-    if (!SRK) return json(res, 500, { ok: false, error: "Missing env: SUPABASE_SERVICE_ROLE_KEY" });
-
-    if (!business_email) return json(res, 400, { ok: false, error: "Missing business_email." });
-    if (!access_code) return json(res, 400, { ok: false, error: "Missing access_code." });
-    if (!usdot_on_record) return json(res, 400, { ok: false, error: "Enter USDOT (digits only)." });
-    if (!plate_on_record) return json(res, 400, { ok: false, error: "Enter plate." });
-    if (!driver_phone) return json(res, 400, { ok: false, error: "Enter driver phone." });
-
-    // 1) Verify requester is approved
-    const checkUrl =
-      `${SUPABASE_URL}/rest/v1/beta_requests` +
-      `?select=id,business_email,approved,status,access_code` +
-      `&business_email=eq.${encodeURIComponent(business_email)}` +
-      `&order=created_at.desc` +
-      `&limit=10`;
-
-    const c = await fetch(checkUrl, {
-      method: "GET",
-      headers: { apikey: SRK, Authorization: `Bearer ${SRK}` },
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+      auth: { persistSession: false },
     });
 
-    const cText = await c.text();
-    let cData;
-    try {
-      cData = JSON.parse(cText);
-    } catch {
-      cData = cText;
+    const body = req.body || {};
+    const load_id = String(body.load_id || "").trim();
+
+    const usdot_digits = onlyDigits(body.usdot_on_record);
+    const plate_upper = toUpperClean(body.plate_on_record);
+    const driver_phone_digits = onlyDigits(body.driver_phone);
+
+    const starts_at = body.starts_at || null;
+    const expires_at = body.expires_at === null ? null : body.expires_at || null;
+
+    if (!load_id) return json(res, 400, { ok: false, error: "load_id is required" });
+    if (!usdot_digits) return json(res, 400, { ok: false, error: "usdot_on_record is required" });
+    if (!plate_upper) return json(res, 400, { ok: false, error: "plate_on_record is required" });
+
+    // Driver phone can be stored as digits or formatted; we keep digits-only in DB.
+    if (driver_phone_digits.length !== 10) {
+      return json(res, 400, { ok: false, error: "driver_phone must be 10 digits" });
     }
 
-    if (!c.ok) return json(res, 500, { ok: false, error: "Supabase error (check user).", details: cData });
-
-    const rows = Array.isArray(cData) ? cData : [];
-    const match = rows.find((r) => String(r.access_code || "").toUpperCase().trim() === access_code);
-
-    if (!match) {
-      return json(res, 401, { ok: false, error: "Unauthorized (bad email/code)." });
+    if (!starts_at) {
+      return json(res, 400, { ok: false, error: "starts_at is required" });
     }
+    // expires_at may be null (No Expire)
 
-    const approved =
-      match.approved === true || String(match.status || "").toLowerCase().trim() === "approved";
+    // Create token (URL-safe)
+    const token =
+      Math.random().toString(36).slice(2) +
+      Math.random().toString(36).slice(2);
 
-    if (!approved) {
-      return json(res, 403, { ok: false, error: "Not approved yet." });
-    }
-
-    // 2) Insert verify link
-    const token = makeToken();
-    const nowIso = new Date().toISOString();
-    const expiresIso = new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString(); // +6 hours default
-
-    const insertUrl = `${SUPABASE_URL}/rest/v1/verify_links`;
-
-    const payload = {
+    const row = {
       token,
-      usdot_on_record,
-      plate_on_record,
-      driver_phone,
+      load_id,
+      usdot_on_record: usdot_digits,
+      plate_on_record: plate_upper,
+      driver_phone: driver_phone_digits,
       status: "active",
-      starts_at: nowIso,
-      expires_at: expiresIso,
+      starts_at,
+      expires_at,
     };
 
-    const ins = await fetch(insertUrl, {
-      method: "POST",
-      headers: {
-        apikey: SRK,
-        Authorization: `Bearer ${SRK}`,
-        "Content-Type": "application/json",
-        Prefer: "return=representation",
-      },
-      body: JSON.stringify(payload),
-    });
+    const { data, error } = await supabase
+      .from("verify_links")
+      .insert(row)
+      .select("token, load_id, status, starts_at, expires_at")
+      .single();
 
-    const insText = await ins.text();
-    let insData;
-    try {
-      insData = JSON.parse(insText);
-    } catch {
-      insData = insText;
+    if (error) {
+      return json(res, 500, { ok: false, error: error.message });
     }
 
-    if (!ins.ok) {
-      return json(res, 500, { ok: false, error: "Supabase error (insert verify_links).", details: insData });
-    }
+    const origin =
+      (req.headers["x-forwarded-proto"] ? `${req.headers["x-forwarded-proto"]}://` : "https://") +
+      (req.headers["x-forwarded-host"] || req.headers.host);
 
-    const origin = getOrigin(req);
     const verify_url = `${origin}/#/verify/${token}`;
 
     return json(res, 200, {
       ok: true,
-      token,
+      token: data.token,
+      load_id: data.load_id,
+      status: data.status,
+      starts_at: data.starts_at,
+      expires_at: data.expires_at,
       verify_url,
-      expires_at: expiresIso,
     });
-  } catch (err) {
-    return json(res, 500, { ok: false, error: "Server error (issue link).", details: String(err?.message || err) });
+  } catch (e) {
+    return json(res, 500, { ok: false, error: "Server error issuing verification." });
   }
-}
-
-function digitsOnly(v) {
-  return String(v || "").replace(/\D/g, "");
-}
-
-function makeToken() {
-  // short, URL-safe, human-copyable
-  const a = Math.random().toString(36).slice(2, 8);
-  const b = Math.random().toString(36).slice(2, 8);
-  return `${a}${b}`.toLowerCase();
-}
-
-function getOrigin(req) {
-  const xfProto = req.headers["x-forwarded-proto"];
-  const xfHost = req.headers["x-forwarded-host"];
-  const host = xfHost || req.headers.host;
-  const proto = (Array.isArray(xfProto) ? xfProto[0] : xfProto) || "https";
-  return `${proto}://${host}`;
-}
-
-function json(res, status, obj) {
-  res.status(status);
-  res.setHeader("Content-Type", "application/json; charset=utf-8");
-  res.setHeader("Cache-Control", "no-store");
-  res.end(JSON.stringify(obj));
 }
