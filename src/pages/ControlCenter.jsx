@@ -13,6 +13,7 @@ function toUpperClean(s) {
   return String(s || "").toUpperCase();
 }
 
+// Formats as 123-456-7890 while typing (digits only under the hood)
 function formatPhoneHyphen(s) {
   const d = onlyDigits(s).slice(0, 10);
   const a = d.slice(0, 3);
@@ -47,6 +48,7 @@ async function safeCopy(text) {
 }
 
 function nowLocalDatetime() {
+  // datetime-local expects "YYYY-MM-DDTHH:mm"
   const d = new Date();
   const pad = (n) => String(n).padStart(2, "0");
   const yyyy = d.getFullYear();
@@ -74,33 +76,41 @@ export default function ControlCenter() {
   const email = (localStorage.getItem(LS_EMAIL) || "").trim();
   const authorized = !!email && isBrokerOrShipper(email);
 
+  // If someone hits this page without auth, bounce them.
   if (!authorized) {
     nav("/login", { replace: true });
     return null;
   }
 
+  // Core form fields
   const [loadId, setLoadId] = useState("");
   const [usdotOnRecord, setUsdotOnRecord] = useState("");
   const [plateOnRecord, setPlateOnRecord] = useState("");
   const [driverPhone, setDriverPhone] = useState("");
 
-  const [expireMode, setExpireMode] = useState("AUTO_24H"); // AUTO_24H | MANUAL | NO_EXPIRE
+  // Expire modes
+  // auto24  => starts now, expires +24h (editable via reset buttons)
+  // custom  => user sets both fields
+  // noexpire => starts now, expires_at = null
+  const [expireMode, setExpireMode] = useState("auto24");
   const [startsAt, setStartsAt] = useState(() => nowLocalDatetime());
   const [expiresAt, setExpiresAt] = useState(() => plusHoursLocalDatetime(24));
 
   const [statusMsg, setStatusMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
-  const [issued, setIssued] = useState(null);
+
+  const [issued, setIssued] = useState(null); // { token, verify_url, expires_at, ... }
 
   const abortRef = useRef(null);
 
   const normalized = useMemo(() => {
+    const load_id = String(loadId || "").trim();
     const usdot_digits = onlyDigits(usdotOnRecord);
-    const plate_upper = toUpperClean(plateOnRecord);
+    const plate_upper = toUpperClean(plateOnRecord).trim();
     const phone_digits = onlyDigits(driverPhone);
-    return { usdot_digits, plate_upper, phone_digits };
-  }, [usdotOnRecord, plateOnRecord, driverPhone]);
+    return { load_id, usdot_digits, plate_upper, phone_digits };
+  }, [loadId, usdotOnRecord, plateOnRecord, driverPhone]);
 
   function logout() {
     try {
@@ -121,15 +131,12 @@ export default function ControlCenter() {
     setExpiresAt(plusHoursLocalDatetime(24));
   }
 
-  async function issueAdbSVerification() {
+  async function issueLink() {
     setErrorMsg("");
     setStatusMsg("");
     setIssued(null);
 
-    const load_id = String(loadId || "").trim();
-    const usdot_digits = normalized.usdot_digits;
-    const plate_upper = normalized.plate_upper;
-    const phone_digits = normalized.phone_digits;
+    const { load_id, usdot_digits, plate_upper, phone_digits } = normalized;
 
     if (!load_id) {
       setErrorMsg("Enter Load ID.");
@@ -148,11 +155,26 @@ export default function ControlCenter() {
       return;
     }
 
-    if (expireMode === "MANUAL") {
-      if (!startsAt) return setErrorMsg("Start time is required.");
-      if (!expiresAt) return setErrorMsg("Expire time is required.");
+    // Determine dates based on mode
+    let starts_at = startsAt;
+    let expires_at = expiresAt;
+
+    if (expireMode === "auto24") {
+      // Use current values (you can reset them with buttons)
+      if (!starts_at) starts_at = nowLocalDatetime();
+      if (!expires_at) expires_at = plusHoursLocalDatetime(24);
+    } else if (expireMode === "custom") {
+      if (!starts_at || !expires_at) {
+        setErrorMsg("Start and Expire are required in Custom mode.");
+        return;
+      }
+    } else if (expireMode === "noexpire") {
+      // Start now; no expire
+      if (!starts_at) starts_at = nowLocalDatetime();
+      expires_at = null;
     }
 
+    // Cancel any previous request to avoid piling up
     try {
       if (abortRef.current) abortRef.current.abort();
     } catch {}
@@ -167,9 +189,8 @@ export default function ControlCenter() {
         usdot_on_record: usdot_digits,
         plate_on_record: plate_upper,
         driver_phone: formatPhoneHyphen(phone_digits),
-        expire_mode: expireMode,
-        starts_at: expireMode === "MANUAL" ? startsAt : null,
-        expires_at: expireMode === "MANUAL" ? expiresAt : null,
+        starts_at,
+        expires_at, // null allowed for no-expire
       };
 
       const res = await fetch("/api/issue_verify_link", {
@@ -188,26 +209,43 @@ export default function ControlCenter() {
       }
 
       if (!res.ok) {
-        const msg = (data && (data.error || data.message)) || `Issuer failed (${res.status}).`;
+        const msg =
+          (data && (data.error || data.message)) ||
+          `Issuer failed (${res.status}).`;
         setErrorMsg(msg);
         setLoading(false);
         return;
       }
 
-      const token = data.token || "";
-      const verify_url = data.verify_url || "";
-      const expires = data.expires_at ?? null;
+      const token =
+        data.token || data.verify_token || (data.data && data.data.token) || "";
+      const verify_url =
+        data.verify_url ||
+        data.url ||
+        data.link ||
+        (data.data && data.data.verify_url) ||
+        "";
+
+      const expires =
+        data.expires_at || (data.data && data.data.expires_at) || expires_at;
 
       setIssued({
         token,
         verify_url,
         expires_at: expires,
         load_id,
+        usdot_on_record: usdot_digits,
+        plate_on_record: plate_upper,
+        driver_phone: formatPhoneHyphen(phone_digits),
       });
 
-      setStatusMsg("AdbS verification link issued.");
+      setStatusMsg("Verification issued.");
     } catch (e) {
-      if (String(e?.name) !== "AbortError") setErrorMsg("Network error issuing link.");
+      if (String(e?.name) === "AbortError") {
+        // user triggered another request
+      } else {
+        setErrorMsg("Network error issuing verification.");
+      }
     } finally {
       setLoading(false);
     }
@@ -247,18 +285,24 @@ export default function ControlCenter() {
     cursor: "pointer",
   });
 
-  const pillBtn = (active) => ({
+  const smallBtn = {
     padding: "10px 12px",
     borderRadius: 12,
+    border: "1px solid rgba(255,255,255,0.16)",
+    background: "rgba(255,255,255,0.06)",
+    color: "inherit",
+    fontSize: 14,
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+  };
+
+  const modeBtn = (active) => ({
+    ...smallBtn,
     border: active
       ? "1px solid rgba(120,180,255,0.45)"
       : "1px solid rgba(255,255,255,0.16)",
-    background: active ? "rgba(40, 110, 190, 0.22)" : "rgba(255,255,255,0.06)",
-    color: "inherit",
-    fontSize: 14,
-    fontWeight: 900,
-    cursor: "pointer",
-    whiteSpace: "nowrap",
+    background: active ? "rgba(40, 110, 190, 0.25)" : "rgba(255,255,255,0.06)",
+    fontWeight: active ? 900 : 800,
   });
 
   return (
@@ -295,50 +339,55 @@ export default function ControlCenter() {
         <div style={{ display: "grid", gridTemplateColumns: "1.05fr 0.95fr", gap: 16 }}>
           {/* Left: Issuer */}
           <div style={cardStyle}>
-            <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 10 }}>
+            <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 10 }}>
               Issue AdbS Verification
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-              <div style={{ gridColumn: "span 2" }}>
+            <div style={{ display: "grid", gap: 12 }}>
+              <div>
                 <div style={labelStyle}>Load ID</div>
                 <input
                   style={inputStyle}
                   value={loadId}
-                  onChange={(e) => setLoadId(e.target.value)}
-                  placeholder="Example: RC-12345 or LOAD-7781"
+                  onChange={(e) => setLoadId(String(e.target.value || ""))}
+                  placeholder="Example: LOAD-12345"
+                  inputMode="text"
                   autoComplete="off"
                 />
                 <div style={{ opacity: 0.7, fontSize: 12, marginTop: 6 }}>
-                  Identifier so the dock is verifying the correct load.
+                  Your internal identifier so checks always tie back to the right load.
                 </div>
               </div>
 
-              <div>
-                <div style={labelStyle}>USDOT# on record</div>
-                <input
-                  style={inputStyle}
-                  value={usdotOnRecord}
-                  onChange={(e) => setUsdotOnRecord(toUpperClean(e.target.value))}
-                  placeholder="123456"
-                  inputMode="text"
-                  autoComplete="off"
-                />
-                <div style={{ opacity: 0.7, fontSize: 12, marginTop: 6 }}>Compared digits-only.</div>
-              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div>
+                  <div style={labelStyle}>USDOT# on record</div>
+                  <input
+                    style={inputStyle}
+                    value={usdotOnRecord}
+                    onChange={(e) => setUsdotOnRecord(toUpperClean(e.target.value))}
+                    placeholder="123456"
+                    inputMode="text"
+                    autoComplete="off"
+                  />
+                  <div style={{ opacity: 0.7, fontSize: 12, marginTop: 6 }}>
+                    Compared digits-only.
+                  </div>
+                </div>
 
-              <div>
-                <div style={labelStyle}>Plate on record</div>
-                <input
-                  style={inputStyle}
-                  value={plateOnRecord}
-                  onChange={(e) => setPlateOnRecord(toUpperClean(e.target.value))}
-                  placeholder="ABC1234"
-                  inputMode="text"
-                  autoComplete="off"
-                />
-                <div style={{ opacity: 0.7, fontSize: 12, marginTop: 6 }}>
-                  Auto-uppercase while typing.
+                <div>
+                  <div style={labelStyle}>Plate on record</div>
+                  <input
+                    style={inputStyle}
+                    value={plateOnRecord}
+                    onChange={(e) => setPlateOnRecord(toUpperClean(e.target.value))}
+                    placeholder="ABC1234"
+                    inputMode="text"
+                    autoComplete="off"
+                  />
+                  <div style={{ opacity: 0.7, fontSize: 12, marginTop: 6 }}>
+                    Auto-uppercase while typing.
+                  </div>
                 </div>
               </div>
 
@@ -360,75 +409,81 @@ export default function ControlCenter() {
               <div>
                 <div style={labelStyle}>Start / Expire</div>
 
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
                   <button
-                    style={pillBtn(expireMode === "AUTO_24H")}
-                    onClick={() => setExpireMode("AUTO_24H")}
                     type="button"
+                    style={modeBtn(expireMode === "auto24")}
+                    onClick={() => {
+                      setExpireMode("auto24");
+                      setStartsAt((v) => v || nowLocalDatetime());
+                      setExpiresAt((v) => v || plusHoursLocalDatetime(24));
+                    }}
                   >
-                    Auto 24h Expire
+                    Auto 24 Hour Expire
                   </button>
+
                   <button
-                    style={pillBtn(expireMode === "MANUAL")}
-                    onClick={() => setExpireMode("MANUAL")}
                     type="button"
+                    style={modeBtn(expireMode === "custom")}
+                    onClick={() => setExpireMode("custom")}
                   >
-                    Choose Start/Expire
+                    Custom Start/Expire
                   </button>
+
                   <button
-                    style={pillBtn(expireMode === "NO_EXPIRE")}
-                    onClick={() => setExpireMode("NO_EXPIRE")}
                     type="button"
+                    style={modeBtn(expireMode === "noexpire")}
+                    onClick={() => {
+                      setExpireMode("noexpire");
+                      setStartsAt((v) => v || nowLocalDatetime());
+                    }}
                   >
                     No Expire
                   </button>
                 </div>
 
-                {expireMode === "MANUAL" ? (
-                  <div style={{ display: "grid", gap: 8 }}>
-                    <input
-                      style={inputStyle}
-                      type="datetime-local"
-                      value={startsAt}
-                      onChange={(e) => setStartsAt(e.target.value)}
-                    />
+                <div style={{ display: "grid", gap: 8 }}>
+                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                    <button type="button" style={smallBtn} onClick={resetStartNow}>
+                      Reset Start = Now
+                    </button>
+
+                    {expireMode !== "noexpire" ? (
+                      <button type="button" style={smallBtn} onClick={resetExpire24h}>
+                        Reset Expire = +24h
+                      </button>
+                    ) : null}
+                  </div>
+
+                  <input
+                    style={inputStyle}
+                    type="datetime-local"
+                    value={startsAt}
+                    onChange={(e) => setStartsAt(e.target.value)}
+                  />
+
+                  {expireMode !== "noexpire" ? (
                     <input
                       style={inputStyle}
                       type="datetime-local"
                       value={expiresAt}
                       onChange={(e) => setExpiresAt(e.target.value)}
                     />
-                    <div style={{ display: "flex", gap: 10 }}>
-                      <button style={btnStyle(false)} type="button" onClick={resetStartNow}>
-                        Reset Start = Now
-                      </button>
-                      <button style={btnStyle(false)} type="button" onClick={resetExpire24h}>
-                        Reset Expire = +24h
-                      </button>
+                  ) : (
+                    <div style={{ opacity: 0.78, fontSize: 13, lineHeight: 1.35 }}>
+                      No Expire selected — verification will remain active until you revoke it later.
                     </div>
-                    <div style={{ opacity: 0.7, fontSize: 12 }}>
-                      Tip: click the field and type, or use the picker.
-                    </div>
+                  )}
+
+                  <div style={{ opacity: 0.7, fontSize: 12 }}>
+                    Tip: click the field and type, or use the picker.
                   </div>
-                ) : expireMode === "AUTO_24H" ? (
-                  <div style={{ opacity: 0.75, fontSize: 12, lineHeight: 1.35 }}>
-                    Start = now. Expire = +24 hours automatically.
-                  </div>
-                ) : (
-                  <div style={{ opacity: 0.75, fontSize: 12, lineHeight: 1.35 }}>
-                    No expiration. Link stays valid until you change status later.
-                  </div>
-                )}
+                </div>
               </div>
             </div>
 
             <div style={{ marginTop: 14, display: "grid", gap: 10 }}>
-              <button
-                onClick={issueAdbSVerification}
-                style={btnStyle(true)}
-                disabled={loading}
-                title={loading ? "Issuing..." : "Issue AdbS Verification"}
-              >
+              <button onClick={issueLink} style={btnStyle(true)} disabled={loading}>
                 {loading ? "Issuing..." : "Issue AdbS Verification"}
               </button>
 
@@ -463,14 +518,18 @@ export default function ControlCenter() {
 
             {issued ? (
               <div style={{ marginTop: 14, ...cardStyle, padding: 14 }}>
-                <div style={{ fontSize: 16, fontWeight: 900, marginBottom: 8 }}>Issued</div>
+                <div style={{ fontSize: 16, fontWeight: 900, marginBottom: 8 }}>
+                  Issued
+                </div>
+
+                <div style={{ fontSize: 14, opacity: 0.92, marginBottom: 10 }}>
+                  Load ID: <span style={{ fontWeight: 900 }}>{issued.load_id}</span>
+                </div>
 
                 <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 10 }}>
-                  Load ID: <span style={{ fontWeight: 900 }}>{issued.load_id}</span>
-                  <br />
                   Expires:{" "}
                   <span style={{ fontWeight: 800 }}>
-                    {issued.expires_at ? issued.expires_at : "No Expire"}
+                    {issued.expires_at ? String(issued.expires_at) : "No Expire"}
                   </span>
                 </div>
 
@@ -478,7 +537,7 @@ export default function ControlCenter() {
                   <div>
                     <div style={labelStyle}>Verify URL</div>
                     <input style={inputStyle} value={issued.verify_url || ""} readOnly />
-                    <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+                    <div style={{ display: "flex", gap: 10, marginTop: 8, flexWrap: "wrap" }}>
                       <button
                         style={btnStyle(false)}
                         onClick={async () => {
@@ -502,15 +561,15 @@ export default function ControlCenter() {
                   </div>
 
                   <div style={{ opacity: 0.75, fontSize: 12, lineHeight: 1.35 }}>
-                    Note: This panel is the production-facing issuer UI. The legacy /smartlink page
-                    stays blocked.
+                    Note: This panel is the production-facing issuer UI. The legacy /smartlink
+                    page stays blocked.
                   </div>
                 </div>
               </div>
             ) : null}
           </div>
 
-          {/* Right: Status (kept for now) */}
+          {/* Right: Status panel (keep as-is, light weight) */}
           <div style={cardStyle}>
             <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 10 }}>Status</div>
 
