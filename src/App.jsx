@@ -7,7 +7,6 @@ import Login from "./pages/Login.jsx";
 import Join from "./pages/Join.jsx";
 import ControlCenter from "./pages/ControlCenter.jsx";
 import Verify from "./pages/Verify.jsx";
-import Admin from "./pages/Admin.jsx";
 
 import { isBrokerOrShipper, LS_EMAIL } from "./utils/auth.js";
 
@@ -41,23 +40,8 @@ export default function App() {
           }
         />
 
-        <Route
-          path="/admin"
-          element={
-            <RequireAuth>
-              <Admin />
-            </RequireAuth>
-          }
-        />
-
-        <Route
-          path="/verify/:token"
-          element={
-            <RequireAuth>
-              <Verify />
-            </RequireAuth>
-          }
-        />
+        {/* PUBLIC VERIFY: must never require login */}
+        <Route path="/verify/:token" element={<Verify />} />
 
         {/* Legacy routes: keep hidden */}
         <Route path="/smartlink" element={<Navigate to="/dashboard" replace />} />
