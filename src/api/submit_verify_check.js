@@ -1,151 +1,207 @@
-// /api/submit_verify_check.js
+// /src/api/submit_verify_check.js
 import { createClient } from "@supabase/supabase-js";
 
 function json(res, code, obj) {
-  res.status(code);
+  res.statusCode = code;
   res.setHeader("Content-Type", "application/json; charset=utf-8");
   res.setHeader("Cache-Control", "no-store");
   res.end(JSON.stringify(obj));
 }
 
-function onlyDigits(s) {
-  return String(s || "").replace(/\D+/g, "");
+function onlyDigits(v) {
+  return String(v || "").replace(/\D+/g, "");
 }
 
-function up(s) {
-  return String(s || "").toUpperCase().trim();
+function upperTrim(v) {
+  return String(v || "").trim().toUpperCase();
+}
+
+function asBoolDriverAnswered(v) {
+  // Accept: true/false, "YES"/"NO", "yes"/"no", 1/0, "1"/"0"
+  if (typeof v === "boolean") return v;
+  const s = String(v || "").trim().toLowerCase();
+  if (s === "yes" || s === "y" || s === "true" || s === "1") return true;
+  if (s === "no" || s === "n" || s === "false" || s === "0") return false;
+  return null;
 }
 
 function nowIso() {
   return new Date().toISOString();
 }
 
-function inWindow(starts_at, expires_at) {
+function isWithinWindow(startsAt, expiresAt) {
+  // startsAt/expiresAt are stored with timezone in DB (timestamptz).
+  // We treat expiresAt null as "no expire".
   const now = Date.now();
-  const start = starts_at ? Date.parse(starts_at) : null;
-  const exp = expires_at ? Date.parse(expires_at) : null;
-  if (start && now < start) return false;
-  if (exp && now > exp) return false;
+  const s = startsAt ? Date.parse(startsAt) : NaN;
+  const e = expiresAt ? Date.parse(expiresAt) : NaN;
+
+  if (!Number.isNaN(s) && now < s) return false;
+  if (!Number.isNaN(e) && now > e) return false;
   return true;
+}
+
+function distinctFailureCount(rows) {
+  // Unique key: entered_usdot + entered_plate + driver_answered
+  const set = new Set();
+  for (const r of rows || []) {
+    const k = `${String(r.entered_usdot || "")}|${String(r.entered_plate || "")}|${
+      r.driver_answered ? "1" : "0"
+    }`;
+    set.add(k);
+  }
+  return set.size;
 }
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
-    return json(res, 405, { ok: false, error: "Method not allowed" });
+    return json(res, 405, { ok: false, error: "Use POST." });
   }
 
+  const SUPABASE_URL = process.env.SUPABASE_URL;
+  const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    return json(res, 500, { ok: false, error: "Server missing Supabase env." });
+  }
+
+  let body = {};
   try {
-    const SUPABASE_URL = process.env.SUPABASE_URL;
-    const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    body = typeof req.body === "string" ? JSON.parse(req.body) : req.body || {};
+  } catch {
+    body = {};
+  }
 
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-      return json(res, 500, { ok: false, error: "Server missing Supabase env vars." });
-    }
+  const token = String(body.token || "").trim();
+  const enteredUsdotDigits = onlyDigits(body.entered_usdot);
+  const enteredPlateUpper = upperTrim(body.entered_plate);
+  const driverAnswered = asBoolDriverAnswered(body.driver_answered);
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-      auth: { persistSession: false },
+  if (!token) return json(res, 400, { ok: false, error: "Missing token." });
+  if (!enteredUsdotDigits) return json(res, 400, { ok: false, error: "Enter USDOT#." });
+  if (!enteredPlateUpper) return json(res, 400, { ok: false, error: "Enter Plate." });
+  if (driverAnswered === null) {
+    return json(res, 400, { ok: false, error: "Select Driver Answered YES or NO." });
+  }
+
+  const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+    auth: { persistSession: false },
+  });
+
+  // 1) Load link
+  const { data: link, error: linkErr } = await sb
+    .from("verify_links")
+    .select("token, load_id, usdot_on_record, plate_on_record, driver_phone, status, starts_at, expires_at")
+    .eq("token", token)
+    .maybeSingle();
+
+  if (linkErr) return json(res, 500, { ok: false, error: "DB error loading link." });
+  if (!link) return json(res, 404, { ok: false, error: "Verify link not found." });
+
+  // 2) Validate link state
+  const status = String(link.status || "").toLowerCase();
+  if (status === "revoked") {
+    return json(res, 403, { ok: false, error: "This verify link is revoked.", revoked: true });
+  }
+  if (!isWithinWindow(link.starts_at, link.expires_at)) {
+    return json(res, 403, { ok: false, error: "This verify link is not active (not started or expired)." });
+  }
+
+  // 3) Option B dedupe:
+  // If an identical attempt exists, return its result WITHOUT consuming another strike.
+  const { data: prior, error: priorErr } = await sb
+    .from("verify_checks")
+    .select("id, result, created_at, checked_at")
+    .eq("token", token)
+    .eq("entered_usdot", enteredUsdotDigits)
+    .eq("entered_plate", enteredPlateUpper)
+    .eq("driver_answered", driverAnswered)
+    .order("created_at", { ascending: false })
+    .limit(1);
+
+  if (priorErr) return json(res, 500, { ok: false, error: "DB error checking duplicates." });
+
+  // Pre-compute current unique failure count (so UI can show remaining tries)
+  const { data: failRowsPre, error: failPreErr } = await sb
+    .from("verify_checks")
+    .select("entered_usdot, entered_plate, driver_answered, result")
+    .eq("token", token)
+    .eq("result", "caution");
+
+  if (failPreErr) return json(res, 500, { ok: false, error: "DB error reading attempts." });
+  const uniqueFailsPre = distinctFailureCount(failRowsPre);
+  const remainingPre = Math.max(0, 3 - uniqueFailsPre);
+
+  if (prior && prior.length) {
+    const priorResult = String(prior[0].result || "").toLowerCase();
+    const revoked = remainingPre <= 0;
+    return json(res, 200, {
+      ok: true,
+      token,
+      load_id: link.load_id ?? null,
+      result: priorResult === "clear" ? "clear" : "caution",
+      deduped: true,
+      attempts_remaining: priorResult === "clear" ? remainingPre : remainingPre,
+      revoked: revoked,
+      note: "Duplicate attempt did not consume another try.",
     });
+  }
 
-    const body = req.body || {};
-    const token = String(body.token || "").trim();
-    const entered_usdot = onlyDigits(body.entered_usdot);
-    const entered_plate = up(body.entered_plate);
-    const driver_answered = !!body.driver_answered;
+  // 4) Compute pass/fail WITHOUT revealing expected values
+  const recordUsdotDigits = onlyDigits(link.usdot_on_record);
+  const recordPlateUpper = upperTrim(link.plate_on_record);
 
-    if (!token) return json(res, 400, { ok: false, error: "token is required" });
-    if (!entered_usdot) return json(res, 400, { ok: false, error: "entered_usdot is required" });
-    if (!entered_plate) return json(res, 400, { ok: false, error: "entered_plate is required" });
+  const pass =
+    enteredUsdotDigits === recordUsdotDigits &&
+    enteredPlateUpper === recordPlateUpper &&
+    driverAnswered === true;
 
-    // Load link
-    const { data: link, error: linkErr } = await supabase
-      .from("verify_links")
-      .select("token, load_id, usdot_on_record, plate_on_record, driver_phone, status, starts_at, expires_at")
-      .eq("token", token)
-      .maybeSingle();
+  const result = pass ? "clear" : "caution";
 
-    if (linkErr) return json(res, 500, { ok: false, error: linkErr.message });
-    if (!link) return json(res, 404, { ok: false, error: "Verification not found." });
+  // 5) Write check row
+  const checkRow = {
+    token,
+    load_id: link.load_id ?? null,
+    entered_usdot: enteredUsdotDigits,
+    entered_plate: enteredPlateUpper,
+    driver_answered: driverAnswered,
+    result,
+    checked_at: nowIso(),
+  };
 
-    if (String(link.status || "").toLowerCase() !== "active") {
-      return json(res, 403, { ok: false, error: "Verification is not active.", locked: true, reasons: ["Link not active."] });
-    }
+  const { error: insErr } = await sb.from("verify_checks").insert(checkRow);
+  if (insErr) return json(res, 500, { ok: false, error: "DB error saving verification check." });
 
-    if (!inWindow(link.starts_at, link.expires_at)) {
-      return json(res, 403, { ok: false, error: "Verification not currently valid.", locked: true, reasons: ["Outside start/expire window."] });
-    }
+  // 6) Strike logic: after inserting, count UNIQUE failures; revoke if >= 3
+  let revokedNow = false;
+  let attemptsRemaining = remainingPre;
 
-    // Count existing failed attempts (caution results) for this token
-    const { data: priorFails, error: failErr } = await supabase
+  if (result === "caution") {
+    // Recount after insert
+    const { data: failRows, error: failErr } = await sb
       .from("verify_checks")
-      .select("id")
+      .select("entered_usdot, entered_plate, driver_answered, result")
       .eq("token", token)
       .eq("result", "caution");
 
-    if (failErr) return json(res, 500, { ok: false, error: failErr.message });
+    if (failErr) return json(res, 500, { ok: false, error: "DB error counting attempts." });
 
-    const failsSoFar = Array.isArray(priorFails) ? priorFails.length : 0;
+    const uniqueFails = distinctFailureCount(failRows);
+    attemptsRemaining = Math.max(0, 3 - uniqueFails);
 
-    // If already locked by attempts, revoke immediately
-    if (failsSoFar >= 3) {
-      // Ensure status is revoked (idempotent)
-      await supabase.from("verify_links").update({ status: "revoked" }).eq("token", token);
-      return json(res, 403, {
-        ok: false,
-        locked: true,
-        error: "CAUTION ALERT — DO NOT LOAD (Locked after failed attempts).",
-        reasons: ["Too many unsuccessful attempts."],
-        attempts_used: 3,
-      });
+    if (uniqueFails >= 3) {
+      revokedNow = true;
+      await sb.from("verify_links").update({ status: "revoked" }).eq("token", token);
     }
-
-    const record_usdot = onlyDigits(link.usdot_on_record);
-    const record_plate = up(link.plate_on_record);
-
-    const usdot_match = entered_usdot === record_usdot;
-    const plate_match = entered_plate === record_plate;
-
-    const reasons = [];
-    if (!usdot_match) reasons.push("USDOT mismatch.");
-    if (!plate_match) reasons.push("Plate mismatch.");
-    if (!driver_answered) reasons.push("Driver did not answer phone.");
-
-    const verdict = usdot_match && plate_match && driver_answered ? "clear" : "caution";
-
-    // Insert check
-    const row = {
-      token,
-      load_id: link.load_id || null,
-      entered_usdot,
-      entered_plate,
-      driver_answered,
-      result: verdict,
-      checked_at: nowIso(),
-    };
-
-    const { error: insErr } = await supabase.from("verify_checks").insert(row);
-    if (insErr) return json(res, 500, { ok: false, error: insErr.message });
-
-    // If this was a failure, see if we hit strike 3
-    let attempts_used = failsSoFar;
-    let locked = false;
-
-    if (verdict === "caution") {
-      attempts_used = failsSoFar + 1;
-      if (attempts_used >= 3) {
-        locked = true;
-        await supabase.from("verify_links").update({ status: "revoked" }).eq("token", token);
-        reasons.unshift("Locked after 3 unsuccessful attempts.");
-      }
-    }
-
-    return json(res, 200, {
-      ok: true,
-      verdict: locked ? "caution" : verdict,
-      locked,
-      attempts_used: verdict === "caution" ? Math.min(attempts_used, 3) : attempts_used,
-      reasons,
-    });
-  } catch {
-    return json(res, 500, { ok: false, error: "Server error submitting verification." });
   }
+
+  return json(res, 200, {
+    ok: true,
+    token,
+    load_id: link.load_id ?? null,
+    result,
+    deduped: false,
+    attempts_remaining: attemptsRemaining,
+    revoked: revokedNow,
+  });
 }
