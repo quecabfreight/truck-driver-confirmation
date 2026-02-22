@@ -1,81 +1,127 @@
-// api/issue_verify_link.js
-import crypto from "crypto";
-import { getAdmin, json, readJson } from "./_supabaseAdmin.js";
+// /api/issue_verify_link.js
+// Issues an AdbS verification link.
+// IMPORTANT: converts datetime-local (no timezone) to a UTC ISO string before storing,
+// so Supabase/Postgres doesn't incorrectly assume UTC for local times.
 
-function normUpper(s) {
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+function json(res, code, obj) {
+  res.statusCode = code;
+  res.setHeader("Content-Type", "application/json; charset=utf-8");
+  res.setHeader("Cache-Control", "no-store");
+  res.end(JSON.stringify(obj));
+}
+
+function onlyDigits(s) {
+  return String(s || "").replace(/\D+/g, "");
+}
+
+function toUpperClean(s) {
   return String(s || "").trim().toUpperCase();
 }
-function normDigits(s) {
-  return String(s || "").replace(/\D/g, "").trim();
-}
-function safeIsoOrNull(s) {
-  const v = String(s || "").trim();
-  if (!v) return null;
-  const d = new Date(v);
-  if (Number.isNaN(d.getTime())) return null;
-  return d.toISOString();
+
+function formatPhoneHyphen(s) {
+  const d = onlyDigits(s).slice(0, 10);
+  const a = d.slice(0, 3);
+  const b = d.slice(3, 6);
+  const c = d.slice(6, 10);
+  if (d.length <= 3) return a;
+  if (d.length <= 6) return `${a}-${b}`;
+  return `${a}-${b}-${c}`;
 }
 
-function buildVerifyUrl(req, token) {
-  // Works for your HashRouter route: /#/verify/:token
-  const proto = (req.headers["x-forwarded-proto"] || "https").toString();
-  const host = (req.headers["x-forwarded-host"] || req.headers.host || "").toString();
-  return `${proto}://${host}/#/verify/${token}`;
+function token(n = 24) {
+  const chars =
+    "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+  let out = "";
+  for (let i = 0; i < n; i++) out += chars[Math.floor(Math.random() * chars.length)];
+  return out;
+}
+
+// datetime-local like "2026-02-21T20:38" must be treated as LOCAL time.
+// Convert to real UTC ISO string.
+function localDatetimeToUtcIso(localStr) {
+  if (!localStr) return null;
+  // JS treats "YYYY-MM-DDTHH:mm" as local time in both browser + Node.
+  const d = new Date(localStr);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toISOString(); // UTC Z
 }
 
 export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    return json(res, 405, { error: "Method not allowed" });
+  }
+
   try {
-    if (req.method !== "POST") return json(res, 405, { ok: false, error: "Use POST." });
+    const body = req.body || {};
+    const load_id = String(body.load_id || "").trim();
 
-    const body = await readJson(req);
+    const usdot_on_record = onlyDigits(body.usdot_on_record);
+    const plate_on_record = toUpperClean(body.plate_on_record);
+    const driver_phone = formatPhoneHyphen(body.driver_phone);
 
-    const usdot = normDigits(body.usdot_on_record);
-    const plate = normUpper(body.plate_on_record);
-    const phone = normDigits(body.driver_phone).slice(0, 15); // allow country code if you ever do
+    const mode = String(body.expire_mode || "AUTO_24H").toUpperCase(); // AUTO_24H | MANUAL | NO_EXPIRE
 
-    const startsAt = safeIsoOrNull(body.starts_at) || new Date().toISOString();
-    const expiresAt = safeIsoOrNull(body.expires_at);
+    const starts_at_utc =
+      mode === "MANUAL" ? localDatetimeToUtcIso(body.starts_at) : new Date().toISOString();
 
-    if (!usdot || !plate || !phone) {
-      return json(res, 400, {
-        ok: false,
-        error: "Missing required fields: USDOT, Plate, Driver Phone.",
-      });
+    let expires_at_utc = null;
+    if (mode === "NO_EXPIRE") {
+      expires_at_utc = null;
+    } else if (mode === "MANUAL") {
+      expires_at_utc = localDatetimeToUtcIso(body.expires_at);
+    } else {
+      // AUTO_24H
+      expires_at_utc = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
     }
 
-    if (expiresAt && new Date(expiresAt) <= new Date(startsAt)) {
-      return json(res, 400, {
-        ok: false,
-        error: "Expires must be after Starts.",
-      });
-    }
+    if (!load_id) return json(res, 400, { error: "Load ID is required." });
+    if (!usdot_on_record) return json(res, 400, { error: "USDOT# (digits) is required." });
+    if (!plate_on_record) return json(res, 400, { error: "Plate is required." });
+    if (onlyDigits(driver_phone).length !== 10)
+      return json(res, 400, { error: "Driver phone must be 10 digits." });
 
-    const token = crypto.randomBytes(18).toString("base64url"); // short + URL-safe
+    if (!starts_at_utc) return json(res, 400, { error: "Invalid start time." });
+    if (mode !== "NO_EXPIRE" && !expires_at_utc)
+      return json(res, 400, { error: "Invalid expire time." });
 
-    const admin = getAdmin();
+    const t = token(24);
 
-    const { error } = await admin.from("verify_links").insert([
+    const { error: insErr } = await supabase.from("verify_links").insert([
       {
-        token,
-        usdot_on_record: usdot,
-        plate_on_record: plate,
-        driver_phone: phone,
+        token: t,
+        load_id,
+        usdot_on_record,
+        plate_on_record,
+        driver_phone,
         status: "active",
-        starts_at: startsAt,
-        expires_at: expiresAt,
+        starts_at: starts_at_utc,
+        expires_at: expires_at_utc,
       },
     ]);
 
-    if (error) throw error;
+    if (insErr) return json(res, 500, { error: insErr.message });
 
-    const verify_url = buildVerifyUrl(req, token);
+    const origin =
+      (req.headers["x-forwarded-proto"] ? `${req.headers["x-forwarded-proto"]}://` : "https://") +
+      (req.headers["x-forwarded-host"] || req.headers.host);
+
+    const verify_url = `${origin}/#/verify/${t}`;
 
     return json(res, 200, {
       ok: true,
-      token,
+      token: t,
       verify_url,
+      expires_at: expires_at_utc,
+      starts_at: starts_at_utc,
     });
   } catch (e) {
-    return json(res, 500, { ok: false, error: e?.message || "Server error." });
+    return json(res, 500, { error: "Server error issuing link." });
   }
 }
