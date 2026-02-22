@@ -7,6 +7,9 @@ import Login from "./pages/Login.jsx";
 import Join from "./pages/Join.jsx";
 import ControlCenter from "./pages/ControlCenter.jsx";
 import Verify from "./pages/Verify.jsx";
+import Admin from "./pages/Admin.jsx";
+import HowItWorks from "./pages/HowItWorks.jsx";
+import About from "./pages/About.jsx";
 
 import { isBrokerOrShipper, LS_EMAIL } from "./utils/auth.js";
 
@@ -29,6 +32,11 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/join" element={<Join />} />
+        <Route path="/how-it-works" element={<HowItWorks />} />
+        <Route path="/about" element={<About />} />
+
+        {/* PUBLIC VERIFY (critical): emailed link must work without being logged in */}
+        <Route path="/verify/:token" element={<Verify />} />
 
         {/* Authorized */}
         <Route
@@ -40,8 +48,14 @@ export default function App() {
           }
         />
 
-        {/* PUBLIC VERIFY: must never require login */}
-        <Route path="/verify/:token" element={<Verify />} />
+        <Route
+          path="/admin"
+          element={
+            <RequireAuth>
+              <Admin />
+            </RequireAuth>
+          }
+        />
 
         {/* Legacy routes: keep hidden */}
         <Route path="/smartlink" element={<Navigate to="/dashboard" replace />} />
