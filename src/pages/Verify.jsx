@@ -1,13 +1,13 @@
 // /src/pages/Verify.jsx
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-
-function onlyDigits(s) {
-  return String(s || "").replace(/\D+/g, "");
-}
 
 function toUpperClean(s) {
   return String(s || "").toUpperCase();
+}
+
+function onlyDigits(s) {
+  return String(s || "").replace(/\D+/g, "");
 }
 
 function fmtPhone(s) {
@@ -15,6 +15,7 @@ function fmtPhone(s) {
   const a = d.slice(0, 3);
   const b = d.slice(3, 6);
   const c = d.slice(6, 10);
+  if (!d) return "";
   if (d.length <= 3) return a;
   if (d.length <= 6) return `${a}-${b}`;
   return `${a}-${b}-${c}`;
@@ -26,6 +27,7 @@ export default function Verify() {
 
   const [loading, setLoading] = useState(true);
   const [link, setLink] = useState(null);
+  const [fatal, setFatal] = useState(""); // load errors like 404 / revoked
   const [err, setErr] = useState("");
 
   const [enteredUsdot, setEnteredUsdot] = useState("");
@@ -33,16 +35,23 @@ export default function Verify() {
   const [driverAnswered, setDriverAnswered] = useState(null); // true/false
 
   const [submitting, setSubmitting] = useState(false);
-  const [result, setResult] = useState(null); // {result, reasons[]}
+  const [verdict, setVerdict] = useState(null); // "clear" | "caution"
+  const [reasons, setReasons] = useState([]);
+  const [attemptsUsed, setAttemptsUsed] = useState(null); // number, optional
+  const [locked, setLocked] = useState(false);
 
   useEffect(() => {
     let alive = true;
 
     async function load() {
       setLoading(true);
+      setFatal("");
       setErr("");
       setLink(null);
-      setResult(null);
+      setVerdict(null);
+      setReasons([]);
+      setAttemptsUsed(null);
+      setLocked(false);
 
       try {
         const res = await fetch(`/api/load_verify_link?token=${encodeURIComponent(token || "")}`, {
@@ -52,19 +61,32 @@ export default function Verify() {
         const data = await res.json().catch(() => null);
 
         if (!res.ok || !data || !data.ok) {
-          const msg = (data && (data.error || data.message)) || `Unable to load (${res.status}).`;
-          if (alive) setErr(msg);
+          const msg = (data && (data.error || data.message)) || `Load failed (${res.status}).`;
+          if (alive) setFatal(msg);
           if (alive) setLoading(false);
           return;
         }
 
+        const l = data.link || null;
+
+        // If link is not active, stop here (DO NOT LOAD)
+        if (l && String(l.status || "").toLowerCase() !== "active") {
+          if (alive) {
+            setLink(l);
+            setLocked(true);
+            setFatal("CAUTION ALERT — DO NOT LOAD (This verification is not active.)");
+            setLoading(false);
+          }
+          return;
+        }
+
         if (alive) {
-          setLink(data.link || null);
+          setLink(l);
           setLoading(false);
         }
       } catch {
         if (alive) {
-          setErr("Network error loading verification.");
+          setFatal("Network error loading verification.");
           setLoading(false);
         }
       }
@@ -76,52 +98,26 @@ export default function Verify() {
     };
   }, [token]);
 
-  const computed = useMemo(() => {
-    const entered_usdot_digits = onlyDigits(enteredUsdot);
-    const entered_plate_upper = toUpperClean(enteredPlate).trim();
-
-    const record_usdot_digits = onlyDigits(link?.usdot_on_record);
-    const record_plate_upper = toUpperClean(link?.plate_on_record).trim();
-
-    const usdotMatch =
-      !!entered_usdot_digits && !!record_usdot_digits && entered_usdot_digits === record_usdot_digits;
-
-    const plateMatch =
-      !!entered_plate_upper && !!record_plate_upper && entered_plate_upper === record_plate_upper;
-
-    return { entered_usdot_digits, entered_plate_upper, usdotMatch, plateMatch };
-  }, [enteredUsdot, enteredPlate, link]);
-
   async function submit() {
     setErr("");
-    setResult(null);
+    setVerdict(null);
+    setReasons([]);
+    setAttemptsUsed(null);
+    setLocked(false);
 
-    if (!link || !token) {
-      setErr("Missing verification data.");
-      return;
-    }
+    const usdotDigits = onlyDigits(enteredUsdot);
+    const plateUpper = toUpperClean(enteredPlate).trim();
 
-    if (!computed.entered_usdot_digits) {
-      setErr("Enter USDOT# (digits).");
-      return;
-    }
-    if (!computed.entered_plate_upper) {
-      setErr("Enter Plate.");
-      return;
-    }
-    if (driverAnswered === null) {
-      setErr("Select YES or NO for Driver Answered Phone.");
-      return;
-    }
+    if (!usdotDigits) return setErr("Enter USDOT# (digits).");
+    if (!plateUpper) return setErr("Enter Plate.");
+    if (driverAnswered === null) return setErr("Select YES or NO for Driver Answered Phone.");
 
     setSubmitting(true);
-
     try {
       const payload = {
         token,
-        load_id: link.load_id || null,
-        entered_usdot: computed.entered_usdot_digits,
-        entered_plate: computed.entered_plate_upper,
+        entered_usdot: usdotDigits,
+        entered_plate: plateUpper,
         driver_answered: !!driverAnswered,
       };
 
@@ -135,15 +131,24 @@ export default function Verify() {
 
       if (!res.ok || !data || !data.ok) {
         const msg = (data && (data.error || data.message)) || `Submit failed (${res.status}).`;
-        setErr(msg);
+        // If server tells us it’s locked, show it loudly
+        if (data && data.locked) {
+          setLocked(true);
+          setVerdict("caution");
+          setReasons(data.reasons || ["Too many failed attempts."]);
+          setAttemptsUsed(data.attempts_used ?? null);
+        } else {
+          setErr(msg);
+        }
         setSubmitting(false);
         return;
       }
 
-      setResult({
-        verdict: data.verdict,
-        reasons: data.reasons || [],
-      });
+      setVerdict(data.verdict);
+      setReasons(data.reasons || []);
+      setAttemptsUsed(data.attempts_used ?? null);
+
+      if (data.locked) setLocked(true);
     } catch {
       setErr("Network error submitting verification.");
     } finally {
@@ -172,7 +177,7 @@ export default function Verify() {
   };
 
   const h1 = { fontSize: 28, fontWeight: 950, margin: 0, letterSpacing: 0.3 };
-  const big = { fontSize: 24, fontWeight: 950, letterSpacing: 0.8, marginTop: 12 };
+  const big = { fontSize: 22, fontWeight: 950, letterSpacing: 0.8, marginTop: 14 };
 
   const label = { fontSize: 14, opacity: 0.92, marginBottom: 6 };
 
@@ -205,19 +210,19 @@ export default function Verify() {
     return (
       <div style={page}>
         <div style={wrap}>
-          <div style={card}>Loading verification…</div>
+          <div style={card}>Loading…</div>
         </div>
       </div>
     );
   }
 
-  if (err) {
+  if (fatal) {
     return (
       <div style={page}>
         <div style={wrap}>
           <div style={card}>
-            <div style={{ fontSize: 18, fontWeight: 950, marginBottom: 10 }}>Unable to load</div>
-            <div style={{ opacity: 0.9, marginBottom: 14 }}>{err}</div>
+            <div style={{ fontSize: 20, fontWeight: 950, marginBottom: 10 }}>Unable to load</div>
+            <div style={{ opacity: 0.9, marginBottom: 14 }}>{fatal}</div>
             <button style={btn(false)} onClick={() => nav("/")}>
               Back Home
             </button>
@@ -227,8 +232,9 @@ export default function Verify() {
     );
   }
 
-  const showVerdict = !!result?.verdict;
-  const isClear = result?.verdict === "clear";
+  const phone = fmtPhone(link?.driver_phone || "");
+  const showVerdict = !!verdict;
+  const isClear = verdict === "clear";
 
   return (
     <div style={page}>
@@ -236,9 +242,10 @@ export default function Verify() {
         <div style={card}>
           <div style={h1}>Dock Verification</div>
 
-          <div style={big}>DOES THE USDOT# ON THE TRUCK MATCH?</div>
+          {/* IMPORTANT: No match signals shown here (non-revealing). */}
+          <div style={big}>ENTER THE USDOT# YOU SEE ON THE TRUCK</div>
           <div style={{ marginTop: 10 }}>
-            <div style={label}>Enter USDOT#</div>
+            <div style={label}>USDOT#</div>
             <input
               style={input}
               value={enteredUsdot}
@@ -247,68 +254,79 @@ export default function Verify() {
               autoComplete="off"
               inputMode="text"
             />
-            <div style={{ marginTop: 8, opacity: 0.85 }}>
-              USDOT Match: <b>{computed.usdotMatch ? "YES" : "NO"}</b>
-            </div>
           </div>
 
-          <div style={{ marginTop: 18 }}>
-            <div style={big}>DOES THE PLATE ON THE TRUCK MATCH?</div>
-            <div style={{ marginTop: 10 }}>
-              <div style={label}>Enter Plate</div>
-              <input
-                style={input}
-                value={enteredPlate}
-                onChange={(e) => setEnteredPlate(toUpperClean(e.target.value))}
-                placeholder="ABC1234"
-                autoComplete="off"
-                inputMode="text"
-              />
-              <div style={{ marginTop: 8, opacity: 0.85 }}>
-                Plate Match: <b>{computed.plateMatch ? "YES" : "NO"}</b>
-              </div>
-            </div>
+          <div style={big}>ENTER THE PLATE YOU SEE ON THE TRUCK</div>
+          <div style={{ marginTop: 10 }}>
+            <div style={label}>Plate</div>
+            <input
+              style={input}
+              value={enteredPlate}
+              onChange={(e) => setEnteredPlate(toUpperClean(e.target.value))}
+              placeholder="ABC1234"
+              autoComplete="off"
+              inputMode="text"
+            />
           </div>
 
-          <div style={{ marginTop: 18 }}>
-            <div style={big}>DID THE DRIVER ANSWER THEIR PHONE?</div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 10 }}>
-              <button
-                style={{
-                  ...btn(driverAnswered === true),
-                  border:
-                    driverAnswered === true
-                      ? "1px solid rgba(80,190,120,0.50)"
-                      : "1px solid rgba(255,255,255,0.16)",
-                }}
-                onClick={() => setDriverAnswered(true)}
-              >
-                YES
-              </button>
-              <button
-                style={{
-                  ...btn(driverAnswered === false),
-                  border:
-                    driverAnswered === false
-                      ? "1px solid rgba(255,90,90,0.50)"
-                      : "1px solid rgba(255,255,255,0.16)",
-                }}
-                onClick={() => setDriverAnswered(false)}
-              >
-                NO
-              </button>
-            </div>
-
-            <div style={{ marginTop: 12, opacity: 0.85 }}>
-              Driver Phone (from record): <b>{fmtPhone(link?.driver_phone || "")}</b>
-            </div>
+          <div style={big}>DID THE DRIVER ANSWER THEIR PHONE?</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 10 }}>
+            <button
+              style={{
+                ...btn(driverAnswered === true),
+                border:
+                  driverAnswered === true
+                    ? "1px solid rgba(80,190,120,0.50)"
+                    : "1px solid rgba(255,255,255,0.16)",
+              }}
+              onClick={() => setDriverAnswered(true)}
+            >
+              YES
+            </button>
+            <button
+              style={{
+                ...btn(driverAnswered === false),
+                border:
+                  driverAnswered === false
+                    ? "1px solid rgba(255,90,90,0.50)"
+                    : "1px solid rgba(255,255,255,0.16)",
+              }}
+              onClick={() => setDriverAnswered(false)}
+            >
+              NO
+            </button>
           </div>
 
-          <div style={{ marginTop: 18, display: "grid", gap: 10 }}>
+          {/* Only visible helper: clickable phone number (as you require) */}
+          <div style={{ marginTop: 14, opacity: 0.9, fontSize: 16 }}>
+            Driver Phone:{" "}
+            {phone ? (
+              <a href={`tel:${onlyDigits(phone)}`} style={{ color: "#a7d1ff", fontWeight: 950 }}>
+                {phone} (Call Now)
+              </a>
+            ) : (
+              <b>(not available)</b>
+            )}
+          </div>
+
+          <div style={{ marginTop: 16, display: "grid", gap: 10 }}>
             <button style={btn(true)} onClick={submit} disabled={submitting}>
               {submitting ? "Submitting..." : "Submit Verification"}
             </button>
+
+            {err ? (
+              <div
+                style={{
+                  border: "1px solid rgba(255,80,80,0.35)",
+                  background: "rgba(255,80,80,0.08)",
+                  padding: 12,
+                  borderRadius: 12,
+                  fontSize: 14,
+                }}
+              >
+                <b>Error:</b> {err}
+              </div>
+            ) : null}
 
             {showVerdict ? (
               <div
@@ -323,10 +341,18 @@ export default function Verify() {
               >
                 <div style={{ fontSize: 24, fontWeight: 950, letterSpacing: 0.6 }}>
                   {isClear ? "CLEAR TO LOAD" : "CAUTION ALERT — DO NOT LOAD"}
+                  {locked ? " (LOCKED)" : ""}
                 </div>
-                {result.reasons?.length ? (
+
+                {typeof attemptsUsed === "number" ? (
+                  <div style={{ marginTop: 8, opacity: 0.9 }}>
+                    Failed attempts used: <b>{attemptsUsed}</b> / 3
+                  </div>
+                ) : null}
+
+                {reasons?.length ? (
                   <div style={{ marginTop: 10, opacity: 0.9, lineHeight: 1.4 }}>
-                    {result.reasons.map((r, i) => (
+                    {reasons.map((r, i) => (
                       <div key={i}>• {r}</div>
                     ))}
                   </div>
@@ -337,7 +363,7 @@ export default function Verify() {
         </div>
 
         <div style={{ marginTop: 14, opacity: 0.65, fontSize: 12 }}>
-          QueCab AdbS — Truck-Driver verification (public verify link; issuer remains protected).
+          QueCab AdbS — Non-revealing verification (no live match signals). Three failed attempts locks the link.
         </div>
       </div>
     </div>
