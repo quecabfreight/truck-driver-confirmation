@@ -48,7 +48,6 @@ async function safeCopy(text) {
 }
 
 function nowLocalDatetime() {
-  // datetime-local expects "YYYY-MM-DDTHH:mm"
   const d = new Date();
   const pad = (n) => String(n).padStart(2, "0");
   const yyyy = d.getFullYear();
@@ -76,23 +75,23 @@ export default function ControlCenter() {
   const email = (localStorage.getItem(LS_EMAIL) || "").trim();
   const authorized = !!email && isBrokerOrShipper(email);
 
-  // If someone hits this page without auth, bounce them.
   if (!authorized) {
     nav("/login", { replace: true });
     return null;
   }
 
-  // Core form fields
+  // Form state
   const [loadId, setLoadId] = useState("");
   const [usdotOnRecord, setUsdotOnRecord] = useState("");
   const [plateOnRecord, setPlateOnRecord] = useState("");
   const [driverPhone, setDriverPhone] = useState("");
 
-  // Expire modes
-  // auto24  => starts now, expires +24h (editable via reset buttons)
-  // custom  => user sets both fields
-  // noexpire => starts now, expires_at = null
+  // Expire modes:
+  // "auto24" = start now + expire +24h
+  // "pick"   = pick start & expire manually
+  // "never"  = no expire (expires_at null)
   const [expireMode, setExpireMode] = useState("auto24");
+
   const [startsAt, setStartsAt] = useState(() => nowLocalDatetime());
   const [expiresAt, setExpiresAt] = useState(() => plusHoursLocalDatetime(24));
 
@@ -100,17 +99,17 @@ export default function ControlCenter() {
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const [issued, setIssued] = useState(null); // { token, verify_url, expires_at, ... }
+  const [issued, setIssued] = useState(null);
 
   const abortRef = useRef(null);
 
   const normalized = useMemo(() => {
-    const load_id = String(loadId || "").trim();
     const usdot_digits = onlyDigits(usdotOnRecord);
     const plate_upper = toUpperClean(plateOnRecord).trim();
     const phone_digits = onlyDigits(driverPhone);
-    return { load_id, usdot_digits, plate_upper, phone_digits };
-  }, [loadId, usdotOnRecord, plateOnRecord, driverPhone]);
+    const load_id = String(loadId || "").trim();
+    return { usdot_digits, plate_upper, phone_digits, load_id };
+  }, [usdotOnRecord, plateOnRecord, driverPhone, loadId]);
 
   function logout() {
     try {
@@ -131,17 +130,30 @@ export default function ControlCenter() {
     setExpiresAt(plusHoursLocalDatetime(24));
   }
 
+  // Keep start/expire sensible when mode changes
+  function onChangeExpireMode(m) {
+    setExpireMode(m);
+    if (m === "auto24") {
+      setStartsAt(nowLocalDatetime());
+      setExpiresAt(plusHoursLocalDatetime(24));
+    }
+    if (m === "never") {
+      setStartsAt(nowLocalDatetime());
+      // expiresAt retained in state but will not be sent
+    }
+    // "pick" leaves existing values
+  }
+
   async function issueLink() {
     setErrorMsg("");
     setStatusMsg("");
     setIssued(null);
 
-    const { load_id, usdot_digits, plate_upper, phone_digits } = normalized;
+    const usdot_digits = normalized.usdot_digits;
+    const plate_upper = normalized.plate_upper;
+    const phone_digits = normalized.phone_digits;
+    const load_id = normalized.load_id || null;
 
-    if (!load_id) {
-      setErrorMsg("Enter Load ID.");
-      return;
-    }
     if (!usdot_digits) {
       setErrorMsg("Enter USDOT# (digits).");
       return;
@@ -155,26 +167,31 @@ export default function ControlCenter() {
       return;
     }
 
-    // Determine dates based on mode
-    let starts_at = startsAt;
-    let expires_at = expiresAt;
+    // Validate times depending on mode
+    let sendStartsAt = startsAt;
+    let sendExpiresAt = expiresAt;
 
     if (expireMode === "auto24") {
-      // Use current values (you can reset them with buttons)
-      if (!starts_at) starts_at = nowLocalDatetime();
-      if (!expires_at) expires_at = plusHoursLocalDatetime(24);
-    } else if (expireMode === "custom") {
-      if (!starts_at || !expires_at) {
-        setErrorMsg("Start and Expire are required in Custom mode.");
-        return;
-      }
-    } else if (expireMode === "noexpire") {
-      // Start now; no expire
-      if (!starts_at) starts_at = nowLocalDatetime();
-      expires_at = null;
+      sendStartsAt = nowLocalDatetime();
+      sendExpiresAt = plusHoursLocalDatetime(24);
+      setStartsAt(sendStartsAt);
+      setExpiresAt(sendExpiresAt);
     }
 
-    // Cancel any previous request to avoid piling up
+    if (expireMode === "pick") {
+      if (!sendStartsAt || !sendExpiresAt) {
+        setErrorMsg("Start/Expire times are required.");
+        return;
+      }
+    }
+
+    if (expireMode === "never") {
+      if (!sendStartsAt) sendStartsAt = nowLocalDatetime();
+      sendExpiresAt = null; // key behavior
+      setStartsAt(sendStartsAt);
+    }
+
+    // Cancel any previous request
     try {
       if (abortRef.current) abortRef.current.abort();
     } catch {}
@@ -189,8 +206,8 @@ export default function ControlCenter() {
         usdot_on_record: usdot_digits,
         plate_on_record: plate_upper,
         driver_phone: formatPhoneHyphen(phone_digits),
-        starts_at,
-        expires_at, // null allowed for no-expire
+        starts_at: sendStartsAt,
+        expires_at: sendExpiresAt, // null allowed for "never"
       };
 
       const res = await fetch("/api/issue_verify_link", {
@@ -209,9 +226,7 @@ export default function ControlCenter() {
       }
 
       if (!res.ok) {
-        const msg =
-          (data && (data.error || data.message)) ||
-          `Issuer failed (${res.status}).`;
+        const msg = (data && (data.error || data.message)) || `Issuer failed (${res.status}).`;
         setErrorMsg(msg);
         setLoading(false);
         return;
@@ -220,31 +235,24 @@ export default function ControlCenter() {
       const token =
         data.token || data.verify_token || (data.data && data.data.token) || "";
       const verify_url =
-        data.verify_url ||
-        data.url ||
-        data.link ||
-        (data.data && data.data.verify_url) ||
-        "";
+        data.verify_url || data.url || data.link || (data.data && data.data.verify_url) || "";
 
       const expires =
-        data.expires_at || (data.data && data.data.expires_at) || expires_at;
+        data.expires_at || (data.data && data.data.expires_at) || sendExpiresAt;
 
       setIssued({
         token,
         verify_url,
         expires_at: expires,
         load_id,
-        usdot_on_record: usdot_digits,
-        plate_on_record: plate_upper,
-        driver_phone: formatPhoneHyphen(phone_digits),
       });
 
-      setStatusMsg("Verification issued.");
+      setStatusMsg("AdbS verification issued.");
     } catch (e) {
       if (String(e?.name) === "AbortError") {
-        // user triggered another request
+        // ignore
       } else {
-        setErrorMsg("Network error issuing verification.");
+        setErrorMsg("Network error issuing link.");
       }
     } finally {
       setLoading(false);
@@ -283,26 +291,22 @@ export default function ControlCenter() {
     color: "inherit",
     fontSize: 16,
     cursor: "pointer",
+    fontWeight: 900,
+    letterSpacing: 0.2,
   });
 
-  const smallBtn = {
-    padding: "10px 12px",
+  const pill = (active) => ({
+    padding: "10px 10px",
     borderRadius: 12,
-    border: "1px solid rgba(255,255,255,0.16)",
-    background: "rgba(255,255,255,0.06)",
+    border: active
+      ? "1px solid rgba(140,190,255,0.42)"
+      : "1px solid rgba(255,255,255,0.16)",
+    background: active ? "rgba(40, 110, 190, 0.22)" : "rgba(255,255,255,0.05)",
     color: "inherit",
-    fontSize: 14,
+    fontSize: 13,
+    fontWeight: 900,
     cursor: "pointer",
     whiteSpace: "nowrap",
-  };
-
-  const modeBtn = (active) => ({
-    ...smallBtn,
-    border: active
-      ? "1px solid rgba(120,180,255,0.45)"
-      : "1px solid rgba(255,255,255,0.16)",
-    background: active ? "rgba(40, 110, 190, 0.25)" : "rgba(255,255,255,0.06)",
-    fontWeight: active ? 900 : 800,
   });
 
   return (
@@ -329,7 +333,7 @@ export default function ControlCenter() {
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: 10 }}>
+          <div style={{ display: "flex", gap: 10, minWidth: 180 }}>
             <button onClick={logout} style={btnStyle(false)}>
               Log Out
             </button>
@@ -337,57 +341,25 @@ export default function ControlCenter() {
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1.05fr 0.95fr", gap: 16 }}>
-          {/* Left: Issuer */}
+          {/* Left: Issue AdbS Verification */}
           <div style={cardStyle}>
-            <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 10 }}>
+            <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 10 }}>
               Issue AdbS Verification
             </div>
 
-            <div style={{ display: "grid", gap: 12 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               <div>
                 <div style={labelStyle}>Load ID</div>
                 <input
                   style={inputStyle}
                   value={loadId}
-                  onChange={(e) => setLoadId(String(e.target.value || ""))}
-                  placeholder="Example: LOAD-12345"
+                  onChange={(e) => setLoadId(String(e.target.value || "").trim())}
+                  placeholder="Optional (ex: LOAD-12345)"
                   inputMode="text"
                   autoComplete="off"
                 />
                 <div style={{ opacity: 0.7, fontSize: 12, marginTop: 6 }}>
-                  Your internal identifier so checks always tie back to the right load.
-                </div>
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                <div>
-                  <div style={labelStyle}>USDOT# on record</div>
-                  <input
-                    style={inputStyle}
-                    value={usdotOnRecord}
-                    onChange={(e) => setUsdotOnRecord(toUpperClean(e.target.value))}
-                    placeholder="123456"
-                    inputMode="text"
-                    autoComplete="off"
-                  />
-                  <div style={{ opacity: 0.7, fontSize: 12, marginTop: 6 }}>
-                    Compared digits-only.
-                  </div>
-                </div>
-
-                <div>
-                  <div style={labelStyle}>Plate on record</div>
-                  <input
-                    style={inputStyle}
-                    value={plateOnRecord}
-                    onChange={(e) => setPlateOnRecord(toUpperClean(e.target.value))}
-                    placeholder="ABC1234"
-                    inputMode="text"
-                    autoComplete="off"
-                  />
-                  <div style={{ opacity: 0.7, fontSize: 12, marginTop: 6 }}>
-                    Auto-uppercase while typing.
-                  </div>
+                  Simple identifier so checks tie to the correct load.
                 </div>
               </div>
 
@@ -407,77 +379,94 @@ export default function ControlCenter() {
               </div>
 
               <div>
-                <div style={labelStyle}>Start / Expire</div>
+                <div style={labelStyle}>USDOT# on record</div>
+                <input
+                  style={inputStyle}
+                  value={usdotOnRecord}
+                  onChange={(e) => setUsdotOnRecord(toUpperClean(e.target.value))}
+                  placeholder="123456"
+                  inputMode="text"
+                  autoComplete="off"
+                />
+                <div style={{ opacity: 0.7, fontSize: 12, marginTop: 6 }}>
+                  Compared digits-only.
+                </div>
+              </div>
 
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
-                  <button
-                    type="button"
-                    style={modeBtn(expireMode === "auto24")}
-                    onClick={() => {
-                      setExpireMode("auto24");
-                      setStartsAt((v) => v || nowLocalDatetime());
-                      setExpiresAt((v) => v || plusHoursLocalDatetime(24));
-                    }}
-                  >
-                    Auto 24 Hour Expire
+              <div>
+                <div style={labelStyle}>Plate on record</div>
+                <input
+                  style={inputStyle}
+                  value={plateOnRecord}
+                  onChange={(e) => setPlateOnRecord(toUpperClean(e.target.value))}
+                  placeholder="ABC1234"
+                  inputMode="text"
+                  autoComplete="off"
+                />
+                <div style={{ opacity: 0.7, fontSize: 12, marginTop: 6 }}>
+                  Auto-uppercase while typing.
+                </div>
+              </div>
+            </div>
+
+            {/* Start/Expire options */}
+            <div style={{ marginTop: 14 }}>
+              <div style={labelStyle}>Start / Expire</div>
+
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <button
+                  type="button"
+                  style={pill(expireMode === "auto24")}
+                  onClick={() => onChangeExpireMode("auto24")}
+                >
+                  Auto 24h Expire
+                </button>
+                <button
+                  type="button"
+                  style={pill(expireMode === "pick")}
+                  onClick={() => onChangeExpireMode("pick")}
+                >
+                  Pick Start/Expire
+                </button>
+                <button
+                  type="button"
+                  style={pill(expireMode === "never")}
+                  onClick={() => onChangeExpireMode("never")}
+                >
+                  No Expire
+                </button>
+              </div>
+
+              <div style={{ marginTop: 10, display: "grid", gap: 8 }}>
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  <button type="button" style={btnStyle(false)} onClick={resetStartNow}>
+                    Reset Start = Now
                   </button>
-
-                  <button
-                    type="button"
-                    style={modeBtn(expireMode === "custom")}
-                    onClick={() => setExpireMode("custom")}
-                  >
-                    Custom Start/Expire
-                  </button>
-
-                  <button
-                    type="button"
-                    style={modeBtn(expireMode === "noexpire")}
-                    onClick={() => {
-                      setExpireMode("noexpire");
-                      setStartsAt((v) => v || nowLocalDatetime());
-                    }}
-                  >
-                    No Expire
+                  <button type="button" style={btnStyle(false)} onClick={resetExpire24h}>
+                    Reset Expire = +24h
                   </button>
                 </div>
 
-                <div style={{ display: "grid", gap: 8 }}>
-                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                    <button type="button" style={smallBtn} onClick={resetStartNow}>
-                      Reset Start = Now
-                    </button>
+                <input
+                  style={inputStyle}
+                  type="datetime-local"
+                  value={startsAt}
+                  onChange={(e) => setStartsAt(e.target.value)}
+                  disabled={expireMode === "auto24"}
+                  title={expireMode === "auto24" ? "Auto mode controls Start/Expire" : "Start time"}
+                />
 
-                    {expireMode !== "noexpire" ? (
-                      <button type="button" style={smallBtn} onClick={resetExpire24h}>
-                        Reset Expire = +24h
-                      </button>
-                    ) : null}
-                  </div>
+                <input
+                  style={inputStyle}
+                  type="datetime-local"
+                  value={expiresAt}
+                  onChange={(e) => setExpiresAt(e.target.value)}
+                  disabled={expireMode !== "pick"}
+                  title={expireMode !== "pick" ? "Pick mode controls Expire" : "Expire time"}
+                />
 
-                  <input
-                    style={inputStyle}
-                    type="datetime-local"
-                    value={startsAt}
-                    onChange={(e) => setStartsAt(e.target.value)}
-                  />
-
-                  {expireMode !== "noexpire" ? (
-                    <input
-                      style={inputStyle}
-                      type="datetime-local"
-                      value={expiresAt}
-                      onChange={(e) => setExpiresAt(e.target.value)}
-                    />
-                  ) : (
-                    <div style={{ opacity: 0.78, fontSize: 13, lineHeight: 1.35 }}>
-                      No Expire selected — verification will remain active until you revoke it later.
-                    </div>
-                  )}
-
-                  <div style={{ opacity: 0.7, fontSize: 12 }}>
-                    Tip: click the field and type, or use the picker.
-                  </div>
+                <div style={{ opacity: 0.72, fontSize: 12 }}>
+                  Tip: Auto mode uses Now → +24h. Pick mode lets you edit. No Expire sends expires_at as null.
                 </div>
               </div>
             </div>
@@ -497,7 +486,7 @@ export default function ControlCenter() {
                     fontSize: 14,
                   }}
                 >
-                  <b style={{ letterSpacing: 0.2 }}>Error:</b> {errorMsg}
+                  <b>Error:</b> {errorMsg}
                 </div>
               ) : null}
 
@@ -522,14 +511,10 @@ export default function ControlCenter() {
                   Issued
                 </div>
 
-                <div style={{ fontSize: 14, opacity: 0.92, marginBottom: 10 }}>
-                  Load ID: <span style={{ fontWeight: 900 }}>{issued.load_id}</span>
-                </div>
-
                 <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 10 }}>
                   Expires:{" "}
                   <span style={{ fontWeight: 800 }}>
-                    {issued.expires_at ? String(issued.expires_at) : "No Expire"}
+                    {issued.expires_at === null ? "NO EXPIRE" : String(issued.expires_at || "")}
                   </span>
                 </div>
 
@@ -537,7 +522,7 @@ export default function ControlCenter() {
                   <div>
                     <div style={labelStyle}>Verify URL</div>
                     <input style={inputStyle} value={issued.verify_url || ""} readOnly />
-                    <div style={{ display: "flex", gap: 10, marginTop: 8, flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
                       <button
                         style={btnStyle(false)}
                         onClick={async () => {
@@ -561,30 +546,34 @@ export default function ControlCenter() {
                   </div>
 
                   <div style={{ opacity: 0.75, fontSize: 12, lineHeight: 1.35 }}>
-                    Note: This panel is the production-facing issuer UI. The legacy /smartlink
-                    page stays blocked.
+                    Note: This panel is the production-facing issuer UI. The legacy /smartlink page stays blocked.
                   </div>
                 </div>
               </div>
             ) : null}
           </div>
 
-          {/* Right: Status panel (keep as-is, light weight) */}
+          {/* Right: Status */}
           <div style={cardStyle}>
-            <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 10 }}>Status</div>
+            <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 10 }}>
+              Status
+            </div>
 
             <div style={{ fontSize: 14, opacity: 0.9, lineHeight: 1.45 }}>
               <div style={{ marginBottom: 10 }}>
                 <b>Issuer UI:</b> Control Center (paid look) ✅
               </div>
               <div style={{ marginBottom: 10 }}>
-                <b>Legacy routes:</b> /smartlink and /driverlink redirect to /dashboard ✅
+                <b>Legacy routes:</b> /smartlink and /driverlink redirect ✅
               </div>
               <div style={{ marginBottom: 10 }}>
                 <b>Formatting:</b> Phone auto-hyphenates; USDOT/Plate uppercase ✅
               </div>
+              <div style={{ marginBottom: 10 }}>
+                <b>Verify links:</b> Public (no login required) ✅
+              </div>
               <div style={{ opacity: 0.75 }}>
-                Next: CAUTION ALERT polish (flash + sound) after issuer is stable.
+                Next: CAUTION ALERT polish (flash + sound) + silent issuer alerts.
               </div>
             </div>
           </div>
