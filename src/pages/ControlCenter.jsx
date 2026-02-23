@@ -1,19 +1,18 @@
 // /src/pages/ControlCenter.jsx
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import Header from "../components/Header.jsx";
-import { LS_EMAIL, isBrokerOrShipper } from "../utils/auth.js";
+import { LS_EMAIL, isBrokerOrShipper, clearAuth } from "../utils/auth.js";
 
 function onlyDigits(s) {
   return String(s || "").replace(/\D+/g, "");
 }
-
 function toUpperClean(s) {
   return String(s || "").toUpperCase();
 }
 
-// Formats as 123-456-7890 while typing (digits only under the hood)
+// Formats as 123-456-7890 while typing
 function formatPhoneHyphen(s) {
   const d = onlyDigits(s).slice(0, 10);
   const a = d.slice(0, 3);
@@ -47,59 +46,61 @@ async function safeCopy(text) {
   }
 }
 
-function nowLocalDatetime() {
-  const d = new Date();
-  const pad = (n) => String(n).padStart(2, "0");
-  const yyyy = d.getFullYear();
-  const mm = pad(d.getMonth() + 1);
-  const dd = pad(d.getDate());
-  const hh = pad(d.getHours());
-  const mi = pad(d.getMinutes());
-  return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
+function pad2(n) {
+  return String(n).padStart(2, "0");
 }
 
-function plusHoursLocalDatetime(hours) {
-  const d = new Date(Date.now() + hours * 60 * 60 * 1000);
-  const pad = (n) => String(n).padStart(2, "0");
+// datetime-local expects "YYYY-MM-DDTHH:mm"
+function toLocalDatetimeValue(d) {
   const yyyy = d.getFullYear();
-  const mm = pad(d.getMonth() + 1);
-  const dd = pad(d.getDate());
-  const hh = pad(d.getHours());
-  const mi = pad(d.getMinutes());
+  const mm = pad2(d.getMonth() + 1);
+  const dd = pad2(d.getDate());
+  const hh = pad2(d.getHours());
+  const mi = pad2(d.getMinutes());
   return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
+}
+function nowLocalDatetime() {
+  return toLocalDatetimeValue(new Date());
+}
+function plusHoursLocalDatetime(hours) {
+  return toLocalDatetimeValue(new Date(Date.now() + hours * 60 * 60 * 1000));
 }
 
 export default function ControlCenter() {
   const nav = useNavigate();
 
-  const email = (localStorage.getItem(LS_EMAIL) || "").trim();
-  const authorized = !!email && isBrokerOrShipper(email);
+  // Auth (do NOT redirect inside render — that’s how you get “nothing works” weirdness)
+  const [email, setEmail] = useState(() => (localStorage.getItem(LS_EMAIL) || "").trim());
+  const authorized = useMemo(() => !!email && isBrokerOrShipper(email), [email]);
 
-  if (!authorized) {
-    nav("/login", { replace: true });
-    return null;
-  }
+  useEffect(() => {
+    if (!authorized) nav("/login", { replace: true });
+  }, [authorized, nav]);
+
+  useEffect(() => {
+    const onStorage = () => {
+      const e = (localStorage.getItem(LS_EMAIL) || "").trim();
+      setEmail(e);
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
 
   // Form state
   const [loadId, setLoadId] = useState("");
+  const [driverPhone, setDriverPhone] = useState("");
   const [usdotOnRecord, setUsdotOnRecord] = useState("");
   const [plateOnRecord, setPlateOnRecord] = useState("");
-  const [driverPhone, setDriverPhone] = useState("");
 
-  // Expire modes:
-  // "auto24" = start now + expire +24h
-  // "pick"   = pick start & expire manually
-  // "never"  = no expire (expires_at null)
-  const [expireMode, setExpireMode] = useState("auto24");
-
+  // Start/Expire mode: auto | pick | none
+  const [timeMode, setTimeMode] = useState("auto");
   const [startsAt, setStartsAt] = useState(() => nowLocalDatetime());
   const [expiresAt, setExpiresAt] = useState(() => plusHoursLocalDatetime(24));
 
+  const [loading, setLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const [issued, setIssued] = useState(null);
+  const [issued, setIssued] = useState(null); // { token, verify_url, expires_at, load_id }
 
   const abortRef = useRef(null);
 
@@ -113,47 +114,50 @@ export default function ControlCenter() {
 
   function logout() {
     try {
-      localStorage.removeItem(LS_EMAIL);
-      localStorage.removeItem("qc_access_code");
-      localStorage.removeItem("qc_role");
-      localStorage.removeItem("access_code");
-      localStorage.removeItem("role");
-    } catch {}
+      clearAuth();
+    } catch {
+      try {
+        localStorage.removeItem(LS_EMAIL);
+      } catch {}
+    }
     nav("/login", { replace: true });
   }
 
   function resetStartNow() {
     setStartsAt(nowLocalDatetime());
+    setStatusMsg("Start reset to now.");
+    setErrorMsg("");
   }
 
   function resetExpire24h() {
     setExpiresAt(plusHoursLocalDatetime(24));
+    setStatusMsg("Expire reset to +24h.");
+    setErrorMsg("");
   }
 
-  // Keep start/expire sensible when mode changes
-  function onChangeExpireMode(m) {
-    setExpireMode(m);
-    if (m === "auto24") {
+  useEffect(() => {
+    // Keep “auto” mode sane: if user switches to auto, snap times to now/+24h once.
+    if (timeMode === "auto") {
       setStartsAt(nowLocalDatetime());
       setExpiresAt(plusHoursLocalDatetime(24));
     }
-    if (m === "never") {
-      setStartsAt(nowLocalDatetime());
-      // expiresAt retained in state but will not be sent
-    }
-    // "pick" leaves existing values
-  }
+  }, [timeMode]);
 
-  async function issueLink() {
+  async function issueAdbsVerification() {
     setErrorMsg("");
     setStatusMsg("");
     setIssued(null);
 
-    const usdot_digits = normalized.usdot_digits;
-    const plate_upper = normalized.plate_upper;
-    const phone_digits = normalized.phone_digits;
-    const load_id = normalized.load_id || null;
+    const { usdot_digits, plate_upper, phone_digits, load_id } = normalized;
 
+    if (!load_id) {
+      setErrorMsg("Enter Load ID (simple identifier).");
+      return;
+    }
+    if (!phone_digits || phone_digits.length !== 10) {
+      setErrorMsg("Enter Driver Phone (10 digits).");
+      return;
+    }
     if (!usdot_digits) {
       setErrorMsg("Enter USDOT# (digits).");
       return;
@@ -162,36 +166,38 @@ export default function ControlCenter() {
       setErrorMsg("Enter Plate.");
       return;
     }
-    if (phone_digits.length !== 10) {
-      setErrorMsg("Enter Driver Phone (10 digits).");
-      return;
-    }
 
-    // Validate times depending on mode
-    let sendStartsAt = startsAt;
-    let sendExpiresAt = expiresAt;
+    // Compute times based on mode
+    const payload = {
+      load_id,
+      usdot_on_record: usdot_digits,
+      plate_on_record: plate_upper,
+      driver_phone: formatPhoneHyphen(phone_digits),
+      starts_at: null,
+      expires_at: null,
+    };
 
-    if (expireMode === "auto24") {
-      sendStartsAt = nowLocalDatetime();
-      sendExpiresAt = plusHoursLocalDatetime(24);
-      setStartsAt(sendStartsAt);
-      setExpiresAt(sendExpiresAt);
-    }
-
-    if (expireMode === "pick") {
-      if (!sendStartsAt || !sendExpiresAt) {
-        setErrorMsg("Start/Expire times are required.");
+    if (timeMode === "auto") {
+      payload.starts_at = nowLocalDatetime();
+      payload.expires_at = plusHoursLocalDatetime(24);
+    } else if (timeMode === "pick") {
+      if (!startsAt) {
+        setErrorMsg("Pick mode: Start time is required.");
         return;
       }
+      if (!expiresAt) {
+        setErrorMsg("Pick mode: Expire time is required.");
+        return;
+      }
+      payload.starts_at = startsAt;
+      payload.expires_at = expiresAt;
+    } else if (timeMode === "none") {
+      // No Expire: starts now; expires null
+      payload.starts_at = nowLocalDatetime();
+      payload.expires_at = null;
     }
 
-    if (expireMode === "never") {
-      if (!sendStartsAt) sendStartsAt = nowLocalDatetime();
-      sendExpiresAt = null; // key behavior
-      setStartsAt(sendStartsAt);
-    }
-
-    // Cancel any previous request
+    // Cancel any previous in-flight request
     try {
       if (abortRef.current) abortRef.current.abort();
     } catch {}
@@ -199,17 +205,7 @@ export default function ControlCenter() {
     abortRef.current = ac;
 
     setLoading(true);
-
     try {
-      const payload = {
-        load_id,
-        usdot_on_record: usdot_digits,
-        plate_on_record: plate_upper,
-        driver_phone: formatPhoneHyphen(phone_digits),
-        starts_at: sendStartsAt,
-        expires_at: sendExpiresAt, // null allowed for "never"
-      };
-
       const res = await fetch("/api/issue_verify_link", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -228,7 +224,6 @@ export default function ControlCenter() {
       if (!res.ok) {
         const msg = (data && (data.error || data.message)) || `Issuer failed (${res.status}).`;
         setErrorMsg(msg);
-        setLoading(false);
         return;
       }
 
@@ -238,7 +233,7 @@ export default function ControlCenter() {
         data.verify_url || data.url || data.link || (data.data && data.data.verify_url) || "";
 
       const expires =
-        data.expires_at || (data.data && data.data.expires_at) || sendExpiresAt;
+        data.expires_at || (data.data && data.data.expires_at) || payload.expires_at;
 
       setIssued({
         token,
@@ -247,11 +242,9 @@ export default function ControlCenter() {
         load_id,
       });
 
-      setStatusMsg("AdbS verification issued.");
+      setStatusMsg("AdbS verification link issued.");
     } catch (e) {
-      if (String(e?.name) === "AbortError") {
-        // ignore
-      } else {
+      if (String(e?.name) !== "AbortError") {
         setErrorMsg("Network error issuing link.");
       }
     } finally {
@@ -259,6 +252,7 @@ export default function ControlCenter() {
     }
   }
 
+  // Styles
   const cardStyle = {
     border: "1px solid rgba(255,255,255,0.12)",
     background: "rgba(12, 18, 28, 0.72)",
@@ -268,6 +262,7 @@ export default function ControlCenter() {
   };
 
   const labelStyle = { fontSize: 14, opacity: 0.92, marginBottom: 6 };
+  const helpStyle = { opacity: 0.7, fontSize: 12, marginTop: 6, lineHeight: 1.3 };
 
   const inputStyle = {
     width: "100%",
@@ -290,24 +285,23 @@ export default function ControlCenter() {
     background: primary ? "rgba(40, 110, 190, 0.35)" : "rgba(255,255,255,0.06)",
     color: "inherit",
     fontSize: 16,
-    cursor: "pointer",
     fontWeight: 900,
-    letterSpacing: 0.2,
+    cursor: "pointer",
   });
 
-  const pill = (active) => ({
-    padding: "10px 10px",
+  const modeBtn = (active) => ({
+    padding: "10px 12px",
     borderRadius: 12,
-    border: active
-      ? "1px solid rgba(140,190,255,0.42)"
-      : "1px solid rgba(255,255,255,0.16)",
-    background: active ? "rgba(40, 110, 190, 0.22)" : "rgba(255,255,255,0.05)",
+    border: active ? "1px solid rgba(120,180,255,0.55)" : "1px solid rgba(255,255,255,0.16)",
+    background: active ? "rgba(40,110,190,0.20)" : "rgba(255,255,255,0.06)",
     color: "inherit",
-    fontSize: 13,
-    fontWeight: 900,
+    fontSize: 14,
+    fontWeight: 950,
     cursor: "pointer",
     whiteSpace: "nowrap",
   });
+
+  if (!authorized) return null;
 
   return (
     <div style={{ minHeight: "100vh" }}>
@@ -325,15 +319,15 @@ export default function ControlCenter() {
           }}
         >
           <div>
-            <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: 0.2 }}>
+            <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: 0.2 }}>
               Control Center
             </div>
             <div style={{ opacity: 0.85, marginTop: 6, fontSize: 15 }}>
-              Authorized: <span style={{ fontWeight: 700 }}>{email}</span>
+              Authorized: <span style={{ fontWeight: 800 }}>{email}</span>
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: 10, minWidth: 180 }}>
+          <div style={{ display: "flex", gap: 10, minWidth: 220 }}>
             <button onClick={logout} style={btnStyle(false)}>
               Log Out
             </button>
@@ -341,9 +335,9 @@ export default function ControlCenter() {
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1.05fr 0.95fr", gap: 16 }}>
-          {/* Left: Issue AdbS Verification */}
+          {/* LEFT: Issuer */}
           <div style={cardStyle}>
-            <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 10 }}>
+            <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 10 }}>
               Issue AdbS Verification
             </div>
 
@@ -353,12 +347,11 @@ export default function ControlCenter() {
                 <input
                   style={inputStyle}
                   value={loadId}
-                  onChange={(e) => setLoadId(String(e.target.value || "").trim())}
-                  placeholder="Optional (ex: LOAD-12345)"
-                  inputMode="text"
+                  onChange={(e) => setLoadId(String(e.target.value || ""))}
+                  placeholder="12345"
                   autoComplete="off"
                 />
-                <div style={{ opacity: 0.7, fontSize: 12, marginTop: 6 }}>
+                <div style={helpStyle}>
                   Simple identifier so checks tie to the correct load.
                 </div>
               </div>
@@ -373,9 +366,7 @@ export default function ControlCenter() {
                   inputMode="tel"
                   autoComplete="off"
                 />
-                <div style={{ opacity: 0.7, fontSize: 12, marginTop: 6 }}>
-                  Auto-formats 123-456-7890.
-                </div>
+                <div style={helpStyle}>Auto-formats 123-456-7890.</div>
               </div>
 
               <div>
@@ -388,9 +379,7 @@ export default function ControlCenter() {
                   inputMode="text"
                   autoComplete="off"
                 />
-                <div style={{ opacity: 0.7, fontSize: 12, marginTop: 6 }}>
-                  Compared digits-only.
-                </div>
+                <div style={helpStyle}>Compared digits-only.</div>
               </div>
 
               <div>
@@ -403,76 +392,75 @@ export default function ControlCenter() {
                   inputMode="text"
                   autoComplete="off"
                 />
-                <div style={{ opacity: 0.7, fontSize: 12, marginTop: 6 }}>
-                  Auto-uppercase while typing.
-                </div>
-              </div>
-            </div>
-
-            {/* Start/Expire options */}
-            <div style={{ marginTop: 14 }}>
-              <div style={labelStyle}>Start / Expire</div>
-
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                <button
-                  type="button"
-                  style={pill(expireMode === "auto24")}
-                  onClick={() => onChangeExpireMode("auto24")}
-                >
-                  Auto 24h Expire
-                </button>
-                <button
-                  type="button"
-                  style={pill(expireMode === "pick")}
-                  onClick={() => onChangeExpireMode("pick")}
-                >
-                  Pick Start/Expire
-                </button>
-                <button
-                  type="button"
-                  style={pill(expireMode === "never")}
-                  onClick={() => onChangeExpireMode("never")}
-                >
-                  No Expire
-                </button>
+                <div style={helpStyle}>Auto-uppercase while typing.</div>
               </div>
 
-              <div style={{ marginTop: 10, display: "grid", gap: 8 }}>
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                  <button type="button" style={btnStyle(false)} onClick={resetStartNow}>
+              <div style={{ gridColumn: "1 / -1" }}>
+                <div style={labelStyle}>Start / Expire</div>
+
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
+                  <button
+                    type="button"
+                    style={modeBtn(timeMode === "auto")}
+                    onClick={() => setTimeMode("auto")}
+                  >
+                    Auto 24h Expire
+                  </button>
+                  <button
+                    type="button"
+                    style={modeBtn(timeMode === "pick")}
+                    onClick={() => setTimeMode("pick")}
+                  >
+                    Pick Start/Expire
+                  </button>
+                  <button
+                    type="button"
+                    style={modeBtn(timeMode === "none")}
+                    onClick={() => setTimeMode("none")}
+                  >
+                    No Expire
+                  </button>
+
+                  <div style={{ flex: 1 }} />
+
+                  <button type="button" style={modeBtn(false)} onClick={resetStartNow}>
                     Reset Start = Now
                   </button>
-                  <button type="button" style={btnStyle(false)} onClick={resetExpire24h}>
+                  <button type="button" style={modeBtn(false)} onClick={resetExpire24h}>
                     Reset Expire = +24h
                   </button>
                 </div>
 
-                <input
-                  style={inputStyle}
-                  type="datetime-local"
-                  value={startsAt}
-                  onChange={(e) => setStartsAt(e.target.value)}
-                  disabled={expireMode === "auto24"}
-                  title={expireMode === "auto24" ? "Auto mode controls Start/Expire" : "Start time"}
-                />
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <input
+                    style={{ ...inputStyle, opacity: timeMode === "none" ? 0.55 : 1 }}
+                    type="datetime-local"
+                    value={startsAt}
+                    onChange={(e) => setStartsAt(e.target.value)}
+                    disabled={timeMode === "auto"}
+                  />
+                  <input
+                    style={{ ...inputStyle, opacity: timeMode === "none" ? 0.55 : 1 }}
+                    type="datetime-local"
+                    value={expiresAt}
+                    onChange={(e) => setExpiresAt(e.target.value)}
+                    disabled={timeMode !== "pick"}
+                  />
+                </div>
 
-                <input
-                  style={inputStyle}
-                  type="datetime-local"
-                  value={expiresAt}
-                  onChange={(e) => setExpiresAt(e.target.value)}
-                  disabled={expireMode !== "pick"}
-                  title={expireMode !== "pick" ? "Pick mode controls Expire" : "Expire time"}
-                />
-
-                <div style={{ opacity: 0.72, fontSize: 12 }}>
-                  Tip: Auto mode uses Now → +24h. Pick mode lets you edit. No Expire sends expires_at as null.
+                <div style={helpStyle}>
+                  Auto mode uses Now → +24h. Pick mode lets you edit. No Expire sends expires_at as null.
                 </div>
               </div>
             </div>
 
             <div style={{ marginTop: 14, display: "grid", gap: 10 }}>
-              <button onClick={issueLink} style={btnStyle(true)} disabled={loading}>
+              <button
+                onClick={issueAdbsVerification}
+                style={btnStyle(true)}
+                disabled={loading}
+                title={loading ? "Issuing..." : "Issue AdbS Verification"}
+              >
                 {loading ? "Issuing..." : "Issue AdbS Verification"}
               </button>
 
@@ -507,14 +495,16 @@ export default function ControlCenter() {
 
             {issued ? (
               <div style={{ marginTop: 14, ...cardStyle, padding: 14 }}>
-                <div style={{ fontSize: 16, fontWeight: 900, marginBottom: 8 }}>
+                <div style={{ fontSize: 16, fontWeight: 950, marginBottom: 8 }}>
                   Issued
                 </div>
 
                 <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 10 }}>
+                  Load ID: <span style={{ fontWeight: 950 }}>{issued.load_id}</span>
+                  <br />
                   Expires:{" "}
-                  <span style={{ fontWeight: 800 }}>
-                    {issued.expires_at === null ? "NO EXPIRE" : String(issued.expires_at || "")}
+                  <span style={{ fontWeight: 950 }}>
+                    {issued.expires_at === null ? "No Expire" : String(issued.expires_at || "")}
                   </span>
                 </div>
 
@@ -522,9 +512,9 @@ export default function ControlCenter() {
                   <div>
                     <div style={labelStyle}>Verify URL</div>
                     <input style={inputStyle} value={issued.verify_url || ""} readOnly />
-                    <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+                    <div style={{ display: "flex", gap: 10, marginTop: 8, flexWrap: "wrap" }}>
                       <button
-                        style={btnStyle(false)}
+                        style={{ ...btnStyle(false), width: "auto", minWidth: 160 }}
                         onClick={async () => {
                           const ok = await safeCopy(issued.verify_url || "");
                           setStatusMsg(ok ? "Link copied." : "Copy failed.");
@@ -534,7 +524,7 @@ export default function ControlCenter() {
                       </button>
 
                       <button
-                        style={btnStyle(false)}
+                        style={{ ...btnStyle(false), width: "auto", minWidth: 200 }}
                         onClick={async () => {
                           const ok = await safeCopy(issued.token || "");
                           setStatusMsg(ok ? "Verification ID copied." : "Copy failed.");
@@ -553,9 +543,9 @@ export default function ControlCenter() {
             ) : null}
           </div>
 
-          {/* Right: Status */}
+          {/* RIGHT: Status */}
           <div style={cardStyle}>
-            <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 10 }}>
+            <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 10 }}>
               Status
             </div>
 
