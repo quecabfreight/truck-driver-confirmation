@@ -78,7 +78,15 @@ export default function Header() {
   };
 
   const title = { fontSize: 15, fontWeight: 950, letterSpacing: 0.2, margin: 0 };
-  const sub = { fontSize: 12, opacity: 0.72, marginTop: 2 };
+
+  // ✅ THIS is the “strong sentence” line under the logo
+  // (Doesn’t reveal sensitive match info; it’s branding + purpose.)
+  const sub = {
+    fontSize: 12,
+    opacity: 0.78,
+    marginTop: 2,
+    letterSpacing: 0.1,
+  };
 
   const row = { display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" };
 
@@ -107,6 +115,7 @@ export default function Header() {
           onClick={() => nav(authorized ? "/dashboard" : "/")}
           title="QueCab AdbS"
         >
+          {/* 🚫 DO NOT CHANGE LOGO SIZE (locked) */}
           <img
             src="/qc-logo.png"
             alt="QueCab AdbS"
@@ -116,7 +125,7 @@ export default function Header() {
           <div>
             <div style={title}>QueCab AdbS</div>
             <div style={sub}>
-              {authorized ? "Control Center" : "Public"} • Truck-Driver verification
+              Anti-Double-Brokering System • Truck-Driver verification
             </div>
           </div>
         </div>
@@ -127,15 +136,12 @@ export default function Header() {
               <button style={btn(true)} onClick={() => nav("/dashboard")}>
                 Control Center
               </button>
-
               <button style={btn(false)} onClick={() => nav("/admin")}>
                 Admin
               </button>
-
               <button style={btn(false)} onClick={() => nav("/how-it-works")}>
                 How It Works
               </button>
-
               <button style={btn(false)} onClick={logout}>
                 Log Out
               </button>
@@ -145,15 +151,12 @@ export default function Header() {
               <button style={btn(true)} onClick={() => nav("/")}>
                 Home
               </button>
-
               <button style={btn(false)} onClick={() => nav("/how-it-works")}>
                 How It Works
               </button>
-
               <button style={btn(false)} onClick={() => nav("/login")}>
                 Log In
               </button>
-
               <button style={btn(false)} onClick={() => nav("/join")}>
                 Request Access
               </button>
