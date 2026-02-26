@@ -35,7 +35,7 @@ export default function App() {
         <Route path="/how-it-works" element={<HowItWorks />} />
         <Route path="/about" element={<About />} />
 
-        {/* PUBLIC VERIFY (critical): emailed link must work without being logged in */}
+        {/* PUBLIC verify link (Dock PIN gate happens inside Verify page) */}
         <Route path="/verify/:token" element={<Verify />} />
 
         {/* Authorized */}
