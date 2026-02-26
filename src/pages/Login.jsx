@@ -17,19 +17,8 @@ export default function Login() {
   const nav = useNavigate();
   const loc = useLocation();
 
-  // Prefill ONCE. No polling. No “tick”. No input-wiping.
-  const [email, setEmail] = useState(() => {
-    const e = (getAuthEmail() || "").trim();
-    return e;
-  });
-
-  const [code, setCode] = useState(() => {
-    try {
-      return (localStorage.getItem(LS_CODE) || "").trim();
-    } catch {
-      return "";
-    }
-  });
+  const emailRef = useRef(null);
+  const codeRef = useRef(null);
 
   const [remember, setRemember] = useState(() => {
     try {
@@ -42,8 +31,16 @@ export default function Login() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const emailRef = useRef(null);
-  const codeRef = useRef(null);
+  // Prefill ONCE (does not fight typing)
+  const prefill = useMemo(() => {
+    const e = (getAuthEmail() || "").trim();
+    let c = "";
+    try {
+      c = (localStorage.getItem(LS_CODE) || "").trim();
+      if (!c) c = (sessionStorage.getItem(SS_CODE) || "").trim();
+    } catch {}
+    return { e, c };
+  }, []);
 
   // If already authorized, bounce to Control Center
   useEffect(() => {
@@ -54,77 +51,42 @@ export default function Login() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Cross-tab sync ONLY (doesn't fight typing)
-  useEffect(() => {
-    const onStorage = () => {
-      const stored = (getAuthEmail() || "").trim();
-      // Only update the field if user hasn’t started typing something different.
-      setEmail((prev) => {
-        const p = String(prev || "").trim();
-        if (p && p !== stored) return prev;
-        return stored;
-      });
-
-      try {
-        const saved = (localStorage.getItem(LS_CODE) || "").trim();
-        if (saved) {
-          setCode((prev) => (prev ? prev : saved));
-          setRemember(true);
-        }
-      } catch {}
-    };
-
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
-  }, []);
-
-  const canSubmit = useMemo(() => {
-    return looksLikeEmail(email) && String(code || "").trim().length >= 4 && !busy;
-  }, [email, code, busy]);
-
   async function onSubmit(e) {
     e.preventDefault();
     setError("");
 
-    const e1 = String(email || "").trim();
-    const c1 = String(code || "").trim();
+    const email = (emailRef.current?.value || "").trim();
+    const code = (codeRef.current?.value || "").trim();
 
-    if (!looksLikeEmail(e1)) {
+    if (!looksLikeEmail(email)) {
       setError("Enter a valid business email.");
       emailRef.current?.focus?.();
       return;
     }
-    if (c1.length < 4) {
+    if (code.length < 4) {
       setError("Enter your access code.");
       codeRef.current?.focus?.();
       return;
     }
 
     setBusy(true);
-
     try {
-      // Save “remember device”
+      // Save email (auth gate)
+      try {
+        localStorage.setItem(LS_EMAIL, email);
+      } catch {}
+
+      // Remember device handling
       try {
         if (remember) {
-          localStorage.setItem(LS_CODE, c1);
+          localStorage.setItem(LS_CODE, code);
           sessionStorage.removeItem(SS_CODE);
         } else {
           localStorage.removeItem(LS_CODE);
-          sessionStorage.setItem(SS_CODE, c1);
+          sessionStorage.setItem(SS_CODE, code);
         }
       } catch {}
 
-      // Store email for auth gating
-      try {
-        localStorage.setItem(LS_EMAIL, e1);
-      } catch {}
-
-      // IMPORTANT:
-      // We do NOT attempt to “verify” here because your project already does that
-      // in your auth flow / broker-shipper check. We just persist the login inputs
-      // and navigate.
-      //
-      // If user is not authorized, RequireAuth will bounce them back to /login.
       nav("/dashboard", { replace: true, state: { from: loc.pathname } });
     } finally {
       setBusy(false);
@@ -158,6 +120,7 @@ export default function Login() {
   };
 
   const row = { display: "grid", gap: 10, marginTop: 14 };
+
   const btn = {
     width: "100%",
     padding: "12px 14px",
@@ -167,8 +130,8 @@ export default function Login() {
     color: "#e6edf5",
     fontSize: 16,
     fontWeight: 950,
-    cursor: canSubmit ? "pointer" : "not-allowed",
-    opacity: canSubmit ? 1 : 0.6,
+    cursor: "pointer",
+    opacity: busy ? 0.7 : 1,
   };
 
   const chkRow = {
@@ -197,8 +160,7 @@ export default function Login() {
                 <input
                   ref={emailRef}
                   style={input}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  defaultValue={prefill.e}
                   placeholder="email@company.com"
                   inputMode="email"
                   autoComplete="email"
@@ -210,8 +172,7 @@ export default function Login() {
                 <input
                   ref={codeRef}
                   style={input}
-                  value={code}
-                  onChange={(e) => setCode(e.target.value)}
+                  defaultValue={prefill.c}
                   placeholder="QC-XXXXXX"
                   autoComplete="one-time-code"
                 />
@@ -240,12 +201,12 @@ export default function Login() {
                 </div>
               ) : null}
 
-              <button type="submit" style={btn} disabled={!canSubmit}>
+              <button type="submit" style={btn} disabled={busy}>
                 {busy ? "Signing in..." : "Log In"}
               </button>
 
               <div style={{ opacity: 0.65, fontSize: 12, lineHeight: 1.4 }}>
-                Note: “Remember this device” stores your access code on this device only.
+                “Remember this device” stores your access code on this device only.
               </div>
             </div>
           </form>
