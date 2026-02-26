@@ -1,145 +1,190 @@
-// /src/pages/Verify.jsx
-import React, { useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+// /src/pages/ControlCenter.jsx
+import React, { useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import Header from "../components/Header.jsx";
+import { LS_EMAIL, isBrokerOrShipper } from "../utils/auth.js";
 
-function onlyDigits(v) {
-  return String(v || "").replace(/\D+/g, "");
-}
-function upperTrim(v) {
-  return String(v || "").trim().toUpperCase();
+function onlyDigits(s) {
+  return String(s || "").replace(/\D+/g, "");
 }
 
-export default function Verify() {
-  const nav = useNavigate();
-  const { token } = useParams();
+function toUpperClean(s) {
+  return String(s || "").toUpperCase();
+}
 
-  // Dock authorization (per device/session)
-  const [dockAuthed, setDockAuthed] = useState(() => {
+function formatPhoneHyphen(s) {
+  const d = onlyDigits(s).slice(0, 10);
+  const a = d.slice(0, 3);
+  const b = d.slice(3, 6);
+  const c = d.slice(6, 10);
+  if (d.length <= 3) return a;
+  if (d.length <= 6) return `${a}-${b}`;
+  return `${a}-${b}-${c}`;
+}
+
+async function safeCopy(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
     try {
-      return sessionStorage.getItem("qc_dock_authed") === "1";
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
+      ta.style.top = "-9999px";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      const ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+      return ok;
     } catch {
       return false;
     }
-  });
-  const [dockPin, setDockPin] = useState("");
-  const [dockAuthLoading, setDockAuthLoading] = useState(false);
-  const [dockAuthError, setDockAuthError] = useState("");
+  }
+}
 
-  // Phone revealed only after dock authorization
-  const [driverPhone, setDriverPhone] = useState(() => {
-    try {
-      return sessionStorage.getItem("qc_driver_phone") || "";
-    } catch {
-      return "";
-    }
-  });
+function nowLocalDatetime() {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  const mm = pad(d.getMonth() + 1);
+  const dd = pad(d.getDate());
+  const hh = pad(d.getHours());
+  const mi = pad(d.getMinutes());
+  return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
+}
 
-  const [enteredUsdot, setEnteredUsdot] = useState("");
-  const [enteredPlate, setEnteredPlate] = useState("");
+function plusHoursLocalDatetime(hours) {
+  const d = new Date(Date.now() + hours * 60 * 60 * 1000);
+  const pad = (n) => String(n).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  const mm = pad(d.getMonth() + 1);
+  const dd = pad(d.getDate());
+  const hh = pad(d.getHours());
+  const mi = pad(d.getMinutes());
+  return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
+}
 
-  const [callClicked, setCallClicked] = useState(false);
-  const [driverAnswered, setDriverAnswered] = useState(null); // true/false/null
-  const [loading, setLoading] = useState(false);
+export default function ControlCenter() {
+  const nav = useNavigate();
 
-  const [errorMsg, setErrorMsg] = useState("");
-  const [result, setResult] = useState(null); // "clear" | "caution"
-  const [attemptsRemaining, setAttemptsRemaining] = useState(null);
-  const [revoked, setRevoked] = useState(false);
+  const email = (localStorage.getItem(LS_EMAIL) || "").trim();
+  const authorized = !!email && isBrokerOrShipper(email);
 
-  const normalized = useMemo(() => {
-    return {
-      token: String(token || "").trim(),
-      entered_usdot: onlyDigits(enteredUsdot),
-      entered_plate: upperTrim(enteredPlate),
-      driver_answered: driverAnswered,
-      ready:
-        !!String(token || "").trim() &&
-        !!onlyDigits(enteredUsdot) &&
-        !!upperTrim(enteredPlate) &&
-        callClicked === true &&
-        (driverAnswered === true || driverAnswered === false),
-    };
-  }, [token, enteredUsdot, enteredPlate, callClicked, driverAnswered]);
-
-  async function authorizeDock() {
-    setDockAuthError("");
-    setDockAuthLoading(true);
-
-    try {
-      const res = await fetch("/api/get_driver_phone", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: String(token || "").trim(), pin: dockPin }),
-      });
-
-      const text = await res.text();
-      let data = null;
-      try {
-        data = JSON.parse(text);
-      } catch {
-        data = { raw: text };
-      }
-
-      if (!res.ok) {
-        const msg = (data && (data.error || data.message)) || `Dock authorization failed (${res.status}).`;
-        setDockAuthError(msg);
-        return;
-      }
-
-      const phone = String(data?.phone || "");
-      setDriverPhone(phone);
-
-      try {
-        sessionStorage.setItem("qc_dock_authed", "1");
-        sessionStorage.setItem("qc_driver_phone", phone);
-      } catch {}
-
-      setDockAuthed(true);
-    } catch {
-      setDockAuthError("Network error. Try again.");
-    } finally {
-      setDockAuthLoading(false);
-    }
+  if (!authorized) {
+    nav("/login", { replace: true });
+    return null;
   }
 
-  async function submit() {
-    setErrorMsg("");
-    setResult(null);
+  const [loadId, setLoadId] = useState("");
+  const [driverPhone, setDriverPhone] = useState("");
+  const [usdotOnRecord, setUsdotOnRecord] = useState("");
+  const [plateOnRecord, setPlateOnRecord] = useState("");
 
-    if (!normalized.token) {
-      setErrorMsg("Missing verify token.");
+  const [mode, setMode] = useState("auto24"); // auto24 | pick | none
+  const [startsAt, setStartsAt] = useState(() => nowLocalDatetime());
+  const [expiresAt, setExpiresAt] = useState(() => plusHoursLocalDatetime(24));
+
+  const [statusMsg, setStatusMsg] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const [issued, setIssued] = useState(null); // { token, verify_url, expires_at, load_id, ... }
+
+  const abortRef = useRef(null);
+
+  const normalized = useMemo(() => {
+    const usdot_digits = onlyDigits(usdotOnRecord);
+    const plate_upper = toUpperClean(plateOnRecord);
+    const phone_digits = onlyDigits(driverPhone);
+    return { usdot_digits, plate_upper, phone_digits };
+  }, [usdotOnRecord, plateOnRecord, driverPhone]);
+
+  function logout() {
+    try {
+      localStorage.removeItem(LS_EMAIL);
+      localStorage.removeItem("qc_access_code");
+      sessionStorage.removeItem("qc_access_code_ss");
+    } catch {}
+    nav("/login", { replace: true });
+  }
+
+  function resetStartNow() {
+    setStartsAt(nowLocalDatetime());
+  }
+  function resetExpire24h() {
+    setExpiresAt(plusHoursLocalDatetime(24));
+  }
+
+  function computeTimes() {
+    if (mode === "none") return { starts_at: nowLocalDatetime(), expires_at: null };
+    if (mode === "auto24") return { starts_at: nowLocalDatetime(), expires_at: plusHoursLocalDatetime(24) };
+    return { starts_at: startsAt, expires_at: expiresAt };
+  }
+
+  async function issueLink() {
+    setErrorMsg("");
+    setStatusMsg("");
+    setIssued(null);
+
+    const usdot_digits = normalized.usdot_digits;
+    const plate_upper = normalized.plate_upper;
+    const phone_digits = normalized.phone_digits;
+    const lid = String(loadId || "").trim();
+
+    if (!lid) {
+      setErrorMsg("Enter Load ID.");
       return;
     }
-    if (!normalized.entered_usdot) {
-      setErrorMsg("Enter USDOT#.");
+    if (!usdot_digits) {
+      setErrorMsg("Enter USDOT# (digits).");
       return;
     }
-    if (!normalized.entered_plate) {
+    if (!plate_upper) {
       setErrorMsg("Enter Plate.");
       return;
     }
-    if (!callClicked) {
-      setErrorMsg("Click CALL DRIVER before submitting.");
-      return;
-    }
-    if (!(driverAnswered === true || driverAnswered === false)) {
-      setErrorMsg("Select Driver Answered: YES or NO.");
+    if (phone_digits.length !== 10) {
+      setErrorMsg("Enter Driver Phone (10 digits).");
       return;
     }
 
-    setLoading(true);
+    const times = computeTimes();
+    if (!times.starts_at) {
+      setErrorMsg("Start time is required.");
+      return;
+    }
+    if (mode !== "none" && !times.expires_at) {
+      setErrorMsg("Expire time is required (or choose No Expire).");
+      return;
+    }
+
     try {
-      const res = await fetch("/api/submit_verify_check", {
+      if (abortRef.current) abortRef.current.abort();
+    } catch {}
+    const ac = new AbortController();
+    abortRef.current = ac;
+
+    setLoading(true);
+
+    try {
+      const payload = {
+        load_id: lid,
+        usdot_on_record: usdot_digits,
+        plate_on_record: plate_upper,
+        driver_phone: formatPhoneHyphen(phone_digits),
+        starts_at: times.starts_at,
+        expires_at: times.expires_at,
+      };
+
+      const res = await fetch("/api/issue_verify_link", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          token: normalized.token,
-          entered_usdot: normalized.entered_usdot,
-          entered_plate: normalized.entered_plate,
-          driver_answered: normalized.driver_answered,
-        }),
+        signal: ac.signal,
+        body: JSON.stringify(payload),
       });
 
       const text = await res.text();
@@ -151,33 +196,46 @@ export default function Verify() {
       }
 
       if (!res.ok) {
-        const msg = (data && (data.error || data.message)) || `Verify failed (${res.status}).`;
+        const msg = (data && (data.error || data.message)) || `Issuer failed (${res.status}).`;
         setErrorMsg(msg);
-        setRevoked(!!data?.revoked);
+        setLoading(false);
         return;
       }
 
-      const r = String(data?.result || "").toLowerCase();
-      setResult(r === "clear" ? "clear" : "caution");
+      const token = data.token || data.verify_token || (data.data && data.data.token) || "";
+      const verify_url =
+        data.verify_url || data.url || data.link || (data.data && data.data.verify_url) || "";
+      const expires = data.expires_at || (data.data && data.data.expires_at) || times.expires_at;
 
-      if (typeof data?.attempts_remaining === "number") {
-        setAttemptsRemaining(data.attempts_remaining);
-      } else {
-        setAttemptsRemaining(null);
-      }
+      setIssued({
+        token,
+        verify_url,
+        expires_at: expires,
+        load_id: lid,
+      });
 
-      setRevoked(!!data?.revoked);
-    } catch {
-      setErrorMsg("Network error. Try again.");
+      setStatusMsg("Verification issued.");
+    } catch (e) {
+      if (String(e?.name) !== "AbortError") setErrorMsg("Network error issuing verification.");
     } finally {
       setLoading(false);
     }
   }
 
-  const page = { minHeight: "100vh", background: "transparent" };
-  const wrap = { maxWidth: 1100, margin: "0 auto", padding: "18px 16px 60px" };
+  function makeEmailBlock() {
+    if (!issued) return "";
+    const lines = [
+      "QueCab AdbS — Dock Verification",
+      "",
+      `Issued`,
+      `Load ID: ${issued.load_id || ""}`,
+      `Expires: ${issued.expires_at === null ? "No Expire" : String(issued.expires_at || "")}`,
+      `Verify URL: ${issued.verify_url || ""}`,
+    ];
+    return lines.join("\n");
+  }
 
-  const card = {
+  const cardStyle = {
     border: "1px solid rgba(255,255,255,0.12)",
     background: "rgba(12, 18, 28, 0.72)",
     borderRadius: 16,
@@ -185,113 +243,191 @@ export default function Verify() {
     boxShadow: "0 12px 28px rgba(0,0,0,0.35)",
   };
 
-  const h1 = { fontSize: 26, fontWeight: 900, letterSpacing: 0.2, margin: 0 };
-  const lead = { marginTop: 10, fontSize: 15, opacity: 0.9, lineHeight: 1.45 };
-
-  const label = { fontSize: 14, opacity: 0.92, marginBottom: 6 };
-  const input = {
+  const labelStyle = { fontSize: 14, opacity: 0.92, marginBottom: 6 };
+  const inputStyle = {
     width: "100%",
-    padding: "14px 12px",
+    padding: "12px 12px",
     borderRadius: 12,
     border: "1px solid rgba(255,255,255,0.16)",
     background: "rgba(255,255,255,0.04)",
     color: "inherit",
-    fontSize: 18,
+    fontSize: 16,
     outline: "none",
   };
 
-  const btn = (primary) => ({
-    padding: "14px 14px",
-    borderRadius: 12,
-    border: primary
-      ? "1px solid rgba(140,190,255,0.42)"
-      : "1px solid rgba(255,255,255,0.16)",
-    background: primary
-      ? "linear-gradient(180deg, rgba(40,110,200,0.85), rgba(20,70,140,0.75))"
-      : "rgba(255,255,255,0.06)",
-    color: "#e6edf5",
-    fontSize: 16,
-    fontWeight: 950,
-    cursor: "pointer",
-    letterSpacing: 0.2,
+  const btnStyle = (primary) => ({
     width: "100%",
-  });
-
-  const ynBtn = (active, yes) => ({
-    flex: 1,
-    padding: "14px 12px",
+    padding: "12px 14px",
     borderRadius: 12,
-    border: active
-      ? yes
-        ? "1px solid rgba(80,190,120,0.55)"
-        : "1px solid rgba(255,90,90,0.55)"
-      : "1px solid rgba(255,255,255,0.16)",
-    background: active
-      ? yes
-        ? "rgba(80,190,120,0.16)"
-        : "rgba(255,90,90,0.16)"
-      : "rgba(255,255,255,0.06)",
+    border: primary ? "1px solid rgba(120,180,255,0.45)" : "1px solid rgba(255,255,255,0.16)",
+    background: primary ? "rgba(40, 110, 190, 0.35)" : "rgba(255,255,255,0.06)",
     color: "inherit",
-    fontSize: 18,
-    fontWeight: 950,
+    fontSize: 16,
     cursor: "pointer",
-    letterSpacing: 0.2,
+    fontWeight: 900,
   });
 
-  const submitDisabled = loading || revoked || !normalized.ready;
+  const pill = (on) => ({
+    padding: "10px 12px",
+    borderRadius: 12,
+    border: "1px solid rgba(255,255,255,0.16)",
+    background: on ? "rgba(40, 110, 190, 0.35)" : "rgba(255,255,255,0.06)",
+    color: "inherit",
+    fontSize: 14,
+    cursor: "pointer",
+    fontWeight: 900,
+    textAlign: "center",
+    userSelect: "none",
+  });
 
   return (
-    <div style={page}>
+    <div style={{ minHeight: "100vh" }}>
       <Header />
 
-      <div style={wrap}>
-        <div style={card}>
-          <div style={h1}>Dock Verification</div>
-
-          <div style={lead}>
-            <b>DOES THE USDOT# ON THE TRUCK MATCH?</b>
-            <br />
-            <b>DID THE DRIVER ANSWER THEIR PHONE?</b>
-            <br />
-            Both must be YES to clear the <b>Truck-Driver</b> for loading.
+      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "18px 16px 48px" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-end",
+            justifyContent: "space-between",
+            gap: 12,
+            flexWrap: "wrap",
+            marginBottom: 14,
+          }}
+        >
+          <div>
+            <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: 0.2 }}>Control Center</div>
+            <div style={{ opacity: 0.85, marginTop: 6, fontSize: 15 }}>
+              Authorized: <span style={{ fontWeight: 700 }}>{email}</span>
+            </div>
           </div>
 
-          {/* Dock Authorization */}
-          {!dockAuthed ? (
-            <div
-              style={{
-                marginTop: 16,
-                border: "1px solid rgba(255,200,80,0.25)",
-                background: "rgba(255,200,80,0.06)",
-                borderRadius: 14,
-                padding: 14,
-              }}
-            >
-              <div style={{ fontSize: 16, fontWeight: 950, letterSpacing: 0.2 }}>
-                Dock Authorization Required
-              </div>
-              <div style={{ opacity: 0.85, marginTop: 6, fontSize: 13, lineHeight: 1.35 }}>
-                Enter the dock PIN to reveal the driver phone number for manual dialing backup.
-              </div>
+          <div style={{ display: "flex", gap: 10 }}>
+            <button onClick={logout} style={btnStyle(false)}>
+              Log Out
+            </button>
+          </div>
+        </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 220px", gap: 10, marginTop: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1.05fr 0.95fr", gap: 16 }}>
+          <div style={cardStyle}>
+            <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 10 }}>
+              Issue AdbS Verification
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div>
+                <div style={labelStyle}>Load ID</div>
                 <input
-                  style={input}
-                  value={dockPin}
-                  onChange={(e) => setDockPin(String(e.target.value || ""))}
-                  placeholder="Dock PIN"
-                  inputMode="numeric"
+                  style={inputStyle}
+                  value={loadId}
+                  onChange={(e) => setLoadId(e.target.value)}
+                  placeholder="12345"
                   autoComplete="off"
                 />
-                <button style={btn(true)} onClick={authorizeDock} disabled={dockAuthLoading}>
-                  {dockAuthLoading ? "Checking..." : "Authorize"}
-                </button>
+                <div style={{ opacity: 0.7, fontSize: 12, marginTop: 6 }}>
+                  Simple identifier so checks tie to the correct load.
+                </div>
               </div>
 
-              {dockAuthError ? (
+              <div>
+                <div style={labelStyle}>Driver Phone</div>
+                <input
+                  style={inputStyle}
+                  value={driverPhone}
+                  onChange={(e) => setDriverPhone(formatPhoneHyphen(e.target.value))}
+                  placeholder="123-456-7890"
+                  inputMode="tel"
+                  autoComplete="off"
+                />
+                <div style={{ opacity: 0.7, fontSize: 12, marginTop: 6 }}>
+                  Auto-formats 123-456-7890.
+                </div>
+              </div>
+
+              <div>
+                <div style={labelStyle}>USDOT# on record</div>
+                <input
+                  style={inputStyle}
+                  value={usdotOnRecord}
+                  onChange={(e) => setUsdotOnRecord(toUpperClean(e.target.value))}
+                  placeholder="123456"
+                  inputMode="text"
+                  autoComplete="off"
+                />
+                <div style={{ opacity: 0.7, fontSize: 12, marginTop: 6 }}>Compared digits-only.</div>
+              </div>
+
+              <div>
+                <div style={labelStyle}>Plate on record</div>
+                <input
+                  style={inputStyle}
+                  value={plateOnRecord}
+                  onChange={(e) => setPlateOnRecord(toUpperClean(e.target.value))}
+                  placeholder="ABC1234"
+                  inputMode="text"
+                  autoComplete="off"
+                />
+                <div style={{ opacity: 0.7, fontSize: 12, marginTop: 6 }}>
+                  Auto-uppercase while typing.
+                </div>
+              </div>
+
+              <div style={{ gridColumn: "1 / -1" }}>
+                <div style={labelStyle}>Start / Expire</div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+                  <div style={pill(mode === "auto24")} onClick={() => setMode("auto24")}>
+                    Auto 24h Expire
+                  </div>
+                  <div style={pill(mode === "pick")} onClick={() => setMode("pick")}>
+                    Pick Start/Expire
+                  </div>
+                  <div style={pill(mode === "none")} onClick={() => setMode("none")}>
+                    No Expire
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 10 }}>
+                  <button style={{ ...pill(false), flex: "1 1 200px" }} onClick={resetStartNow}>
+                    Reset Start = Now
+                  </button>
+                  <button style={{ ...pill(false), flex: "1 1 200px" }} onClick={resetExpire24h}>
+                    Reset Expire = +24h
+                  </button>
+                </div>
+
+                <div style={{ display: "grid", gap: 8, marginTop: 10 }}>
+                  <input
+                    style={inputStyle}
+                    type="datetime-local"
+                    value={startsAt}
+                    disabled={mode !== "pick"}
+                    onChange={(e) => setStartsAt(e.target.value)}
+                  />
+                  <input
+                    style={inputStyle}
+                    type="datetime-local"
+                    value={expiresAt}
+                    disabled={mode !== "pick"}
+                    onChange={(e) => setExpiresAt(e.target.value)}
+                  />
+                </div>
+
+                <div style={{ opacity: 0.7, fontSize: 12, marginTop: 6 }}>
+                  Tip: Auto mode uses Now → +24h. Pick mode lets you edit. No Expire sends expires_at as null.
+                </div>
+              </div>
+            </div>
+
+            <div style={{ marginTop: 14, display: "grid", gap: 10 }}>
+              <button onClick={issueLink} style={btnStyle(true)} disabled={loading}>
+                {loading ? "Issuing..." : "Issue AdbS Verification"}
+              </button>
+
+              {errorMsg ? (
                 <div
                   style={{
-                    marginTop: 10,
                     border: "1px solid rgba(255,80,80,0.35)",
                     background: "rgba(255,80,80,0.08)",
                     padding: 12,
@@ -299,170 +435,107 @@ export default function Verify() {
                     fontSize: 14,
                   }}
                 >
-                  <b>Error:</b> {dockAuthError}
+                  <b>Error:</b> {errorMsg}
+                </div>
+              ) : null}
+
+              {statusMsg ? (
+                <div
+                  style={{
+                    border: "1px solid rgba(120,180,255,0.30)",
+                    background: "rgba(120,180,255,0.08)",
+                    padding: 12,
+                    borderRadius: 12,
+                    fontSize: 14,
+                  }}
+                >
+                  {statusMsg}
                 </div>
               ) : null}
             </div>
-          ) : null}
 
-          {/* Inputs */}
-          <div style={{ marginTop: 16, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            <div>
-              <div style={label}>Enter USDOT#</div>
-              <input
-                style={input}
-                value={enteredUsdot}
-                onChange={(e) => setEnteredUsdot(upperTrim(e.target.value))}
-                placeholder="123456"
-                inputMode="text"
-                autoComplete="off"
-              />
-              <div style={{ opacity: 0.7, fontSize: 12, marginTop: 6 }}>
-                Tip: Type what you see. (Compared digits-only.)
-              </div>
-            </div>
+            {issued ? (
+              <div style={{ marginTop: 14, ...cardStyle, padding: 14 }}>
+                <div style={{ fontSize: 16, fontWeight: 900, marginBottom: 8 }}>Issued</div>
 
-            <div>
-              <div style={label}>Enter Plate</div>
-              <input
-                style={input}
-                value={enteredPlate}
-                onChange={(e) => setEnteredPlate(upperTrim(e.target.value))}
-                placeholder="ABC1234"
-                inputMode="text"
-                autoComplete="off"
-              />
-              <div style={{ opacity: 0.7, fontSize: 12, marginTop: 6 }}>
-                Auto-uppercase while typing.
-              </div>
-            </div>
-          </div>
-
-          {/* Call */}
-          <div style={{ marginTop: 16 }}>
-            <div style={{ fontSize: 16, fontWeight: 950, letterSpacing: 0.2, textTransform: "uppercase" }}>
-              Call the Driver
-            </div>
-
-            <div style={{ marginTop: 10, display: "grid", gap: 10 }}>
-              <a
-                href={dockAuthed && driverPhone ? `tel:${onlyDigits(driverPhone)}` : "tel:"}
-                onClick={() => setCallClicked(true)}
-                style={{
-                  ...btn(true),
-                  textAlign: "center",
-                  textDecoration: "none",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 10,
-                  opacity: dockAuthed ? 1 : 0.6,
-                  pointerEvents: dockAuthed ? "auto" : "none",
-                }}
-                title={dockAuthed ? "CALL DRIVER" : "Authorize dock to enable calling"}
-              >
-                CALL DRIVER {callClicked ? "✅" : ""}
-              </a>
-
-              <div style={{ opacity: 0.82, fontSize: 13 }}>
-                {dockAuthed ? (
-                  <>
-                    Driver Phone (manual backup): <b>{driverPhone || "(not available)"}</b>
-                  </>
-                ) : (
-                  <>Authorize dock to reveal the driver phone number.</>
-                )}
-              </div>
-            </div>
-
-            <div style={{ marginTop: 10 }}>
-              <div style={label}>Driver Answered Phone?</div>
-              <div style={{ display: "flex", gap: 10 }}>
-                <button style={ynBtn(driverAnswered === true, true)} onClick={() => setDriverAnswered(true)} type="button">
-                  YES
-                </button>
-                <button style={ynBtn(driverAnswered === false, false)} onClick={() => setDriverAnswered(false)} type="button">
-                  NO
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Submit */}
-          <div style={{ marginTop: 16, display: "grid", gap: 10 }}>
-            <button style={btn(true)} onClick={submit} disabled={submitDisabled}>
-              {loading ? "Submitting..." : revoked ? "LINK LOCKED" : "SUBMIT VERIFICATION"}
-            </button>
-
-            <div style={{ opacity: 0.72, fontSize: 12 }}>
-              Submit unlocks only after USDOT + Plate + CALL DRIVER + YES/NO are completed.
-            </div>
-
-            {errorMsg ? (
-              <div
-                style={{
-                  border: "1px solid rgba(255,80,80,0.35)",
-                  background: "rgba(255,80,80,0.08)",
-                  padding: 12,
-                  borderRadius: 12,
-                  fontSize: 14,
-                }}
-              >
-                <b>Error:</b> {errorMsg}
-              </div>
-            ) : null}
-
-            {result === "clear" ? (
-              <div
-                style={{
-                  marginTop: 6,
-                  border: "1px solid rgba(80,190,120,0.45)",
-                  background: "rgba(80,190,120,0.12)",
-                  padding: 16,
-                  borderRadius: 14,
-                  textAlign: "center",
-                }}
-              >
-                <div style={{ fontSize: 30, fontWeight: 950, letterSpacing: 0.6 }}>CLEAR TO LOAD</div>
-                <div style={{ marginTop: 8, opacity: 0.9 }}>Truck-Driver verification passed.</div>
-              </div>
-            ) : null}
-
-            {result === "caution" ? (
-              <div
-                style={{
-                  marginTop: 6,
-                  border: "1px solid rgba(255,90,90,0.45)",
-                  background: "rgba(255,90,90,0.12)",
-                  padding: 16,
-                  borderRadius: 14,
-                  textAlign: "center",
-                }}
-              >
-                <div style={{ fontSize: 26, fontWeight: 950, letterSpacing: 0.6 }}>
-                  CAUTION — DO NOT LOAD
-                </div>
-                <div style={{ marginTop: 8, opacity: 0.92 }}>
-                  Verification failed. Follow your dock policy and move to NEXT.
+                <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 10 }}>
+                  <div><b>Load ID:</b> {issued.load_id}</div>
+                  <div>
+                    <b>Expires:</b>{" "}
+                    {issued.expires_at === null ? "No Expire" : String(issued.expires_at || "")}
+                  </div>
                 </div>
 
-                {typeof attemptsRemaining === "number" ? (
-                  <div style={{ marginTop: 10, fontWeight: 900 }}>Attempts remaining: {attemptsRemaining}</div>
-                ) : null}
+                <div style={{ display: "grid", gap: 10 }}>
+                  <div>
+                    <div style={labelStyle}>Verify URL</div>
+                    <input style={inputStyle} value={issued.verify_url || ""} readOnly />
 
-                {revoked ? <div style={{ marginTop: 10, fontWeight: 900 }}>This link is now locked.</div> : null}
+                    <div style={{ display: "flex", gap: 10, marginTop: 8, flexWrap: "wrap" }}>
+                      <button
+                        style={{ ...btnStyle(false), flex: "1 1 180px" }}
+                        onClick={async () => {
+                          const ok = await safeCopy(issued.verify_url || "");
+                          setStatusMsg(ok ? "Link copied." : "Copy failed.");
+                        }}
+                      >
+                        Copy Link
+                      </button>
+
+                      <button
+                        style={{ ...btnStyle(false), flex: "1 1 180px" }}
+                        onClick={async () => {
+                          const ok = await safeCopy(issued.token || "");
+                          setStatusMsg(ok ? "Verification ID copied." : "Copy failed.");
+                        }}
+                      >
+                        Copy Verification ID
+                      </button>
+
+                      <button
+                        style={{ ...btnStyle(false), flex: "1 1 220px" }}
+                        onClick={async () => {
+                          const ok = await safeCopy(makeEmailBlock());
+                          setStatusMsg(ok ? "Email block copied." : "Copy failed.");
+                        }}
+                      >
+                        Copy Email Block
+                      </button>
+                    </div>
+                  </div>
+
+                  <div style={{ opacity: 0.75, fontSize: 12, lineHeight: 1.35 }}>
+                    Note: This is the production issuer UI. Legacy /smartlink stays blocked.
+                  </div>
+                </div>
               </div>
             ) : null}
           </div>
 
-          <div style={{ marginTop: 16, opacity: 0.65, fontSize: 12 }}>
-            Intended for authorized dock/check-in personnel.
-            <div style={{ marginTop: 8 }}>
-              <button style={btn(false)} onClick={() => nav("/")}>
-                Back Home
-              </button>
+          <div style={cardStyle}>
+            <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 10 }}>Status</div>
+            <div style={{ fontSize: 14, opacity: 0.9, lineHeight: 1.45 }}>
+              <div style={{ marginBottom: 10 }}>
+                <b>Issuer UI:</b> Control Center (paid look) ✅
+              </div>
+              <div style={{ marginBottom: 10 }}>
+                <b>Legacy routes:</b> /smartlink and /driverlink redirect ✅
+              </div>
+              <div style={{ marginBottom: 10 }}>
+                <b>Formatting:</b> Phone auto-hyphenates; USDOT/Plate uppercase ✅
+              </div>
+              <div style={{ marginBottom: 10 }}>
+                <b>Verify links:</b> Public (no login required) ✅
+              </div>
+              <div style={{ opacity: 0.75 }}>
+                Next: CAUTION ALERT polish (flash + sound) + silent issuer alerts.
+              </div>
             </div>
           </div>
+        </div>
+
+        <div style={{ marginTop: 16, opacity: 0.65, fontSize: 12 }}>
+          QueCab AdbS — Truck-Driver verification system. Paid-subscription UI standards enforced.
         </div>
       </div>
     </div>
