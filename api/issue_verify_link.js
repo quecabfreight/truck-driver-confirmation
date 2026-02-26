@@ -1,17 +1,11 @@
-// /api/issue_verify_link.js
-// Issues an AdbS verification link.
-// IMPORTANT: converts datetime-local (no timezone) to a UTC ISO string before storing,
-// so Supabase/Postgres doesn't incorrectly assume UTC for local times.
+// /src/api/issue_verify_link.js
+// Issues a verify link and stores it in Supabase.
+// Returns a phone/email-safe URL that does NOT rely on "#/..." (because some email clients strip fragments).
 
 import { createClient } from "@supabase/supabase-js";
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
-
 function json(res, code, obj) {
-  res.statusCode = code;
+  res.status(code);
   res.setHeader("Content-Type", "application/json; charset=utf-8");
   res.setHeader("Cache-Control", "no-store");
   res.end(JSON.stringify(obj));
@@ -21,7 +15,7 @@ function onlyDigits(s) {
   return String(s || "").replace(/\D+/g, "");
 }
 
-function toUpperClean(s) {
+function toUpper(s) {
   return String(s || "").trim().toUpperCase();
 }
 
@@ -35,93 +29,91 @@ function formatPhoneHyphen(s) {
   return `${a}-${b}-${c}`;
 }
 
-function token(n = 24) {
-  const chars =
-    "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+function makeToken(len = 24) {
+  // URL-safe random token
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
   let out = "";
-  for (let i = 0; i < n; i++) out += chars[Math.floor(Math.random() * chars.length)];
+  const buf = new Uint32Array(len);
+  crypto.getRandomValues(buf);
+  for (let i = 0; i < len; i++) out += chars[buf[i] % chars.length];
   return out;
 }
 
-// datetime-local like "2026-02-21T20:38" must be treated as LOCAL time.
-// Convert to real UTC ISO string.
-function localDatetimeToUtcIso(localStr) {
-  if (!localStr) return null;
-  // JS treats "YYYY-MM-DDTHH:mm" as local time in both browser + Node.
-  const d = new Date(localStr);
-  if (Number.isNaN(d.getTime())) return null;
-  return d.toISOString(); // UTC Z
+function getBaseUrl(req) {
+  const proto = (req.headers["x-forwarded-proto"] || "https").toString();
+  const host = (req.headers["x-forwarded-host"] || req.headers.host || "").toString();
+  return `${proto}://${host}`;
 }
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
-    return json(res, 405, { error: "Method not allowed" });
+    return json(res, 405, { ok: false, error: "Method not allowed" });
   }
 
   try {
-    const body = req.body || {};
-    const load_id = String(body.load_id || "").trim();
+    const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+    const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-    const usdot_on_record = onlyDigits(body.usdot_on_record);
-    const plate_on_record = toUpperClean(body.plate_on_record);
-    const driver_phone = formatPhoneHyphen(body.driver_phone);
-
-    const mode = String(body.expire_mode || "AUTO_24H").toUpperCase(); // AUTO_24H | MANUAL | NO_EXPIRE
-
-    const starts_at_utc =
-      mode === "MANUAL" ? localDatetimeToUtcIso(body.starts_at) : new Date().toISOString();
-
-    let expires_at_utc = null;
-    if (mode === "NO_EXPIRE") {
-      expires_at_utc = null;
-    } else if (mode === "MANUAL") {
-      expires_at_utc = localDatetimeToUtcIso(body.expires_at);
-    } else {
-      // AUTO_24H
-      expires_at_utc = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    if (!SUPABASE_URL || !SERVICE_KEY) {
+      return json(res, 500, { ok: false, error: "Server missing Supabase env vars." });
     }
 
-    if (!load_id) return json(res, 400, { error: "Load ID is required." });
-    if (!usdot_on_record) return json(res, 400, { error: "USDOT# (digits) is required." });
-    if (!plate_on_record) return json(res, 400, { error: "Plate is required." });
-    if (onlyDigits(driver_phone).length !== 10)
-      return json(res, 400, { error: "Driver phone must be 10 digits." });
+    const sb = createClient(SUPABASE_URL, SERVICE_KEY, {
+      auth: { persistSession: false },
+    });
 
-    if (!starts_at_utc) return json(res, 400, { error: "Invalid start time." });
-    if (mode !== "NO_EXPIRE" && !expires_at_utc)
-      return json(res, 400, { error: "Invalid expire time." });
+    const body = req.body || {};
+    const load_id = (body.load_id ?? null) === "" ? null : (body.load_id ?? null);
 
-    const t = token(24);
+    const usdot_on_record = onlyDigits(body.usdot_on_record);
+    const plate_on_record = toUpper(body.plate_on_record);
+    const driver_phone_digits = onlyDigits(body.driver_phone);
 
-    const { error: insErr } = await supabase.from("verify_links").insert([
-      {
-        token: t,
-        load_id,
-        usdot_on_record,
-        plate_on_record,
-        driver_phone,
-        status: "active",
-        starts_at: starts_at_utc,
-        expires_at: expires_at_utc,
-      },
-    ]);
+    const starts_at = body.starts_at || null;
+    const expires_at = body.expires_at ?? null; // allow null for No Expire
 
-    if (insErr) return json(res, 500, { error: insErr.message });
+    if (!usdot_on_record) return json(res, 400, { ok: false, error: "Missing usdot_on_record (digits)." });
+    if (!plate_on_record) return json(res, 400, { ok: false, error: "Missing plate_on_record." });
+    if (driver_phone_digits.length !== 10) return json(res, 400, { ok: false, error: "Driver phone must be 10 digits." });
+    if (!starts_at) return json(res, 400, { ok: false, error: "Missing starts_at." });
 
-    const origin =
-      (req.headers["x-forwarded-proto"] ? `${req.headers["x-forwarded-proto"]}://` : "https://") +
-      (req.headers["x-forwarded-host"] || req.headers.host);
+    const token = makeToken(28);
 
-    const verify_url = `${origin}/#/verify/${t}`;
+    const insertRow = {
+      token,
+      load_id,
+      usdot_on_record,
+      plate_on_record,
+      driver_phone: formatPhoneHyphen(driver_phone_digits),
+      status: "active",
+      starts_at,
+      expires_at,
+    };
+
+    const { error } = await sb.from("verify_links").insert(insertRow);
+    if (error) {
+      return json(res, 500, { ok: false, error: error.message || "Supabase insert failed." });
+    }
+
+    const base = getBaseUrl(req);
+
+    // Primary (email-safe) link:
+    const verify_url = `${base}/v.html?t=${encodeURIComponent(token)}`;
+
+    // Secondary (direct hash route) link:
+    const verify_hash_url = `${base}/#/verify/${encodeURIComponent(token)}`;
 
     return json(res, 200, {
       ok: true,
-      token: t,
+      token,
       verify_url,
-      expires_at: expires_at_utc,
-      starts_at: starts_at_utc,
+      verify_hash_url,
+      load_id: load_id ?? null,
+      starts_at,
+      expires_at,
+      status: "active",
     });
   } catch (e) {
-    return json(res, 500, { error: "Server error issuing link." });
+    return json(res, 500, { ok: false, error: "Server error issuing verify link." });
   }
 }
