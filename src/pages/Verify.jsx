@@ -1,18 +1,13 @@
-// /src/pages/ControlCenter.jsx
-import React, { useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
-
-import Header from "../components/Header.jsx";
-import { LS_EMAIL, isBrokerOrShipper } from "../utils/auth.js";
+// /src/pages/Verify.jsx
+import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 
 function onlyDigits(s) {
   return String(s || "").replace(/\D+/g, "");
 }
-
-function toUpperClean(s) {
+function toUpper(s) {
   return String(s || "").toUpperCase();
 }
-
 function formatPhoneHyphen(s) {
   const d = onlyDigits(s).slice(0, 10);
   const a = d.slice(0, 3);
@@ -23,520 +18,485 @@ function formatPhoneHyphen(s) {
   return `${a}-${b}-${c}`;
 }
 
-async function safeCopy(text) {
+async function postJSON(url, body) {
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    cache: "no-store",
+    body: JSON.stringify(body || {}),
+  });
+  const text = await res.text();
+  let data = null;
   try {
-    await navigator.clipboard.writeText(text);
-    return true;
+    data = JSON.parse(text);
   } catch {
-    try {
-      const ta = document.createElement("textarea");
-      ta.value = text;
-      ta.style.position = "fixed";
-      ta.style.left = "-9999px";
-      ta.style.top = "-9999px";
-      document.body.appendChild(ta);
-      ta.focus();
-      ta.select();
-      const ok = document.execCommand("copy");
-      document.body.removeChild(ta);
-      return ok;
-    } catch {
-      return false;
-    }
+    data = { raw: text };
   }
+  return { ok: res.ok, status: res.status, data };
 }
 
-function nowLocalDatetime() {
-  const d = new Date();
-  const pad = (n) => String(n).padStart(2, "0");
-  const yyyy = d.getFullYear();
-  const mm = pad(d.getMonth() + 1);
-  const dd = pad(d.getDate());
-  const hh = pad(d.getHours());
-  const mi = pad(d.getMinutes());
-  return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
+async function getJSON(url) {
+  const res = await fetch(url, { method: "GET", cache: "no-store" });
+  const text = await res.text();
+  let data = null;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    data = { raw: text };
+  }
+  return { ok: res.ok, status: res.status, data };
 }
 
-function plusHoursLocalDatetime(hours) {
-  const d = new Date(Date.now() + hours * 60 * 60 * 1000);
-  const pad = (n) => String(n).padStart(2, "0");
-  const yyyy = d.getFullYear();
-  const mm = pad(d.getMonth() + 1);
-  const dd = pad(d.getDate());
-  const hh = pad(d.getHours());
-  const mi = pad(d.getMinutes());
-  return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
-}
-
-export default function ControlCenter() {
+export default function Verify() {
   const nav = useNavigate();
+  const { token } = useParams();
 
-  const email = (localStorage.getItem(LS_EMAIL) || "").trim();
-  const authorized = !!email && isBrokerOrShipper(email);
+  const [loading, setLoading] = useState(true);
+  const [ctx, setCtx] = useState(null); // { load_id, starts_at, expires_at, status, ... }
+  const [err, setErr] = useState("");
 
-  if (!authorized) {
-    nav("/login", { replace: true });
-    return null;
-  }
+  // Dock authorization gate
+  const [pin, setPin] = useState("");
+  const [pinOk, setPinOk] = useState(false);
+  const [pinBusy, setPinBusy] = useState(false);
 
-  const [loadId, setLoadId] = useState("");
+  // Verification inputs (NO live match signals)
+  const [enteredDot, setEnteredDot] = useState("");
+  const [enteredPlate, setEnteredPlate] = useState("");
+  const [driverAnswered, setDriverAnswered] = useState(""); // "YES" | "NO" | ""
+
+  // Phone (revealed only after Dock PIN)
   const [driverPhone, setDriverPhone] = useState("");
-  const [usdotOnRecord, setUsdotOnRecord] = useState("");
-  const [plateOnRecord, setPlateOnRecord] = useState("");
+  const [phoneBusy, setPhoneBusy] = useState(false);
 
-  const [mode, setMode] = useState("auto24"); // auto24 | pick | none
-  const [startsAt, setStartsAt] = useState(() => nowLocalDatetime());
-  const [expiresAt, setExpiresAt] = useState(() => plusHoursLocalDatetime(24));
+  // Result
+  const [subBusy, setSubBusy] = useState(false);
+  const [result, setResult] = useState(null); // { result, message, ... }
 
-  const [statusMsg, setStatusMsg] = useState("");
-  const [errorMsg, setErrorMsg] = useState("");
-  const [loading, setLoading] = useState(false);
+  const cleanToken = useMemo(() => String(token || "").trim(), [token]);
 
-  const [issued, setIssued] = useState(null); // { token, verify_url, expires_at, load_id, ... }
+  useEffect(() => {
+    let alive = true;
 
-  const abortRef = useRef(null);
+    async function loadContext() {
+      setLoading(true);
+      setErr("");
+      setCtx(null);
 
-  const normalized = useMemo(() => {
-    const usdot_digits = onlyDigits(usdotOnRecord);
-    const plate_upper = toUpperClean(plateOnRecord);
-    const phone_digits = onlyDigits(driverPhone);
-    return { usdot_digits, plate_upper, phone_digits };
-  }, [usdotOnRecord, plateOnRecord, driverPhone]);
-
-  function logout() {
-    try {
-      localStorage.removeItem(LS_EMAIL);
-      localStorage.removeItem("qc_access_code");
-      sessionStorage.removeItem("qc_access_code_ss");
-    } catch {}
-    nav("/login", { replace: true });
-  }
-
-  function resetStartNow() {
-    setStartsAt(nowLocalDatetime());
-  }
-  function resetExpire24h() {
-    setExpiresAt(plusHoursLocalDatetime(24));
-  }
-
-  function computeTimes() {
-    if (mode === "none") return { starts_at: nowLocalDatetime(), expires_at: null };
-    if (mode === "auto24") return { starts_at: nowLocalDatetime(), expires_at: plusHoursLocalDatetime(24) };
-    return { starts_at: startsAt, expires_at: expiresAt };
-  }
-
-  async function issueLink() {
-    setErrorMsg("");
-    setStatusMsg("");
-    setIssued(null);
-
-    const usdot_digits = normalized.usdot_digits;
-    const plate_upper = normalized.plate_upper;
-    const phone_digits = normalized.phone_digits;
-    const lid = String(loadId || "").trim();
-
-    if (!lid) {
-      setErrorMsg("Enter Load ID.");
-      return;
-    }
-    if (!usdot_digits) {
-      setErrorMsg("Enter USDOT# (digits).");
-      return;
-    }
-    if (!plate_upper) {
-      setErrorMsg("Enter Plate.");
-      return;
-    }
-    if (phone_digits.length !== 10) {
-      setErrorMsg("Enter Driver Phone (10 digits).");
-      return;
-    }
-
-    const times = computeTimes();
-    if (!times.starts_at) {
-      setErrorMsg("Start time is required.");
-      return;
-    }
-    if (mode !== "none" && !times.expires_at) {
-      setErrorMsg("Expire time is required (or choose No Expire).");
-      return;
-    }
-
-    try {
-      if (abortRef.current) abortRef.current.abort();
-    } catch {}
-    const ac = new AbortController();
-    abortRef.current = ac;
-
-    setLoading(true);
-
-    try {
-      const payload = {
-        load_id: lid,
-        usdot_on_record: usdot_digits,
-        plate_on_record: plate_upper,
-        driver_phone: formatPhoneHyphen(phone_digits),
-        starts_at: times.starts_at,
-        expires_at: times.expires_at,
-      };
-
-      const res = await fetch("/api/issue_verify_link", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: ac.signal,
-        body: JSON.stringify(payload),
-      });
-
-      const text = await res.text();
-      let data = null;
-      try {
-        data = JSON.parse(text);
-      } catch {
-        data = { raw: text };
-      }
-
-      if (!res.ok) {
-        const msg = (data && (data.error || data.message)) || `Issuer failed (${res.status}).`;
-        setErrorMsg(msg);
+      if (!cleanToken) {
+        setErr("Missing verification token.");
         setLoading(false);
         return;
       }
 
-      const token = data.token || data.verify_token || (data.data && data.data.token) || "";
-      const verify_url =
-        data.verify_url || data.url || data.link || (data.data && data.data.verify_url) || "";
-      const expires = data.expires_at || (data.data && data.data.expires_at) || times.expires_at;
+      const q = encodeURIComponent(cleanToken);
+      const r = await getJSON(`/api/get_verify_context?t=${q}`);
 
-      setIssued({
-        token,
-        verify_url,
-        expires_at: expires,
-        load_id: lid,
-      });
+      if (!alive) return;
 
-      setStatusMsg("Verification issued.");
-    } catch (e) {
-      if (String(e?.name) !== "AbortError") setErrorMsg("Network error issuing verification.");
-    } finally {
+      if (!r.ok || !r.data || !r.data.ok) {
+        const msg =
+          (r.data && (r.data.error || r.data.message)) ||
+          `Unable to load verification context (${r.status}).`;
+        setErr(msg);
+        setLoading(false);
+        return;
+      }
+
+      setCtx(r.data.context || null);
       setLoading(false);
     }
+
+    loadContext();
+    return () => {
+      alive = false;
+    };
+  }, [cleanToken]);
+
+  const expired = useMemo(() => {
+    const ex = ctx?.expires_at;
+    if (!ex) return false; // "No Expire" allowed
+    const t = Date.parse(ex);
+    if (!Number.isFinite(t)) return false;
+    return Date.now() > t;
+  }, [ctx]);
+
+  async function authorizeDock() {
+    setErr("");
+    setPinBusy(true);
+
+    const r = await postJSON("/api/reveal_driver_phone", {
+      t: cleanToken,
+      pin: String(pin || "").trim(),
+    });
+
+    setPinBusy(false);
+
+    if (!r.ok || !r.data || !r.data.ok) {
+      const msg =
+        (r.data && (r.data.error || r.data.message)) ||
+        "Dock authorization failed.";
+      setErr(msg);
+      setPinOk(false);
+      setDriverPhone("");
+      return;
+    }
+
+    setPinOk(true);
+    setDriverPhone(formatPhoneHyphen(r.data.driver_phone || ""));
   }
 
-  function makeEmailBlock() {
-    if (!issued) return "";
-    const lines = [
-      "QueCab AdbS — Dock Verification",
-      "",
-      `Issued`,
-      `Load ID: ${issued.load_id || ""}`,
-      `Expires: ${issued.expires_at === null ? "No Expire" : String(issued.expires_at || "")}`,
-      `Verify URL: ${issued.verify_url || ""}`,
-    ];
-    return lines.join("\n");
+  async function refreshPhone() {
+    if (!pinOk) return;
+    setErr("");
+    setPhoneBusy(true);
+
+    const r = await postJSON("/api/reveal_driver_phone", {
+      t: cleanToken,
+      pin: String(pin || "").trim(),
+    });
+
+    setPhoneBusy(false);
+
+    if (!r.ok || !r.data || !r.data.ok) {
+      const msg =
+        (r.data && (r.data.error || r.data.message)) ||
+        "Could not refresh phone.";
+      setErr(msg);
+      return;
+    }
+
+    setDriverPhone(formatPhoneHyphen(r.data.driver_phone || ""));
   }
 
-  const cardStyle = {
-    border: "1px solid rgba(255,255,255,0.12)",
-    background: "rgba(12, 18, 28, 0.72)",
-    borderRadius: 16,
-    padding: 18,
-    boxShadow: "0 12px 28px rgba(0,0,0,0.35)",
+  const canSubmit = useMemo(() => {
+    if (!ctx) return false;
+    if (expired) return false;
+    if (!pinOk) return false;
+
+    const dot = onlyDigits(enteredDot);
+    const plate = toUpper(enteredPlate).trim();
+
+    if (!dot) return false;
+    if (!plate) return false;
+    if (driverAnswered !== "YES" && driverAnswered !== "NO") return false;
+
+    return true;
+  }, [ctx, expired, pinOk, enteredDot, enteredPlate, driverAnswered]);
+
+  async function submitVerification() {
+    setErr("");
+    setResult(null);
+    setSubBusy(true);
+
+    const payload = {
+      token: cleanToken,
+      load_id: ctx?.load_id ?? null,
+      entered_usdot: onlyDigits(enteredDot),
+      entered_plate: toUpper(enteredPlate).trim(),
+      driver_answered: driverAnswered === "YES",
+      checked_at: new Date().toISOString(),
+    };
+
+    const r = await postJSON("/api/submit_verify_check", payload);
+
+    setSubBusy(false);
+
+    if (!r.ok || !r.data) {
+      const msg =
+        (r.data && (r.data.error || r.data.message)) ||
+        `Submit failed (${r.status}).`;
+      setErr(msg);
+      return;
+    }
+
+    // Accept a few shapes
+    const verdict =
+      r.data.result ||
+      (r.data.data && r.data.data.result) ||
+      (r.data.verdict ? r.data.verdict : "");
+
+    const message =
+      r.data.message ||
+      (r.data.data && r.data.data.message) ||
+      "";
+
+    setResult({
+      result: String(verdict || "").toUpperCase(),
+      message: message || "",
+      raw: r.data,
+    });
+  }
+
+  const page = {
+    minHeight: "100vh",
+    background: "#0f1722",
+    color: "#e6edf5",
   };
-
-  const labelStyle = { fontSize: 14, opacity: 0.92, marginBottom: 6 };
-  const inputStyle = {
+  const wrap = { maxWidth: 980, margin: "0 auto", padding: "18px 16px 56px" };
+  const card = {
+    border: "1px solid rgba(140,190,255,0.14)",
+    background: "rgba(0,0,0,0.26)",
+    boxShadow: "0 16px 34px rgba(0,0,0,0.30)",
+    borderRadius: 14,
+    padding: 16,
+  };
+  const h1 = { fontSize: 22, fontWeight: 950, margin: 0 };
+  const label = { fontSize: 13, opacity: 0.85, marginBottom: 6 };
+  const input = {
     width: "100%",
     padding: "12px 12px",
     borderRadius: 12,
     border: "1px solid rgba(255,255,255,0.16)",
-    background: "rgba(255,255,255,0.04)",
+    background: "rgba(255,255,255,0.05)",
     color: "inherit",
     fontSize: 16,
     outline: "none",
   };
-
-  const btnStyle = (primary) => ({
+  const btn = (primary) => ({
     width: "100%",
     padding: "12px 14px",
     borderRadius: 12,
-    border: primary ? "1px solid rgba(120,180,255,0.45)" : "1px solid rgba(255,255,255,0.16)",
-    background: primary ? "rgba(40, 110, 190, 0.35)" : "rgba(255,255,255,0.06)",
-    color: "inherit",
+    border: primary
+      ? "1px solid rgba(140,190,255,0.42)"
+      : "1px solid rgba(255,255,255,0.16)",
+    background: primary
+      ? "linear-gradient(180deg, rgba(40,110,200,0.85), rgba(20,70,140,0.75))"
+      : "rgba(255,255,255,0.06)",
+    color: "#e6edf5",
     fontSize: 16,
-    cursor: "pointer",
     fontWeight: 900,
-  });
-
-  const pill = (on) => ({
-    padding: "10px 12px",
-    borderRadius: 12,
-    border: "1px solid rgba(255,255,255,0.16)",
-    background: on ? "rgba(40, 110, 190, 0.35)" : "rgba(255,255,255,0.06)",
-    color: "inherit",
-    fontSize: 14,
     cursor: "pointer",
-    fontWeight: 900,
-    textAlign: "center",
-    userSelect: "none",
   });
 
   return (
-    <div style={{ minHeight: "100vh" }}>
-      <Header />
-
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "18px 16px 48px" }}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "flex-end",
-            justifyContent: "space-between",
-            gap: 12,
-            flexWrap: "wrap",
-            marginBottom: 14,
-          }}
-        >
+    <div style={page}>
+      <div style={wrap}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+          <img
+            src="/qc-logo.png"
+            alt="QueCab AdbS"
+            style={{ width: 40, height: 40, objectFit: "contain" }}
+            onError={(e) => (e.currentTarget.style.display = "none")}
+          />
           <div>
-            <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: 0.2 }}>Control Center</div>
-            <div style={{ opacity: 0.85, marginTop: 6, fontSize: 15 }}>
-              Authorized: <span style={{ fontWeight: 700 }}>{email}</span>
+            <div style={h1}>Dock Verification</div>
+            <div style={{ fontSize: 13, opacity: 0.75 }}>
+              Verify before you load • Truck-Driver confirmation
             </div>
-          </div>
-
-          <div style={{ display: "flex", gap: 10 }}>
-            <button onClick={logout} style={btnStyle(false)}>
-              Log Out
-            </button>
           </div>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1.05fr 0.95fr", gap: 16 }}>
-          <div style={cardStyle}>
-            <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 10 }}>
-              Issue AdbS Verification
+        {loading ? (
+          <div style={card}>Loading verification…</div>
+        ) : err ? (
+          <div style={{ ...card, borderColor: "rgba(255,90,90,0.35)" }}>
+            <div style={{ fontWeight: 950, marginBottom: 6 }}>Unable to load</div>
+            <div style={{ opacity: 0.9, marginBottom: 10 }}>{String(err)}</div>
+            <button style={btn(false)} onClick={() => nav("/")}>
+              Back Home
+            </button>
+          </div>
+        ) : !ctx ? (
+          <div style={card}>No verification context found.</div>
+        ) : expired ? (
+          <div style={{ ...card, borderColor: "rgba(255,170,90,0.40)" }}>
+            <div style={{ fontWeight: 950, marginBottom: 6 }}>Link Expired</div>
+            <div style={{ opacity: 0.9 }}>
+              This verification link is no longer valid.
             </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-              <div>
-                <div style={labelStyle}>Load ID</div>
-                <input
-                  style={inputStyle}
-                  value={loadId}
-                  onChange={(e) => setLoadId(e.target.value)}
-                  placeholder="12345"
-                  autoComplete="off"
-                />
-                <div style={{ opacity: 0.7, fontSize: 12, marginTop: 6 }}>
-                  Simple identifier so checks tie to the correct load.
+          </div>
+        ) : (
+          <>
+            {/* Dock PIN Gate */}
+            {!pinOk ? (
+              <div style={card}>
+                <div style={{ fontSize: 18, fontWeight: 950, marginBottom: 8 }}>
+                  Dock Authorization Required
                 </div>
-              </div>
-
-              <div>
-                <div style={labelStyle}>Driver Phone</div>
-                <input
-                  style={inputStyle}
-                  value={driverPhone}
-                  onChange={(e) => setDriverPhone(formatPhoneHyphen(e.target.value))}
-                  placeholder="123-456-7890"
-                  inputMode="tel"
-                  autoComplete="off"
-                />
-                <div style={{ opacity: 0.7, fontSize: 12, marginTop: 6 }}>
-                  Auto-formats 123-456-7890.
-                </div>
-              </div>
-
-              <div>
-                <div style={labelStyle}>USDOT# on record</div>
-                <input
-                  style={inputStyle}
-                  value={usdotOnRecord}
-                  onChange={(e) => setUsdotOnRecord(toUpperClean(e.target.value))}
-                  placeholder="123456"
-                  inputMode="text"
-                  autoComplete="off"
-                />
-                <div style={{ opacity: 0.7, fontSize: 12, marginTop: 6 }}>Compared digits-only.</div>
-              </div>
-
-              <div>
-                <div style={labelStyle}>Plate on record</div>
-                <input
-                  style={inputStyle}
-                  value={plateOnRecord}
-                  onChange={(e) => setPlateOnRecord(toUpperClean(e.target.value))}
-                  placeholder="ABC1234"
-                  inputMode="text"
-                  autoComplete="off"
-                />
-                <div style={{ opacity: 0.7, fontSize: 12, marginTop: 6 }}>
-                  Auto-uppercase while typing.
-                </div>
-              </div>
-
-              <div style={{ gridColumn: "1 / -1" }}>
-                <div style={labelStyle}>Start / Expire</div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
-                  <div style={pill(mode === "auto24")} onClick={() => setMode("auto24")}>
-                    Auto 24h Expire
-                  </div>
-                  <div style={pill(mode === "pick")} onClick={() => setMode("pick")}>
-                    Pick Start/Expire
-                  </div>
-                  <div style={pill(mode === "none")} onClick={() => setMode("none")}>
-                    No Expire
-                  </div>
+                <div style={{ fontSize: 14, opacity: 0.82, lineHeight: 1.45, marginBottom: 12 }}>
+                  Enter the dock PIN to reveal the driver phone number for manual dialing backup.
                 </div>
 
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 10 }}>
-                  <button style={{ ...pill(false), flex: "1 1 200px" }} onClick={resetStartNow}>
-                    Reset Start = Now
-                  </button>
-                  <button style={{ ...pill(false), flex: "1 1 200px" }} onClick={resetExpire24h}>
-                    Reset Expire = +24h
-                  </button>
-                </div>
-
-                <div style={{ display: "grid", gap: 8, marginTop: 10 }}>
-                  <input
-                    style={inputStyle}
-                    type="datetime-local"
-                    value={startsAt}
-                    disabled={mode !== "pick"}
-                    onChange={(e) => setStartsAt(e.target.value)}
-                  />
-                  <input
-                    style={inputStyle}
-                    type="datetime-local"
-                    value={expiresAt}
-                    disabled={mode !== "pick"}
-                    onChange={(e) => setExpiresAt(e.target.value)}
-                  />
-                </div>
-
-                <div style={{ opacity: 0.7, fontSize: 12, marginTop: 6 }}>
-                  Tip: Auto mode uses Now → +24h. Pick mode lets you edit. No Expire sends expires_at as null.
-                </div>
-              </div>
-            </div>
-
-            <div style={{ marginTop: 14, display: "grid", gap: 10 }}>
-              <button onClick={issueLink} style={btnStyle(true)} disabled={loading}>
-                {loading ? "Issuing..." : "Issue AdbS Verification"}
-              </button>
-
-              {errorMsg ? (
-                <div
-                  style={{
-                    border: "1px solid rgba(255,80,80,0.35)",
-                    background: "rgba(255,80,80,0.08)",
-                    padding: 12,
-                    borderRadius: 12,
-                    fontSize: 14,
-                  }}
-                >
-                  <b>Error:</b> {errorMsg}
-                </div>
-              ) : null}
-
-              {statusMsg ? (
-                <div
-                  style={{
-                    border: "1px solid rgba(120,180,255,0.30)",
-                    background: "rgba(120,180,255,0.08)",
-                    padding: 12,
-                    borderRadius: 12,
-                    fontSize: 14,
-                  }}
-                >
-                  {statusMsg}
-                </div>
-              ) : null}
-            </div>
-
-            {issued ? (
-              <div style={{ marginTop: 14, ...cardStyle, padding: 14 }}>
-                <div style={{ fontSize: 16, fontWeight: 900, marginBottom: 8 }}>Issued</div>
-
-                <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 10 }}>
-                  <div><b>Load ID:</b> {issued.load_id}</div>
+                <div style={{ display: "grid", gap: 10, maxWidth: 420 }}>
                   <div>
-                    <b>Expires:</b>{" "}
-                    {issued.expires_at === null ? "No Expire" : String(issued.expires_at || "")}
+                    <div style={label}>Dock PIN</div>
+                    <input
+                      style={input}
+                      value={pin}
+                      onChange={(e) => setPin(onlyDigits(e.target.value).slice(0, 6))}
+                      placeholder="Enter PIN"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                    />
                   </div>
-                </div>
-
-                <div style={{ display: "grid", gap: 10 }}>
-                  <div>
-                    <div style={labelStyle}>Verify URL</div>
-                    <input style={inputStyle} value={issued.verify_url || ""} readOnly />
-
-                    <div style={{ display: "flex", gap: 10, marginTop: 8, flexWrap: "wrap" }}>
-                      <button
-                        style={{ ...btnStyle(false), flex: "1 1 180px" }}
-                        onClick={async () => {
-                          const ok = await safeCopy(issued.verify_url || "");
-                          setStatusMsg(ok ? "Link copied." : "Copy failed.");
-                        }}
-                      >
-                        Copy Link
-                      </button>
-
-                      <button
-                        style={{ ...btnStyle(false), flex: "1 1 180px" }}
-                        onClick={async () => {
-                          const ok = await safeCopy(issued.token || "");
-                          setStatusMsg(ok ? "Verification ID copied." : "Copy failed.");
-                        }}
-                      >
-                        Copy Verification ID
-                      </button>
-
-                      <button
-                        style={{ ...btnStyle(false), flex: "1 1 220px" }}
-                        onClick={async () => {
-                          const ok = await safeCopy(makeEmailBlock());
-                          setStatusMsg(ok ? "Email block copied." : "Copy failed.");
-                        }}
-                      >
-                        Copy Email Block
-                      </button>
-                    </div>
-                  </div>
-
-                  <div style={{ opacity: 0.75, fontSize: 12, lineHeight: 1.35 }}>
-                    Note: This is the production issuer UI. Legacy /smartlink stays blocked.
-                  </div>
+                  <button
+                    style={btn(true)}
+                    onClick={authorizeDock}
+                    disabled={pinBusy || String(pin || "").trim().length < 4}
+                    title="Authorize Dock"
+                  >
+                    {pinBusy ? "Authorizing…" : "Authorize Dock"}
+                  </button>
                 </div>
               </div>
             ) : null}
-          </div>
 
-          <div style={cardStyle}>
-            <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 10 }}>Status</div>
-            <div style={{ fontSize: 14, opacity: 0.9, lineHeight: 1.45 }}>
-              <div style={{ marginBottom: 10 }}>
-                <b>Issuer UI:</b> Control Center (paid look) ✅
+            {/* Main Form */}
+            <div style={{ ...card, marginTop: 14 }}>
+              <div style={{ fontSize: 18, fontWeight: 950, marginBottom: 10 }}>
+                DOES THE USDOT# ON THE TRUCK MATCH?
               </div>
-              <div style={{ marginBottom: 10 }}>
-                <b>Legacy routes:</b> /smartlink and /driverlink redirect ✅
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div>
+                  <div style={label}>ENTER DOT</div>
+                  <input
+                    style={input}
+                    value={enteredDot}
+                    onChange={(e) => setEnteredDot(toUpper(e.target.value))}
+                    placeholder="ENTER DOT"
+                    inputMode="text"
+                    autoComplete="off"
+                  />
+                </div>
+
+                <div>
+                  <div style={label}>ENTER PLATE</div>
+                  <input
+                    style={input}
+                    value={enteredPlate}
+                    onChange={(e) => setEnteredPlate(toUpper(e.target.value))}
+                    placeholder="ENTER PLATE"
+                    inputMode="text"
+                    autoComplete="off"
+                  />
+                </div>
               </div>
-              <div style={{ marginBottom: 10 }}>
-                <b>Formatting:</b> Phone auto-hyphenates; USDOT/Plate uppercase ✅
+
+              <div style={{ marginTop: 14, fontSize: 18, fontWeight: 950 }}>
+                DID THE DRIVER ANSWER THEIR PHONE?
               </div>
-              <div style={{ marginBottom: 10 }}>
-                <b>Verify links:</b> Public (no login required) ✅
+
+              <div style={{ marginTop: 10, display: "grid", gap: 10, maxWidth: 520 }}>
+                <div>
+                  <div style={label}>Driver Phone (click to call)</div>
+                  {pinOk ? (
+                    <a
+                      href={`tel:${onlyDigits(driverPhone)}`}
+                      style={{
+                        display: "inline-block",
+                        padding: "12px 12px",
+                        borderRadius: 12,
+                        border: "1px solid rgba(120,180,255,0.35)",
+                        background: "rgba(120,180,255,0.10)",
+                        color: "#e6edf5",
+                        fontSize: 18,
+                        fontWeight: 950,
+                        textDecoration: "none",
+                      }}
+                    >
+                      {driverPhone || "—"}
+                    </a>
+                  ) : (
+                    <div style={{ opacity: 0.75 }}>Dock PIN required.</div>
+                  )}
+
+                  {pinOk ? (
+                    <div style={{ marginTop: 8, display: "flex", gap: 10, flexWrap: "wrap" }}>
+                      <button
+                        style={btn(false)}
+                        onClick={refreshPhone}
+                        disabled={phoneBusy}
+                        title="Refresh phone from server"
+                      >
+                        {phoneBusy ? "Refreshing…" : "Refresh Phone"}
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  <button
+                    style={{
+                      ...btn(driverAnswered === "YES"),
+                      width: "auto",
+                      minWidth: 140,
+                      opacity: pinOk ? 1 : 0.5,
+                    }}
+                    disabled={!pinOk}
+                    onClick={() => setDriverAnswered("YES")}
+                  >
+                    YES
+                  </button>
+                  <button
+                    style={{
+                      ...btn(driverAnswered === "NO"),
+                      width: "auto",
+                      minWidth: 140,
+                      opacity: pinOk ? 1 : 0.5,
+                    }}
+                    disabled={!pinOk}
+                    onClick={() => setDriverAnswered("NO")}
+                  >
+                    NO
+                  </button>
+                </div>
+
+                <div style={{ fontSize: 14, opacity: 0.8 }}>
+                  Both must be YES to clear the Truck-Driver for loading.
+                </div>
+
+                <button
+                  style={{ ...btn(true), opacity: canSubmit ? 1 : 0.55 }}
+                  onClick={submitVerification}
+                  disabled={!canSubmit || subBusy}
+                  title="Submit Verification"
+                >
+                  {subBusy ? "Submitting…" : "SUBMIT VERIFICATION"}
+                </button>
               </div>
-              <div style={{ opacity: 0.75 }}>
-                Next: CAUTION ALERT polish (flash + sound) + silent issuer alerts.
-              </div>
+
+              {result ? (
+                <div
+                  style={{
+                    marginTop: 14,
+                    padding: 14,
+                    borderRadius: 14,
+                    border:
+                      result.result === "CLEAR_TO_LOAD" || result.result === "CLEAR"
+                        ? "1px solid rgba(80,190,120,0.45)"
+                        : "1px solid rgba(255,90,90,0.45)",
+                    background:
+                      result.result === "CLEAR_TO_LOAD" || result.result === "CLEAR"
+                        ? "rgba(80,190,120,0.10)"
+                        : "rgba(255,90,90,0.10)",
+                  }}
+                >
+                  <div style={{ fontSize: 22, fontWeight: 950, letterSpacing: 0.3 }}>
+                    {result.result === "CLEAR_TO_LOAD" || result.result === "CLEAR"
+                      ? "CLEAR TO LOAD"
+                      : "DO NOT LOAD"}
+                  </div>
+                  {result.message ? (
+                    <div style={{ marginTop: 6, opacity: 0.9 }}>{result.message}</div>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
-          </div>
-        </div>
 
-        <div style={{ marginTop: 16, opacity: 0.65, fontSize: 12 }}>
-          QueCab AdbS — Truck-Driver verification system. Paid-subscription UI standards enforced.
-        </div>
+            <div style={{ marginTop: 12, opacity: 0.65, fontSize: 12 }}>
+              Load ID: <b>{ctx.load_id || "(none)"}</b>{" "}
+              {ctx.expires_at ? (
+                <>
+                  • Expires: <b>{ctx.expires_at}</b>
+                </>
+              ) : (
+                <>• Expires: <b>Never</b></>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
