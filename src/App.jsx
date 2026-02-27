@@ -8,8 +8,6 @@ import Join from "./pages/Join.jsx";
 import ControlCenter from "./pages/ControlCenter.jsx";
 import Verify from "./pages/Verify.jsx";
 import Admin from "./pages/Admin.jsx";
-import HowItWorks from "./pages/HowItWorks.jsx";
-import About from "./pages/About.jsx";
 
 import { isBrokerOrShipper, LS_EMAIL } from "./utils/auth.js";
 
@@ -32,10 +30,8 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/join" element={<Join />} />
-        <Route path="/how-it-works" element={<HowItWorks />} />
-        <Route path="/about" element={<About />} />
 
-        {/* PUBLIC verify link (Dock PIN gate happens inside Verify page) */}
+        {/* PUBLIC verify link (NO LOGIN REQUIRED) */}
         <Route path="/verify/:token" element={<Verify />} />
 
         {/* Authorized */}
