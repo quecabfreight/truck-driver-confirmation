@@ -1,48 +1,47 @@
+<!-- /public/v.html -->
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>QueCab AdbS — Verify</title>
+    <meta name="robots" content="noindex,nofollow" />
     <style>
       body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#0f1722;color:#e6edf5}
-      .wrap{max-width:900px;margin:0 auto;padding:26px 18px}
-      .card{border:1px solid rgba(140,190,255,.14);background:rgba(0,0,0,.22);border-radius:14px;padding:18px}
-      .muted{opacity:.75}
-      code{background:rgba(255,255,255,.06);padding:2px 6px;border-radius:8px}
-      a{color:#9cc7ff}
+      .wrap{max-width:760px;margin:0 auto;padding:24px}
+      .card{border:1px solid rgba(140,190,255,0.14);background:rgba(0,0,0,0.22);border-radius:14px;padding:16px}
+      .h{font-weight:900;font-size:18px;margin:0 0 8px}
+      .p{opacity:.8;margin:0}
+      .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
     </style>
   </head>
   <body>
     <div class="wrap">
       <div class="card">
-        <div style="font-weight:900;font-size:18px;margin-bottom:8px;">QueCab AdbS — Opening Verify Link…</div>
-        <div class="muted" id="msg">Redirecting…</div>
+        <div class="h">Opening verification…</div>
+        <p class="p">
+          If you are not redirected automatically, this link may be missing a token.
+        </p>
+        <p class="p" style="margin-top:10px">
+          Token: <span class="mono" id="tok">(loading)</span>
+        </p>
       </div>
     </div>
 
     <script>
       (function () {
-        function getParam(name) {
-          try {
-            var u = new URL(window.location.href);
-            return (u.searchParams.get(name) || "").trim();
-          } catch (e) {
-            return "";
-          }
+        try {
+          var params = new URLSearchParams(window.location.search || "");
+          var t = (params.get("t") || "").trim();
+          document.getElementById("tok").textContent = t || "(missing)";
+          if (!t) return;
+
+          // HashRouter target
+          var dest = "/#/verify/" + encodeURIComponent(t);
+          window.location.replace(dest);
+        } catch (e) {
+          // do nothing; page stays readable
         }
-
-        var t = getParam("t") || getParam("token") || getParam("id");
-
-        if (!t) {
-          document.getElementById("msg").innerHTML =
-            'Missing token. If you were given a verify link, it should look like <code>/v.html?t=TOKEN</code>.';
-          return;
-        }
-
-        // IMPORTANT: this redirects into the HashRouter route
-        var dest = "/#/verify/" + encodeURIComponent(t);
-        window.location.replace(dest);
       })();
     </script>
   </body>
