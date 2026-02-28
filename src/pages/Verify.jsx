@@ -1,13 +1,15 @@
 // /src/pages/Verify.jsx
 import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 
 function onlyDigits(s) {
   return String(s || "").replace(/\D+/g, "");
 }
+
 function toUpper(s) {
   return String(s || "").toUpperCase();
 }
+
 function formatPhoneHyphen(s) {
   const d = onlyDigits(s).slice(0, 10);
   const a = d.slice(0, 3);
@@ -18,214 +20,169 @@ function formatPhoneHyphen(s) {
   return `${a}-${b}-${c}`;
 }
 
-async function postJSON(url, body) {
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    cache: "no-store",
-    body: JSON.stringify(body || {}),
-  });
+async function safeJson(res) {
   const text = await res.text();
-  let data = null;
   try {
-    data = JSON.parse(text);
+    return JSON.parse(text);
   } catch {
-    data = { raw: text };
+    return { raw: text };
   }
-  return { ok: res.ok, status: res.status, data };
-}
-
-async function getJSON(url) {
-  const res = await fetch(url, { method: "GET", cache: "no-store" });
-  const text = await res.text();
-  let data = null;
-  try {
-    data = JSON.parse(text);
-  } catch {
-    data = { raw: text };
-  }
-  return { ok: res.ok, status: res.status, data };
 }
 
 export default function Verify() {
   const nav = useNavigate();
   const { token } = useParams();
 
-  const [loading, setLoading] = useState(true);
-  const [ctx, setCtx] = useState(null); // { load_id, starts_at, expires_at, status, ... }
-  const [err, setErr] = useState("");
+  const [dockPin, setDockPin] = useState("");
+  const [pinStatus, setPinStatus] = useState(""); // success/error text
+  const [pinError, setPinError] = useState("");
+  const [pinLoading, setPinLoading] = useState(false);
+  const [phoneUnlocked, setPhoneUnlocked] = useState(false);
 
-  // Dock authorization gate
-  const [pin, setPin] = useState("");
-  const [pinOk, setPinOk] = useState(false);
-  const [pinBusy, setPinBusy] = useState(false);
+  const [driverPhone, setDriverPhone] = useState(""); // revealed or manual
+  const [phoneLinkClicked, setPhoneLinkClicked] = useState(false);
 
-  // Verification inputs (NO live match signals)
   const [enteredDot, setEnteredDot] = useState("");
   const [enteredPlate, setEnteredPlate] = useState("");
+
   const [driverAnswered, setDriverAnswered] = useState(""); // "YES" | "NO" | ""
-
-  // Phone (revealed only after Dock PIN)
-  const [driverPhone, setDriverPhone] = useState("");
-  const [phoneBusy, setPhoneBusy] = useState(false);
-
-  // Result
-  const [subBusy, setSubBusy] = useState(false);
-  const [result, setResult] = useState(null); // { result, message, ... }
-
-  const cleanToken = useMemo(() => String(token || "").trim(), [token]);
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const [result, setResult] = useState(null); // { result: "clear"|"caution", ... }
 
   useEffect(() => {
-    let alive = true;
+    document.title = "Dock Verification — QueCab AdbS";
+  }, []);
 
-    async function loadContext() {
-      setLoading(true);
-      setErr("");
-      setCtx(null);
-
-      if (!cleanToken) {
-        setErr("Missing verification token.");
-        setLoading(false);
-        return;
-      }
-
-      const q = encodeURIComponent(cleanToken);
-      const r = await getJSON(`/api/get_verify_context?t=${q}`);
-
-      if (!alive) return;
-
-      if (!r.ok || !r.data || !r.data.ok) {
-        const msg =
-          (r.data && (r.data.error || r.data.message)) ||
-          `Unable to load verification context (${r.status}).`;
-        setErr(msg);
-        setLoading(false);
-        return;
-      }
-
-      setCtx(r.data.context || null);
-      setLoading(false);
-    }
-
-    loadContext();
-    return () => {
-      alive = false;
+  const clean = useMemo(() => {
+    return {
+      token: String(token || "").trim(),
+      dot: toUpper(enteredDot).trim(),
+      plate: toUpper(enteredPlate).trim(),
+      driverAnswered: driverAnswered,
+      phone: formatPhoneHyphen(driverPhone),
+      dockPin: String(dockPin || "").trim(),
     };
-  }, [cleanToken]);
-
-  const expired = useMemo(() => {
-    const ex = ctx?.expires_at;
-    if (!ex) return false; // "No Expire" allowed
-    const t = Date.parse(ex);
-    if (!Number.isFinite(t)) return false;
-    return Date.now() > t;
-  }, [ctx]);
-
-  async function authorizeDock() {
-    setErr("");
-    setPinBusy(true);
-
-    const r = await postJSON("/api/reveal_driver_phone", {
-      t: cleanToken,
-      pin: String(pin || "").trim(),
-    });
-
-    setPinBusy(false);
-
-    if (!r.ok || !r.data || !r.data.ok) {
-      const msg =
-        (r.data && (r.data.error || r.data.message)) ||
-        "Dock authorization failed.";
-      setErr(msg);
-      setPinOk(false);
-      setDriverPhone("");
-      return;
-    }
-
-    setPinOk(true);
-    setDriverPhone(formatPhoneHyphen(r.data.driver_phone || ""));
-  }
-
-  async function refreshPhone() {
-    if (!pinOk) return;
-    setErr("");
-    setPhoneBusy(true);
-
-    const r = await postJSON("/api/reveal_driver_phone", {
-      t: cleanToken,
-      pin: String(pin || "").trim(),
-    });
-
-    setPhoneBusy(false);
-
-    if (!r.ok || !r.data || !r.data.ok) {
-      const msg =
-        (r.data && (r.data.error || r.data.message)) ||
-        "Could not refresh phone.";
-      setErr(msg);
-      return;
-    }
-
-    setDriverPhone(formatPhoneHyphen(r.data.driver_phone || ""));
-  }
+  }, [token, enteredDot, enteredPlate, driverAnswered, driverPhone, dockPin]);
 
   const canSubmit = useMemo(() => {
-    if (!ctx) return false;
-    if (expired) return false;
-    if (!pinOk) return false;
+    if (!clean.token) return false;
+    if (!clean.dot) return false;
+    if (!clean.plate) return false;
+    if (clean.driverAnswered !== "YES" && clean.driverAnswered !== "NO") return false;
 
-    const dot = onlyDigits(enteredDot);
-    const plate = toUpper(enteredPlate).trim();
-
-    if (!dot) return false;
-    if (!plate) return false;
-    if (driverAnswered !== "YES" && driverAnswered !== "NO") return false;
-
+    // If phone is unlocked, require they at least clicked it once (preferred),
+    // BUT allow submit even if tel link is blocked (some desktops).
+    // So: submit allowed either phoneLinkClicked OR driverAnswered is selected.
+    // (DriverAnswered is required anyway.)
     return true;
-  }, [ctx, expired, pinOk, enteredDot, enteredPlate, driverAnswered]);
+  }, [clean]);
+
+  async function revealPhone() {
+    setPinError("");
+    setPinStatus("");
+    setPinLoading(true);
+    setPhoneUnlocked(false);
+
+    try {
+      // Preferred endpoint name (if it exists)
+      // POST /api/reveal_driver_phone { token, dock_pin }
+      const res = await fetch("/api/reveal_driver_phone", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: clean.token, dock_pin: clean.dockPin }),
+      });
+
+      // If the endpoint does not exist yet, DON'T crash; fall back to manual.
+      if (res.status === 404) {
+        setPhoneUnlocked(true);
+        setPinStatus(
+          "Dock authorization endpoint isn’t live yet (404). Phone reveal fallback enabled for testing."
+        );
+        setPinLoading(false);
+        return;
+      }
+
+      const data = await safeJson(res);
+
+      if (!res.ok) {
+        const msg = data?.error || data?.message || `Dock authorization failed (${res.status}).`;
+        setPinError(msg);
+        setPinLoading(false);
+        return;
+      }
+
+      const phone =
+        data?.driver_phone ||
+        data?.phone ||
+        (data?.link && (data.link.driver_phone || data.link.phone)) ||
+        "";
+
+      setDriverPhone(formatPhoneHyphen(phone));
+      setPhoneUnlocked(true);
+      setPinStatus("Dock Authorization Granted.");
+    } catch {
+      setPinError("Network error during dock authorization.");
+    } finally {
+      setPinLoading(false);
+    }
+  }
 
   async function submitVerification() {
-    setErr("");
+    setSubmitError("");
     setResult(null);
-    setSubBusy(true);
+    setSubmitLoading(true);
 
-    const payload = {
-      token: cleanToken,
-      load_id: ctx?.load_id ?? null,
-      entered_usdot: onlyDigits(enteredDot),
-      entered_plate: toUpper(enteredPlate).trim(),
-      driver_answered: driverAnswered === "YES",
-      checked_at: new Date().toISOString(),
-    };
+    try {
+      const payload = {
+        token: clean.token,
+        entered_usdot: clean.dot,
+        entered_plate: clean.plate,
+        driver_answered: clean.driverAnswered === "YES",
+      };
 
-    const r = await postJSON("/api/submit_verify_check", payload);
+      // Optional: include load_id if present in future; not required to submit.
+      // payload.load_id = ...
 
-    setSubBusy(false);
+      const res = await fetch("/api/submit_verify_check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-    if (!r.ok || !r.data) {
-      const msg =
-        (r.data && (r.data.error || r.data.message)) ||
-        `Submit failed (${r.status}).`;
-      setErr(msg);
-      return;
+      const data = await safeJson(res);
+
+      if (!res.ok) {
+        const msg =
+          data?.error ||
+          data?.message ||
+          `Submit failed (${res.status}).`;
+        setSubmitError(msg);
+        setSubmitLoading(false);
+        return;
+      }
+
+      // Normalize response shapes
+      const r =
+        data?.result ||
+        data?.verdict ||
+        (data?.check && data.check.result) ||
+        "";
+
+      const normalized =
+        String(r).toLowerCase().includes("clear") ? "clear" :
+        String(r).toLowerCase().includes("caution") ? "caution" :
+        "";
+
+      setResult({
+        raw: data,
+        verdict: normalized || "caution",
+      });
+    } catch {
+      setSubmitError("Network error submitting verification.");
+    } finally {
+      setSubmitLoading(false);
     }
-
-    // Accept a few shapes
-    const verdict =
-      r.data.result ||
-      (r.data.data && r.data.data.result) ||
-      (r.data.verdict ? r.data.verdict : "");
-
-    const message =
-      r.data.message ||
-      (r.data.data && r.data.data.message) ||
-      "";
-
-    setResult({
-      result: String(verdict || "").toUpperCase(),
-      message: message || "",
-      raw: r.data,
-    });
   }
 
   const page = {
@@ -233,270 +190,297 @@ export default function Verify() {
     background: "#0f1722",
     color: "#e6edf5",
   };
-  const wrap = { maxWidth: 980, margin: "0 auto", padding: "18px 16px 56px" };
+
+  const wrap = {
+    maxWidth: 980,
+    margin: "0 auto",
+    padding: "18px 16px 60px",
+  };
+
   const card = {
     border: "1px solid rgba(140,190,255,0.14)",
-    background: "rgba(0,0,0,0.26)",
+    background: "rgba(0,0,0,0.22)",
     boxShadow: "0 16px 34px rgba(0,0,0,0.30)",
     borderRadius: 14,
     padding: 16,
   };
-  const h1 = { fontSize: 22, fontWeight: 950, margin: 0 };
-  const label = { fontSize: 13, opacity: 0.85, marginBottom: 6 };
+
+  const h1 = { fontSize: 26, fontWeight: 950, margin: 0, letterSpacing: 0.2 };
+
+  const label = { fontSize: 13, opacity: 0.85, marginBottom: 6, fontWeight: 800 };
+
   const input = {
     width: "100%",
-    padding: "12px 12px",
+    padding: "14px 12px",
     borderRadius: 12,
-    border: "1px solid rgba(255,255,255,0.16)",
-    background: "rgba(255,255,255,0.05)",
+    border: "1px solid rgba(140,190,255,0.18)",
+    background: "rgba(255,255,255,0.04)",
     color: "inherit",
-    fontSize: 16,
+    fontSize: 18,
     outline: "none",
   };
+
   const btn = (primary) => ({
     width: "100%",
-    padding: "12px 14px",
+    padding: "14px 14px",
     borderRadius: 12,
     border: primary
       ? "1px solid rgba(140,190,255,0.42)"
-      : "1px solid rgba(255,255,255,0.16)",
+      : "1px solid rgba(140,190,255,0.20)",
     background: primary
       ? "linear-gradient(180deg, rgba(40,110,200,0.85), rgba(20,70,140,0.75))"
-      : "rgba(255,255,255,0.06)",
+      : "rgba(0,0,0,0.18)",
     color: "#e6edf5",
     fontSize: 16,
-    fontWeight: 900,
+    fontWeight: 950,
     cursor: "pointer",
+    letterSpacing: 0.2,
+    opacity: primary ? 1 : 0.95,
+  });
+
+  const pill = (active) => ({
+    padding: "12px 12px",
+    borderRadius: 12,
+    border: active
+      ? "1px solid rgba(90,200,140,0.45)"
+      : "1px solid rgba(140,190,255,0.16)",
+    background: active ? "rgba(90,200,140,0.14)" : "rgba(255,255,255,0.04)",
+    color: "inherit",
+    fontSize: 16,
+    fontWeight: 950,
+    cursor: "pointer",
+    width: "100%",
   });
 
   return (
     <div style={page}>
       <div style={wrap}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-          <img
-            src="/qc-logo.png"
-            alt="QueCab AdbS"
-            style={{ width: 40, height: 40, objectFit: "contain" }}
-            onError={(e) => (e.currentTarget.style.display = "none")}
-          />
-          <div>
-            <div style={h1}>Dock Verification</div>
-            <div style={{ fontSize: 13, opacity: 0.75 }}>
-              Verify before you load • Truck-Driver confirmation
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <img
+              src="/qc-logo.png"
+              alt="QueCab AdbS"
+              style={{ width: 38, height: 38, objectFit: "contain" }}
+              onError={(e) => (e.currentTarget.style.display = "none")}
+            />
+            <div>
+              <div style={{ fontWeight: 950, letterSpacing: 0.2 }}>QueCab AdbS</div>
+              <div style={{ fontSize: 12, opacity: 0.75 }}>Dock Verification</div>
             </div>
+          </div>
+
+          <button style={btn(false)} onClick={() => nav("/")} title="Back Home">
+            Back Home
+          </button>
+        </div>
+
+        <div style={{ marginTop: 14, ...card }}>
+          <div style={h1}>DOES THE USDOT# ON THE TRUCK MATCH?</div>
+          <div style={{ marginTop: 10, fontSize: 16, opacity: 0.9, fontWeight: 900 }}>
+            DID THE DRIVER ANSWER THEIR PHONE?
+          </div>
+          <div style={{ marginTop: 8, fontSize: 14, opacity: 0.8 }}>
+            Both must be completed before submitting verification.
           </div>
         </div>
 
-        {loading ? (
-          <div style={card}>Loading verification…</div>
-        ) : err ? (
-          <div style={{ ...card, borderColor: "rgba(255,90,90,0.35)" }}>
-            <div style={{ fontWeight: 950, marginBottom: 6 }}>Unable to load</div>
-            <div style={{ opacity: 0.9, marginBottom: 10 }}>{String(err)}</div>
-            <button style={btn(false)} onClick={() => nav("/")}>
-              Back Home
+        {/* Dock Authorization (PIN) */}
+        <div style={{ marginTop: 14, ...card }}>
+          <div style={{ fontSize: 16, fontWeight: 950, marginBottom: 8 }}>
+            Dock Authorization Required
+          </div>
+          <div style={{ fontSize: 13, opacity: 0.82, marginBottom: 12 }}>
+            Enter the dock PIN to reveal the driver phone number for manual dialing backup.
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 220px", gap: 12, alignItems: "end" }}>
+            <div>
+              <div style={label}>Dock PIN</div>
+              <input
+                style={input}
+                value={dockPin}
+                onChange={(e) => setDockPin(onlyDigits(e.target.value).slice(0, 6))}
+                placeholder="Enter PIN"
+                inputMode="numeric"
+                autoComplete="off"
+              />
+            </div>
+
+            <button
+              style={btn(true)}
+              onClick={revealPhone}
+              disabled={pinLoading || !clean.dockPin}
+              title="Authorize dock"
+            >
+              {pinLoading ? "Authorizing..." : "Authorize"}
             </button>
           </div>
-        ) : !ctx ? (
-          <div style={card}>No verification context found.</div>
-        ) : expired ? (
-          <div style={{ ...card, borderColor: "rgba(255,170,90,0.40)" }}>
-            <div style={{ fontWeight: 950, marginBottom: 6 }}>Link Expired</div>
-            <div style={{ opacity: 0.9 }}>
-              This verification link is no longer valid.
+
+          {pinError ? (
+            <div style={{ marginTop: 12, border: "1px solid rgba(255,90,90,0.35)", background: "rgba(255,90,90,0.08)", padding: 12, borderRadius: 12 }}>
+              <b>Error:</b> {pinError}
+            </div>
+          ) : null}
+
+          {pinStatus ? (
+            <div style={{ marginTop: 12, border: "1px solid rgba(90,200,140,0.35)", background: "rgba(90,200,140,0.08)", padding: 12, borderRadius: 12 }}>
+              {pinStatus}
+            </div>
+          ) : null}
+
+          {/* Phone reveal / fallback */}
+          <div style={{ marginTop: 12 }}>
+            <div style={label}>Driver Phone</div>
+            {phoneUnlocked ? (
+              <div style={{ display: "grid", gap: 10 }}>
+                <a
+                  href={driverPhone ? `tel:${onlyDigits(driverPhone)}` : undefined}
+                  onClick={() => setPhoneLinkClicked(true)}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: "14px 12px",
+                    borderRadius: 12,
+                    border: "1px solid rgba(140,190,255,0.28)",
+                    background: "rgba(255,255,255,0.04)",
+                    color: "#e6edf5",
+                    fontSize: 18,
+                    fontWeight: 950,
+                    textDecoration: "none",
+                    cursor: driverPhone ? "pointer" : "default",
+                  }}
+                  title="Click to call (backup)"
+                >
+                  {driverPhone ? driverPhone : "Phone not available (enter manually below)"}
+                </a>
+
+                {!driverPhone ? (
+                  <input
+                    style={input}
+                    value={driverPhone}
+                    onChange={(e) => setDriverPhone(formatPhoneHyphen(e.target.value))}
+                    placeholder="Enter phone manually (backup)"
+                    inputMode="tel"
+                    autoComplete="off"
+                  />
+                ) : null}
+
+                <div style={{ fontSize: 12, opacity: 0.7 }}>
+                  Backup: if clicking doesn’t dial on this device, dial manually using the number shown.
+                </div>
+              </div>
+            ) : (
+              <div style={{ fontSize: 13, opacity: 0.75 }}>
+                Phone hidden until Dock Authorization.
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Main entry fields */}
+        <div style={{ marginTop: 14, ...card }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div>
+              <div style={label}>ENTER DOT</div>
+              <input
+                style={input}
+                value={enteredDot}
+                onChange={(e) => setEnteredDot(toUpper(e.target.value))}
+                placeholder="Enter DOT"
+                inputMode="text"
+                autoComplete="off"
+              />
+            </div>
+
+            <div>
+              <div style={label}>ENTER PLATE</div>
+              <input
+                style={input}
+                value={enteredPlate}
+                onChange={(e) => setEnteredPlate(toUpper(e.target.value))}
+                placeholder="Enter Plate"
+                inputMode="text"
+                autoComplete="off"
+              />
             </div>
           </div>
-        ) : (
-          <>
-            {/* Dock PIN Gate */}
-            {!pinOk ? (
-              <div style={card}>
-                <div style={{ fontSize: 18, fontWeight: 950, marginBottom: 8 }}>
-                  Dock Authorization Required
-                </div>
-                <div style={{ fontSize: 14, opacity: 0.82, lineHeight: 1.45, marginBottom: 12 }}>
-                  Enter the dock PIN to reveal the driver phone number for manual dialing backup.
-                </div>
 
-                <div style={{ display: "grid", gap: 10, maxWidth: 420 }}>
-                  <div>
-                    <div style={label}>Dock PIN</div>
-                    <input
-                      style={input}
-                      value={pin}
-                      onChange={(e) => setPin(onlyDigits(e.target.value).slice(0, 6))}
-                      placeholder="Enter PIN"
-                      inputMode="numeric"
-                      autoComplete="one-time-code"
-                    />
-                  </div>
-                  <button
-                    style={btn(true)}
-                    onClick={authorizeDock}
-                    disabled={pinBusy || String(pin || "").trim().length < 4}
-                    title="Authorize Dock"
-                  >
-                    {pinBusy ? "Authorizing…" : "Authorize Dock"}
-                  </button>
-                </div>
-              </div>
-            ) : null}
-
-            {/* Main Form */}
-            <div style={{ ...card, marginTop: 14 }}>
-              <div style={{ fontSize: 18, fontWeight: 950, marginBottom: 10 }}>
-                DOES THE USDOT# ON THE TRUCK MATCH?
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                <div>
-                  <div style={label}>ENTER DOT</div>
-                  <input
-                    style={input}
-                    value={enteredDot}
-                    onChange={(e) => setEnteredDot(toUpper(e.target.value))}
-                    placeholder="ENTER DOT"
-                    inputMode="text"
-                    autoComplete="off"
-                  />
-                </div>
-
-                <div>
-                  <div style={label}>ENTER PLATE</div>
-                  <input
-                    style={input}
-                    value={enteredPlate}
-                    onChange={(e) => setEnteredPlate(toUpper(e.target.value))}
-                    placeholder="ENTER PLATE"
-                    inputMode="text"
-                    autoComplete="off"
-                  />
-                </div>
-              </div>
-
-              <div style={{ marginTop: 14, fontSize: 18, fontWeight: 950 }}>
-                DID THE DRIVER ANSWER THEIR PHONE?
-              </div>
-
-              <div style={{ marginTop: 10, display: "grid", gap: 10, maxWidth: 520 }}>
-                <div>
-                  <div style={label}>Driver Phone (click to call)</div>
-                  {pinOk ? (
-                    <a
-                      href={`tel:${onlyDigits(driverPhone)}`}
-                      style={{
-                        display: "inline-block",
-                        padding: "12px 12px",
-                        borderRadius: 12,
-                        border: "1px solid rgba(120,180,255,0.35)",
-                        background: "rgba(120,180,255,0.10)",
-                        color: "#e6edf5",
-                        fontSize: 18,
-                        fontWeight: 950,
-                        textDecoration: "none",
-                      }}
-                    >
-                      {driverPhone || "—"}
-                    </a>
-                  ) : (
-                    <div style={{ opacity: 0.75 }}>Dock PIN required.</div>
-                  )}
-
-                  {pinOk ? (
-                    <div style={{ marginTop: 8, display: "flex", gap: 10, flexWrap: "wrap" }}>
-                      <button
-                        style={btn(false)}
-                        onClick={refreshPhone}
-                        disabled={phoneBusy}
-                        title="Refresh phone from server"
-                      >
-                        {phoneBusy ? "Refreshing…" : "Refresh Phone"}
-                      </button>
-                    </div>
-                  ) : null}
-                </div>
-
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                  <button
-                    style={{
-                      ...btn(driverAnswered === "YES"),
-                      width: "auto",
-                      minWidth: 140,
-                      opacity: pinOk ? 1 : 0.5,
-                    }}
-                    disabled={!pinOk}
-                    onClick={() => setDriverAnswered("YES")}
-                  >
-                    YES
-                  </button>
-                  <button
-                    style={{
-                      ...btn(driverAnswered === "NO"),
-                      width: "auto",
-                      minWidth: 140,
-                      opacity: pinOk ? 1 : 0.5,
-                    }}
-                    disabled={!pinOk}
-                    onClick={() => setDriverAnswered("NO")}
-                  >
-                    NO
-                  </button>
-                </div>
-
-                <div style={{ fontSize: 14, opacity: 0.8 }}>
-                  Both must be YES to clear the Truck-Driver for loading.
-                </div>
-
-                <button
-                  style={{ ...btn(true), opacity: canSubmit ? 1 : 0.55 }}
-                  onClick={submitVerification}
-                  disabled={!canSubmit || subBusy}
-                  title="Submit Verification"
-                >
-                  {subBusy ? "Submitting…" : "SUBMIT VERIFICATION"}
-                </button>
-              </div>
-
-              {result ? (
-                <div
-                  style={{
-                    marginTop: 14,
-                    padding: 14,
-                    borderRadius: 14,
-                    border:
-                      result.result === "CLEAR_TO_LOAD" || result.result === "CLEAR"
-                        ? "1px solid rgba(80,190,120,0.45)"
-                        : "1px solid rgba(255,90,90,0.45)",
-                    background:
-                      result.result === "CLEAR_TO_LOAD" || result.result === "CLEAR"
-                        ? "rgba(80,190,120,0.10)"
-                        : "rgba(255,90,90,0.10)",
-                  }}
-                >
-                  <div style={{ fontSize: 22, fontWeight: 950, letterSpacing: 0.3 }}>
-                    {result.result === "CLEAR_TO_LOAD" || result.result === "CLEAR"
-                      ? "CLEAR TO LOAD"
-                      : "DO NOT LOAD"}
-                  </div>
-                  {result.message ? (
-                    <div style={{ marginTop: 6, opacity: 0.9 }}>{result.message}</div>
-                  ) : null}
-                </div>
-              ) : null}
+          <div style={{ marginTop: 14 }}>
+            <div style={label}>DID THE DRIVER ANSWER THEIR PHONE?</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <button
+                style={pill(driverAnswered === "YES")}
+                onClick={() => setDriverAnswered("YES")}
+                type="button"
+              >
+                YES
+              </button>
+              <button
+                style={pill(driverAnswered === "NO")}
+                onClick={() => setDriverAnswered("NO")}
+                type="button"
+              >
+                NO
+              </button>
             </div>
+          </div>
 
-            <div style={{ marginTop: 12, opacity: 0.65, fontSize: 12 }}>
-              Load ID: <b>{ctx.load_id || "(none)"}</b>{" "}
-              {ctx.expires_at ? (
-                <>
-                  • Expires: <b>{ctx.expires_at}</b>
-                </>
-              ) : (
-                <>• Expires: <b>Never</b></>
-              )}
+          <div style={{ marginTop: 14, opacity: 0.8, fontSize: 13 }}>
+            Submit becomes available once DOT, Plate, and Answered YES/NO are set.
+          </div>
+
+          <div style={{ marginTop: 14 }}>
+            <button
+              style={{ ...btn(true), opacity: canSubmit ? 1 : 0.55, cursor: canSubmit ? "pointer" : "not-allowed" }}
+              disabled={!canSubmit || submitLoading}
+              onClick={submitVerification}
+              title="Submit Verification"
+            >
+              {submitLoading ? "Submitting..." : "SUBMIT VERIFICATION"}
+            </button>
+          </div>
+
+          {submitError ? (
+            <div style={{ marginTop: 12, border: "1px solid rgba(255,90,90,0.35)", background: "rgba(255,90,90,0.08)", padding: 12, borderRadius: 12 }}>
+              <b>Error:</b> {submitError}
             </div>
-          </>
-        )}
+          ) : null}
+        </div>
+
+        {/* Result */}
+        {result ? (
+          <div
+            style={{
+              marginTop: 14,
+              ...card,
+              borderColor:
+                result.verdict === "clear"
+                  ? "rgba(90,200,140,0.35)"
+                  : "rgba(255,90,90,0.35)",
+              background:
+                result.verdict === "clear"
+                  ? "rgba(90,200,140,0.10)"
+                  : "rgba(255,90,90,0.10)",
+              textAlign: "center",
+              padding: 22,
+            }}
+          >
+            <div style={{ fontSize: 14, fontWeight: 950, letterSpacing: 1, opacity: 0.85 }}>
+              {result.verdict === "clear" ? "CLEAR" : "CAUTION"}
+            </div>
+            <div style={{ fontSize: 34, fontWeight: 950, letterSpacing: 0.6, marginTop: 8 }}>
+              {result.verdict === "clear" ? "CLEAR TO LOAD" : "DO NOT LOAD"}
+            </div>
+            <div style={{ marginTop: 10, fontSize: 13, opacity: 0.75 }}>
+              (No on-record values are displayed on this screen.)
+            </div>
+          </div>
+        ) : null}
+
+        <div style={{ marginTop: 16, opacity: 0.55, fontSize: 12 }}>
+          Token: <span style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" }}>{clean.token || "(missing)"}</span>
+        </div>
       </div>
     </div>
   );
