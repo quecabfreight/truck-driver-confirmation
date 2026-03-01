@@ -1,11 +1,20 @@
-// /src/api/issue_verify_link.js
-// Issues a verify link and stores it in Supabase.
-// Returns a phone/email-safe URL that does NOT rely on "#/..." (because some email clients strip fragments).
+// /api/issue_verify_link.js
+// Creates a Verify Link record in Supabase.
+// Stores optional per-link dock_pin. If not provided, reveal endpoint will fall back to DOCK_ACCESS_PIN.
+//
+// Env required:
+// - SUPABASE_URL
+// - SUPABASE_SERVICE_ROLE_KEY
+//
+// Table: verify_links columns expected:
+// token (text), load_id (text nullable), usdot_on_record (text), plate_on_record (text),
+// driver_phone (text), status (text), starts_at (timestamptz nullable), expires_at (timestamptz nullable),
+// dock_pin (text nullable)
 
-import { createClient } from "@supabase/supabase-js";
+import crypto from "crypto";
 
 function json(res, code, obj) {
-  res.status(code);
+  res.statusCode = code;
   res.setHeader("Content-Type", "application/json; charset=utf-8");
   res.setHeader("Cache-Control", "no-store");
   res.end(JSON.stringify(obj));
@@ -16,33 +25,53 @@ function onlyDigits(s) {
 }
 
 function toUpper(s) {
-  return String(s || "").trim().toUpperCase();
+  return String(s || "").toUpperCase();
 }
 
-function formatPhoneHyphen(s) {
-  const d = onlyDigits(s).slice(0, 10);
-  const a = d.slice(0, 3);
-  const b = d.slice(3, 6);
-  const c = d.slice(6, 10);
-  if (d.length <= 3) return a;
-  if (d.length <= 6) return `${a}-${b}`;
-  return `${a}-${b}-${c}`;
+function tokenBase64Url(bytes = 18) {
+  return crypto.randomBytes(bytes).toString("base64url");
 }
 
-function makeToken(len = 24) {
-  // URL-safe random token
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
-  let out = "";
-  const buf = new Uint32Array(len);
-  crypto.getRandomValues(buf);
-  for (let i = 0; i < len; i++) out += chars[buf[i] % chars.length];
-  return out;
-}
+async function sbInsertVerifyLink(row) {
+  const SUPABASE_URL = process.env.SUPABASE_URL;
+  const KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-function getBaseUrl(req) {
-  const proto = (req.headers["x-forwarded-proto"] || "https").toString();
-  const host = (req.headers["x-forwarded-host"] || req.headers.host || "").toString();
-  return `${proto}://${host}`;
+  if (!SUPABASE_URL || !KEY) {
+    throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+  }
+
+  const url = `${SUPABASE_URL}/rest/v1/verify_links`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      apikey: KEY,
+      Authorization: `Bearer ${KEY}`,
+      "Content-Type": "application/json",
+      Prefer: "return=representation",
+    },
+    body: JSON.stringify(row),
+  });
+
+  const text = await res.text();
+  let data = null;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    data = { raw: text };
+  }
+
+  if (!res.ok) {
+    const msg =
+      (data && (data.message || data.error)) ||
+      `Supabase insert failed (${res.status})`;
+    const err = new Error(msg);
+    err.status = res.status;
+    err.data = data;
+    throw err;
+  }
+
+  // Supabase returns array of inserted rows when Prefer return=representation
+  return Array.isArray(data) ? data[0] : data;
 }
 
 export default async function handler(req, res) {
@@ -51,69 +80,66 @@ export default async function handler(req, res) {
   }
 
   try {
-    const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-    const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!SUPABASE_URL || !SERVICE_KEY) {
-      return json(res, 500, { ok: false, error: "Server missing Supabase env vars." });
-    }
-
-    const sb = createClient(SUPABASE_URL, SERVICE_KEY, {
-      auth: { persistSession: false },
-    });
-
     const body = req.body || {};
-    const load_id = (body.load_id ?? null) === "" ? null : (body.load_id ?? null);
+    const load_id = String(body.load_id || "").trim() || null;
 
     const usdot_on_record = onlyDigits(body.usdot_on_record);
-    const plate_on_record = toUpper(body.plate_on_record);
+    const plate_on_record = toUpper(body.plate_on_record).trim();
     const driver_phone_digits = onlyDigits(body.driver_phone);
+    const driver_phone = driver_phone_digits || "";
 
-    const starts_at = body.starts_at || null;
-    const expires_at = body.expires_at ?? null; // allow null for No Expire
+    // Optional: per-link dock PIN
+    const dock_pin_digits = onlyDigits(body.dock_pin).slice(0, 6);
+    const dock_pin =
+      dock_pin_digits.length >= 4 ? dock_pin_digits : null;
 
-    if (!usdot_on_record) return json(res, 400, { ok: false, error: "Missing usdot_on_record (digits)." });
-    if (!plate_on_record) return json(res, 400, { ok: false, error: "Missing plate_on_record." });
-    if (driver_phone_digits.length !== 10) return json(res, 400, { ok: false, error: "Driver phone must be 10 digits." });
-    if (!starts_at) return json(res, 400, { ok: false, error: "Missing starts_at." });
+    const starts_at = body.starts_at ? String(body.starts_at) : null;
+    const expires_at =
+      body.expires_at === null || body.expires_at === ""
+        ? null
+        : body.expires_at
+        ? String(body.expires_at)
+        : null;
 
-    const token = makeToken(28);
+    if (!usdot_on_record) return json(res, 400, { ok: false, error: "Enter USDOT# (digits)." });
+    if (!plate_on_record) return json(res, 400, { ok: false, error: "Enter Plate." });
+    if (onlyDigits(driver_phone).length !== 10) return json(res, 400, { ok: false, error: "Enter Driver Phone (10 digits)." });
 
-    const insertRow = {
+    const token = tokenBase64Url(18);
+
+    const row = {
       token,
       load_id,
       usdot_on_record,
       plate_on_record,
-      driver_phone: formatPhoneHyphen(driver_phone_digits),
+      driver_phone: driver_phone_digits, // store digits only; UI formats
       status: "active",
       starts_at,
       expires_at,
+      dock_pin, // nullable
     };
 
-    const { error } = await sb.from("verify_links").insert(insertRow);
-    if (error) {
-      return json(res, 500, { ok: false, error: error.message || "Supabase insert failed." });
-    }
+    const inserted = await sbInsertVerifyLink(row);
 
-    const base = getBaseUrl(req);
+    const origin =
+      (req.headers["x-forwarded-proto"] ? `${req.headers["x-forwarded-proto"]}://` : "https://") +
+      (req.headers["x-forwarded-host"] || req.headers.host || "localhost");
 
-    // Primary (email-safe) link:
-    const verify_url = `${base}/v.html?t=${encodeURIComponent(token)}`;
-
-    // Secondary (direct hash route) link:
-    const verify_hash_url = `${base}/#/verify/${encodeURIComponent(token)}`;
+    // Two URL formats (both useful):
+    const verify_hash = `${origin}/#/verify/${token}`;
+    const verify_public = `${origin}/v.html?t=${token}`;
 
     return json(res, 200, {
       ok: true,
       token,
-      verify_url,
-      verify_hash_url,
-      load_id: load_id ?? null,
-      starts_at,
-      expires_at,
-      status: "active",
+      load_id,
+      status: inserted?.status || "active",
+      starts_at: inserted?.starts_at || starts_at,
+      expires_at: inserted?.expires_at || expires_at,
+      verify_url: verify_public,       // keep your current “v.html” flow
+      verify_hash_url: verify_hash,    // backup
     });
   } catch (e) {
-    return json(res, 500, { ok: false, error: "Server error issuing verify link." });
+    return json(res, 500, { ok: false, error: String(e?.message || "Server error") });
   }
 }
