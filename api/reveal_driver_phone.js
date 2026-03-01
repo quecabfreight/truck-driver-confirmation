@@ -1,91 +1,161 @@
-// /src/api/reveal_driver_phone.js
-// POST { token, dock_pin } -> { ok:true, driver_phone:"585-506-1158" }
-// Reveals ONLY the driver phone (no DOT/plate leak) after dock PIN validation.
-
-import { createClient } from "@supabase/supabase-js";
+// /api/reveal_driver_phone.js
+// Purpose:
+// - GET  -> health check (confirms DOCK_ACCESS_PIN is present in deployed env)
+// - POST -> validates dock_pin and returns masked driver phone for the verify page
+//
+// Env required:
+// - DOCK_ACCESS_PIN
+// - SUPABASE_URL
+// - SUPABASE_SERVICE_ROLE_KEY
 
 function json(res, code, obj) {
-  res.status(code).setHeader("Content-Type", "application/json; charset=utf-8");
+  res.statusCode = code;
+  res.setHeader("Content-Type", "application/json; charset=utf-8");
   res.setHeader("Cache-Control", "no-store");
   res.end(JSON.stringify(obj));
-}
-
-function cleanStr(v) {
-  return String(v || "").trim();
 }
 
 function onlyDigits(s) {
   return String(s || "").replace(/\D+/g, "");
 }
 
+function formatPhoneHyphen(s) {
+  const d = onlyDigits(s).slice(0, 10);
+  const a = d.slice(0, 3);
+  const b = d.slice(3, 6);
+  const c = d.slice(6, 10);
+  if (d.length <= 3) return a;
+  if (d.length <= 6) return `${a}-${b}`;
+  return `${a}-${b}-${c}`;
+}
+
+function isWithinWindow(starts_at, expires_at) {
+  const now = Date.now();
+  try {
+    if (starts_at) {
+      const s = Date.parse(starts_at);
+      if (!Number.isNaN(s) && now < s) return false;
+    }
+    if (expires_at) {
+      const e = Date.parse(expires_at);
+      if (!Number.isNaN(e) && now > e) return false;
+    }
+  } catch {}
+  return true;
+}
+
+async function getLinkByToken(token) {
+  const SUPABASE_URL = process.env.SUPABASE_URL;
+  const KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!SUPABASE_URL || !KEY) {
+    return { error: "Server missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY." };
+  }
+
+  const url =
+    `${SUPABASE_URL}/rest/v1/verify_links` +
+    `?select=token,load_id,driver_phone,status,starts_at,expires_at` +
+    `&token=eq.${encodeURIComponent(token)}` +
+    `&limit=1`;
+
+  const r = await fetch(url, {
+    method: "GET",
+    headers: {
+      apikey: KEY,
+      Authorization: `Bearer ${KEY}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  const text = await r.text();
+  let data = null;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    data = null;
+  }
+
+  if (!r.ok) {
+    return { error: `Supabase error (${r.status}).`, detail: data || text };
+  }
+
+  if (!Array.isArray(data) || data.length === 0) {
+    return { error: "Link not found." };
+  }
+
+  return { link: data[0] };
+}
+
 export default async function handler(req, res) {
+  // CORS / preflight safety (some devices/browsers)
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  if (req.method === "OPTIONS") {
+    return json(res, 200, { ok: true });
+  }
+
+  // ✅ Browser-friendly health check
+  if (req.method === "GET") {
+    const hasPin = !!process.env.DOCK_ACCESS_PIN;
+    const hasSbUrl = !!process.env.SUPABASE_URL;
+    const hasSrk = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    return json(res, 200, {
+      ok: true,
+      endpoint: "reveal_driver_phone",
+      has_DOCK_ACCESS_PIN: hasPin,
+      has_SUPABASE_URL: hasSbUrl,
+      has_SUPABASE_SERVICE_ROLE_KEY: hasSrk,
+      note: "Use POST with { token, dock_pin } to reveal phone.",
+    });
+  }
+
+  // Real action
   if (req.method !== "POST") {
     return json(res, 405, { error: "Method not allowed" });
   }
 
+  // Parse body
+  let body = {};
   try {
-    const SUPABASE_URL = process.env.SUPABASE_URL;
-    const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    body = typeof req.body === "string" ? JSON.parse(req.body) : (req.body || {});
+  } catch {}
 
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-      return json(res, 500, { error: "Server missing Supabase env vars." });
-    }
+  const token = String(body.token || body.t || "").trim();
+  const dock_pin = String(body.dock_pin || body.pin || "").trim();
 
-    const DOCK_ACCESS_PIN = cleanStr(process.env.DOCK_ACCESS_PIN);
-    if (!DOCK_ACCESS_PIN) {
-      return json(res, 500, { error: "Server missing DOCK_ACCESS_PIN." });
-    }
+  if (!token) return json(res, 400, { error: "Missing token." });
 
-    const body = req.body || {};
-    const token = cleanStr(body.token);
-    const dock_pin = onlyDigits(body.dock_pin).slice(0, 6);
+  const serverPin = String(process.env.DOCK_ACCESS_PIN || "").trim();
+  if (!serverPin) return json(res, 500, { error: "Server missing DOCK_ACCESS_PIN." });
 
-    if (!token) return json(res, 400, { error: "Missing token." });
-    if (!dock_pin) return json(res, 400, { error: "Missing dock PIN." });
+  if (!dock_pin) return json(res, 400, { error: "Missing dock_pin." });
 
-    if (dock_pin !== DOCK_ACCESS_PIN) {
-      // Don't leak anything.
-      return json(res, 401, { error: "Dock authorization denied." });
-    }
-
-    const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-      auth: { persistSession: false },
-    });
-
-    const { data, error } = await sb
-      .from("verify_links")
-      .select("driver_phone,status,starts_at,expires_at")
-      .eq("token", token)
-      .maybeSingle();
-
-    if (error) return json(res, 500, { error: "Database error.", detail: error.message });
-
-    if (!data) return json(res, 404, { error: "Link not found." });
-
-    // Basic status/time checks (no leaks)
-    if (String(data.status || "").toLowerCase() !== "active") {
-      return json(res, 403, { error: "Link is not active." });
-    }
-
-    const now = Date.now();
-    const startsAt = data.starts_at ? Date.parse(data.starts_at) : null;
-    const expiresAt = data.expires_at ? Date.parse(data.expires_at) : null;
-
-    if (startsAt && !Number.isNaN(startsAt) && now < startsAt) {
-      return json(res, 403, { error: "Link not started yet." });
-    }
-    if (expiresAt && !Number.isNaN(expiresAt) && now > expiresAt) {
-      return json(res, 403, { error: "Link expired." });
-    }
-
-    const phoneDigits = onlyDigits(data.driver_phone);
-    if (phoneDigits.length !== 10) {
-      return json(res, 422, { error: "Driver phone missing/invalid for this link." });
-    }
-
-    // Return only what the dock needs (backup manual dialing)
-    return json(res, 200, { ok: true, driver_phone: phoneDigits });
-  } catch (e) {
-    return json(res, 500, { error: "Server error." });
+  if (dock_pin !== serverPin) {
+    return json(res, 403, { error: "Dock authorization failed (bad PIN)." });
   }
+
+  const found = await getLinkByToken(token);
+  if (found.error) return json(res, 404, { error: found.error });
+
+  const link = found.link;
+
+  if (String(link.status || "").toLowerCase() !== "active") {
+    return json(res, 403, { error: "Link is not active." });
+  }
+
+  if (!isWithinWindow(link.starts_at, link.expires_at)) {
+    return json(res, 403, { error: "Link not currently valid (start/expire window)." });
+  }
+
+  const phone = formatPhoneHyphen(link.driver_phone || "");
+
+  return json(res, 200, {
+    ok: true,
+    driver_phone: phone, // formatted for display + manual dialing backup
+    load_id: link.load_id ?? null,
+    token: link.token,
+  });
 }
