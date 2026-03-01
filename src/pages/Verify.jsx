@@ -5,11 +5,9 @@ import { useParams, useNavigate } from "react-router-dom";
 function onlyDigits(s) {
   return String(s || "").replace(/\D+/g, "");
 }
-
 function toUpper(s) {
   return String(s || "").toUpperCase();
 }
-
 function formatPhoneHyphen(s) {
   const d = onlyDigits(s).slice(0, 10);
   const a = d.slice(0, 3);
@@ -19,7 +17,6 @@ function formatPhoneHyphen(s) {
   if (d.length <= 6) return `${a}-${b}`;
   return `${a}-${b}-${c}`;
 }
-
 async function safeJson(res) {
   const text = await res.text();
   try {
@@ -40,15 +37,15 @@ export default function Verify() {
   const [phoneUnlocked, setPhoneUnlocked] = useState(false);
 
   const [driverPhone, setDriverPhone] = useState("");
-  const [callConfirmed, setCallConfirmed] = useState(false);
+  const [callCompleted, setCallCompleted] = useState(false);
 
   const [enteredDot, setEnteredDot] = useState("");
   const [enteredPlate, setEnteredPlate] = useState("");
 
-  const [driverAnswered, setDriverAnswered] = useState(""); // "YES" | "NO" | ""
+  const [driverAnswered, setDriverAnswered] = useState(""); // YES|NO|""
   const [submitLoading, setSubmitLoading] = useState(false);
   const [submitError, setSubmitError] = useState("");
-  const [result, setResult] = useState(null); // { verdict: "clear"|"caution", raw }
+  const [result, setResult] = useState(null); // { verdict, raw }
 
   useEffect(() => {
     document.title = "Dock Verification — QueCab AdbS";
@@ -59,28 +56,26 @@ export default function Verify() {
       token: String(token || "").trim(),
       dot: toUpper(enteredDot).trim(),
       plate: toUpper(enteredPlate).trim(),
-      driverAnswered: driverAnswered,
+      driverAnswered,
+      phone: formatPhoneHyphen(driverPhone),
       dockPin: String(dockPin || "").trim(),
     };
-  }, [token, enteredDot, enteredPlate, driverAnswered, dockPin]);
+  }, [token, enteredDot, enteredPlate, driverAnswered, driverPhone, dockPin]);
 
   const canSubmit = useMemo(() => {
     if (!clean.token) return false;
     if (!clean.dot) return false;
     if (!clean.plate) return false;
     if (clean.driverAnswered !== "YES" && clean.driverAnswered !== "NO") return false;
-    if (!phoneUnlocked) return false; // phone must be authorized to proceed
-    if (!callConfirmed) return false; // force call step completion
+    if (!callCompleted) return false; // your preferred “Option B”
     return true;
-  }, [clean, phoneUnlocked, callConfirmed]);
+  }, [clean, callCompleted]);
 
   async function revealPhone() {
     setPinError("");
     setPinStatus("");
     setPinLoading(true);
     setPhoneUnlocked(false);
-    setDriverPhone("");
-    setCallConfirmed(false);
 
     try {
       const res = await fetch("/api/reveal_driver_phone", {
@@ -92,25 +87,14 @@ export default function Verify() {
       const data = await safeJson(res);
 
       if (!res.ok) {
-        const msg =
-          data?.error ||
-          data?.message ||
-          `Dock authorization failed (${res.status}).`;
+        const msg = data?.error || data?.message || `Dock authorization failed (${res.status}).`;
         setPinError(msg);
         setPinLoading(false);
         return;
       }
 
       const phone = data?.driver_phone || "";
-      const formatted = formatPhoneHyphen(phone);
-
-      if (!formatted || onlyDigits(formatted).length !== 10) {
-        setPinError("Authorized, but driver phone is missing/invalid for this link.");
-        setPinLoading(false);
-        return;
-      }
-
-      setDriverPhone(formatted);
+      setDriverPhone(formatPhoneHyphen(phone));
       setPhoneUnlocked(true);
       setPinStatus("Dock Authorization Granted.");
     } catch {
@@ -148,18 +132,10 @@ export default function Verify() {
         return;
       }
 
-      const r =
-        data?.result ||
-        data?.verdict ||
-        (data?.check && data.check.result) ||
-        "";
-
+      const r = data?.result || data?.verdict || (data?.check && data.check.result) || "";
       const normalized =
-        String(r).toLowerCase().includes("clear")
-          ? "clear"
-          : String(r).toLowerCase().includes("caution")
-          ? "caution"
-          : "caution";
+        String(r).toLowerCase().includes("clear") ? "clear" :
+        String(r).toLowerCase().includes("caution") ? "caution" : "caution";
 
       setResult({ raw: data, verdict: normalized });
     } catch {
@@ -169,17 +145,8 @@ export default function Verify() {
     }
   }
 
-  const page = {
-    minHeight: "100vh",
-    background: "#0f1722",
-    color: "#e6edf5",
-  };
-
-  const wrap = {
-    maxWidth: 980,
-    margin: "0 auto",
-    padding: "18px 16px 60px",
-  };
+  const page = { minHeight: "100vh", background: "#0f1722", color: "#e6edf5" };
+  const wrap = { maxWidth: 980, margin: "0 auto", padding: "18px 16px 60px" };
 
   const card = {
     border: "1px solid rgba(140,190,255,0.14)",
@@ -190,7 +157,6 @@ export default function Verify() {
   };
 
   const h1 = { fontSize: 26, fontWeight: 950, margin: 0, letterSpacing: 0.2 };
-
   const label = { fontSize: 13, opacity: 0.85, marginBottom: 6, fontWeight: 800 };
 
   const input = {
@@ -208,9 +174,7 @@ export default function Verify() {
     width: "100%",
     padding: "14px 14px",
     borderRadius: 12,
-    border: primary
-      ? "1px solid rgba(140,190,255,0.42)"
-      : "1px solid rgba(140,190,255,0.20)",
+    border: primary ? "1px solid rgba(140,190,255,0.42)" : "1px solid rgba(140,190,255,0.20)",
     background: primary
       ? "linear-gradient(180deg, rgba(40,110,200,0.85), rgba(20,70,140,0.75))"
       : "rgba(0,0,0,0.18)",
@@ -219,15 +183,12 @@ export default function Verify() {
     fontWeight: 950,
     cursor: "pointer",
     letterSpacing: 0.2,
-    opacity: primary ? 1 : 0.95,
   });
 
   const pill = (active) => ({
     padding: "12px 12px",
     borderRadius: 12,
-    border: active
-      ? "1px solid rgba(90,200,140,0.45)"
-      : "1px solid rgba(140,190,255,0.16)",
+    border: active ? "1px solid rgba(90,200,140,0.45)" : "1px solid rgba(140,190,255,0.16)",
     background: active ? "rgba(90,200,140,0.14)" : "rgba(255,255,255,0.04)",
     color: "inherit",
     fontSize: 16,
@@ -236,20 +197,17 @@ export default function Verify() {
     width: "100%",
   });
 
-  const smallNote = { marginTop: 10, fontSize: 13, opacity: 0.78 };
-
   return (
     <div style={page}>
       <div style={wrap}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            gap: 12,
-            flexWrap: "wrap",
-            alignItems: "center",
-          }}
-        >
+        <style>{`
+          .pinRow{ display:grid; grid-template-columns: 1fr 240px; gap:12px; align-items:end; }
+          @media (max-width: 520px){
+            .pinRow{ grid-template-columns: 1fr; }
+          }
+        `}</style>
+
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <img
               src="/qc-logo.png"
@@ -273,12 +231,12 @@ export default function Verify() {
           <div style={{ marginTop: 10, fontSize: 16, opacity: 0.9, fontWeight: 900 }}>
             DID THE DRIVER ANSWER THEIR PHONE?
           </div>
-          <div style={smallNote}>
+          <div style={{ marginTop: 8, fontSize: 14, opacity: 0.8 }}>
             Enter DOT + Plate, complete the phone step, then submit. No on-record values are displayed on this screen.
           </div>
         </div>
 
-        {/* Dock Authorization (PIN) */}
+        {/* Dock Authorization */}
         <div style={{ marginTop: 14, ...card }}>
           <div style={{ fontSize: 16, fontWeight: 950, marginBottom: 8 }}>
             Dock Authorization Required
@@ -287,7 +245,7 @@ export default function Verify() {
             Enter the dock PIN to reveal the driver phone number (click-to-call + manual backup).
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 220px", gap: 12, alignItems: "end" }}>
+          <div className="pinRow">
             <div>
               <div style={label}>Dock PIN</div>
               <input
@@ -303,7 +261,7 @@ export default function Verify() {
             <button
               style={btn(true)}
               onClick={revealPhone}
-              disabled={pinLoading || !clean.dockPin || !clean.token}
+              disabled={pinLoading || !clean.dockPin}
               title="Authorize dock"
             >
               {pinLoading ? "Authorizing..." : "Authorize"}
@@ -311,29 +269,13 @@ export default function Verify() {
           </div>
 
           {pinError ? (
-            <div
-              style={{
-                marginTop: 12,
-                border: "1px solid rgba(255,90,90,0.35)",
-                background: "rgba(255,90,90,0.08)",
-                padding: 12,
-                borderRadius: 12,
-              }}
-            >
+            <div style={{ marginTop: 12, border: "1px solid rgba(255,90,90,0.35)", background: "rgba(255,90,90,0.08)", padding: 12, borderRadius: 12 }}>
               <b>Error:</b> {pinError}
             </div>
           ) : null}
 
           {pinStatus ? (
-            <div
-              style={{
-                marginTop: 12,
-                border: "1px solid rgba(90,200,140,0.35)",
-                background: "rgba(90,200,140,0.08)",
-                padding: 12,
-                borderRadius: 12,
-              }}
-            >
+            <div style={{ marginTop: 12, border: "1px solid rgba(90,200,140,0.35)", background: "rgba(90,200,140,0.08)", padding: 12, borderRadius: 12 }}>
               {pinStatus}
             </div>
           ) : null}
@@ -344,8 +286,8 @@ export default function Verify() {
             {phoneUnlocked ? (
               <div style={{ display: "grid", gap: 10 }}>
                 <a
-                  href={`tel:${onlyDigits(driverPhone)}`}
-                  onClick={() => setCallConfirmed(true)}
+                  href={driverPhone ? `tel:${onlyDigits(driverPhone)}` : undefined}
+                  onClick={() => setCallCompleted(true)}
                   style={{
                     display: "inline-flex",
                     alignItems: "center",
@@ -355,28 +297,26 @@ export default function Verify() {
                     border: "1px solid rgba(140,190,255,0.28)",
                     background: "rgba(255,255,255,0.04)",
                     color: "#e6edf5",
-                    fontSize: 18,
+                    fontSize: 22,
                     fontWeight: 950,
                     textDecoration: "none",
                   }}
-                  title="Click to call"
+                  title="Click-to-call (backup)"
                 >
                   {driverPhone}
                 </a>
 
                 <button
-                  type="button"
-                  onClick={() => setCallConfirmed(true)}
                   style={{
                     ...btn(false),
-                    border: callConfirmed
-                      ? "1px solid rgba(90,200,140,0.45)"
-                      : "1px solid rgba(140,190,255,0.20)",
-                    background: callConfirmed ? "rgba(90,200,140,0.12)" : "rgba(0,0,0,0.18)",
+                    border: "1px solid rgba(90,200,140,0.35)",
+                    background: callCompleted ? "rgba(90,200,140,0.14)" : "rgba(255,255,255,0.04)",
+                    fontWeight: 950,
                   }}
-                  title="Use this if the device blocks click-to-call but you dialed manually"
+                  type="button"
+                  onClick={() => setCallCompleted(true)}
                 >
-                  {callConfirmed ? "Call Completed ✅" : "I Dialed / Call Completed"}
+                  {callCompleted ? "Call Completed ✅" : "Mark Call Completed"}
                 </button>
 
                 <div style={{ fontSize: 12, opacity: 0.7 }}>
@@ -391,7 +331,7 @@ export default function Verify() {
           </div>
         </div>
 
-        {/* Main entry fields */}
+        {/* Entry + Submit */}
         <div style={{ marginTop: 14, ...card }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <div>
@@ -431,17 +371,13 @@ export default function Verify() {
             </div>
           </div>
 
-          <div style={smallNote}>
+          <div style={{ marginTop: 12, opacity: 0.8, fontSize: 13 }}>
             SUBMIT unlocks only after DOT + Plate + Answered YES/NO + Call Completed.
           </div>
 
           <div style={{ marginTop: 14 }}>
             <button
-              style={{
-                ...btn(true),
-                opacity: canSubmit ? 1 : 0.55,
-                cursor: canSubmit ? "pointer" : "not-allowed",
-              }}
+              style={{ ...btn(true), opacity: canSubmit ? 1 : 0.55, cursor: canSubmit ? "pointer" : "not-allowed" }}
               disabled={!canSubmit || submitLoading}
               onClick={submitVerification}
               title="Submit Verification"
@@ -451,21 +387,12 @@ export default function Verify() {
           </div>
 
           {submitError ? (
-            <div
-              style={{
-                marginTop: 12,
-                border: "1px solid rgba(255,90,90,0.35)",
-                background: "rgba(255,90,90,0.08)",
-                padding: 12,
-                borderRadius: 12,
-              }}
-            >
+            <div style={{ marginTop: 12, border: "1px solid rgba(255,90,90,0.35)", background: "rgba(255,90,90,0.08)", padding: 12, borderRadius: 12 }}>
               <b>Error:</b> {submitError}
             </div>
           ) : null}
         </div>
 
-        {/* Result */}
         {result ? (
           <div
             style={{
@@ -489,7 +416,7 @@ export default function Verify() {
           </div>
         ) : null}
 
-        <div style={{ marginTop: 16, opacity: 0.45, fontSize: 12 }}>
+        <div style={{ marginTop: 16, opacity: 0.55, fontSize: 12 }}>
           (Ref) Token:{" "}
           <span style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" }}>
             {clean.token || "(missing)"}
