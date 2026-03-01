@@ -4,10 +4,95 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>QueCab AdbS</title>
+
+    <style>
+      html, body { height: 100%; margin: 0; }
+      body {
+        background: #0f1722;
+        color: #e6edf5;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      }
+      #qc-boot-error {
+        display: none;
+        min-height: 100vh;
+        padding: 18px 16px;
+      }
+      .qc-card {
+        max-width: 980px;
+        margin: 0 auto;
+        border: 1px solid rgba(255,90,90,0.35);
+        background: rgba(0,0,0,0.25);
+        border-radius: 14px;
+        padding: 16px;
+        box-shadow: 0 16px 34px rgba(0,0,0,0.30);
+      }
+      .qc-title { font-size: 18px; font-weight: 950; margin: 0 0 6px; }
+      .qc-sub { font-size: 13px; opacity: 0.75; margin: 0 0 12px; }
+      pre {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 13px;
+        white-space: pre-wrap;
+        line-height: 1.35;
+        margin: 0;
+        opacity: 0.92;
+      }
+      .qc-btn {
+        display: inline-block;
+        margin-top: 12px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(140,190,255,0.20);
+        background: rgba(0,0,0,0.18);
+        color: #e6edf5;
+        font-weight: 900;
+        letter-spacing: 0.2px;
+        text-decoration: none;
+      }
+    </style>
+
+    <script>
+      (function () {
+        function show(msg) {
+          try {
+            var box = document.getElementById("qc-boot-error");
+            var pre = document.getElementById("qc-boot-msg");
+            if (!box || !pre) return;
+            pre.textContent = String(msg || "Unknown startup error.");
+            box.style.display = "block";
+          } catch {}
+        }
+
+        window.addEventListener("error", function (e) {
+          var m = (e && (e.message || (e.error && e.error.message))) || "Script error.";
+          show(m);
+        });
+
+        window.addEventListener("unhandledrejection", function (e) {
+          var r = e && e.reason;
+          show((r && r.message) || String(r || "Unhandled promise rejection."));
+        });
+
+        setTimeout(function () {
+          var root = document.getElementById("root");
+          if (root && !root.hasChildNodes()) {
+            show("App did not start (root stayed empty). Likely a startup crash.");
+          }
+        }, 2500);
+      })();
+    </script>
   </head>
+
   <body>
-    <!-- React mounts here. NOTHING else belongs in this file. -->
     <div id="root"></div>
+
+    <div id="qc-boot-error">
+      <div class="qc-card">
+        <div class="qc-title">QueCab AdbS — Startup Error</div>
+        <div class="qc-sub">Copy the message below and send it to me.</div>
+        <pre id="qc-boot-msg">(waiting…)</pre>
+        <a class="qc-btn" href="/#/">Back Home</a>
+      </div>
+    </div>
 
     <script type="module" src="/src/main.jsx"></script>
   </body>
