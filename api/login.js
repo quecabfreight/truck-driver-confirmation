@@ -1,6 +1,6 @@
 // /api/login.js
 // POST { email, access_code } -> verifies approved beta request and returns role
-// Case-insensitive access code match (server-side), trims whitespace.
+// Debug-friendly: returns Supabase error details if DB query fails.
 
 import { createClient } from "@supabase/supabase-js";
 
@@ -16,7 +16,6 @@ function cleanEmail(v) {
 }
 
 function cleanCode(v) {
-  // Match the way the UI behaves: uppercase + trim
   return String(v || "").trim().toUpperCase();
 }
 
@@ -29,7 +28,12 @@ export default async function handler(req, res) {
   const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-    return json(res, 500, { ok: false, error: "Server missing Supabase env." });
+    return json(res, 500, {
+      ok: false,
+      error: "Server missing Supabase env.",
+      has_SUPABASE_URL: !!SUPABASE_URL,
+      has_SUPABASE_SERVICE_ROLE_KEY: !!SUPABASE_SERVICE_ROLE_KEY,
+    });
   }
 
   let body = {};
@@ -50,34 +54,49 @@ export default async function handler(req, res) {
   try {
     const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Pull approved row(s) for this email.
-    const { data, error } = await sb
-      .from("beta_requests")
+    // Force public schema (prevents “wrong schema” surprises)
+    const base = sb.schema("public").from("beta_requests");
+
+    // Try strict match first (most reliable)
+    let q = await base
       .select("id,email,role,status,access_code")
-      .ilike("email", email) // email compare case-insensitive
+      .eq("email", email)
       .limit(25);
 
-    if (error) {
-      return json(res, 500, { ok: false, error: "DB error loading beta request." });
+    // If strict match returns nothing, try case-insensitive match
+    if (!q.error && Array.isArray(q.data) && q.data.length === 0) {
+      q = await base
+        .select("id,email,role,status,access_code")
+        .ilike("email", email)
+        .limit(25);
     }
 
-    const rows = Array.isArray(data) ? data : [];
-    const approved = rows.filter((r) => String(r.status || "").toLowerCase() === "approved");
+    if (q.error) {
+      // IMPORTANT: This is the real clue you need to paste back to me.
+      return json(res, 500, {
+        ok: false,
+        error: "DB error loading beta request.",
+        supabase: {
+          message: q.error.message,
+          details: q.error.details,
+          hint: q.error.hint,
+          code: q.error.code,
+        },
+      });
+    }
 
-    // Case-insensitive code match (normalize both sides)
+    const rows = Array.isArray(q.data) ? q.data : [];
+    const approved = rows.filter((r) => String(r.status || "").toLowerCase() === "approved");
     const match = approved.find((r) => cleanCode(r.access_code) === accessCode);
 
     if (!match) {
-      // Helpful but not too revealing
       return json(res, 403, { ok: false, error: "Access denied" });
     }
-
-    const role = String(match.role || "broker").toLowerCase();
 
     return json(res, 200, {
       ok: true,
       email: match.email,
-      role,
+      role: String(match.role || "broker").toLowerCase(),
       status: match.status,
     });
   } catch (e) {
