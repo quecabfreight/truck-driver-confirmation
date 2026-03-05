@@ -1,215 +1,265 @@
 // /src/pages/Login.jsx
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import Header from "../components/Header.jsx";
-import { LS_EMAIL, getAuthEmail, isBrokerOrShipper } from "../utils/auth.js";
-
-const LS_CODE = "qc_access_code";
-const SS_CODE = "qc_access_code_ss";
+import { setAuthEmail, setAuthRole, setAuthCode, isBrokerOrShipper } from "../utils/auth.js";
 
 function looksLikeEmail(v) {
   const s = String(v || "").trim();
   return s.includes("@") && s.includes(".");
 }
 
+function onlyDigits(s) {
+  return String(s || "").replace(/\D+/g, "");
+}
+
 export default function Login() {
   const nav = useNavigate();
   const loc = useLocation();
 
-  const emailRef = useRef(null);
-  const codeRef = useRef(null);
+  const from = (loc.state && loc.state.from) || "/dashboard";
 
-  const [remember, setRemember] = useState(() => {
-    try {
-      return !!(localStorage.getItem(LS_CODE) || "").trim();
-    } catch {
-      return false;
-    }
-  });
+  const [email, setEmail] = useState("");
+  const [code, setCode] = useState("");
+  const [remember, setRemember] = useState(true);
 
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
 
-  // Prefill ONCE (does not fight typing)
-  const prefill = useMemo(() => {
-    const e = (getAuthEmail() || "").trim();
-    let c = "";
-    try {
-      c = (localStorage.getItem(LS_CODE) || "").trim();
-      if (!c) c = (sessionStorage.getItem(SS_CODE) || "").trim();
-    } catch {}
-    return { e, c };
-  }, []);
-
-  // If already authorized, bounce to Control Center
   useEffect(() => {
-    const e = (getAuthEmail() || "").trim();
-    if (e && isBrokerOrShipper(e)) {
-      nav("/dashboard", { replace: true });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    document.title = "Log In — QueCab AdbS";
   }, []);
+
+  const canSubmit = useMemo(() => {
+    if (!looksLikeEmail(email)) return false;
+    if (!String(code || "").trim()) return false;
+    return true;
+  }, [email, code]);
 
   async function onSubmit(e) {
     e.preventDefault();
     setError("");
 
-    const email = (emailRef.current?.value || "").trim();
-    const code = (codeRef.current?.value || "").trim();
+    const eClean = String(email || "").trim().toLowerCase();
+    const cClean = String(code || "").trim().toUpperCase();
 
-    if (!looksLikeEmail(email)) {
+    if (!looksLikeEmail(eClean)) {
       setError("Enter a valid business email.");
-      emailRef.current?.focus?.();
       return;
     }
-    if (code.length < 4) {
+    if (!cClean) {
       setError("Enter your access code.");
-      codeRef.current?.focus?.();
       return;
     }
 
-    setBusy(true);
+    setLoading(true);
+
     try {
-      // Save email (auth gate)
-      try {
-        localStorage.setItem(LS_EMAIL, email);
-      } catch {}
+      // Minimal login: we store email + code locally and rely on isBrokerOrShipper(email)
+      // for gating routes (beta). Admin gating is separate (Admin Key).
+      setAuthEmail(eClean, remember);
+      setAuthCode(cClean, remember);
+      setAuthRole("broker", remember); // default; role is not enforced client-side yet
 
-      // Remember device handling
-      try {
-        if (remember) {
-          localStorage.setItem(LS_CODE, code);
-          sessionStorage.removeItem(SS_CODE);
-        } else {
-          localStorage.removeItem(LS_CODE);
-          sessionStorage.setItem(SS_CODE, code);
-        }
-      } catch {}
-
-      nav("/dashboard", { replace: true, state: { from: loc.pathname } });
+      // If this email is already on the approved list, go straight in.
+      // If not, we still allow them to proceed to request access; BUT we won't route them to dashboard.
+      if (isBrokerOrShipper(eClean)) {
+        nav(from, { replace: true });
+      } else {
+        nav("/join", { replace: true });
+      }
+    } catch {
+      setError("Could not save login. Check browser storage settings.");
     } finally {
-      setBusy(false);
+      setLoading(false);
     }
   }
 
   const page = { minHeight: "100vh", background: "transparent" };
-  const wrap = { maxWidth: 720, margin: "0 auto", padding: "18px 16px 48px" };
+  const wrap = { maxWidth: 820, margin: "0 auto", padding: "18px 16px 60px" };
 
+  // Tiny industrial polish: steel-ish card + faint rivet line feel (no layout changes)
   const card = {
-    border: "1px solid rgba(255,255,255,0.12)",
-    background: "rgba(12, 18, 28, 0.72)",
+    border: "1px solid rgba(140,190,255,0.14)",
+    background:
+      "linear-gradient(180deg, rgba(12,18,28,0.78), rgba(8,12,18,0.72))",
     borderRadius: 18,
     padding: 18,
-    boxShadow: "0 12px 28px rgba(0,0,0,0.35)",
+    boxShadow: "0 16px 34px rgba(0,0,0,0.35)",
+    position: "relative",
+    overflow: "hidden",
   };
 
-  const h1 = { fontSize: 26, fontWeight: 950, margin: 0 };
-  const sub = { marginTop: 8, opacity: 0.85, lineHeight: 1.5, fontSize: 14 };
+  const steelLine = {
+    content: '""',
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    height: 3,
+    background:
+      "linear-gradient(90deg, rgba(120,180,255,0.0), rgba(120,180,255,0.45), rgba(120,180,255,0.0))",
+    opacity: 0.55,
+  };
 
-  const label = { fontSize: 13, fontWeight: 900, opacity: 0.9, marginBottom: 6 };
+  const titleRow = {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 14,
+  };
+
+  const logo = { width: 44, height: 44, objectFit: "contain" };
+  const h1 = { margin: 0, fontSize: 24, fontWeight: 950, letterSpacing: 0.2 };
+  const sub = { marginTop: 4, fontSize: 13, opacity: 0.72, fontWeight: 700 };
+
+  const grid = { display: "grid", gap: 12 };
+
+  const label = { fontSize: 13, opacity: 0.9, fontWeight: 900, marginBottom: 6 };
   const input = {
     width: "100%",
-    padding: "12px 12px",
+    padding: "14px 12px",
     borderRadius: 12,
-    border: "1px solid rgba(255,255,255,0.16)",
+    border: "1px solid rgba(140,190,255,0.18)",
     background: "rgba(255,255,255,0.04)",
     color: "inherit",
-    fontSize: 16,
+    fontSize: 18,
     outline: "none",
   };
 
-  const row = { display: "grid", gap: 10, marginTop: 14 };
-
-  const btn = {
+  const btn = (primary) => ({
     width: "100%",
-    padding: "12px 14px",
+    padding: "14px 14px",
     borderRadius: 12,
-    border: "1px solid rgba(140,190,255,0.42)",
-    background: "linear-gradient(180deg, rgba(40,110,200,0.85), rgba(20,70,140,0.75))",
+    border: primary
+      ? "1px solid rgba(140,190,255,0.42)"
+      : "1px solid rgba(140,190,255,0.20)",
+    background: primary
+      ? "linear-gradient(180deg, rgba(40,110,200,0.85), rgba(20,70,140,0.75))"
+      : "rgba(0,0,0,0.18)",
     color: "#e6edf5",
     fontSize: 16,
     fontWeight: 950,
     cursor: "pointer",
-    opacity: busy ? 0.7 : 1,
-  };
+    letterSpacing: 0.2,
+    opacity: primary ? 1 : 0.95,
+  });
 
-  const chkRow = {
-    display: "flex",
-    gap: 10,
-    alignItems: "center",
-    marginTop: 10,
-    opacity: 0.9,
-    fontSize: 14,
-  };
+  const row = { display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" };
+  const checkbox = { transform: "scale(1.1)" };
+  const help = { fontSize: 12, opacity: 0.72, lineHeight: 1.35 };
 
   return (
     <div style={page}>
       <Header />
+
       <div style={wrap}>
         <div style={card}>
-          <h1 style={h1}>Log In</h1>
-          <div style={sub}>
-            Enter your business email and access code to reach the Control Center.
+          {/* pseudo steel line */}
+          <div style={steelLine} />
+
+          <div style={titleRow}>
+            <img
+              src="/qc-logo.png"
+              alt="QueCab AdbS"
+              style={logo}
+              onError={(e) => (e.currentTarget.style.display = "none")}
+            />
+            <div>
+              <h1 style={h1}>Log In</h1>
+              <div style={sub}>QueCab AdbS • Secure Your Load</div>
+            </div>
           </div>
 
-          <form onSubmit={onSubmit} style={{ marginTop: 14 }}>
-            <div style={row}>
-              <div>
-                <div style={label}>Business Email</div>
-                <input
-                  ref={emailRef}
-                  style={input}
-                  defaultValue={prefill.e}
-                  placeholder="email@company.com"
-                  inputMode="email"
-                  autoComplete="email"
-                />
-              </div>
+          <form onSubmit={onSubmit} style={grid}>
+            <div>
+              <div style={label}>Business Email</div>
+              <input
+                style={input}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="name@company.com"
+                inputMode="email"
+                autoComplete="email"
+              />
+            </div>
 
-              <div>
-                <div style={label}>Access Code</div>
-                <input
-                  ref={codeRef}
-                  style={input}
-                  defaultValue={prefill.c}
-                  placeholder="QC-XXXXXX"
-                  autoComplete="one-time-code"
-                />
-              </div>
-
-              <label style={chkRow}>
-                <input
-                  type="checkbox"
-                  checked={remember}
-                  onChange={(e) => setRemember(e.target.checked)}
-                />
-                Remember this device
-              </label>
-
-              {error ? (
-                <div
-                  style={{
-                    border: "1px solid rgba(255,80,80,0.35)",
-                    background: "rgba(255,80,80,0.08)",
-                    padding: 12,
-                    borderRadius: 12,
-                    fontSize: 14,
-                  }}
-                >
-                  <b>Error:</b> {error}
-                </div>
-              ) : null}
-
-              <button type="submit" style={btn} disabled={busy}>
-                {busy ? "Signing in..." : "Log In"}
-              </button>
-
-              <div style={{ opacity: 0.65, fontSize: 12, lineHeight: 1.4 }}>
-                “Remember this device” stores your access code on this device only.
+            <div>
+              <div style={label}>Access Code</div>
+              <input
+                style={{ ...input, textTransform: "uppercase", letterSpacing: 1.2 }}
+                value={code}
+                onChange={(e) => setCode(String(e.target.value || "").toUpperCase())}
+                placeholder="QC-XXXXXX"
+                inputMode="text"
+                autoComplete="off"
+              />
+              <div style={{ marginTop: 6, ...help }}>
+                Tip: Access codes are uppercase.
               </div>
             </div>
+
+            <div style={row}>
+              <input
+                id="remember"
+                type="checkbox"
+                checked={remember}
+                onChange={(e) => setRemember(e.target.checked)}
+                style={checkbox}
+              />
+              <label htmlFor="remember" style={{ fontWeight: 900, opacity: 0.9 }}>
+                Remember this device
+              </label>
+              <span style={help}>
+                (Stores login locally so you don’t retype.)
+              </span>
+            </div>
+
+            {error ? (
+              <div
+                style={{
+                  border: "1px solid rgba(255,90,90,0.35)",
+                  background: "rgba(255,90,90,0.08)",
+                  padding: 12,
+                  borderRadius: 12,
+                  fontSize: 14,
+                }}
+              >
+                <b style={{ letterSpacing: 0.2 }}>Error:</b> {error}
+              </div>
+            ) : null}
+
+            <button
+              type="submit"
+              style={{
+                ...btn(true),
+                opacity: canSubmit && !loading ? 1 : 0.55,
+                cursor: canSubmit && !loading ? "pointer" : "not-allowed",
+              }}
+              disabled={!canSubmit || loading}
+              title="Log In"
+            >
+              {loading ? "Signing in..." : "Log In"}
+            </button>
+
+            <button
+              type="button"
+              style={btn(false)}
+              onClick={() => nav("/join")}
+              title="Request Access"
+            >
+              Request Access
+            </button>
+
+            <div style={{ marginTop: 6, ...help }}>
+              If you don’t have an access code yet, request beta access and we’ll review.
+            </div>
           </form>
+        </div>
+
+        <div style={{ marginTop: 14, opacity: 0.55, fontSize: 12 }}>
+          QueCab AdbS — Truck-Driver verification system. Paid-subscription UI standards enforced.
         </div>
       </div>
     </div>
