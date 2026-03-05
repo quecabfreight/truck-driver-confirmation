@@ -1,87 +1,117 @@
 // /src/utils/auth.js
-// AUTH RULES (STRICT):
-// - Logged-in identity is ALWAYS a plain email string.
-// - JSON blobs are NEVER treated as auth identity.
-// - No brute scanning of storage (it creates false positives).
-// - If qc_email isn't set correctly, you're NOT authorized.
+// Central auth storage helpers (localStorage) + role gate.
+// Keeps backward compatibility with older key names.
 
 export const LS_EMAIL = "qc_email";
-export const LS_ACCESS_CODE = "qc_access_code";
 export const LS_ROLE = "qc_role";
+export const LS_CODE = "qc_access_code";
+export const LS_REMEMBER = "qc_remember_device";
 
-function safeGet(store, key) {
+function safeGet(k) {
   try {
-    return (store.getItem(key) || "").trim();
+    return (localStorage.getItem(k) || "").trim();
   } catch {
     return "";
   }
 }
 
-function isJsonishString(v) {
-  const s = String(v || "").trim();
-  return s.startsWith("{") || s.startsWith("[");
+function safeSet(k, v) {
+  try {
+    if (v === null || v === undefined || String(v).trim() === "") {
+      localStorage.removeItem(k);
+    } else {
+      localStorage.setItem(k, String(v));
+    }
+  } catch {}
 }
 
-export function looksLikeEmail(v) {
-  const s = String(v || "").trim();
-  if (!s) return false;
-  if (isJsonishString(s)) return false;
-  if (s.length > 160) return false;
-  // Basic and fast email-ish check
-  return s.includes("@") && s.includes(".");
+function normRole(r) {
+  return String(r || "")
+    .trim()
+    .toLowerCase();
+}
+
+export function setAuthEmail(email) {
+  safeSet(LS_EMAIL, String(email || "").trim());
+}
+
+export function setAuthRole(role) {
+  safeSet(LS_ROLE, normRole(role));
+}
+
+export function setAuthCode(code) {
+  // Store exactly what user sees (but uppercase is fine too)
+  safeSet(LS_CODE, String(code || "").trim().toUpperCase());
+}
+
+export function setRememberDevice(remember) {
+  safeSet(LS_REMEMBER, remember ? "1" : "");
 }
 
 export function getAuthEmail() {
-  // Only trust the canonical key (and sessionStorage mirror)
-  const a = safeGet(localStorage, LS_EMAIL);
-  if (looksLikeEmail(a)) return a;
+  // Primary
+  const p = safeGet(LS_EMAIL);
+  if (p) return p;
 
-  const b = safeGet(sessionStorage, LS_EMAIL);
-  if (looksLikeEmail(b)) return b;
+  // Back-compat fallbacks
+  const old1 = safeGet("LS_EMAIL");
+  if (old1) return old1;
+
+  const old2 = safeGet("email");
+  if (old2) return old2;
 
   return "";
 }
 
-// Export kept because other files expect it
+export function getAuthRole() {
+  const p = safeGet(LS_ROLE);
+  if (p) return p;
+
+  // Back-compat fallbacks
+  const old1 = safeGet("qc_role");
+  if (old1) return normRole(old1);
+
+  const old2 = safeGet("role");
+  if (old2) return normRole(old2);
+
+  return "";
+}
+
+export function getAuthCode() {
+  const p = safeGet(LS_CODE);
+  if (p) return p;
+
+  // Back-compat fallbacks
+  const old1 = safeGet("access_code");
+  if (old1) return old1.toUpperCase();
+
+  return "";
+}
+
+export function isRememberedDevice() {
+  return safeGet(LS_REMEMBER) === "1";
+}
+
 export function isBrokerOrShipper(email) {
-  // For now: any valid email counts as "authorized identity exists".
-  // Role enforcement can be added later once login stores role reliably.
-  return looksLikeEmail(email);
-}
-
-export function isAuthorized() {
-  const email = getAuthEmail();
-  return isBrokerOrShipper(email);
-}
-
-export function setAuthEmail(email, { remember = true } = {}) {
   const e = String(email || "").trim();
-  if (!looksLikeEmail(e)) return "";
+  if (!e) return false;
 
-  try {
-    if (remember) {
-      localStorage.setItem(LS_EMAIL, e);
-      sessionStorage.removeItem(LS_EMAIL);
-    } else {
-      sessionStorage.setItem(LS_EMAIL, e);
-      localStorage.removeItem(LS_EMAIL);
-    }
-  } catch {}
-
-  return e;
+  const r = normRole(getAuthRole());
+  return r === "broker" || r === "shipper";
 }
 
 export function clearAuth() {
   try {
     localStorage.removeItem(LS_EMAIL);
-    sessionStorage.removeItem(LS_EMAIL);
-
-    localStorage.removeItem(LS_ACCESS_CODE);
     localStorage.removeItem(LS_ROLE);
+    localStorage.removeItem(LS_CODE);
+    localStorage.removeItem(LS_REMEMBER);
 
-    // common leftovers
-    localStorage.removeItem("access_code");
+    // Back-compat cleanup
+    localStorage.removeItem("email");
     localStorage.removeItem("role");
-    localStorage.removeItem("remember_device");
+    localStorage.removeItem("access_code");
+    localStorage.removeItem("qc_access_code");
+    localStorage.removeItem("qc_role");
   } catch {}
 }
