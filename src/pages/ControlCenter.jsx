@@ -78,7 +78,8 @@ export default function ControlCenter() {
   }
 
   const [loadId, setLoadId] = useState("");
-  const [dockPin, setDockPin] = useState(""); // optional per-link PIN (4–6 digits)
+  const [dockEmail, setDockEmail] = useState("");
+  const [dockPin, setDockPin] = useState("");
 
   const [usdotOnRecord, setUsdotOnRecord] = useState("");
   const [plateOnRecord, setPlateOnRecord] = useState("");
@@ -92,7 +93,7 @@ export default function ControlCenter() {
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const [issued, setIssued] = useState(null); // { token, verify_url, expires_at, load_id }
+  const [issued, setIssued] = useState(null);
 
   const abortRef = useRef(null);
 
@@ -135,13 +136,11 @@ export default function ControlCenter() {
     if (!plate_upper) return setErrorMsg("Enter Plate.");
     if (phone_digits.length !== 10) return setErrorMsg("Enter Driver Phone (10 digits).");
 
-    // Dock PIN optional but if entered must be 4–6 digits
     const pin = normalized.dock_pin_digits;
     if (pin && (pin.length < 4 || pin.length > 6)) {
       return setErrorMsg("Dock PIN must be 4–6 digits (or leave blank).");
     }
 
-    // Start/Expire rules
     let starts_at = null;
     let expires_at = null;
 
@@ -155,7 +154,6 @@ export default function ControlCenter() {
       starts_at = startsAt;
       expires_at = expiresAt;
     } else {
-      // none
       starts_at = nowLocalDatetime();
       expires_at = null;
       setStartsAt(starts_at);
@@ -173,12 +171,13 @@ export default function ControlCenter() {
     try {
       const payload = {
         load_id: String(loadId || "").trim() || null,
+        dock_email: String(dockEmail || "").trim() || null,
         usdot_on_record: usdot_digits,
         plate_on_record: plate_upper,
         driver_phone: formatPhoneHyphen(phone_digits),
         starts_at,
         expires_at,
-        dock_pin: pin || null, // per-link override (optional)
+        dock_pin: pin || null,
       };
 
       const res = await fetch("/api/issue_verify_link", {
@@ -208,20 +207,40 @@ export default function ControlCenter() {
       const expires = data.expires_at ?? expires_at;
 
       const msgLines = [
-        `Load ID: ${payload.load_id || "(none)"}`,
+        "AdbS TRUCK-DRIVER VERIFICATION",
+        "",
+        payload.load_id ? `Load ID: ${payload.load_id}` : null,
+        "",
+        "OPEN AT DOCK:",
+        verify_url,
+        "",
+        "Dock Instruction:",
+        "When the truck arrives, open the link above and complete verification before releasing the load.",
+        "Enter the DOT and plate shown on the truck, then call the driver using the link.",
+        "",
         `Expires: ${expires ? String(expires) : "No Expire"}`,
-        `Verify URL: ${verify_url}`,
-      ].join("\n");
+      ]
+        .filter(Boolean)
+        .join("\n");
 
       setIssued({
         token,
         verify_url,
         expires_at: expires,
         load_id: payload.load_id,
+        dock_email: payload.dock_email,
+        email_status: data.email_status || null,
+        email_error: data.email_error || null,
         full_message: msgLines,
       });
 
-      setStatusMsg("AdbS Verification issued.");
+      if (payload.dock_email && data.email_status === "sent") {
+        setStatusMsg("AdbS Verification issued and emailed to dock.");
+      } else if (payload.dock_email && data.email_status === "failed") {
+        setStatusMsg("AdbS Verification issued, but dock email failed.");
+      } else {
+        setStatusMsg("AdbS Verification issued.");
+      }
     } catch (e) {
       if (String(e?.name) !== "AbortError") {
         setErrorMsg("Network error issuing link.");
@@ -305,7 +324,6 @@ export default function ControlCenter() {
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1.05fr 0.95fr", gap: 16 }}>
-          {/* Left */}
           <div style={cardStyle}>
             <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 10 }}>Issue AdbS Verification</div>
 
@@ -325,6 +343,21 @@ export default function ControlCenter() {
               </div>
 
               <div>
+                <div style={labelStyle}>Dock Email</div>
+                <input
+                  style={inputStyle}
+                  value={dockEmail}
+                  onChange={(e) => setDockEmail(e.target.value)}
+                  placeholder="dock@warehouse.com"
+                  inputMode="email"
+                  autoComplete="off"
+                />
+                <div style={{ opacity: 0.7, fontSize: 12, marginTop: 6 }}>
+                  If entered, the system emails the verification link automatically.
+                </div>
+              </div>
+
+              <div>
                 <div style={labelStyle}>Dock PIN (optional)</div>
                 <input
                   style={inputStyle}
@@ -335,7 +368,7 @@ export default function ControlCenter() {
                   autoComplete="off"
                 />
                 <div style={{ opacity: 0.7, fontSize: 12, marginTop: 6 }}>
-                  If blank, system uses the default Dock PIN set in Vercel.
+                  If blank, system uses the default Dock PIN.
                 </div>
               </div>
 
@@ -446,7 +479,17 @@ export default function ControlCenter() {
                   Load ID: <span style={{ fontWeight: 900 }}>{issued.load_id || "(none)"}</span>
                   <br />
                   Expires: <span style={{ fontWeight: 900 }}>{issued.expires_at ? String(issued.expires_at) : "No Expire"}</span>
+                  <br />
+                  Dock Email: <span style={{ fontWeight: 900 }}>{issued.dock_email || "(manual only)"}</span>
+                  <br />
+                  Email Status: <span style={{ fontWeight: 900 }}>{issued.email_status || "not sent"}</span>
                 </div>
+
+                {issued.email_error ? (
+                  <div style={{ marginBottom: 10, border: "1px solid rgba(255,80,80,0.35)", background: "rgba(255,80,80,0.08)", padding: 10, borderRadius: 10, fontSize: 13 }}>
+                    <b>Email Error:</b> {issued.email_error}
+                  </div>
+                ) : null}
 
                 <div style={{ display: "grid", gap: 10 }}>
                   <div>
@@ -476,23 +519,19 @@ export default function ControlCenter() {
                   </div>
 
                   <div style={{ opacity: 0.75, fontSize: 12, lineHeight: 1.35 }}>
-                    Note: This panel is the production-facing issuer UI. The legacy /smartlink page stays blocked.
+                    Automatic email is now supported when Dock Email is entered.
                   </div>
                 </div>
               </div>
             ) : null}
           </div>
 
-          {/* Right */}
           <div style={cardStyle}>
             <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 10 }}>Status</div>
 
             <div style={{ fontSize: 14, opacity: 0.9, lineHeight: 1.45 }}>
               <div style={{ marginBottom: 10 }}>
-                <b>Issuer UI:</b> Control Center (paid look) ✅
-              </div>
-              <div style={{ marginBottom: 10 }}>
-                <b>Legacy routes:</b> /smartlink and /driverlink redirect ✅
+                <b>Issuer UI:</b> Control Center ✅
               </div>
               <div style={{ marginBottom: 10 }}>
                 <b>Formatting:</b> Phone auto-hyphenates; USDOT/Plate uppercase ✅
@@ -500,15 +539,18 @@ export default function ControlCenter() {
               <div style={{ marginBottom: 10 }}>
                 <b>Dock PIN:</b> per-link optional; falls back to default ✅
               </div>
+              <div style={{ marginBottom: 10 }}>
+                <b>Dock Email:</b> automatic send supported ✅
+              </div>
               <div style={{ opacity: 0.75 }}>
-                Next: CAUTION ALERT polish (flash + sound) + silent issuer alerts.
+                Next: silent alert email + search records + unlock/revoke controls.
               </div>
             </div>
           </div>
         </div>
 
         <div style={{ marginTop: 16, opacity: 0.65, fontSize: 12 }}>
-          QueCab AdbS — Truck-Driver verification system. Paid-subscription UI standards enforced.
+          QueCab AdbS — Truck-Driver verification system. Developed by Omnimobile Inc. for QueCab Inc.
         </div>
       </div>
     </div>
