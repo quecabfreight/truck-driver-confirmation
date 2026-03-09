@@ -1,6 +1,6 @@
 // /src/pages/Verify.jsx
 import React, { useEffect, useMemo, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 function onlyDigits(s) {
   return String(s || "").replace(/\D+/g, "");
@@ -33,26 +33,21 @@ export default function Verify() {
   const nav = useNavigate();
   const { token } = useParams();
 
-  // PIN gate
   const [dockPin, setDockPin] = useState("");
   const [pinStatus, setPinStatus] = useState("");
   const [pinError, setPinError] = useState("");
   const [pinLoading, setPinLoading] = useState(false);
   const [authorized, setAuthorized] = useState(false);
 
-  // After PIN: phone
-  const [driverPhone, setDriverPhone] = useState("");
-  const [phoneLinkClicked, setPhoneLinkClicked] = useState(false);
-
-  // After PIN: inputs
   const [enteredDot, setEnteredDot] = useState("");
   const [enteredPlate, setEnteredPlate] = useState("");
-  const [driverAnswered, setDriverAnswered] = useState(""); // "YES" | "NO" | ""
 
-  // Submit
+  const [driverPhone, setDriverPhone] = useState("");
+  const [driverAnswered, setDriverAnswered] = useState("");
+
   const [submitLoading, setSubmitLoading] = useState(false);
   const [submitError, setSubmitError] = useState("");
-  const [result, setResult] = useState(null); // { verdict: "clear"|"caution", raw }
+  const [result, setResult] = useState(null);
 
   useEffect(() => {
     document.title = "Dock Verification — QueCab AdbS";
@@ -64,10 +59,10 @@ export default function Verify() {
       dockPin: String(dockPin || "").trim(),
       dot: toUpper(enteredDot).trim(),
       plate: toUpper(enteredPlate).trim(),
-      driverAnswered,
       phone: formatPhoneHyphen(driverPhone),
+      driverAnswered,
     };
-  }, [token, dockPin, enteredDot, enteredPlate, driverAnswered, driverPhone]);
+  }, [token, dockPin, enteredDot, enteredPlate, driverPhone, driverAnswered]);
 
   const canSubmit = useMemo(() => {
     if (!authorized) return false;
@@ -84,7 +79,6 @@ export default function Verify() {
     setPinLoading(true);
     setAuthorized(false);
     setDriverPhone("");
-    setPhoneLinkClicked(false);
 
     try {
       const res = await fetch("/api/reveal_driver_phone", {
@@ -93,12 +87,9 @@ export default function Verify() {
         body: JSON.stringify({ token: clean.token, dock_pin: clean.dockPin }),
       });
 
-      // If endpoint missing, allow pass-through (testing only)
       if (res.status === 404) {
         setAuthorized(true);
-        setPinStatus(
-          "Dock authorization endpoint isn’t live yet (404). Proceeding in test mode."
-        );
+        setPinStatus("Dock authorization endpoint isn’t live yet (404). Proceeding in test mode.");
         setPinLoading(false);
         return;
       }
@@ -106,8 +97,7 @@ export default function Verify() {
       const data = await safeJson(res);
 
       if (!res.ok) {
-        const msg =
-          data?.error || data?.message || `Dock authorization failed (${res.status}).`;
+        const msg = data?.error || data?.message || `Dock authorization failed (${res.status}).`;
         setPinError(msg);
         setPinLoading(false);
         return;
@@ -181,7 +171,6 @@ export default function Verify() {
     }
   }
 
-  // Styles (kept simple, consistent with your paid look)
   const page = {
     minHeight: "100vh",
     background: "#0f1722",
@@ -252,7 +241,6 @@ export default function Verify() {
   return (
     <div style={page}>
       <div style={wrap}>
-        {/* Top bar */}
         <div
           style={{
             display: "flex",
@@ -280,7 +268,6 @@ export default function Verify() {
           </button>
         </div>
 
-        {/* Header instruction */}
         <div style={{ marginTop: 14, ...card }}>
           <div style={h1}>DOES THE USDOT# ON THE TRUCK MATCH?</div>
           <div style={{ marginTop: 10, fontSize: 16, opacity: 0.9, fontWeight: 900 }}>
@@ -291,7 +278,6 @@ export default function Verify() {
           </div>
         </div>
 
-        {/* Step 1: Dock PIN gate */}
         {!authorized ? (
           <div style={{ marginTop: 14, ...card }}>
             <div style={{ fontSize: 16, fontWeight: 950, marginBottom: 8 }}>
@@ -361,82 +347,8 @@ export default function Verify() {
           </div>
         ) : null}
 
-        {/* Step 2: Verification UI (only after PIN) */}
         {authorized ? (
           <>
-            {/* Driver phone (click-to-call + manual backup) */}
-            <div style={{ marginTop: 14, ...card }}>
-              <div style={{ fontSize: 16, fontWeight: 950, marginBottom: 8 }}>
-                Driver Phone (click-to-call + manual backup)
-              </div>
-
-              <a
-                href={driverPhone ? `tel:${onlyDigits(driverPhone)}` : undefined}
-                onClick={() => setPhoneLinkClicked(true)}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  padding: "14px 12px",
-                  borderRadius: 12,
-                  border: "1px solid rgba(140,190,255,0.28)",
-                  background: "rgba(255,255,255,0.04)",
-                  color: "#e6edf5",
-                  fontSize: 18,
-                  fontWeight: 950,
-                  textDecoration: "none",
-                  cursor: driverPhone ? "pointer" : "default",
-                  width: "100%",
-                }}
-                title="Click to call"
-              >
-                {driverPhone ? driverPhone : "Phone not available (enter manually below)"}
-              </a>
-
-              {!driverPhone ? (
-                <div style={{ marginTop: 10 }}>
-                  <div style={label}>Manual Phone Entry (backup)</div>
-                  <input
-                    style={input}
-                    value={driverPhone}
-                    onChange={(e) => setDriverPhone(formatPhoneHyphen(e.target.value))}
-                    placeholder="Enter phone"
-                    inputMode="tel"
-                    autoComplete="off"
-                  />
-                </div>
-              ) : null}
-
-              <div style={{ marginTop: 10, fontSize: 12, opacity: 0.7 }}>
-                If tap-to-call is blocked on this device, dial manually using the number shown.
-              </div>
-
-              <div style={{ marginTop: 12 }}>
-                <div style={label}>DID THE DRIVER ANSWER THEIR PHONE?</div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                  <button
-                    style={pill(driverAnswered === "YES")}
-                    onClick={() => setDriverAnswered("YES")}
-                    type="button"
-                  >
-                    YES
-                  </button>
-                  <button
-                    style={pill(driverAnswered === "NO")}
-                    onClick={() => setDriverAnswered("NO")}
-                    type="button"
-                  >
-                    NO
-                  </button>
-                </div>
-              </div>
-
-              <div style={{ marginTop: 10, fontSize: 12, opacity: 0.7 }}>
-                Tip: this is the only YES/NO required. DOT + Plate are checked on submit.
-              </div>
-            </div>
-
-            {/* DOT / PLATE inputs */}
             <div style={{ marginTop: 14, ...card }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <div>
@@ -463,21 +375,77 @@ export default function Verify() {
                   />
                 </div>
               </div>
+            </div>
 
-              <div style={{ marginTop: 14 }}>
-                <button
-                  style={{
-                    ...btn(true),
-                    opacity: canSubmit ? 1 : 0.55,
-                    cursor: canSubmit ? "pointer" : "not-allowed",
-                  }}
-                  disabled={!canSubmit || submitLoading}
-                  onClick={submitVerification}
-                  title="Submit Verification"
-                >
-                  {submitLoading ? "Submitting..." : "SUBMIT VERIFICATION"}
-                </button>
+            <div style={{ marginTop: 14, ...card }}>
+              <div style={{ fontSize: 16, fontWeight: 950, marginBottom: 8 }}>
+                Driver Phone (click-to-call + manual backup)
               </div>
+
+              <a
+                href={driverPhone ? `tel:${onlyDigits(driverPhone)}` : undefined}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "14px 12px",
+                  borderRadius: 12,
+                  border: "1px solid rgba(140,190,255,0.28)",
+                  background: "rgba(255,255,255,0.04)",
+                  color: "#e6edf5",
+                  fontSize: 18,
+                  fontWeight: 950,
+                  textDecoration: "none",
+                  cursor: driverPhone ? "pointer" : "default",
+                  width: "100%",
+                }}
+                title="Click to call"
+              >
+                {driverPhone ? driverPhone : "Phone not available"}
+              </a>
+
+              <div style={{ marginTop: 10, fontSize: 12, opacity: 0.7 }}>
+                If tap-to-call is blocked on this device, dial manually using the number shown.
+              </div>
+
+              <div style={{ marginTop: 12 }}>
+                <div style={label}>DID THE DRIVER ANSWER THEIR PHONE?</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <button
+                    style={pill(driverAnswered === "YES")}
+                    onClick={() => setDriverAnswered("YES")}
+                    type="button"
+                  >
+                    YES
+                  </button>
+                  <button
+                    style={pill(driverAnswered === "NO")}
+                    onClick={() => setDriverAnswered("NO")}
+                    type="button"
+                  >
+                    NO
+                  </button>
+                </div>
+              </div>
+
+              <div style={{ marginTop: 10, fontSize: 12, opacity: 0.7 }}>
+                Phone call is the final live check before submitting verification.
+              </div>
+            </div>
+
+            <div style={{ marginTop: 14, ...card }}>
+              <button
+                style={{
+                  ...btn(true),
+                  opacity: canSubmit ? 1 : 0.55,
+                  cursor: canSubmit ? "pointer" : "not-allowed",
+                }}
+                disabled={!canSubmit || submitLoading}
+                onClick={submitVerification}
+                title="Submit Verification"
+              >
+                {submitLoading ? "Submitting..." : "SUBMIT VERIFICATION"}
+              </button>
 
               {submitError ? (
                 <div
@@ -494,7 +462,6 @@ export default function Verify() {
               ) : null}
             </div>
 
-            {/* Result (NO silent alert messaging shown here) */}
             {result ? (
               <div
                 style={{
@@ -540,7 +507,12 @@ export default function Verify() {
 
             <div style={{ marginTop: 16, opacity: 0.55, fontSize: 12 }}>
               Token:{" "}
-              <span style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" }}>
+              <span
+                style={{
+                  fontFamily:
+                    "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+                }}
+              >
                 {clean.token || "(missing)"}
               </span>
             </div>
