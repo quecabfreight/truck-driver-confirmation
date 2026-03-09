@@ -47,23 +47,13 @@ async function safeCopy(text) {
 function nowLocalDatetime() {
   const d = new Date();
   const pad = (n) => String(n).padStart(2, "0");
-  const yyyy = d.getFullYear();
-  const mm = pad(d.getMonth() + 1);
-  const dd = pad(d.getDate());
-  const hh = pad(d.getHours());
-  const mi = pad(d.getMinutes());
-  return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 function plusHoursLocalDatetime(hours) {
   const d = new Date(Date.now() + hours * 60 * 60 * 1000);
   const pad = (n) => String(n).padStart(2, "0");
-  const yyyy = d.getFullYear();
-  const mm = pad(d.getMonth() + 1);
-  const dd = pad(d.getDate());
-  const hh = pad(d.getHours());
-  const mi = pad(d.getMinutes());
-  return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 export default function ControlCenter() {
@@ -80,29 +70,31 @@ export default function ControlCenter() {
   const [loadId, setLoadId] = useState("");
   const [dockEmail, setDockEmail] = useState("");
   const [dockPin, setDockPin] = useState("");
-
   const [usdotOnRecord, setUsdotOnRecord] = useState("");
   const [plateOnRecord, setPlateOnRecord] = useState("");
   const [driverPhone, setDriverPhone] = useState("");
 
-  const [mode, setMode] = useState("auto"); // auto | pick | none
+  const [mode, setMode] = useState("auto");
   const [startsAt, setStartsAt] = useState(() => nowLocalDatetime());
   const [expiresAt, setExpiresAt] = useState(() => plusHoursLocalDatetime(24));
 
   const [statusMsg, setStatusMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
-
   const [issued, setIssued] = useState(null);
+  const [attempts, setAttempts] = useState([]);
+  const [attemptsLoading, setAttemptsLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState("");
 
   const abortRef = useRef(null);
 
   const normalized = useMemo(() => {
-    const usdot_digits = onlyDigits(usdotOnRecord);
-    const plate_upper = toUpperClean(plateOnRecord).trim();
-    const phone_digits = onlyDigits(driverPhone);
-    const dock_pin_digits = onlyDigits(dockPin).slice(0, 6);
-    return { usdot_digits, plate_upper, phone_digits, dock_pin_digits };
+    return {
+      usdot_digits: onlyDigits(usdotOnRecord),
+      plate_upper: toUpperClean(plateOnRecord).trim(),
+      phone_digits: onlyDigits(driverPhone),
+      dock_pin_digits: onlyDigits(dockPin).slice(0, 6),
+    };
   }, [usdotOnRecord, plateOnRecord, driverPhone, dockPin]);
 
   function logout() {
@@ -116,17 +108,20 @@ export default function ControlCenter() {
     nav("/login", { replace: true });
   }
 
-  function resetStartNow() {
-    setStartsAt(nowLocalDatetime());
-  }
-  function resetExpire24h() {
-    setExpiresAt(plusHoursLocalDatetime(24));
+  async function safeJson(res) {
+    const text = await res.text();
+    try {
+      return JSON.parse(text);
+    } catch {
+      return { raw: text };
+    }
   }
 
   async function issueLink() {
     setErrorMsg("");
     setStatusMsg("");
     setIssued(null);
+    setAttempts([]);
 
     const usdot_digits = normalized.usdot_digits;
     const plate_upper = normalized.plate_upper;
@@ -187,24 +182,13 @@ export default function ControlCenter() {
         body: JSON.stringify(payload),
       });
 
-      const text = await res.text();
-      let data = null;
-      try {
-        data = JSON.parse(text);
-      } catch {
-        data = { raw: text };
-      }
+      const data = await safeJson(res);
 
       if (!res.ok) {
-        const msg = (data && (data.error || data.message)) || `Issuer failed (${res.status}).`;
-        setErrorMsg(msg);
+        setErrorMsg(data?.error || data?.message || `Issuer failed (${res.status}).`);
         setLoading(false);
         return;
       }
-
-      const token = data.token || "";
-      const verify_url = data.verify_url || "";
-      const expires = data.expires_at ?? expires_at;
 
       const msgLines = [
         "AdbS TRUCK-DRIVER VERIFICATION",
@@ -212,31 +196,32 @@ export default function ControlCenter() {
         payload.load_id ? `Load ID: ${payload.load_id}` : null,
         "",
         "OPEN AT DOCK:",
-        verify_url,
+        data?.verify_url || "",
         "",
         "Dock Instruction:",
         "When the truck arrives, open the link above and complete verification before releasing the load.",
         "Enter the DOT and plate shown on the truck, then call the driver using the link.",
         "",
-        `Expires: ${expires ? String(expires) : "No Expire"}`,
+        `Expires: ${data?.expires_at ? String(data.expires_at) : "No Expire"}`,
       ]
         .filter(Boolean)
         .join("\n");
 
       setIssued({
-        token,
-        verify_url,
-        expires_at: expires,
+        token: data?.token || "",
+        verify_url: data?.verify_url || "",
+        expires_at: data?.expires_at || null,
         load_id: payload.load_id,
         dock_email: payload.dock_email,
-        email_status: data.email_status || null,
-        email_error: data.email_error || null,
+        email_status: data?.email_status || null,
+        email_error: data?.email_error || null,
         full_message: msgLines,
+        status: data?.status || "active",
       });
 
-      if (payload.dock_email && data.email_status === "sent") {
+      if (payload.dock_email && data?.email_status === "sent") {
         setStatusMsg("AdbS Verification issued and emailed to dock.");
-      } else if (payload.dock_email && data.email_status === "failed") {
+      } else if (payload.dock_email && data?.email_status === "failed") {
         setStatusMsg("AdbS Verification issued, but dock email failed.");
       } else {
         setStatusMsg("AdbS Verification issued.");
@@ -247,6 +232,120 @@ export default function ControlCenter() {
       }
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleLever(action) {
+    if (!issued?.token) return;
+
+    setActionLoading(action);
+    setErrorMsg("");
+    setStatusMsg("");
+
+    try {
+      const res = await fetch("/api/manage_verify_link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action,
+          token: issued.token,
+          dock_email: issued.dock_email || null,
+        }),
+      });
+
+      const data = await safeJson(res);
+
+      if (!res.ok) {
+        setErrorMsg(data?.error || data?.message || `${action} failed.`);
+        return;
+      }
+
+      if (action === "reissue") {
+        const newToken = data?.new_token || "";
+        const newUrl = data?.verify_url || "";
+        const newMessage = [
+          "AdbS TRUCK-DRIVER VERIFICATION",
+          "",
+          issued.load_id ? `Load ID: ${issued.load_id}` : null,
+          "",
+          "OPEN AT DOCK:",
+          newUrl,
+          "",
+          "Dock Instruction:",
+          "When the truck arrives, open the link above and complete verification before releasing the load.",
+          "Enter the DOT and plate shown on the truck, then call the driver using the link.",
+          "",
+          `Expires: ${issued.expires_at ? String(issued.expires_at) : "No Expire"}`,
+        ]
+          .filter(Boolean)
+          .join("\n");
+
+        setIssued((prev) => ({
+          ...prev,
+          token: newToken,
+          verify_url: newUrl,
+          full_message: newMessage,
+          email_status: data?.email_status || prev?.email_status || null,
+          email_error: data?.email_error || null,
+          status: "active",
+        }));
+
+        setStatusMsg(
+          data?.email_status === "sent"
+            ? "Verification link reissued and emailed."
+            : "Verification link reissued."
+        );
+        return;
+      }
+
+      if (action === "lock") {
+        setIssued((prev) => ({ ...prev, status: "locked" }));
+        setStatusMsg("Load verification locked.");
+        return;
+      }
+
+      if (action === "clear") {
+        setIssued((prev) => ({ ...prev, status: "cleared" }));
+        setStatusMsg("Load marked cleared.");
+        return;
+      }
+    } catch {
+      setErrorMsg(`${action} failed due to network error.`);
+    } finally {
+      setActionLoading("");
+    }
+  }
+
+  async function loadAttempts() {
+    if (!issued?.token) return;
+
+    setAttemptsLoading(true);
+    setErrorMsg("");
+    setStatusMsg("");
+
+    try {
+      const res = await fetch("/api/manage_verify_link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "attempts",
+          token: issued.token,
+        }),
+      });
+
+      const data = await safeJson(res);
+
+      if (!res.ok) {
+        setErrorMsg(data?.error || data?.message || "Failed to load attempts.");
+        return;
+      }
+
+      setAttempts(Array.isArray(data?.attempts) ? data.attempts : []);
+      setStatusMsg("Attempts loaded.");
+    } catch {
+      setErrorMsg("Failed to load attempts.");
+    } finally {
+      setAttemptsLoading(false);
     }
   }
 
@@ -337,9 +436,6 @@ export default function ControlCenter() {
                   placeholder="Rob Q1"
                   autoComplete="off"
                 />
-                <div style={{ opacity: 0.7, fontSize: 12, marginTop: 6 }}>
-                  Simple identifier so checks tie to the correct load.
-                </div>
               </div>
 
               <div>
@@ -352,9 +448,6 @@ export default function ControlCenter() {
                   inputMode="email"
                   autoComplete="off"
                 />
-                <div style={{ opacity: 0.7, fontSize: 12, marginTop: 6 }}>
-                  If entered, the system emails the verification link automatically.
-                </div>
               </div>
 
               <div>
@@ -367,9 +460,6 @@ export default function ControlCenter() {
                   inputMode="numeric"
                   autoComplete="off"
                 />
-                <div style={{ opacity: 0.7, fontSize: 12, marginTop: 6 }}>
-                  If blank, system uses the default Dock PIN.
-                </div>
               </div>
 
               <div>
@@ -382,9 +472,6 @@ export default function ControlCenter() {
                   inputMode="tel"
                   autoComplete="off"
                 />
-                <div style={{ opacity: 0.7, fontSize: 12, marginTop: 6 }}>
-                  Auto-formats 123-456-7890.
-                </div>
               </div>
 
               <div>
@@ -397,7 +484,6 @@ export default function ControlCenter() {
                   inputMode="text"
                   autoComplete="off"
                 />
-                <div style={{ opacity: 0.7, fontSize: 12, marginTop: 6 }}>Compared digits-only.</div>
               </div>
 
               <div>
@@ -410,7 +496,6 @@ export default function ControlCenter() {
                   inputMode="text"
                   autoComplete="off"
                 />
-                <div style={{ opacity: 0.7, fontSize: 12, marginTop: 6 }}>Auto-uppercase while typing.</div>
               </div>
 
               <div>
@@ -420,15 +505,6 @@ export default function ControlCenter() {
                     <div style={chip(mode === "auto")} onClick={() => setMode("auto")}>Auto 24h</div>
                     <div style={chip(mode === "pick")} onClick={() => setMode("pick")}>Pick</div>
                     <div style={chip(mode === "none")} onClick={() => setMode("none")}>No Expire</div>
-                  </div>
-
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                    <button style={btnStyle(false)} onClick={resetStartNow} type="button">
-                      Reset Start = Now
-                    </button>
-                    <button style={btnStyle(false)} onClick={resetExpire24h} type="button">
-                      Reset Expire = +24h
-                    </button>
                   </div>
 
                   <input
@@ -445,10 +521,6 @@ export default function ControlCenter() {
                     onChange={(e) => setExpiresAt(e.target.value)}
                     disabled={mode !== "pick"}
                   />
-
-                  <div style={{ opacity: 0.7, fontSize: 12 }}>
-                    Auto uses Now → +24h. Pick lets you edit. No Expire sends expires_at as null.
-                  </div>
                 </div>
               </div>
             </div>
@@ -478,6 +550,8 @@ export default function ControlCenter() {
                 <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 10 }}>
                   Load ID: <span style={{ fontWeight: 900 }}>{issued.load_id || "(none)"}</span>
                   <br />
+                  Status: <span style={{ fontWeight: 900 }}>{issued.status || "active"}</span>
+                  <br />
                   Expires: <span style={{ fontWeight: 900 }}>{issued.expires_at ? String(issued.expires_at) : "No Expire"}</span>
                   <br />
                   Dock Email: <span style={{ fontWeight: 900 }}>{issued.dock_email || "(manual only)"}</span>
@@ -491,35 +565,64 @@ export default function ControlCenter() {
                   </div>
                 ) : null}
 
-                <div style={{ display: "grid", gap: 10 }}>
-                  <div>
-                    <div style={labelStyle}>Verify URL</div>
-                    <input style={inputStyle} value={issued.verify_url || ""} readOnly />
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
-                      <button
-                        style={btnStyle(false)}
-                        onClick={async () => {
-                          const ok = await safeCopy(issued.verify_url || "");
-                          setStatusMsg(ok ? "Link copied." : "Copy failed.");
-                        }}
-                      >
-                        Copy AdbS ID Link
-                      </button>
+                <div>
+                  <div style={labelStyle}>Verify URL</div>
+                  <input style={inputStyle} value={issued.verify_url || ""} readOnly />
 
-                      <button
-                        style={btnStyle(false)}
-                        onClick={async () => {
-                          const ok = await safeCopy(issued.full_message || "");
-                          setStatusMsg(ok ? "Full message copied." : "Copy failed.");
-                        }}
-                      >
-                        Copy Full Message
-                      </button>
-                    </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
+                    <button
+                      style={btnStyle(false)}
+                      onClick={async () => {
+                        const ok = await safeCopy(issued.verify_url || "");
+                        setStatusMsg(ok ? "Link copied." : "Copy failed.");
+                      }}
+                    >
+                      Copy AdbS ID Link
+                    </button>
+
+                    <button
+                      style={btnStyle(false)}
+                      onClick={async () => {
+                        const ok = await safeCopy(issued.full_message || "");
+                        setStatusMsg(ok ? "Full message copied." : "Copy failed.");
+                      }}
+                    >
+                      Copy Full Message
+                    </button>
                   </div>
 
-                  <div style={{ opacity: 0.75, fontSize: 12, lineHeight: 1.35 }}>
-                    Automatic email is now supported when Dock Email is entered.
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 12 }}>
+                    <button
+                      style={btnStyle(false)}
+                      disabled={actionLoading === "reissue"}
+                      onClick={() => handleLever("reissue")}
+                    >
+                      {actionLoading === "reissue" ? "Reissuing..." : "Reissue Verification Link"}
+                    </button>
+
+                    <button
+                      style={btnStyle(false)}
+                      disabled={actionLoading === "lock"}
+                      onClick={() => handleLever("lock")}
+                    >
+                      {actionLoading === "lock" ? "Locking..." : "Lock Load Verification"}
+                    </button>
+
+                    <button
+                      style={btnStyle(false)}
+                      disabled={actionLoading === "clear"}
+                      onClick={() => handleLever("clear")}
+                    >
+                      {actionLoading === "clear" ? "Marking..." : "Mark Load Cleared"}
+                    </button>
+
+                    <button
+                      style={btnStyle(false)}
+                      disabled={attemptsLoading}
+                      onClick={loadAttempts}
+                    >
+                      {attemptsLoading ? "Loading..." : "Review Attempts"}
+                    </button>
                   </div>
                 </div>
               </div>
@@ -527,25 +630,42 @@ export default function ControlCenter() {
           </div>
 
           <div style={cardStyle}>
-            <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 10 }}>Status</div>
+            <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 10 }}>Attempt Review</div>
 
-            <div style={{ fontSize: 14, opacity: 0.9, lineHeight: 1.45 }}>
-              <div style={{ marginBottom: 10 }}>
-                <b>Issuer UI:</b> Control Center ✅
+            {!attempts.length ? (
+              <div style={{ opacity: 0.75, fontSize: 14 }}>
+                No attempt history loaded yet.
               </div>
-              <div style={{ marginBottom: 10 }}>
-                <b>Formatting:</b> Phone auto-hyphenates; USDOT/Plate uppercase ✅
+            ) : (
+              <div style={{ display: "grid", gap: 10 }}>
+                {attempts.map((a, idx) => (
+                  <div
+                    key={`${a.id || idx}-${idx}`}
+                    style={{
+                      border: "1px solid rgba(255,255,255,0.12)",
+                      borderRadius: 12,
+                      padding: 12,
+                      background: "rgba(255,255,255,0.04)",
+                    }}
+                  >
+                    <div style={{ fontWeight: 900, marginBottom: 6 }}>
+                      {String(a.result || "").toLowerCase().includes("clear") ? "CLEAR" : "ATTEMPT"}
+                    </div>
+                    <div style={{ fontSize: 13, opacity: 0.9, lineHeight: 1.45 }}>
+                      DOT Entered: <b>{a.entered_usdot || "(blank)"}</b>
+                      <br />
+                      Plate Entered: <b>{a.entered_plate || "(blank)"}</b>
+                      <br />
+                      Driver Answered: <b>{String(a.driver_answered ?? "").toUpperCase()}</b>
+                      <br />
+                      Result: <b>{a.result || "(unknown)"}</b>
+                      <br />
+                      Time: <b>{a.created_at || a.checked_at || "(unknown)"}</b>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div style={{ marginBottom: 10 }}>
-                <b>Dock PIN:</b> per-link optional; falls back to default ✅
-              </div>
-              <div style={{ marginBottom: 10 }}>
-                <b>Dock Email:</b> automatic send supported ✅
-              </div>
-              <div style={{ opacity: 0.75 }}>
-                Next: silent alert email + search records + unlock/revoke controls.
-              </div>
-            </div>
+            )}
           </div>
         </div>
 
