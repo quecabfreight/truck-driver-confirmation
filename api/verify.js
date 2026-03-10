@@ -10,101 +10,177 @@ const supabase = createClient(
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-export default async function handler(req, res) {
+function normalizeDOT(value) {
+  return String(value || "").replace(/\D/g, "");
+}
 
+function normalizePlate(value) {
+  return String(value || "").trim().toUpperCase();
+}
+
+function normalizeAnswered(value) {
+  if (value === true) return true;
+  const v = String(value || "").trim().toUpperCase();
+  return v === "YES" || v === "Y" || v === "TRUE";
+}
+
+export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { token, entered_usdot, entered_plate, driver_answered } = req.body;
+  try {
+    const { token, entered_usdot, entered_plate, driver_answered } = req.body || {};
 
-  if (!token) {
-    return res.status(400).json({ error: "Missing token" });
-  }
+    if (!token) {
+      return res.status(400).json({ error: "Missing token" });
+    }
 
-  // Fetch verification link record
-  const { data: link, error } = await supabase
-    .from("verify_links")
-    .select("*")
-    .eq("token", token)
-    .single();
+    const { data: link, error: linkError } = await supabase
+      .from("verify_links")
+      .select("*")
+      .eq("token", token)
+      .single();
 
-  if (error || !link) {
-    return res.status(404).json({ error: "Verification link not found" });
-  }
+    if (linkError || !link) {
+      console.error("verify.js: verify_links lookup failed", linkError);
+      return res.status(404).json({ error: "Verification link not found" });
+    }
 
-  // Normalize comparisons
-  const enteredDOT = String(entered_usdot).replace(/\D/g, "");
-  const enteredPlate = String(entered_plate).toUpperCase();
+    const enteredDOT = normalizeDOT(entered_usdot);
+    const enteredPlate = normalizePlate(entered_plate);
+    const recordDOT = normalizeDOT(link.usdot_on_record);
+    const recordPlate = normalizePlate(link.plate_on_record);
+    const phoneMatch = normalizeAnswered(driver_answered);
 
-  const recordDOT = String(link.usdot_on_record).replace(/\D/g, "");
-  const recordPlate = String(link.plate_on_record).toUpperCase();
+    const dotMatch = enteredDOT === recordDOT;
+    const plateMatch = enteredPlate === recordPlate;
 
-  const dotMatch = enteredDOT === recordDOT;
-  const plateMatch = enteredPlate === recordPlate;
-  const phoneMatch = driver_answered === "YES";
+    const result =
+      dotMatch && plateMatch && phoneMatch
+        ? "CLEAR_TO_LOAD"
+        : "CAUTION_ALERT";
 
-  const result =
-    dotMatch && plateMatch && phoneMatch
-      ? "CLEAR_TO_LOAD"
-      : "CAUTION_ALERT";
+    const { error: insertError } = await supabase.from("verify_checks").insert({
+      token,
+      entered_usdot: enteredDOT,
+      entered_plate: enteredPlate,
+      driver_answered: phoneMatch,
+      result,
+      checked_at: new Date().toISOString()
+    });
 
-  // Log attempt
-  await supabase.from("verify_checks").insert({
-    token: token,
-    entered_usdot: enteredDOT,
-    entered_plate: enteredPlate,
-    driver_answered: driver_answered,
-    result: result,
-    checked_at: new Date().toISOString()
-  });
+    if (insertError) {
+      console.error("verify.js: verify_checks insert failed", insertError);
+      return res.status(500).json({
+        error: "Failed to log verification attempt",
+        detail: insertError.message || String(insertError)
+      });
+    }
 
-  // Count attempts
-  const { data: attempts } = await supabase
-    .from("verify_checks")
-    .select("result")
-    .eq("token", token);
+    const { data: attempts, error: attemptsError } = await supabase
+      .from("verify_checks")
+      .select("result, checked_at")
+      .eq("token", token)
+      .order("checked_at", { ascending: true });
 
-  const failedAttempts = attempts.filter(
-    (a) => a.result === "CAUTION_ALERT"
-  ).length;
+    if (attemptsError) {
+      console.error("verify.js: verify_checks read failed", attemptsError);
+      return res.status(500).json({
+        error: "Failed to read verification attempts",
+        detail: attemptsError.message || String(attemptsError)
+      });
+    }
 
-  // Trigger silent alert after 3 failures
-  if (failedAttempts >= 3) {
+    const failedAttempts = (attempts || []).filter(
+      (a) => a.result === "CAUTION_ALERT"
+    ).length;
 
-    const alertEmail =
-      link.issuer_email ||
-      process.env.ADBS_ALERT_EMAIL;
+    let alertTriggered = false;
+    let alertSent = false;
+    let alertTo = null;
+    let alertError = null;
+    let resendData = null;
 
-    if (alertEmail) {
-      try {
-        await resend.emails.send({
-          from: process.env.ADBS_EMAIL_FROM,
-          to: alertEmail,
-          subject: "AdbS Fraud Alert — Multiple Failed Verification Attempts",
-          html: `
-            <h2>AdbS Alert</h2>
+    if (failedAttempts >= 3) {
+      alertTriggered = true;
 
-            <p>Multiple failed Truck-Driver verification attempts detected.</p>
+      const alertEmail =
+        String(link.issuer_email || "").trim() ||
+        String(process.env.ADBS_ALERT_EMAIL || "").trim() ||
+        null;
 
-            <b>Load ID:</b> ${link.load_id}<br/>
-            <b>Verification Token:</b> ${token}<br/>
-            <b>Failed Attempts:</b> ${failedAttempts}<br/>
-            <b>Time:</b> ${new Date().toLocaleString()}<br/><br/>
+      alertTo = alertEmail;
 
-            <b>Verify Page:</b><br/>
-            https://quecabadbs.com/v.html?t=${token}
-          `
-        });
-      } catch (err) {
-        console.error("Silent alert email failed:", err);
+      if (!process.env.RESEND_API_KEY) {
+        alertError = "Missing RESEND_API_KEY";
+        console.error("verify.js: Missing RESEND_API_KEY");
+      } else if (!process.env.ADBS_EMAIL_FROM) {
+        alertError = "Missing ADBS_EMAIL_FROM";
+        console.error("verify.js: Missing ADBS_EMAIL_FROM");
+      } else if (!alertEmail) {
+        alertError = "No alert recipient found (issuer_email and ADBS_ALERT_EMAIL are both empty)";
+        console.error("verify.js: No alert recipient found");
+      } else {
+        try {
+          console.log("verify.js: sending silent alert", {
+            to: alertEmail,
+            from: process.env.ADBS_EMAIL_FROM,
+            load_id: link.load_id,
+            token,
+            failedAttempts
+          });
+
+          const sendResult = await resend.emails.send({
+            from: process.env.ADBS_EMAIL_FROM,
+            to: alertEmail,
+            subject: "AdbS Fraud Alert — Multiple Failed Verification Attempts",
+            html: `
+              <h2>AdbS Alert</h2>
+              <p>Multiple failed Truck-Driver verification attempts detected.</p>
+              <p><strong>Load ID:</strong> ${link.load_id || "(none)"}</p>
+              <p><strong>Verification Token:</strong> ${token}</p>
+              <p><strong>Failed Attempts:</strong> ${failedAttempts}</p>
+              <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
+              <p><strong>Verify Page:</strong><br/>https://quecabadbs.com/v.html?t=${token}</p>
+            `
+          });
+
+          resendData = sendResult;
+
+          if (sendResult?.error) {
+            alertError = sendResult.error.message || JSON.stringify(sendResult.error);
+            console.error("verify.js: resend returned error", sendResult.error);
+          } else {
+            alertSent = true;
+            console.log("verify.js: silent alert sent", sendResult);
+          }
+        } catch (err) {
+          alertError = err?.message || String(err);
+          console.error("verify.js: silent alert email failed", err);
+        }
       }
     }
 
+    return res.status(200).json({
+      result,
+      debug: {
+        dotMatch,
+        plateMatch,
+        phoneMatch,
+        failedAttempts,
+        alertTriggered,
+        alertSent,
+        alertTo,
+        alertError,
+        resendData
+      }
+    });
+  } catch (err) {
+    console.error("verify.js: unexpected error", err);
+    return res.status(500).json({
+      error: "Unexpected verify error",
+      detail: err?.message || String(err)
+    });
   }
-
-  return res.status(200).json({
-    result
-  });
-
 }
