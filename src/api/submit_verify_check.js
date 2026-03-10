@@ -29,17 +29,6 @@ function pickFirst(...values) {
   return "";
 }
 
-function isFailureResult(value) {
-  const r = String(value || "").trim().toLowerCase();
-  return (
-    r === "caution" ||
-    r === "caution_alert" ||
-    r === "caution alert" ||
-    r === "do_not_load" ||
-    r === "do not load"
-  );
-}
-
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ ok: false, error: "Method not allowed" });
@@ -87,7 +76,7 @@ export default async function handler(req, res) {
 
     const isClear = dotMatch && plateMatch && phoneMatch;
 
-    const resultCode = isClear ? "CLEAR_TO_LOAD" : "caution";
+    const resultCode = isClear ? "clear" : "caution";
     const verdict = isClear ? "CLEAR TO LOAD" : "CAUTION ALERT — DO NOT LOAD";
 
     const { error: insertError } = await supabase.from("verify_checks").insert({
@@ -107,29 +96,13 @@ export default async function handler(req, res) {
       });
     }
 
-    const { data: attempts, error: attemptsError } = await supabase
-      .from("verify_checks")
-      .select("result, checked_at")
-      .eq("token", token);
-
-    if (attemptsError) {
-      console.error("submit_verify_check: verify_checks read failed", attemptsError);
-      return res.status(500).json({
-        ok: false,
-        error: "Failed to review verification attempts"
-      });
-    }
-
-    const failedAttempts = (attempts || []).filter((a) => isFailureResult(a.result)).length;
-
-    let alertTriggered = false;
     let alertSent = false;
-    let alertTo = "";
     let alertError = "";
+    let alertTo = "";
 
-    if (failedAttempts >= 3) {
-      alertTriggered = true;
-
+    // TEMP TEST MODE:
+    // send alert on EVERY caution result so we can prove the alert path works
+    if (!isClear) {
       const alertEmail = pickFirst(
         link.issuer_email,
         link.authorized_email,
@@ -154,15 +127,18 @@ export default async function handler(req, res) {
           const emailResult = await resend.emails.send({
             from: process.env.ADBS_EMAIL_FROM,
             to: alertTo,
-            subject: "AdbS Fraud Alert — Multiple Failed Verification Attempts",
+            subject: "TEST ALERT — AdbS Caution Triggered",
             html: `
               <div style="font-family: Arial, sans-serif; line-height: 1.5;">
-                <h2>AdbS Alert</h2>
-                <p>Multiple failed Truck-Driver verification attempts detected.</p>
+                <h2>AdbS Test Alert</h2>
+                <p>This is a temporary test-mode alert.</p>
+                <p>A caution result was triggered on the verification page.</p>
 
                 <p><strong>Load ID:</strong> ${link.load_id || "(none)"}</p>
                 <p><strong>Verification Token:</strong> ${token}</p>
-                <p><strong>Failed Attempts:</strong> ${failedAttempts}</p>
+                <p><strong>Entered USDOT:</strong> ${enteredUSDOT}</p>
+                <p><strong>Entered Plate:</strong> ${enteredPlate}</p>
+                <p><strong>Driver Answered:</strong> ${driverAnswered ? "YES" : "NO"}</p>
                 <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
 
                 <p><strong>Verify URL:</strong><br/>
@@ -177,15 +153,14 @@ export default async function handler(req, res) {
             console.error("submit_verify_check: resend returned error", emailResult.error);
           } else {
             alertSent = true;
-            console.log("submit_verify_check: silent alert sent", {
+            console.log("submit_verify_check: test alert sent", {
               to: alertTo,
-              load_id: link.load_id,
-              failedAttempts
+              load_id: link.load_id
             });
           }
         } catch (err) {
           alertError = err?.message || String(err);
-          console.error("submit_verify_check: silent alert send failed", err);
+          console.error("submit_verify_check: test alert send failed", err);
         }
       }
     }
@@ -193,12 +168,9 @@ export default async function handler(req, res) {
     return res.status(200).json({
       ok: true,
       result: resultCode,
-      result_code: resultCode,
       verdict,
       clear_to_load: isClear,
       caution_alert: !isClear,
-      failed_attempts: failedAttempts,
-      alert_triggered: alertTriggered,
       alert_sent: alertSent,
       alert_to: alertTo,
       alert_error: alertError
