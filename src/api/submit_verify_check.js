@@ -29,6 +29,17 @@ function pickFirst(...values) {
   return "";
 }
 
+function isFailureResult(value) {
+  const r = String(value || "").trim().toLowerCase();
+  return (
+    r === "caution" ||
+    r === "caution_alert" ||
+    r === "caution alert" ||
+    r === "do_not_load" ||
+    r === "do not load"
+  );
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ ok: false, error: "Method not allowed" });
@@ -74,11 +85,10 @@ export default async function handler(req, res) {
     const plateMatch = enteredPlate === recordPlate;
     const phoneMatch = driverAnswered === true;
 
-    const resultCode =
-      dotMatch && plateMatch && phoneMatch ? "CLEAR_TO_LOAD" : "CAUTION_ALERT";
+    const isClear = dotMatch && plateMatch && phoneMatch;
 
-    const verdict =
-      resultCode === "CLEAR_TO_LOAD" ? "CLEAR TO LOAD" : "CAUTION ALERT — DO NOT LOAD";
+    const resultCode = isClear ? "CLEAR_TO_LOAD" : "caution";
+    const verdict = isClear ? "CLEAR TO LOAD" : "CAUTION ALERT — DO NOT LOAD";
 
     const { error: insertError } = await supabase.from("verify_checks").insert({
       token,
@@ -110,10 +120,7 @@ export default async function handler(req, res) {
       });
     }
 
-    const failedAttempts = (attempts || []).filter((a) => {
-      const r = String(a.result || "").toUpperCase();
-      return r === "CAUTION_ALERT" || r === "CAUTION ALERT" || r === "DO_NOT_LOAD";
-    }).length;
+    const failedAttempts = (attempts || []).filter((a) => isFailureResult(a.result)).length;
 
     let alertTriggered = false;
     let alertSent = false;
@@ -188,8 +195,8 @@ export default async function handler(req, res) {
       result: resultCode,
       result_code: resultCode,
       verdict,
-      clear_to_load: resultCode === "CLEAR_TO_LOAD",
-      caution_alert: resultCode !== "CLEAR_TO_LOAD",
+      clear_to_load: isClear,
+      caution_alert: !isClear,
       failed_attempts: failedAttempts,
       alert_triggered: alertTriggered,
       alert_sent: alertSent,
