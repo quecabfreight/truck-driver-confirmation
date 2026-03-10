@@ -1,207 +1,169 @@
-// /api/submit_verify_check.js
-// Writes a verify_checks row, updates verify_links counters,
-// and triggers a "silent alert" after 3 failed attempts.
+import { createClient } from "@supabase/supabase-js";
+import { Resend } from "resend";
 
-function json(res, code, obj) {
-  res.statusCode = code;
-  res.setHeader("Content-Type", "application/json; charset=utf-8");
-  res.setHeader("Cache-Control", "no-store");
-  res.end(JSON.stringify(obj));
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+function digitsOnly(value) {
+  return String(value || "").replace(/\D/g, "");
 }
 
-function onlyDigits(s) {
-  return String(s || "").replace(/\D+/g, "");
+function upper(value) {
+  return String(value || "").trim().toUpperCase();
 }
 
-function toUpperClean(s) {
-  return String(s || "").toUpperCase().trim();
-}
-
-function nowIso() {
-  return new Date().toISOString();
-}
-
-function isExpired(link) {
-  const now = Date.now();
-  const starts = link?.starts_at ? Date.parse(link.starts_at) : NaN;
-  const expires = link?.expires_at ? Date.parse(link.expires_at) : NaN;
-
-  if (!Number.isNaN(starts) && now < starts) return true;
-  if (!Number.isNaN(expires) && now > expires) return true;
-  return false;
+function truthyYes(value) {
+  if (value === true) return true;
+  const v = String(value || "").trim().toUpperCase();
+  return v === "YES" || v === "Y" || v === "TRUE";
 }
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") return json(res, 405, { ok: false, error: "Method not allowed" });
-
-  const SUPABASE_URL = process.env.SUPABASE_URL;
-  const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-    return json(res, 500, { ok: false, error: "Server missing Supabase env vars." });
+  if (req.method !== "POST") {
+    return res.status(405).json({ ok: false, error: "Method not allowed." });
   }
 
-  let body = {};
   try {
-    body = typeof req.body === "string" ? JSON.parse(req.body) : (req.body || {});
-  } catch {
-    return json(res, 400, { ok: false, error: "Invalid JSON body." });
-  }
+    const body =
+      typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
 
-  const token = String(body.token || "").trim();
-  const entered_usdot = toUpperClean(body.entered_usdot);
-  const entered_plate = toUpperClean(body.entered_plate);
-  const driver_answered = !!body.driver_answered;
-
-  if (!token) return json(res, 400, { ok: false, error: "Missing token." });
-  if (!entered_usdot) return json(res, 400, { ok: false, error: "Enter DOT." });
-  if (!entered_plate) return json(res, 400, { ok: false, error: "Enter Plate." });
-
-  // 1) Fetch link by token
-  let link = null;
-  try {
-    const r = await fetch(
-      `${SUPABASE_URL}/rest/v1/verify_links?token=eq.${encodeURIComponent(token)}&select=*`,
-      {
-        headers: {
-          apikey: SUPABASE_SERVICE_ROLE_KEY,
-          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-        },
-      }
+    const token = String(body.token || body.t || "").trim();
+    const entered_usdot = digitsOnly(body.entered_usdot || body.usdot || "");
+    const entered_plate = upper(body.entered_plate || body.plate || "");
+    const driver_answered = truthyYes(
+      body.driver_answered ?? body.driverAnswered ?? body.answered
     );
 
-    const text = await r.text();
-    let data = null;
-    try { data = JSON.parse(text); } catch { data = { raw: text }; }
-
-    if (!r.ok) {
-      const msg = data?.message || data?.error || `Supabase read failed (${r.status}).`;
-      return json(res, 500, { ok: false, error: msg });
+    if (!token) {
+      return res.status(400).json({ ok: false, error: "Missing token." });
     }
 
-    link = Array.isArray(data) ? data[0] : null;
-    if (!link) return json(res, 404, { ok: false, error: "Verify link not found." });
+    const { data: link, error: linkError } = await supabase
+      .from("verify_links")
+      .select("*")
+      .eq("token", token)
+      .single();
 
-    if (String(link.status || "").toLowerCase() !== "active") {
-      return json(res, 403, { ok: false, error: "Verify link is not active." });
+    if (linkError || !link) {
+      console.error("submit_verify_check: verify_links lookup failed", linkError);
+      return res.status(404).json({ ok: false, error: "Verification link not found." });
     }
 
-    if (isExpired(link)) {
-      return json(res, 403, { ok: false, error: "Verify link is not active (time window ended)." });
-    }
-  } catch {
-    return json(res, 500, { ok: false, error: "Network error reading verify link." });
-  }
+    const usdot_match = entered_usdot === digitsOnly(link.usdot_on_record);
+    const plate_match = entered_plate === upper(link.plate_on_record);
+    const phone_match = driver_answered === true;
 
-  // 2) Compute pass/fail
-  const on_usdot_digits = onlyDigits(link.usdot_on_record);
-  const entered_usdot_digits = onlyDigits(entered_usdot);
+    const result = usdot_match && plate_match && phone_match ? "clear" : "caution";
 
-  const on_plate = toUpperClean(link.plate_on_record);
-  const entered_plate_clean = toUpperClean(entered_plate);
-
-  const usdot_match = !!on_usdot_digits && (entered_usdot_digits === on_usdot_digits);
-  const plate_match = !!on_plate && (entered_plate_clean === on_plate);
-
-  // Your rule: final verdict is decided ONLY on submit.
-  // Clear requires: DOT match AND Plate match AND driver answered YES.
-  const verdict = (usdot_match && plate_match && driver_answered) ? "clear" : "caution";
-
-  // 3) Insert verify_check row (audit log)
-  const checkRow = {
-    token,
-    load_id: link.load_id || null,
-    entered_usdot: entered_usdot,
-    entered_plate: entered_plate,
-    driver_answered: driver_answered,
-    result: verdict,
-    checked_at: nowIso(),
-  };
-
-  try {
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/verify_checks`, {
-      method: "POST",
-      headers: {
-        apikey: SUPABASE_SERVICE_ROLE_KEY,
-        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-        "Content-Type": "application/json",
-        Prefer: "return=representation",
-      },
-      body: JSON.stringify(checkRow),
+    const { error: insertError } = await supabase.from("verify_checks").insert({
+      token,
+      entered_usdot,
+      entered_plate,
+      driver_answered,
+      result,
+      checked_at: new Date().toISOString()
     });
 
-    const text = await r.text();
-    let data = null;
-    try { data = JSON.parse(text); } catch { data = { raw: text }; }
-
-    if (!r.ok) {
-      const msg = data?.message || data?.error || `Supabase insert failed (${r.status}).`;
-      return json(res, 500, { ok: false, error: msg });
-    }
-  } catch {
-    return json(res, 500, { ok: false, error: "Network error writing verify check." });
-  }
-
-  // 4) Update link fail counter + trigger "silent alert" after 3 failed attempts
-  let alert_triggered = false;
-  let failed_attempts_next = Number(link.failed_attempts || 0);
-
-  if (verdict === "caution") {
-    failed_attempts_next = failed_attempts_next + 1;
-
-    const alreadySent = !!link.alert_sent;
-
-    if (!alreadySent && failed_attempts_next >= 3) {
-      alert_triggered = true;
+    if (insertError) {
+      console.error("submit_verify_check: verify_checks insert failed", insertError);
+      return res.status(500).json({ ok: false, error: "Failed to save verification attempt." });
     }
 
-    const patch = {
-      failed_attempts: failed_attempts_next,
-      alert_sent: alreadySent ? true : (alert_triggered ? true : false),
-      flagged_at: alert_triggered ? nowIso() : (link.flagged_at || null),
-      // OPTIONAL: you can also set status="flagged" if you want a hard lock
-      // status: alert_triggered ? "flagged" : "active",
-    };
+    const { data: attempts, error: attemptsError } = await supabase
+      .from("verify_checks")
+      .select("result")
+      .eq("token", token);
 
-    try {
-      const r = await fetch(
-        `${SUPABASE_URL}/rest/v1/verify_links?token=eq.${encodeURIComponent(token)}`,
-        {
-          method: "PATCH",
-          headers: {
-            apikey: SUPABASE_SERVICE_ROLE_KEY,
-            Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-            "Content-Type": "application/json",
-            Prefer: "return=representation",
-          },
-          body: JSON.stringify(patch),
+    if (attemptsError) {
+      console.error("submit_verify_check: verify_checks read failed", attemptsError);
+      return res.status(500).json({ ok: false, error: "Failed to count verification attempts." });
+    }
+
+    const failed_attempts_next = (attempts || []).filter(
+      (a) => String(a.result || "").trim().toLowerCase() === "caution"
+    ).length;
+
+    let alert_triggered = false;
+    let alert_error = "";
+
+    if (failed_attempts_next >= 3) {
+      const alert_to = String(
+        link.issuer_email ||
+        link.authorized_email ||
+        process.env.ADBS_ALERT_EMAIL ||
+        ""
+      ).trim();
+
+      if (!alert_to) {
+        alert_error = "No alert recipient found.";
+        console.error("submit_verify_check: no alert recipient found");
+      } else if (!process.env.RESEND_API_KEY) {
+        alert_error = "Missing RESEND_API_KEY.";
+        console.error("submit_verify_check: missing RESEND_API_KEY");
+      } else if (!process.env.ADBS_EMAIL_FROM) {
+        alert_error = "Missing ADBS_EMAIL_FROM.";
+        console.error("submit_verify_check: missing ADBS_EMAIL_FROM");
+      } else {
+        try {
+          const sendResult = await resend.emails.send({
+            from: process.env.ADBS_EMAIL_FROM,
+            to: alert_to,
+            subject: `AdbS Fraud Alert — ${link.load_id || "Load"}`,
+            html: `
+              <div style="font-family:Arial,sans-serif;line-height:1.5;">
+                <h2>AdbS Fraud Alert</h2>
+                <p>Three or more failed Truck-Driver verification attempts were recorded.</p>
+
+                <p><strong>Load ID:</strong> ${link.load_id || "(none)"}</p>
+                <p><strong>Failed Attempts:</strong> ${failed_attempts_next}</p>
+                <p><strong>Token:</strong> ${token}</p>
+                <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
+
+                <p><strong>Verify URL:</strong><br/>
+                https://quecabadbs.com/v.html?t=${token}</p>
+              </div>
+            `
+          });
+
+          if (sendResult?.error) {
+            alert_error = sendResult.error.message || JSON.stringify(sendResult.error);
+            console.error("submit_verify_check: resend returned error", sendResult.error);
+          } else {
+            alert_triggered = true;
+            console.log("submit_verify_check: silent alert sent", {
+              to: alert_to,
+              load_id: link.load_id,
+              failed_attempts_next
+            });
+          }
+        } catch (err) {
+          alert_error = err?.message || String(err);
+          console.error("submit_verify_check: silent alert send failed", err);
         }
-      );
-
-      const text = await r.text();
-      let data = null;
-      try { data = JSON.parse(text); } catch { data = { raw: text }; }
-
-      if (!r.ok) {
-        // Don't block dock flow if patch fails — still return verdict.
-        // But surface debug to issuer later if needed.
       }
-    } catch {
-      // Same: don’t block dock flow.
     }
-  }
 
-  // 5) Return result
-  // IMPORTANT: We are NOT revealing on-record DOT/Plate.
-  // We only return verdict + whether alert was triggered.
-  return json(res, 200, {
-    ok: true,
-    result: verdict,
-    alert_triggered,
-    failed_attempts: failed_attempts_next,
-    load_id: link.load_id || null,
-    note: alert_triggered
-      ? "Silent alert triggered (3 failed attempts). Load should NOT be released."
-      : "Verification recorded.",
-  });
+    return res.status(200).json({
+      ok: true,
+      result,
+      alert_triggered,
+      failed_attempts: failed_attempts_next,
+      load_id: link.load_id || null,
+      note: alert_triggered
+        ? "Silent alert triggered (3 failed attempts). Load should NOT be released."
+        : "Verification recorded.",
+      alert_error
+    });
+  } catch (err) {
+    console.error("submit_verify_check: unexpected error", err);
+    return res.status(500).json({
+      ok: false,
+      error: "Unexpected server error.",
+      detail: err?.message || String(err)
+    });
+  }
 }
