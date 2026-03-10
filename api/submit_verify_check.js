@@ -28,6 +28,35 @@ function pickFirst(...values) {
   return "";
 }
 
+async function sendAlertEmail({ to, from, subject, html }) {
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      from,
+      to,
+      subject,
+      html
+    })
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    const message =
+      data?.message ||
+      data?.error?.message ||
+      JSON.stringify(data) ||
+      `Resend API error (${response.status})`;
+    throw new Error(message);
+  }
+
+  return data;
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ ok: false, error: "Method not allowed." });
@@ -133,12 +162,9 @@ export default async function handler(req, res) {
         console.error("submit_verify_check alert: missing ADBS_EMAIL_FROM");
       } else {
         try {
-          const { Resend } = await import("resend");
-          const resend = new Resend(process.env.RESEND_API_KEY);
-
-          const sendResult = await resend.emails.send({
-            from: process.env.ADBS_EMAIL_FROM,
+          await sendAlertEmail({
             to: alert_to,
+            from: process.env.ADBS_EMAIL_FROM,
             subject: `AdbS Fraud Alert — ${link.load_id || "Load"}`,
             html: `
               <div style="font-family:Arial,sans-serif;line-height:1.5;">
@@ -153,12 +179,7 @@ export default async function handler(req, res) {
             `
           });
 
-          if (sendResult && sendResult.error) {
-            alert_error = sendResult.error.message || JSON.stringify(sendResult.error);
-            console.error("submit_verify_check alert sendResult.error:", sendResult.error);
-          } else {
-            alert_triggered = true;
-          }
+          alert_triggered = true;
         } catch (err) {
           alert_error = err?.message || String(err);
           console.error("submit_verify_check alert exception:", err);
