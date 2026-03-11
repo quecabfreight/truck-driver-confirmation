@@ -1,271 +1,186 @@
-const BUILD_TAG = "verify-safe-write-first-01";
+// /api/verify.js
 
-function json(res, code, obj) {
-  res.status(code).setHeader("Content-Type", "application/json; charset=utf-8");
-  res.setHeader("Cache-Control", "no-store");
-  res.end(JSON.stringify(obj));
+import { createClient } from "@supabase/supabase-js";
+import { Resend } from "resend";
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+function normalizeDOT(value) {
+  return String(value || "").replace(/\D/g, "");
 }
 
-function normalizeText(value) {
-  return String(value ?? "").trim().toUpperCase();
+function normalizePlate(value) {
+  return String(value || "").trim().toUpperCase();
 }
 
-async function sbSelectOne(table, query) {
-  const url = `${process.env.SUPABASE_URL}/rest/v1/${table}?${query}`;
-  const resp = await fetch(url, {
-    method: "GET",
-    headers: {
-      apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
-      Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-      Accept: "application/json",
-    },
-  });
-
-  const text = await resp.text();
-  if (!resp.ok) {
-    throw new Error(`Supabase SELECT failed (${resp.status}): ${text}`);
-  }
-
-  const rows = JSON.parse(text || "[]");
-  return Array.isArray(rows) ? rows[0] || null : null;
-}
-
-async function sbInsert(table, row) {
-  const url = `${process.env.SUPABASE_URL}/rest/v1/${table}`;
-  const resp = await fetch(url, {
-    method: "POST",
-    headers: {
-      apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
-      Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-      "Content-Type": "application/json",
-      Prefer: "return=representation",
-    },
-    body: JSON.stringify(row),
-  });
-
-  const text = await resp.text();
-  if (!resp.ok) {
-    throw new Error(`Supabase INSERT failed (${resp.status}): ${text}`);
-  }
-
-  const rows = JSON.parse(text || "[]");
-  return Array.isArray(rows) ? rows[0] || null : null;
-}
-
-async function sbPatch(table, query, row) {
-  const url = `${process.env.SUPABASE_URL}/rest/v1/${table}?${query}`;
-  const resp = await fetch(url, {
-    method: "PATCH",
-    headers: {
-      apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
-      Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-      "Content-Type": "application/json",
-      Prefer: "return=representation",
-    },
-    body: JSON.stringify(row),
-  });
-
-  const text = await resp.text();
-  if (!resp.ok) {
-    throw new Error(`Supabase PATCH failed (${resp.status}): ${text}`);
-  }
-
-  const rows = JSON.parse(text || "[]");
-  return Array.isArray(rows) ? rows[0] || null : null;
-}
-
-async function sendCautionEmail({
-  to,
-  token,
-  enteredUsdot,
-  enteredPlate,
-  driverAnswered,
-  carrierCompany,
-  carrierContactName,
-  carrierContactPhone,
-}) {
-  if (!process.env.RESEND_API_KEY) {
-    return { ok: false, skipped: true, reason: "Missing RESEND_API_KEY" };
-  }
-
-  if (!process.env.ADBS_EMAIL_FROM) {
-    return { ok: false, skipped: true, reason: "Missing ADBS_EMAIL_FROM" };
-  }
-
-  if (!to) {
-    return { ok: false, skipped: true, reason: "No alert recipient available" };
-  }
-
-  const subject = `CAUTION ALERT — DO NOT LOAD (${token})`;
-
-  const html = `
-    <div style="font-family:Arial,sans-serif;background:#0f1720;color:#e8eef7;padding:24px;">
-      <div style="max-width:680px;margin:0 auto;background:#18212c;border:1px solid #2c3948;border-radius:14px;overflow:hidden;">
-        <div style="background:#7f1d1d;color:#fff;padding:18px 20px;font-size:22px;font-weight:800;">
-          CAUTION ALERT — DO NOT LOAD
-        </div>
-        <div style="padding:20px;">
-          <p style="font-size:15px;line-height:1.55;margin-top:0;">
-            A Truck-Driver verification returned a caution result.
-          </p>
-
-          <table style="width:100%;border-collapse:collapse;font-size:14px;">
-            <tr>
-              <td style="padding:8px 0;color:#9fb1c7;">Token</td>
-              <td style="padding:8px 0;color:#ffffff;font-weight:700;">${token || "—"}</td>
-            </tr>
-            <tr>
-              <td style="padding:8px 0;color:#9fb1c7;">Entered USDOT</td>
-              <td style="padding:8px 0;color:#ffffff;font-weight:700;">${enteredUsdot || "—"}</td>
-            </tr>
-            <tr>
-              <td style="padding:8px 0;color:#9fb1c7;">Entered Plate</td>
-              <td style="padding:8px 0;color:#ffffff;font-weight:700;">${enteredPlate || "—"}</td>
-            </tr>
-            <tr>
-              <td style="padding:8px 0;color:#9fb1c7;">Driver Answered</td>
-              <td style="padding:8px 0;color:#ffffff;font-weight:700;">${driverAnswered ? "YES" : "NO"}</td>
-            </tr>
-            <tr>
-              <td style="padding:8px 0;color:#9fb1c7;">Carrier Company</td>
-              <td style="padding:8px 0;color:#ffffff;font-weight:700;">${carrierCompany || "—"}</td>
-            </tr>
-            <tr>
-              <td style="padding:8px 0;color:#9fb1c7;">Carrier Contact Name</td>
-              <td style="padding:8px 0;color:#ffffff;font-weight:700;">${carrierContactName || "—"}</td>
-            </tr>
-            <tr>
-              <td style="padding:8px 0;color:#9fb1c7;">Carrier Contact Phone</td>
-              <td style="padding:8px 0;color:#ffffff;font-weight:700;">${carrierContactPhone || "—"}</td>
-            </tr>
-          </table>
-        </div>
-      </div>
-    </div>
-  `;
-
-  const resp = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from: process.env.ADBS_EMAIL_FROM,
-      to: [to],
-      subject,
-      html,
-    }),
-  });
-
-  const text = await resp.text();
-  if (!resp.ok) {
-    throw new Error(`Resend failed (${resp.status}): ${text}`);
-  }
-
-  return { ok: true };
+function normalizeAnswered(value) {
+  if (value === true) return true;
+  const v = String(value || "").trim().toUpperCase();
+  return v === "YES" || v === "Y" || v === "TRUE";
 }
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
-    return json(res, 405, { ok: false, error: "Method not allowed", build_tag: BUILD_TAG });
+    return res.status(405).json({ error: "Method not allowed" });
   }
 
   try {
-    const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
-    const token = String(body.token ?? "").trim();
-    const enteredUsdot = normalizeText(body.entered_usdot);
-    const enteredPlate = normalizeText(body.entered_plate);
-    const driverAnswered = Boolean(body.driver_answered);
+    const { token, entered_usdot, entered_plate, driver_answered } = req.body || {};
 
     if (!token) {
-      return json(res, 400, { ok: false, error: "Missing token", build_tag: BUILD_TAG });
+      return res.status(400).json({ error: "Missing token" });
     }
 
-    const link = await sbSelectOne("verify_links", `token=eq.${encodeURIComponent(token)}&limit=1`);
+    const { data: link, error: linkError } = await supabase
+      .from("verify_links")
+      .select("*")
+      .eq("token", token)
+      .single();
 
-    if (!link) {
-      return json(res, 404, { ok: false, error: "Link not found", build_tag: BUILD_TAG });
+    if (linkError || !link) {
+      console.error("verify.js: verify_links lookup failed", linkError);
+      return res.status(404).json({ error: "Verification link not found" });
     }
 
-    const now = Date.now();
-    const startsAt = link.starts_at ? new Date(link.starts_at).getTime() : null;
-    const expiresAt = link.expires_at ? new Date(link.expires_at).getTime() : null;
+    const enteredDOT = normalizeDOT(entered_usdot);
+    const enteredPlate = normalizePlate(entered_plate);
+    const recordDOT = normalizeDOT(link.usdot_on_record);
+    const recordPlate = normalizePlate(link.plate_on_record);
+    const phoneMatch = normalizeAnswered(driver_answered);
 
-    if (startsAt && now < startsAt) {
-      return json(res, 403, { ok: false, error: "Verification not active yet", build_tag: BUILD_TAG });
-    }
+    const dotMatch = enteredDOT === recordDOT;
+    const plateMatch = enteredPlate === recordPlate;
 
-    if (expiresAt && now > expiresAt) {
-      return json(res, 403, { ok: false, error: "Verification expired", build_tag: BUILD_TAG });
-    }
+    const result =
+      dotMatch && plateMatch && phoneMatch
+        ? "CLEAR_TO_LOAD"
+        : "CAUTION_ALERT";
 
-    const expectedUsdot = normalizeText(link.usdot_on_record);
-    const expectedPlate = normalizeText(link.plate_on_record);
-
-    const usdotMatch = enteredUsdot && expectedUsdot && enteredUsdot === expectedUsdot;
-    const plateMatch = enteredPlate && expectedPlate && enteredPlate === expectedPlate;
-
-    const passed = Boolean(usdotMatch && plateMatch && driverAnswered);
-    const result = passed ? "CLEAR TO LOAD" : "CAUTION ALERT — DO NOT LOAD";
-
-    // WRITE FIRST: verification log
-    await sbInsert("verify_checks", {
+    const { error: insertError } = await supabase.from("verify_checks").insert({
       token,
-      entered_usdot: enteredUsdot,
+      entered_usdot: enteredDOT,
       entered_plate: enteredPlate,
-      driver_answered: driverAnswered,
+      driver_answered: phoneMatch,
       result,
-      checked_at: new Date().toISOString(),
+      checked_at: new Date().toISOString()
     });
 
-    // WRITE SECOND: link status / last activity marker
-    await sbPatch(
-      "verify_links",
-      `token=eq.${encodeURIComponent(token)}`,
-      {
-        status: passed ? "clear" : "caution",
-      }
-    );
+    if (insertError) {
+      console.error("verify.js: verify_checks insert failed", insertError);
+      return res.status(500).json({
+        error: "Failed to log verification attempt",
+        detail: insertError.message || String(insertError)
+      });
+    }
 
-    let email = { ok: false, skipped: true, reason: "Not needed" };
+    const { data: attempts, error: attemptsError } = await supabase
+      .from("verify_checks")
+      .select("result, checked_at")
+      .eq("token", token)
+      .order("checked_at", { ascending: true });
 
-    // EMAIL THIRD: never let email failure kill verification writes
-    if (!passed) {
-      try {
-        email = await sendCautionEmail({
-          to:
-            link.issuer_email ||
-            link.broker_email ||
-            process.env.ADBS_ALERT_TO ||
-            process.env.ADBS_EMAIL_FROM,
-          token,
-          enteredUsdot,
-          enteredPlate,
-          driverAnswered,
-          carrierCompany: link.carrier_company || "",
-          carrierContactName: link.carrier_contact_name || link.dispatch_contact || "",
-          carrierContactPhone: link.carrier_contact_phone || link.dispatch_phone || "",
-        });
-      } catch (err) {
-        email = { ok: false, skipped: false, reason: err.message };
+    if (attemptsError) {
+      console.error("verify.js: verify_checks read failed", attemptsError);
+      return res.status(500).json({
+        error: "Failed to read verification attempts",
+        detail: attemptsError.message || String(attemptsError)
+      });
+    }
+
+    const failedAttempts = (attempts || []).filter(
+      (a) => a.result === "CAUTION_ALERT"
+    ).length;
+
+    let alertTriggered = false;
+    let alertSent = false;
+    let alertTo = null;
+    let alertError = null;
+    let resendData = null;
+
+    if (failedAttempts >= 3) {
+      alertTriggered = true;
+
+      const alertEmail =
+        String(link.issuer_email || "").trim() ||
+        String(process.env.ADBS_ALERT_EMAIL || "").trim() ||
+        null;
+
+      alertTo = alertEmail;
+
+      if (!process.env.RESEND_API_KEY) {
+        alertError = "Missing RESEND_API_KEY";
+        console.error("verify.js: Missing RESEND_API_KEY");
+      } else if (!process.env.ADBS_EMAIL_FROM) {
+        alertError = "Missing ADBS_EMAIL_FROM";
+        console.error("verify.js: Missing ADBS_EMAIL_FROM");
+      } else if (!alertEmail) {
+        alertError = "No alert recipient found (issuer_email and ADBS_ALERT_EMAIL are both empty)";
+        console.error("verify.js: No alert recipient found");
+      } else {
+        try {
+          console.log("verify.js: sending silent alert", {
+            to: alertEmail,
+            from: process.env.ADBS_EMAIL_FROM,
+            load_id: link.load_id,
+            token,
+            failedAttempts
+          });
+
+          const sendResult = await resend.emails.send({
+            from: process.env.ADBS_EMAIL_FROM,
+            to: alertEmail,
+            subject: "AdbS Fraud Alert — Multiple Failed Verification Attempts",
+            html: `
+              <h2>AdbS Alert</h2>
+              <p>Multiple failed Truck-Driver verification attempts detected.</p>
+              <p><strong>Load ID:</strong> ${link.load_id || "(none)"}</p>
+              <p><strong>Verification Token:</strong> ${token}</p>
+              <p><strong>Failed Attempts:</strong> ${failedAttempts}</p>
+              <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
+              <p><strong>Verify Page:</strong><br/>https://quecabadbs.com/v.html?t=${token}</p>
+            `
+          });
+
+          resendData = sendResult;
+
+          if (sendResult?.error) {
+            alertError = sendResult.error.message || JSON.stringify(sendResult.error);
+            console.error("verify.js: resend returned error", sendResult.error);
+          } else {
+            alertSent = true;
+            console.log("verify.js: silent alert sent", sendResult);
+          }
+        } catch (err) {
+          alertError = err?.message || String(err);
+          console.error("verify.js: silent alert email failed", err);
+        }
       }
     }
 
-    return json(res, 200, {
-      ok: true,
-      build_tag: BUILD_TAG,
+    return res.status(200).json({
       result,
-      usdot_match: usdotMatch,
-      plate_match: plateMatch,
-      driver_answered: driverAnswered,
-      email,
+      debug: {
+        dotMatch,
+        plateMatch,
+        phoneMatch,
+        failedAttempts,
+        alertTriggered,
+        alertSent,
+        alertTo,
+        alertError,
+        resendData
+      }
     });
   } catch (err) {
-    return json(res, 500, {
-      ok: false,
-      error: err.message || "Verification failed",
-      build_tag: BUILD_TAG,
+    console.error("verify.js: unexpected error", err);
+    return res.status(500).json({
+      error: "Unexpected verify error",
+      detail: err?.message || String(err)
     });
   }
 }
