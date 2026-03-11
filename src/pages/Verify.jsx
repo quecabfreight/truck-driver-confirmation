@@ -1,5 +1,5 @@
 // /src/pages/Verify.jsx
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 function onlyDigits(s) {
@@ -33,6 +33,10 @@ export default function Verify() {
   const nav = useNavigate();
   const { token } = useParams();
 
+  const dockPinRef = useRef(null);
+  const enteredDotRef = useRef(null);
+  const enteredPlateRef = useRef(null);
+
   const [dockPin, setDockPin] = useState("");
   const [pinStatus, setPinStatus] = useState("");
   const [pinError, setPinError] = useState("");
@@ -52,6 +56,19 @@ export default function Verify() {
   useEffect(() => {
     document.title = "Dock Verification — QueCab AdbS";
   }, []);
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (!authorized) {
+        dockPinRef.current?.focus();
+        dockPinRef.current?.select?.();
+      } else {
+        enteredDotRef.current?.focus();
+        enteredDotRef.current?.select?.();
+      }
+    }, 0);
+    return () => clearTimeout(t);
+  }, [authorized]);
 
   const clean = useMemo(() => {
     return {
@@ -168,6 +185,44 @@ export default function Verify() {
       setSubmitError("Network error submitting verification.");
     } finally {
       setSubmitLoading(false);
+    }
+  }
+
+  function handlePinKeyDown(e) {
+    if (e.key !== "Enter") return;
+    if (e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) return;
+    e.preventDefault();
+    if (pinLoading || !clean.dockPin || !clean.token) return;
+    revealPhone();
+  }
+
+  function handleVerifyKeyDown(e) {
+    if (e.key !== "Enter") return;
+    if (e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) return;
+
+    const tag = String(e.target?.tagName || "").toLowerCase();
+    if (tag === "textarea") return;
+
+    e.preventDefault();
+
+    if (submitLoading) return;
+
+    const target = e.target;
+
+    if (target === enteredDotRef.current) {
+      enteredPlateRef.current?.focus();
+      enteredPlateRef.current?.select?.();
+      return;
+    }
+
+    if (target === enteredPlateRef.current) {
+      if (!clean.driverAnswered) return;
+      if (canSubmit) submitVerification();
+      return;
+    }
+
+    if (canSubmit) {
+      submitVerification();
     }
   }
 
@@ -298,9 +353,11 @@ export default function Verify() {
               <div>
                 <div style={label}>Dock PIN</div>
                 <input
+                  ref={dockPinRef}
                   style={input}
                   value={dockPin}
                   onChange={(e) => setDockPin(onlyDigits(e.target.value).slice(0, 6))}
+                  onKeyDown={handlePinKeyDown}
                   placeholder="Enter PIN"
                   inputMode="numeric"
                   autoComplete="off"
@@ -349,11 +406,12 @@ export default function Verify() {
 
         {authorized ? (
           <>
-            <div style={{ marginTop: 14, ...card }}>
+            <div style={{ marginTop: 14, ...card }} onKeyDown={handleVerifyKeyDown}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <div>
                   <div style={label}>ENTER DOT</div>
                   <input
+                    ref={enteredDotRef}
                     style={input}
                     value={enteredDot}
                     onChange={(e) => setEnteredDot(toUpper(e.target.value))}
@@ -366,6 +424,7 @@ export default function Verify() {
                 <div>
                   <div style={label}>ENTER PLATE</div>
                   <input
+                    ref={enteredPlateRef}
                     style={input}
                     value={enteredPlate}
                     onChange={(e) => setEnteredPlate(toUpper(e.target.value))}
