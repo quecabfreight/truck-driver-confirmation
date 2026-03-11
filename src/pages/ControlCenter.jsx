@@ -93,6 +93,10 @@ export default function ControlCenter() {
   const [plateOnRecord, setPlateOnRecord] = useState("");
   const [driverPhone, setDriverPhone] = useState("");
 
+  const [carrierCompany, setCarrierCompany] = useState("");
+  const [dispatchContact, setDispatchContact] = useState("");
+  const [dispatchPhone, setDispatchPhone] = useState("");
+
   const [mode, setMode] = useState("auto");
   const [startsAt, setStartsAt] = useState(() => nowLocalDatetime());
   const [expiresAt, setExpiresAt] = useState(() => plusHoursLocalDatetime(24));
@@ -111,8 +115,9 @@ export default function ControlCenter() {
       plate_upper: toUpperClean(plateOnRecord).trim(),
       phone_digits: onlyDigits(driverPhone),
       dock_pin_digits: onlyDigits(dockPin).slice(0, 6),
+      dispatch_phone_digits: onlyDigits(dispatchPhone).slice(0, 10),
     };
-  }, [usdotOnRecord, plateOnRecord, driverPhone, dockPin]);
+  }, [usdotOnRecord, plateOnRecord, driverPhone, dockPin, dispatchPhone]);
 
   function logout() {
     try {
@@ -139,6 +144,9 @@ export default function ControlCenter() {
     setDriverPhone("");
     setUsdotOnRecord("");
     setPlateOnRecord("");
+    setCarrierCompany("");
+    setDispatchContact("");
+    setDispatchPhone("");
 
     setTimeout(() => {
       loadIdRef.current?.focus();
@@ -157,35 +165,17 @@ export default function ControlCenter() {
 
     if (loading) return;
 
-    const target = e.target;
+    const grid = e.currentTarget;
+    const fields = Array.from(
+      grid.querySelectorAll('input:not([disabled]), textarea:not([disabled]), select:not([disabled])')
+    ).filter((el) => el.offsetParent !== null);
 
-    if (target === loadIdRef.current) {
-      dockEmailRef.current?.focus();
-      dockEmailRef.current?.select?.();
-      return;
-    }
-    if (target === dockEmailRef.current) {
-      dockPinRef.current?.focus();
-      dockPinRef.current?.select?.();
-      return;
-    }
-    if (target === dockPinRef.current) {
-      driverPhoneRef.current?.focus();
-      driverPhoneRef.current?.select?.();
-      return;
-    }
-    if (target === driverPhoneRef.current) {
-      usdotRef.current?.focus();
-      usdotRef.current?.select?.();
-      return;
-    }
-    if (target === usdotRef.current) {
-      plateRef.current?.focus();
-      plateRef.current?.select?.();
-      return;
-    }
-    if (target === plateRef.current) {
-      issueLink();
+    const idx = fields.indexOf(e.target);
+
+    if (idx >= 0 && idx < fields.length - 1) {
+      const next = fields[idx + 1];
+      next?.focus?.();
+      next?.select?.();
       return;
     }
 
@@ -223,6 +213,10 @@ export default function ControlCenter() {
       dockPinRef.current?.focus();
       return;
     }
+
+    const dispatchPhoneFormatted = normalized.dispatch_phone_digits
+      ? formatPhoneHyphen(normalized.dispatch_phone_digits)
+      : "";
 
     let starts_at = null;
     let expires_at = null;
@@ -264,6 +258,10 @@ export default function ControlCenter() {
         starts_at,
         expires_at,
         dock_pin: pin || null,
+
+        carrier_company: String(carrierCompany || "").trim() || null,
+        dispatch_contact: String(dispatchContact || "").trim() || null,
+        dispatch_phone: dispatchPhoneFormatted || null,
       };
 
       const res = await fetch("/api/issue_verify_link", {
@@ -285,6 +283,9 @@ export default function ControlCenter() {
         "AdbS TRUCK-DRIVER VERIFICATION",
         "",
         payload.load_id ? `Load ID: ${payload.load_id}` : null,
+        payload.carrier_company ? `Carrier Company: ${payload.carrier_company}` : null,
+        payload.dispatch_contact ? `Dispatch Contact: ${payload.dispatch_contact}` : null,
+        payload.dispatch_phone ? `Dispatch Phone: ${payload.dispatch_phone}` : null,
         "",
         "OPEN AT DOCK:",
         data?.verify_url || "",
@@ -308,6 +309,10 @@ export default function ControlCenter() {
         email_error: data?.email_error || null,
         full_message: msgLines,
         status: data?.status || "active",
+
+        carrier_company: payload.carrier_company,
+        dispatch_contact: payload.dispatch_contact,
+        dispatch_phone: payload.dispatch_phone,
       });
 
       if (payload.dock_email && data?.email_status === "sent") {
@@ -360,6 +365,9 @@ export default function ControlCenter() {
           "AdbS TRUCK-DRIVER VERIFICATION",
           "",
           issued.load_id ? `Load ID: ${issued.load_id}` : null,
+          issued.carrier_company ? `Carrier Company: ${issued.carrier_company}` : null,
+          issued.dispatch_contact ? `Dispatch Contact: ${issued.dispatch_contact}` : null,
+          issued.dispatch_phone ? `Dispatch Phone: ${issued.dispatch_phone}` : null,
           "",
           "OPEN AT DOCK:",
           newUrl,
@@ -601,6 +609,40 @@ export default function ControlCenter() {
               </div>
 
               <div>
+                <div style={labelStyle}>Carrier Company (optional)</div>
+                <input
+                  style={inputStyle}
+                  value={carrierCompany}
+                  onChange={(e) => setCarrierCompany(e.target.value)}
+                  placeholder="ABC Logistics LLC"
+                  autoComplete="off"
+                />
+              </div>
+
+              <div>
+                <div style={labelStyle}>Dispatch Contact (optional)</div>
+                <input
+                  style={inputStyle}
+                  value={dispatchContact}
+                  onChange={(e) => setDispatchContact(e.target.value)}
+                  placeholder="Mike Reynolds"
+                  autoComplete="off"
+                />
+              </div>
+
+              <div>
+                <div style={labelStyle}>Dispatch Phone (optional)</div>
+                <input
+                  style={inputStyle}
+                  value={dispatchPhone}
+                  onChange={(e) => setDispatchPhone(formatPhoneHyphen(e.target.value))}
+                  placeholder="123-456-7890"
+                  inputMode="tel"
+                  autoComplete="off"
+                />
+              </div>
+
+              <div>
                 <div style={labelStyle}>Start / Expire</div>
                 <div style={{ display: "grid", gap: 8 }}>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
@@ -660,6 +702,49 @@ export default function ControlCenter() {
                   <br />
                   Email Status: <span style={{ fontWeight: 900 }}>{issued.email_status || "not sent"}</span>
                 </div>
+
+                {(issued.carrier_company || issued.dispatch_contact || issued.dispatch_phone) ? (
+                  <div
+                    style={{
+                      marginBottom: 12,
+                      border: "1px solid rgba(255,255,255,0.12)",
+                      background: "rgba(255,255,255,0.04)",
+                      padding: 12,
+                      borderRadius: 12,
+                    }}
+                  >
+                    <div style={{ fontSize: 15, fontWeight: 900, marginBottom: 8 }}>Carrier Contact</div>
+
+                    {issued.carrier_company ? (
+                      <div style={{ fontSize: 14, marginBottom: 6 }}>
+                        Carrier Company: <span style={{ fontWeight: 900 }}>{issued.carrier_company}</span>
+                      </div>
+                    ) : null}
+
+                    {issued.dispatch_contact ? (
+                      <div style={{ fontSize: 14, marginBottom: 6 }}>
+                        Dispatch Contact: <span style={{ fontWeight: 900 }}>{issued.dispatch_contact}</span>
+                      </div>
+                    ) : null}
+
+                    {issued.dispatch_phone ? (
+                      <div style={{ fontSize: 14 }}>
+                        Dispatch Phone:{" "}
+                        <a
+                          href={`tel:${onlyDigits(issued.dispatch_phone)}`}
+                          style={{
+                            color: "#e6edf5",
+                            fontWeight: 900,
+                            textDecoration: "none",
+                          }}
+                          title="Call Dispatch"
+                        >
+                          {issued.dispatch_phone}
+                        </a>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
 
                 {issued.email_error ? (
                   <div style={{ marginBottom: 10, border: "1px solid rgba(255,80,80,0.35)", background: "rgba(255,80,80,0.08)", padding: 10, borderRadius: 10, fontSize: 13 }}>
