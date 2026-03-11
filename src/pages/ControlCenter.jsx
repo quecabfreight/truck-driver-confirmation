@@ -1,5 +1,5 @@
 // /src/pages/ControlCenter.jsx
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import Header from "../components/Header.jsx";
@@ -62,8 +62,27 @@ export default function ControlCenter() {
   const email = (localStorage.getItem(LS_EMAIL) || "").trim();
   const authorized = !!email && isBrokerOrShipper(email);
 
+  const loadIdRef = useRef(null);
+  const dockEmailRef = useRef(null);
+  const dockPinRef = useRef(null);
+  const driverPhoneRef = useRef(null);
+  const usdotRef = useRef(null);
+  const plateRef = useRef(null);
+  const abortRef = useRef(null);
+
+  useEffect(() => {
+    if (!authorized) {
+      nav("/login", { replace: true });
+      return;
+    }
+    const t = setTimeout(() => {
+      loadIdRef.current?.focus();
+      loadIdRef.current?.select?.();
+    }, 0);
+    return () => clearTimeout(t);
+  }, [authorized, nav]);
+
   if (!authorized) {
-    nav("/login", { replace: true });
     return null;
   }
 
@@ -85,8 +104,6 @@ export default function ControlCenter() {
   const [attempts, setAttempts] = useState([]);
   const [attemptsLoading, setAttemptsLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState("");
-
-  const abortRef = useRef(null);
 
   const normalized = useMemo(() => {
     return {
@@ -117,23 +134,94 @@ export default function ControlCenter() {
     }
   }
 
+  function clearNextLoadFields() {
+    setLoadId("");
+    setDriverPhone("");
+    setUsdotOnRecord("");
+    setPlateOnRecord("");
+
+    setTimeout(() => {
+      loadIdRef.current?.focus();
+      loadIdRef.current?.select?.();
+    }, 0);
+  }
+
+  function handleFormKeyDown(e) {
+    if (e.key !== "Enter") return;
+    if (e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) return;
+
+    const tag = String(e.target?.tagName || "").toLowerCase();
+    if (tag === "textarea") return;
+
+    e.preventDefault();
+
+    if (loading) return;
+
+    const target = e.target;
+
+    if (target === loadIdRef.current) {
+      dockEmailRef.current?.focus();
+      dockEmailRef.current?.select?.();
+      return;
+    }
+    if (target === dockEmailRef.current) {
+      dockPinRef.current?.focus();
+      dockPinRef.current?.select?.();
+      return;
+    }
+    if (target === dockPinRef.current) {
+      driverPhoneRef.current?.focus();
+      driverPhoneRef.current?.select?.();
+      return;
+    }
+    if (target === driverPhoneRef.current) {
+      usdotRef.current?.focus();
+      usdotRef.current?.select?.();
+      return;
+    }
+    if (target === usdotRef.current) {
+      plateRef.current?.focus();
+      plateRef.current?.select?.();
+      return;
+    }
+    if (target === plateRef.current) {
+      issueLink();
+      return;
+    }
+
+    issueLink();
+  }
+
   async function issueLink() {
     setErrorMsg("");
     setStatusMsg("");
-    setIssued(null);
     setAttempts([]);
 
     const usdot_digits = normalized.usdot_digits;
     const plate_upper = normalized.plate_upper;
     const phone_digits = normalized.phone_digits;
 
-    if (!usdot_digits) return setErrorMsg("Enter USDOT# (digits).");
-    if (!plate_upper) return setErrorMsg("Enter Plate.");
-    if (phone_digits.length !== 10) return setErrorMsg("Enter Driver Phone (10 digits).");
+    if (!usdot_digits) {
+      setErrorMsg("Enter USDOT# (digits).");
+      usdotRef.current?.focus();
+      return;
+    }
+    if (!plate_upper) {
+      setErrorMsg("Enter Plate.");
+      plateRef.current?.focus();
+      return;
+    }
+    if (phone_digits.length !== 10) {
+      setErrorMsg("Enter Driver Phone (10 digits).");
+      driverPhoneRef.current?.focus();
+      return;
+    }
 
     const pin = normalized.dock_pin_digits;
     if (pin && (pin.length < 4 || pin.length > 6)) {
-      return setErrorMsg("Dock PIN must be 4–6 digits (or leave blank).");
+      setErrorMsg("Dock PIN must be 4–6 digits (or leave blank).");
+      dockPinRef.current?.focus();
+      return;
     }
 
     let starts_at = null;
@@ -145,7 +233,10 @@ export default function ControlCenter() {
       setStartsAt(starts_at);
       setExpiresAt(expires_at);
     } else if (mode === "pick") {
-      if (!startsAt || !expiresAt) return setErrorMsg("Start/Expire times are required.");
+      if (!startsAt || !expiresAt) {
+        setErrorMsg("Start/Expire times are required.");
+        return;
+      }
       starts_at = startsAt;
       expires_at = expiresAt;
     } else {
@@ -226,6 +317,8 @@ export default function ControlCenter() {
       } else {
         setStatusMsg("AdbS Verification issued.");
       }
+
+      clearNextLoadFields();
     } catch (e) {
       if (String(e?.name) !== "AbortError") {
         setErrorMsg("Network error issuing link.");
@@ -341,7 +434,7 @@ export default function ControlCenter() {
       }
 
       setAttempts(Array.isArray(data?.attempts) ? data.attempts : []);
-      setStatusMsg("Attempts loaded.");
+      setStatusMsg("Load activity loaded.");
     } catch {
       setErrorMsg("Failed to load attempts.");
     } finally {
@@ -426,10 +519,14 @@ export default function ControlCenter() {
           <div style={cardStyle}>
             <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 10 }}>Issue AdbS Verification</div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div
+              style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}
+              onKeyDown={handleFormKeyDown}
+            >
               <div>
                 <div style={labelStyle}>Load ID</div>
                 <input
+                  ref={loadIdRef}
                   style={inputStyle}
                   value={loadId}
                   onChange={(e) => setLoadId(e.target.value)}
@@ -441,6 +538,7 @@ export default function ControlCenter() {
               <div>
                 <div style={labelStyle}>Dock Email</div>
                 <input
+                  ref={dockEmailRef}
                   style={inputStyle}
                   value={dockEmail}
                   onChange={(e) => setDockEmail(e.target.value)}
@@ -453,6 +551,7 @@ export default function ControlCenter() {
               <div>
                 <div style={labelStyle}>Dock PIN (optional)</div>
                 <input
+                  ref={dockPinRef}
                   style={inputStyle}
                   value={dockPin}
                   onChange={(e) => setDockPin(onlyDigits(e.target.value).slice(0, 6))}
@@ -465,6 +564,7 @@ export default function ControlCenter() {
               <div>
                 <div style={labelStyle}>Driver Phone</div>
                 <input
+                  ref={driverPhoneRef}
                   style={inputStyle}
                   value={driverPhone}
                   onChange={(e) => setDriverPhone(formatPhoneHyphen(e.target.value))}
@@ -477,11 +577,12 @@ export default function ControlCenter() {
               <div>
                 <div style={labelStyle}>USDOT# on record</div>
                 <input
+                  ref={usdotRef}
                   style={inputStyle}
                   value={usdotOnRecord}
-                  onChange={(e) => setUsdotOnRecord(toUpperClean(e.target.value))}
+                  onChange={(e) => setUsdotOnRecord(onlyDigits(e.target.value))}
                   placeholder="123456"
-                  inputMode="text"
+                  inputMode="numeric"
                   autoComplete="off"
                 />
               </div>
@@ -489,6 +590,7 @@ export default function ControlCenter() {
               <div>
                 <div style={labelStyle}>Plate on record</div>
                 <input
+                  ref={plateRef}
                   style={inputStyle}
                   value={plateOnRecord}
                   onChange={(e) => setPlateOnRecord(toUpperClean(e.target.value))}
@@ -630,11 +732,11 @@ export default function ControlCenter() {
           </div>
 
           <div style={cardStyle}>
-            <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 10 }}>Attempt Review</div>
+            <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 10 }}>Load Activity</div>
 
             {!attempts.length ? (
               <div style={{ opacity: 0.75, fontSize: 14 }}>
-                No attempt history loaded yet.
+                No verification attempts recorded yet.
               </div>
             ) : (
               <div style={{ display: "grid", gap: 10 }}>
