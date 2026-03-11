@@ -102,7 +102,7 @@ export default async function handler(req, res) {
     let alertError = null;
     let resendData = null;
 
-    if (failedAttempts >= 3) {
+    if (failedAttempts === 3) {
       alertTriggered = true;
 
       const alertEmail =
