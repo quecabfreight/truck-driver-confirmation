@@ -1,6 +1,7 @@
 // /src/pages/ControlCenter.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import QRCode from "qrcode";
 
 import Header from "../components/Header.jsx";
 import { LS_EMAIL, isBrokerOrShipper } from "../utils/auth.js";
@@ -8,9 +9,11 @@ import { LS_EMAIL, isBrokerOrShipper } from "../utils/auth.js";
 function onlyDigits(s) {
   return String(s || "").replace(/\D+/g, "");
 }
+
 function toUpperClean(s) {
   return String(s || "").toUpperCase();
 }
+
 function formatPhoneHyphen(s) {
   const d = onlyDigits(s).slice(0, 10);
   const a = d.slice(0, 3);
@@ -56,6 +59,16 @@ function plusHoursLocalDatetime(hours) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+async function makeQrDataUrl(value) {
+  const clean = String(value || "").trim();
+  if (!clean) return "";
+  return QRCode.toDataURL(clean, {
+    errorCorrectionLevel: "M",
+    margin: 1,
+    width: 260,
+  });
+}
+
 export default function ControlCenter() {
   const nav = useNavigate();
 
@@ -94,8 +107,8 @@ export default function ControlCenter() {
   const [driverPhone, setDriverPhone] = useState("");
 
   const [carrierCompany, setCarrierCompany] = useState("");
-  const [dispatchContact, setDispatchContact] = useState("");
-  const [dispatchPhone, setDispatchPhone] = useState("");
+  const [carrierContactName, setCarrierContactName] = useState("");
+  const [carrierContactPhone, setCarrierContactPhone] = useState("");
 
   const [mode, setMode] = useState("auto");
   const [startsAt, setStartsAt] = useState(() => nowLocalDatetime());
@@ -105,6 +118,7 @@ export default function ControlCenter() {
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
   const [issued, setIssued] = useState(null);
+  const [issuedQr, setIssuedQr] = useState("");
   const [attempts, setAttempts] = useState([]);
   const [attemptsLoading, setAttemptsLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState("");
@@ -115,9 +129,9 @@ export default function ControlCenter() {
       plate_upper: toUpperClean(plateOnRecord).trim(),
       phone_digits: onlyDigits(driverPhone),
       dock_pin_digits: onlyDigits(dockPin).slice(0, 6),
-      dispatch_phone_digits: onlyDigits(dispatchPhone).slice(0, 10),
+      carrier_contact_phone_digits: onlyDigits(carrierContactPhone).slice(0, 10),
     };
-  }, [usdotOnRecord, plateOnRecord, driverPhone, dockPin, dispatchPhone]);
+  }, [usdotOnRecord, plateOnRecord, driverPhone, dockPin, carrierContactPhone]);
 
   function logout() {
     try {
@@ -145,8 +159,8 @@ export default function ControlCenter() {
     setUsdotOnRecord("");
     setPlateOnRecord("");
     setCarrierCompany("");
-    setDispatchContact("");
-    setDispatchPhone("");
+    setCarrierContactName("");
+    setCarrierContactPhone("");
 
     setTimeout(() => {
       loadIdRef.current?.focus();
@@ -186,6 +200,7 @@ export default function ControlCenter() {
     setErrorMsg("");
     setStatusMsg("");
     setAttempts([]);
+    setIssuedQr("");
 
     const usdot_digits = normalized.usdot_digits;
     const plate_upper = normalized.plate_upper;
@@ -214,8 +229,8 @@ export default function ControlCenter() {
       return;
     }
 
-    const dispatchPhoneFormatted = normalized.dispatch_phone_digits
-      ? formatPhoneHyphen(normalized.dispatch_phone_digits)
+    const carrierContactPhoneFormatted = normalized.carrier_contact_phone_digits
+      ? formatPhoneHyphen(normalized.carrier_contact_phone_digits)
       : "";
 
     let starts_at = null;
@@ -260,8 +275,8 @@ export default function ControlCenter() {
         dock_pin: pin || null,
 
         carrier_company: String(carrierCompany || "").trim() || null,
-        dispatch_contact: String(dispatchContact || "").trim() || null,
-        dispatch_phone: dispatchPhoneFormatted || null,
+        dispatch_contact: String(carrierContactName || "").trim() || null,
+        dispatch_phone: carrierContactPhoneFormatted || null,
       };
 
       const res = await fetch("/api/issue_verify_link", {
@@ -279,16 +294,19 @@ export default function ControlCenter() {
         return;
       }
 
+      const verifyUrl = data?.verify_url || "";
+      const qrDataUrl = verifyUrl ? await makeQrDataUrl(verifyUrl) : "";
+
       const msgLines = [
         "AdbS TRUCK-DRIVER VERIFICATION",
         "",
         payload.load_id ? `Load ID: ${payload.load_id}` : null,
         payload.carrier_company ? `Carrier Company: ${payload.carrier_company}` : null,
-        payload.dispatch_contact ? `Dispatch Contact: ${payload.dispatch_contact}` : null,
-        payload.dispatch_phone ? `Dispatch Phone: ${payload.dispatch_phone}` : null,
+        payload.dispatch_contact ? `Carrier Contact Name: ${payload.dispatch_contact}` : null,
+        payload.dispatch_phone ? `Carrier Contact Phone: ${payload.dispatch_phone}` : null,
         "",
         "OPEN AT DOCK:",
-        data?.verify_url || "",
+        verifyUrl,
         "",
         "Dock Instruction:",
         "When the truck arrives, open the link above and complete verification before releasing the load.",
@@ -301,7 +319,7 @@ export default function ControlCenter() {
 
       setIssued({
         token: data?.token || "",
-        verify_url: data?.verify_url || "",
+        verify_url: verifyUrl,
         expires_at: data?.expires_at || null,
         load_id: payload.load_id,
         dock_email: payload.dock_email,
@@ -311,9 +329,11 @@ export default function ControlCenter() {
         status: data?.status || "active",
 
         carrier_company: payload.carrier_company,
-        dispatch_contact: payload.dispatch_contact,
-        dispatch_phone: payload.dispatch_phone,
+        carrier_contact_name: payload.dispatch_contact,
+        carrier_contact_phone: payload.dispatch_phone,
       });
+
+      setIssuedQr(qrDataUrl);
 
       if (payload.dock_email && data?.email_status === "sent") {
         setStatusMsg("AdbS Verification issued and emailed to dock.");
@@ -361,13 +381,15 @@ export default function ControlCenter() {
       if (action === "reissue") {
         const newToken = data?.new_token || "";
         const newUrl = data?.verify_url || "";
+        const newQr = newUrl ? await makeQrDataUrl(newUrl) : "";
+
         const newMessage = [
           "AdbS TRUCK-DRIVER VERIFICATION",
           "",
           issued.load_id ? `Load ID: ${issued.load_id}` : null,
           issued.carrier_company ? `Carrier Company: ${issued.carrier_company}` : null,
-          issued.dispatch_contact ? `Dispatch Contact: ${issued.dispatch_contact}` : null,
-          issued.dispatch_phone ? `Dispatch Phone: ${issued.dispatch_phone}` : null,
+          issued.carrier_contact_name ? `Carrier Contact Name: ${issued.carrier_contact_name}` : null,
+          issued.carrier_contact_phone ? `Carrier Contact Phone: ${issued.carrier_contact_phone}` : null,
           "",
           "OPEN AT DOCK:",
           newUrl,
@@ -390,6 +412,8 @@ export default function ControlCenter() {
           email_error: data?.email_error || null,
           status: "active",
         }));
+
+        setIssuedQr(newQr);
 
         setStatusMsg(
           data?.email_status === "sent"
@@ -620,22 +644,22 @@ export default function ControlCenter() {
               </div>
 
               <div>
-                <div style={labelStyle}>Dispatch Contact (optional)</div>
+                <div style={labelStyle}>Carrier Contact Name (optional)</div>
                 <input
                   style={inputStyle}
-                  value={dispatchContact}
-                  onChange={(e) => setDispatchContact(e.target.value)}
+                  value={carrierContactName}
+                  onChange={(e) => setCarrierContactName(e.target.value)}
                   placeholder="Mike Reynolds"
                   autoComplete="off"
                 />
               </div>
 
               <div>
-                <div style={labelStyle}>Dispatch Phone (optional)</div>
+                <div style={labelStyle}>Carrier Contact Phone (optional)</div>
                 <input
                   style={inputStyle}
-                  value={dispatchPhone}
-                  onChange={(e) => setDispatchPhone(formatPhoneHyphen(e.target.value))}
+                  value={carrierContactPhone}
+                  onChange={(e) => setCarrierContactPhone(formatPhoneHyphen(e.target.value))}
                   placeholder="123-456-7890"
                   inputMode="tel"
                   autoComplete="off"
@@ -703,7 +727,7 @@ export default function ControlCenter() {
                   Email Status: <span style={{ fontWeight: 900 }}>{issued.email_status || "not sent"}</span>
                 </div>
 
-                {(issued.carrier_company || issued.dispatch_contact || issued.dispatch_phone) ? (
+                {(issued.carrier_company || issued.carrier_contact_name || issued.carrier_contact_phone) ? (
                   <div
                     style={{
                       marginBottom: 12,
@@ -721,25 +745,25 @@ export default function ControlCenter() {
                       </div>
                     ) : null}
 
-                    {issued.dispatch_contact ? (
+                    {issued.carrier_contact_name ? (
                       <div style={{ fontSize: 14, marginBottom: 6 }}>
-                        Dispatch Contact: <span style={{ fontWeight: 900 }}>{issued.dispatch_contact}</span>
+                        Carrier Contact Name: <span style={{ fontWeight: 900 }}>{issued.carrier_contact_name}</span>
                       </div>
                     ) : null}
 
-                    {issued.dispatch_phone ? (
+                    {issued.carrier_contact_phone ? (
                       <div style={{ fontSize: 14 }}>
-                        Dispatch Phone:{" "}
+                        Carrier Contact Phone:{" "}
                         <a
-                          href={`tel:${onlyDigits(issued.dispatch_phone)}`}
+                          href={`tel:${onlyDigits(issued.carrier_contact_phone)}`}
                           style={{
                             color: "#e6edf5",
                             fontWeight: 900,
                             textDecoration: "none",
                           }}
-                          title="Call Dispatch"
+                          title="Call Carrier Contact"
                         >
-                          {issued.dispatch_phone}
+                          {issued.carrier_contact_phone}
                         </a>
                       </div>
                     ) : null}
@@ -753,8 +777,86 @@ export default function ControlCenter() {
                 ) : null}
 
                 <div>
-                  <div style={labelStyle}>Verify URL</div>
+                  <div style={labelStyle}>AdbS SmartLink</div>
                   <input style={inputStyle} value={issued.verify_url || ""} readOnly />
+
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      marginTop: 14,
+                      marginBottom: 14,
+                    }}
+                  >
+                    <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.10)" }} />
+                    <div
+                      style={{
+                        color: "rgba(220,228,240,0.66)",
+                        fontSize: 12,
+                        letterSpacing: "0.14em",
+                        textTransform: "uppercase",
+                        fontWeight: 900,
+                      }}
+                    >
+                      OR
+                    </div>
+                    <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.10)" }} />
+                  </div>
+
+                  <div style={{ marginBottom: 8, ...labelStyle }}>AdbS QR Code</div>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      minHeight: 300,
+                      padding: 18,
+                      borderRadius: 16,
+                      background: "rgba(255,255,255,0.04)",
+                      border: "1px solid rgba(255,255,255,0.10)",
+                      marginBottom: 14,
+                    }}
+                  >
+                    {issuedQr ? (
+                      <>
+                        <img
+                          src={issuedQr}
+                          alt="AdbS QR Code"
+                          style={{
+                            width: 260,
+                            maxWidth: "100%",
+                            height: "auto",
+                            display: "block",
+                            borderRadius: 12,
+                            background: "#ffffff",
+                            padding: 12,
+                          }}
+                        />
+                        <div
+                          style={{
+                            marginTop: 12,
+                            color: "rgba(220,228,240,0.72)",
+                            fontSize: 14,
+                            textAlign: "center",
+                          }}
+                        >
+                          Same destination as the AdbS SmartLink.
+                        </div>
+                      </>
+                    ) : (
+                      <div
+                        style={{
+                          color: "rgba(220,228,240,0.72)",
+                          fontSize: 15,
+                          fontWeight: 700,
+                        }}
+                      >
+                        QR not available.
+                      </div>
+                    )}
+                  </div>
 
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
                     <button
