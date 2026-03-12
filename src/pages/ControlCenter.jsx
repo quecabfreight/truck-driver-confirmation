@@ -5,959 +5,282 @@ import { useNavigate } from "react-router-dom";
 import Header from "../components/Header.jsx";
 import { LS_EMAIL, isBrokerOrShipper } from "../utils/auth.js";
 
-function onlyDigits(s) {
-  return String(s || "").replace(/\D+/g, "");
+function onlyDigits(s){return String(s||"").replace(/\D+/g,"")}
+function toUpperClean(s){return String(s||"").toUpperCase()}
+function formatPhoneHyphen(s){
+  const d=onlyDigits(s).slice(0,10)
+  const a=d.slice(0,3),b=d.slice(3,6),c=d.slice(6,10)
+  if(d.length<=3)return a
+  if(d.length<=6)return`${a}-${b}`
+  return`${a}-${b}-${c}`
 }
 
-function toUpperClean(s) {
-  return String(s || "").toUpperCase();
+function makeQrDataUrl(value){
+  const clean=String(value||"").trim()
+  if(!clean)return""
+  return`https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(clean)}`
 }
 
-function formatPhoneHyphen(s) {
-  const d = onlyDigits(s).slice(0, 10);
-  const a = d.slice(0, 3);
-  const b = d.slice(3, 6);
-  const c = d.slice(6, 10);
-  if (d.length <= 3) return a;
-  if (d.length <= 6) return `${a}-${b}`;
-  return `${a}-${b}-${c}`;
+export default function ControlCenter(){
+
+const nav=useNavigate()
+const email=(localStorage.getItem(LS_EMAIL)||"").trim()
+const authorized=!!email&&isBrokerOrShipper(email)
+
+const loadIdRef=useRef(null)
+const driverPhoneRef=useRef(null)
+const usdotRef=useRef(null)
+const plateRef=useRef(null)
+
+useEffect(()=>{
+if(!authorized){nav("/login",{replace:true});return}
+setTimeout(()=>{loadIdRef.current?.focus()},0)
+},[authorized,nav])
+
+if(!authorized)return null
+
+const [loadId,setLoadId]=useState("")
+const [dockEmail,setDockEmail]=useState("")
+const [dockPin,setDockPin]=useState("")
+const [usdotOnRecord,setUsdotOnRecord]=useState("")
+const [plateOnRecord,setPlateOnRecord]=useState("")
+const [driverPhone,setDriverPhone]=useState("")
+
+const [statusMsg,setStatusMsg]=useState("")
+const [errorMsg,setErrorMsg]=useState("")
+const [loading,setLoading]=useState(false)
+
+const [issued,setIssued]=useState(null)
+const [issuedQr,setIssuedQr]=useState("")
+const [attempts,setAttempts]=useState([])
+
+/* ----------- Protection Summary ----------- */
+
+const protectionSummary=useMemo(()=>{
+let verifications=issued?1:0
+let cleared=0
+let caution=0
+
+attempts.forEach(a=>{
+if(String(a.result||"").toLowerCase().includes("clear"))cleared++
+else caution++
+})
+
+return{
+verifications,
+cleared,
+caution
+}
+},[attempts,issued])
+
+/* ----------- Issue Link ----------- */
+
+async function issueLink(){
+
+setErrorMsg("")
+setStatusMsg("")
+
+const usdot_digits=onlyDigits(usdotOnRecord)
+const plate_upper=toUpperClean(plateOnRecord).trim()
+const phone_digits=onlyDigits(driverPhone)
+
+if(!usdot_digits){setErrorMsg("Enter USDOT#");usdotRef.current?.focus();return}
+if(!plate_upper){setErrorMsg("Enter Plate");plateRef.current?.focus();return}
+if(phone_digits.length!==10){setErrorMsg("Enter Driver Phone");driverPhoneRef.current?.focus();return}
+
+setLoading(true)
+
+try{
+
+const payload={
+load_id:loadId||null,
+dock_email:dockEmail||null,
+usdot_on_record:usdot_digits,
+plate_on_record:plate_upper,
+driver_phone:formatPhoneHyphen(phone_digits),
+dock_pin:dockPin||null
 }
 
-async function safeCopy(text) {
-  try {
-    await navigator.clipboard.writeText(text);
-    return true;
-  } catch {
-    try {
-      const ta = document.createElement("textarea");
-      ta.value = text;
-      ta.style.position = "fixed";
-      ta.style.left = "-9999px";
-      ta.style.top = "-9999px";
-      document.body.appendChild(ta);
-      ta.focus();
-      ta.select();
-      const ok = document.execCommand("copy");
-      document.body.removeChild(ta);
-      return ok;
-    } catch {
-      return false;
-    }
-  }
+const res=await fetch("/api/issue_verify_link",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)})
+const data=await res.json()
+
+if(!res.ok){setErrorMsg(data.error||"Issue failed");setLoading(false);return}
+
+const verifyUrl=data.verify_url||""
+const qrDataUrl=makeQrDataUrl(verifyUrl)
+
+setIssued({
+verification_id:data.token,
+verify_url:verifyUrl,
+status:data.status||"active"
+})
+
+setIssuedQr(qrDataUrl)
+setStatusMsg("AdbS Verification issued")
+
+}catch{
+setErrorMsg("Network error")
 }
 
-function nowLocalDatetime() {
-  const d = new Date();
-  const pad = (n) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+setLoading(false)
 }
 
-function plusHoursLocalDatetime(hours) {
-  const d = new Date(Date.now() + hours * 60 * 60 * 1000);
-  const pad = (n) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+/* ----------- Layout Styles ----------- */
+
+const card={
+border:"1px solid rgba(255,255,255,0.12)",
+background:"rgba(12,18,28,0.72)",
+borderRadius:16,
+padding:18
 }
 
-function makeQrDataUrl(value) {
-  const clean = String(value || "").trim();
-  if (!clean) return "";
-  return `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(clean)}`;
+const input={
+width:"100%",
+padding:12,
+borderRadius:12,
+border:"1px solid rgba(255,255,255,0.16)",
+background:"rgba(255,255,255,0.04)",
+color:"inherit",
+fontSize:16
 }
 
-export default function ControlCenter() {
-  const nav = useNavigate();
-
-  const email = (localStorage.getItem(LS_EMAIL) || "").trim();
-  const authorized = !!email && isBrokerOrShipper(email);
-
-  const loadIdRef = useRef(null);
-  const dockEmailRef = useRef(null);
-  const dockPinRef = useRef(null);
-  const driverPhoneRef = useRef(null);
-  const usdotRef = useRef(null);
-  const plateRef = useRef(null);
-  const abortRef = useRef(null);
-
-  useEffect(() => {
-    if (!authorized) {
-      nav("/login", { replace: true });
-      return;
-    }
-    const t = setTimeout(() => {
-      loadIdRef.current?.focus();
-      loadIdRef.current?.select?.();
-    }, 0);
-    return () => clearTimeout(t);
-  }, [authorized, nav]);
-
-  if (!authorized) {
-    return null;
-  }
-
-  const [loadId, setLoadId] = useState("");
-  const [dockEmail, setDockEmail] = useState("");
-  const [dockPin, setDockPin] = useState("");
-  const [usdotOnRecord, setUsdotOnRecord] = useState("");
-  const [plateOnRecord, setPlateOnRecord] = useState("");
-  const [driverPhone, setDriverPhone] = useState("");
-
-  const [carrierCompany, setCarrierCompany] = useState("");
-  const [carrierContactName, setCarrierContactName] = useState("");
-  const [carrierContactPhone, setCarrierContactPhone] = useState("");
-
-  const [mode, setMode] = useState("auto");
-  const [startsAt, setStartsAt] = useState(() => nowLocalDatetime());
-  const [expiresAt, setExpiresAt] = useState(() => plusHoursLocalDatetime(24));
-
-  const [statusMsg, setStatusMsg] = useState("");
-  const [errorMsg, setErrorMsg] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [issued, setIssued] = useState(null);
-  const [issuedQr, setIssuedQr] = useState("");
-  const [attempts, setAttempts] = useState([]);
-  const [attemptsLoading, setAttemptsLoading] = useState(false);
-  const [actionLoading, setActionLoading] = useState("");
-
-  const normalized = useMemo(() => {
-    return {
-      usdot_digits: onlyDigits(usdotOnRecord),
-      plate_upper: toUpperClean(plateOnRecord).trim(),
-      phone_digits: onlyDigits(driverPhone),
-      dock_pin_digits: onlyDigits(dockPin).slice(0, 6),
-      carrier_contact_phone_digits: onlyDigits(carrierContactPhone).slice(0, 10),
-    };
-  }, [usdotOnRecord, plateOnRecord, driverPhone, dockPin, carrierContactPhone]);
-
-  function logout() {
-    try {
-      localStorage.removeItem(LS_EMAIL);
-      localStorage.removeItem("qc_access_code");
-      localStorage.removeItem("qc_role");
-      localStorage.removeItem("access_code");
-      localStorage.removeItem("role");
-    } catch {}
-    nav("/login", { replace: true });
-  }
-
-  async function safeJson(res) {
-    const text = await res.text();
-    try {
-      return JSON.parse(text);
-    } catch {
-      return { raw: text };
-    }
-  }
-
-  function clearNextLoadFields() {
-    setLoadId("");
-    setDriverPhone("");
-    setUsdotOnRecord("");
-    setPlateOnRecord("");
-    setCarrierCompany("");
-    setCarrierContactName("");
-    setCarrierContactPhone("");
-
-    setTimeout(() => {
-      loadIdRef.current?.focus();
-      loadIdRef.current?.select?.();
-    }, 0);
-  }
-
-  function handleFormKeyDown(e) {
-    if (e.key !== "Enter") return;
-    if (e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) return;
-
-    const tag = String(e.target?.tagName || "").toLowerCase();
-    if (tag === "textarea") return;
-
-    e.preventDefault();
-
-    if (loading) return;
-
-    const grid = e.currentTarget;
-    const fields = Array.from(
-      grid.querySelectorAll('input:not([disabled]), textarea:not([disabled]), select:not([disabled])')
-    ).filter((el) => el.offsetParent !== null);
-
-    const idx = fields.indexOf(e.target);
-
-    if (idx >= 0 && idx < fields.length - 1) {
-      const next = fields[idx + 1];
-      next?.focus?.();
-      next?.select?.();
-      return;
-    }
-
-    issueLink();
-  }
-
-  async function issueLink() {
-    setErrorMsg("");
-    setStatusMsg("");
-    setAttempts([]);
-    setIssuedQr("");
-
-    const usdot_digits = normalized.usdot_digits;
-    const plate_upper = normalized.plate_upper;
-    const phone_digits = normalized.phone_digits;
-
-    if (!usdot_digits) {
-      setErrorMsg("Enter USDOT# (digits).");
-      usdotRef.current?.focus();
-      return;
-    }
-    if (!plate_upper) {
-      setErrorMsg("Enter Plate.");
-      plateRef.current?.focus();
-      return;
-    }
-    if (phone_digits.length !== 10) {
-      setErrorMsg("Enter Driver Phone (10 digits).");
-      driverPhoneRef.current?.focus();
-      return;
-    }
-
-    const pin = normalized.dock_pin_digits;
-    if (pin && (pin.length < 4 || pin.length > 6)) {
-      setErrorMsg("Dock PIN must be 4–6 digits (or leave blank).");
-      dockPinRef.current?.focus();
-      return;
-    }
-
-    const carrierContactPhoneFormatted = normalized.carrier_contact_phone_digits
-      ? formatPhoneHyphen(normalized.carrier_contact_phone_digits)
-      : "";
-
-    let starts_at = null;
-    let expires_at = null;
-
-    if (mode === "auto") {
-      starts_at = nowLocalDatetime();
-      expires_at = plusHoursLocalDatetime(24);
-      setStartsAt(starts_at);
-      setExpiresAt(expires_at);
-    } else if (mode === "pick") {
-      if (!startsAt || !expiresAt) {
-        setErrorMsg("Start/Expire times are required.");
-        return;
-      }
-      starts_at = startsAt;
-      expires_at = expiresAt;
-    } else {
-      starts_at = nowLocalDatetime();
-      expires_at = null;
-      setStartsAt(starts_at);
-      setExpiresAt(plusHoursLocalDatetime(24));
-    }
-
-    try {
-      if (abortRef.current) abortRef.current.abort();
-    } catch {}
-
-    const ac = new AbortController();
-    abortRef.current = ac;
-
-    setLoading(true);
-
-    try {
-      const payload = {
-        load_id: String(loadId || "").trim() || null,
-        dock_email: String(dockEmail || "").trim() || null,
-        usdot_on_record: usdot_digits,
-        plate_on_record: plate_upper,
-        driver_phone: formatPhoneHyphen(phone_digits),
-        starts_at,
-        expires_at,
-        dock_pin: pin || null,
-
-        carrier_company: String(carrierCompany || "").trim() || null,
-        dispatch_contact: String(carrierContactName || "").trim() || null,
-        dispatch_phone: carrierContactPhoneFormatted || null,
-      };
-
-      const res = await fetch("/api/issue_verify_link", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: ac.signal,
-        body: JSON.stringify(payload),
-      });
-
-      const data = await safeJson(res);
-
-      if (!res.ok) {
-        setErrorMsg(data?.error || data?.message || `Issuer failed (${res.status}).`);
-        setLoading(false);
-        return;
-      }
-
-      const verifyUrl = data?.verify_url || "";
-      const qrDataUrl = verifyUrl ? makeQrDataUrl(verifyUrl) : "";
-
-      const msgLines = [
-        "AdbS TRUCK-DRIVER VERIFICATION",
-        "",
-        payload.load_id ? `Load ID: ${payload.load_id}` : null,
-        payload.carrier_company ? `Carrier Company: ${payload.carrier_company}` : null,
-        payload.dispatch_contact ? `Carrier Contact Name: ${payload.dispatch_contact}` : null,
-        payload.dispatch_phone ? `Carrier Contact Phone: ${payload.dispatch_phone}` : null,
-        "",
-        "OPEN AT DOCK:",
-        verifyUrl,
-        "",
-        "Dock Instruction:",
-        "When the truck arrives, open the link above and complete verification before releasing the load.",
-        "Enter the DOT and plate shown on the truck, then call the driver using the link.",
-        "",
-        `Expires: ${data?.expires_at ? String(data.expires_at) : "No Expire"}`,
-      ]
-        .filter(Boolean)
-        .join("\n");
-
-      setIssued({
-        token: data?.token || "",
-        verify_url: verifyUrl,
-        expires_at: data?.expires_at || null,
-        load_id: payload.load_id,
-        dock_email: payload.dock_email,
-        email_status: data?.email_status || null,
-        email_error: data?.email_error || null,
-        full_message: msgLines,
-        status: data?.status || "active",
-
-        carrier_company: payload.carrier_company,
-        carrier_contact_name: payload.dispatch_contact,
-        carrier_contact_phone: payload.dispatch_phone,
-      });
-
-      setIssuedQr(qrDataUrl);
-
-      if (payload.dock_email && data?.email_status === "sent") {
-        setStatusMsg("AdbS Verification issued and emailed to dock.");
-      } else if (payload.dock_email && data?.email_status === "failed") {
-        setStatusMsg("AdbS Verification issued, but dock email failed.");
-      } else {
-        setStatusMsg("AdbS Verification issued.");
-      }
-
-      clearNextLoadFields();
-    } catch (e) {
-      if (String(e?.name) !== "AbortError") {
-        setErrorMsg("Network error issuing link.");
-      }
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleLever(action) {
-    if (!issued?.token) return;
-
-    setActionLoading(action);
-    setErrorMsg("");
-    setStatusMsg("");
-
-    try {
-      const res = await fetch("/api/manage_verify_link", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action,
-          token: issued.token,
-          dock_email: issued.dock_email || null,
-        }),
-      });
-
-      const data = await safeJson(res);
-
-      if (!res.ok) {
-        setErrorMsg(data?.error || data?.message || `${action} failed.`);
-        return;
-      }
-
-      if (action === "reissue") {
-        const newToken = data?.new_token || "";
-        const newUrl = data?.verify_url || "";
-        const newQr = newUrl ? makeQrDataUrl(newUrl) : "";
-
-        const newMessage = [
-          "AdbS TRUCK-DRIVER VERIFICATION",
-          "",
-          issued.load_id ? `Load ID: ${issued.load_id}` : null,
-          issued.carrier_company ? `Carrier Company: ${issued.carrier_company}` : null,
-          issued.carrier_contact_name ? `Carrier Contact Name: ${issued.carrier_contact_name}` : null,
-          issued.carrier_contact_phone ? `Carrier Contact Phone: ${issued.carrier_contact_phone}` : null,
-          "",
-          "OPEN AT DOCK:",
-          newUrl,
-          "",
-          "Dock Instruction:",
-          "When the truck arrives, open the link above and complete verification before releasing the load.",
-          "Enter the DOT and plate shown on the truck, then call the driver using the link.",
-          "",
-          `Expires: ${issued.expires_at ? String(issued.expires_at) : "No Expire"}`,
-        ]
-          .filter(Boolean)
-          .join("\n");
-
-        setIssued((prev) => ({
-          ...prev,
-          token: newToken,
-          verify_url: newUrl,
-          full_message: newMessage,
-          email_status: data?.email_status || prev?.email_status || null,
-          email_error: data?.email_error || null,
-          status: "active",
-        }));
-
-        setIssuedQr(newQr);
-
-        setStatusMsg(
-          data?.email_status === "sent"
-            ? "Verification link reissued and emailed."
-            : "Verification link reissued."
-        );
-        return;
-      }
-
-      if (action === "lock") {
-        setIssued((prev) => ({ ...prev, status: "locked" }));
-        setStatusMsg("Load verification locked.");
-        return;
-      }
-
-      if (action === "clear") {
-        setIssued((prev) => ({ ...prev, status: "cleared" }));
-        setStatusMsg("Load marked cleared.");
-        return;
-      }
-    } catch {
-      setErrorMsg(`${action} failed due to network error.`);
-    } finally {
-      setActionLoading("");
-    }
-  }
-
-  async function loadAttempts() {
-    if (!issued?.token) return;
-
-    setAttemptsLoading(true);
-    setErrorMsg("");
-    setStatusMsg("");
-
-    try {
-      const res = await fetch("/api/manage_verify_link", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "attempts",
-          token: issued.token,
-        }),
-      });
-
-      const data = await safeJson(res);
-
-      if (!res.ok) {
-        setErrorMsg(data?.error || data?.message || "Failed to load attempts.");
-        return;
-      }
-
-      setAttempts(Array.isArray(data?.attempts) ? data.attempts : []);
-      setStatusMsg("Load activity loaded.");
-    } catch {
-      setErrorMsg("Failed to load attempts.");
-    } finally {
-      setAttemptsLoading(false);
-    }
-  }
-
-  const cardStyle = {
-    border: "1px solid rgba(255,255,255,0.12)",
-    background: "rgba(12, 18, 28, 0.72)",
-    borderRadius: 16,
-    padding: 18,
-    boxShadow: "0 12px 28px rgba(0,0,0,0.35)",
-  };
-
-  const labelStyle = { fontSize: 14, opacity: 0.92, marginBottom: 6, fontWeight: 800 };
-
-  const inputStyle = {
-    width: "100%",
-    padding: "12px 12px",
-    borderRadius: 12,
-    border: "1px solid rgba(255,255,255,0.16)",
-    background: "rgba(255,255,255,0.04)",
-    color: "inherit",
-    fontSize: 16,
-    outline: "none",
-  };
-
-  const btnStyle = (primary) => ({
-    width: "100%",
-    padding: "12px 14px",
-    borderRadius: 12,
-    border: primary ? "1px solid rgba(120,180,255,0.45)" : "1px solid rgba(255,255,255,0.16)",
-    background: primary ? "rgba(40, 110, 190, 0.35)" : "rgba(255,255,255,0.06)",
-    color: "inherit",
-    fontSize: 16,
-    cursor: "pointer",
-    fontWeight: 900,
-  });
-
-  const chip = (active) => ({
-    padding: "10px 12px",
-    borderRadius: 12,
-    border: active ? "1px solid rgba(90,200,140,0.45)" : "1px solid rgba(255,255,255,0.16)",
-    background: active ? "rgba(90,200,140,0.14)" : "rgba(255,255,255,0.06)",
-    color: "inherit",
-    cursor: "pointer",
-    fontWeight: 900,
-    textAlign: "center",
-  });
-
-  return (
-    <div style={{ minHeight: "100vh" }}>
-      <Header />
-
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "18px 16px 48px" }}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "flex-end",
-            justifyContent: "space-between",
-            gap: 12,
-            flexWrap: "wrap",
-            marginBottom: 14,
-          }}
-        >
-          <div>
-            <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: 0.2 }}>Control Center</div>
-            <div style={{ opacity: 0.85, marginTop: 6, fontSize: 15 }}>
-              Authorized: <span style={{ fontWeight: 700 }}>{email}</span>
-            </div>
-          </div>
-
-          <div style={{ display: "flex", gap: 10 }}>
-            <button onClick={logout} style={btnStyle(false)}>
-              Log Out
-            </button>
-          </div>
-        </div>
-
-        <div style={{ display: "grid", gridTemplateColumns: "1.05fr 0.95fr", gap: 16 }}>
-          <div style={cardStyle}>
-            <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 10 }}>Issue AdbS Verification</div>
-
-            <div
-              style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}
-              onKeyDown={handleFormKeyDown}
-            >
-              <div>
-                <div style={labelStyle}>Load ID</div>
-                <input
-                  ref={loadIdRef}
-                  style={inputStyle}
-                  value={loadId}
-                  onChange={(e) => setLoadId(e.target.value)}
-                  placeholder="Rob Q1"
-                  autoComplete="off"
-                />
-              </div>
-
-              <div>
-                <div style={labelStyle}>Dock Email</div>
-                <input
-                  ref={dockEmailRef}
-                  style={inputStyle}
-                  value={dockEmail}
-                  onChange={(e) => setDockEmail(e.target.value)}
-                  placeholder="dock@warehouse.com"
-                  inputMode="email"
-                  autoComplete="off"
-                />
-              </div>
-
-              <div>
-                <div style={labelStyle}>Dock PIN (optional)</div>
-                <input
-                  ref={dockPinRef}
-                  style={inputStyle}
-                  value={dockPin}
-                  onChange={(e) => setDockPin(onlyDigits(e.target.value).slice(0, 6))}
-                  placeholder="4–6 digits (optional)"
-                  inputMode="numeric"
-                  autoComplete="off"
-                />
-              </div>
-
-              <div>
-                <div style={labelStyle}>Driver Phone</div>
-                <input
-                  ref={driverPhoneRef}
-                  style={inputStyle}
-                  value={driverPhone}
-                  onChange={(e) => setDriverPhone(formatPhoneHyphen(e.target.value))}
-                  placeholder="123-456-7890"
-                  inputMode="tel"
-                  autoComplete="off"
-                />
-              </div>
-
-              <div>
-                <div style={labelStyle}>USDOT# on record</div>
-                <input
-                  ref={usdotRef}
-                  style={inputStyle}
-                  value={usdotOnRecord}
-                  onChange={(e) => setUsdotOnRecord(onlyDigits(e.target.value))}
-                  placeholder="123456"
-                  inputMode="numeric"
-                  autoComplete="off"
-                />
-              </div>
-
-              <div>
-                <div style={labelStyle}>Plate on record</div>
-                <input
-                  ref={plateRef}
-                  style={inputStyle}
-                  value={plateOnRecord}
-                  onChange={(e) => setPlateOnRecord(toUpperClean(e.target.value))}
-                  placeholder="ABC1234"
-                  inputMode="text"
-                  autoComplete="off"
-                />
-              </div>
-
-              <div>
-                <div style={labelStyle}>Carrier Company (optional)</div>
-                <input
-                  style={inputStyle}
-                  value={carrierCompany}
-                  onChange={(e) => setCarrierCompany(e.target.value)}
-                  placeholder="ABC Logistics LLC"
-                  autoComplete="off"
-                />
-              </div>
-
-              <div>
-                <div style={labelStyle}>Carrier Contact Name (optional)</div>
-                <input
-                  style={inputStyle}
-                  value={carrierContactName}
-                  onChange={(e) => setCarrierContactName(e.target.value)}
-                  placeholder="Mike Reynolds"
-                  autoComplete="off"
-                />
-              </div>
-
-              <div>
-                <div style={labelStyle}>Carrier Contact Phone (optional)</div>
-                <input
-                  style={inputStyle}
-                  value={carrierContactPhone}
-                  onChange={(e) => setCarrierContactPhone(formatPhoneHyphen(e.target.value))}
-                  placeholder="123-456-7890"
-                  inputMode="tel"
-                  autoComplete="off"
-                />
-              </div>
-
-              <div>
-                <div style={labelStyle}>Start / Expire</div>
-                <div style={{ display: "grid", gap: 8 }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-                    <div style={chip(mode === "auto")} onClick={() => setMode("auto")}>Auto 24h</div>
-                    <div style={chip(mode === "pick")} onClick={() => setMode("pick")}>Pick</div>
-                    <div style={chip(mode === "none")} onClick={() => setMode("none")}>No Expire</div>
-                  </div>
-
-                  <input
-                    style={inputStyle}
-                    type="datetime-local"
-                    value={startsAt}
-                    onChange={(e) => setStartsAt(e.target.value)}
-                    disabled={mode !== "pick"}
-                  />
-                  <input
-                    style={inputStyle}
-                    type="datetime-local"
-                    value={expiresAt}
-                    onChange={(e) => setExpiresAt(e.target.value)}
-                    disabled={mode !== "pick"}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div style={{ marginTop: 14, display: "grid", gap: 10 }}>
-              <button onClick={issueLink} style={btnStyle(true)} disabled={loading}>
-                {loading ? "Issuing..." : "Issue AdbS Verification"}
-              </button>
-
-              {errorMsg ? (
-                <div style={{ border: "1px solid rgba(255,80,80,0.35)", background: "rgba(255,80,80,0.08)", padding: 12, borderRadius: 12, fontSize: 14 }}>
-                  <b>Error:</b> {errorMsg}
-                </div>
-              ) : null}
-
-              {statusMsg ? (
-                <div style={{ border: "1px solid rgba(120,180,255,0.30)", background: "rgba(120,180,255,0.08)", padding: 12, borderRadius: 12, fontSize: 14 }}>
-                  {statusMsg}
-                </div>
-              ) : null}
-            </div>
-
-            {issued ? (
-              <div style={{ marginTop: 14, ...cardStyle, padding: 14 }}>
-                <div style={{ fontSize: 16, fontWeight: 900, marginBottom: 8 }}>Issued</div>
-
-                <div style={{ fontSize: 14, opacity: 0.9, marginBottom: 10 }}>
-                  Load ID: <span style={{ fontWeight: 900 }}>{issued.load_id || "(none)"}</span>
-                  <br />
-                  Status: <span style={{ fontWeight: 900 }}>{issued.status || "active"}</span>
-                  <br />
-                  Expires: <span style={{ fontWeight: 900 }}>{issued.expires_at ? String(issued.expires_at) : "No Expire"}</span>
-                  <br />
-                  Dock Email: <span style={{ fontWeight: 900 }}>{issued.dock_email || "(manual only)"}</span>
-                  <br />
-                  Email Status: <span style={{ fontWeight: 900 }}>{issued.email_status || "not sent"}</span>
-                </div>
-
-                {(issued.carrier_company || issued.carrier_contact_name || issued.carrier_contact_phone) ? (
-                  <div
-                    style={{
-                      marginBottom: 12,
-                      border: "1px solid rgba(255,255,255,0.12)",
-                      background: "rgba(255,255,255,0.04)",
-                      padding: 12,
-                      borderRadius: 12,
-                    }}
-                  >
-                    <div style={{ fontSize: 15, fontWeight: 900, marginBottom: 8 }}>Carrier Contact</div>
-
-                    {issued.carrier_company ? (
-                      <div style={{ fontSize: 14, marginBottom: 6 }}>
-                        Carrier Company: <span style={{ fontWeight: 900 }}>{issued.carrier_company}</span>
-                      </div>
-                    ) : null}
-
-                    {issued.carrier_contact_name ? (
-                      <div style={{ fontSize: 14, marginBottom: 6 }}>
-                        Carrier Contact Name: <span style={{ fontWeight: 900 }}>{issued.carrier_contact_name}</span>
-                      </div>
-                    ) : null}
-
-                    {issued.carrier_contact_phone ? (
-                      <div style={{ fontSize: 14 }}>
-                        Carrier Contact Phone:{" "}
-                        <a
-                          href={`tel:${onlyDigits(issued.carrier_contact_phone)}`}
-                          style={{
-                            color: "#e6edf5",
-                            fontWeight: 900,
-                            textDecoration: "none",
-                          }}
-                          title="Call Carrier Contact"
-                        >
-                          {issued.carrier_contact_phone}
-                        </a>
-                      </div>
-                    ) : null}
-                  </div>
-                ) : null}
-
-                {issued.email_error ? (
-                  <div style={{ marginBottom: 10, border: "1px solid rgba(255,80,80,0.35)", background: "rgba(255,80,80,0.08)", padding: 10, borderRadius: 10, fontSize: 13 }}>
-                    <b>Email Error:</b> {issued.email_error}
-                  </div>
-                ) : null}
-
-                <div>
-                  <div style={labelStyle}>AdbS SmartLink</div>
-                  <input style={inputStyle} value={issued.verify_url || ""} readOnly />
-
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 12,
-                      marginTop: 14,
-                      marginBottom: 14,
-                    }}
-                  >
-                    <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.10)" }} />
-                    <div
-                      style={{
-                        color: "rgba(220,228,240,0.66)",
-                        fontSize: 12,
-                        letterSpacing: "0.14em",
-                        textTransform: "uppercase",
-                        fontWeight: 900,
-                      }}
-                    >
-                      OR
-                    </div>
-                    <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.10)" }} />
-                  </div>
-
-                  <div style={{ marginBottom: 8, ...labelStyle }}>AdbS QR Code</div>
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      minHeight: 300,
-                      padding: 18,
-                      borderRadius: 16,
-                      background: "rgba(255,255,255,0.04)",
-                      border: "1px solid rgba(255,255,255,0.10)",
-                      marginBottom: 14,
-                    }}
-                  >
-                    {issuedQr ? (
-                      <>
-                        <img
-                          src={issuedQr}
-                          alt="AdbS QR Code"
-                          style={{
-                            width: 260,
-                            maxWidth: "100%",
-                            height: "auto",
-                            display: "block",
-                            borderRadius: 12,
-                            background: "#ffffff",
-                            padding: 12,
-                          }}
-                        />
-                        <div
-                          style={{
-                            marginTop: 12,
-                            color: "rgba(220,228,240,0.72)",
-                            fontSize: 14,
-                            textAlign: "center",
-                          }}
-                        >
-                          Same destination as the AdbS SmartLink.
-                        </div>
-                      </>
-                    ) : (
-                      <div
-                        style={{
-                          color: "rgba(220,228,240,0.72)",
-                          fontSize: 15,
-                          fontWeight: 700,
-                        }}
-                      >
-                        QR not available.
-                      </div>
-                    )}
-                  </div>
-
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
-                    <button
-                      style={btnStyle(false)}
-                      onClick={async () => {
-                        const ok = await safeCopy(issued.verify_url || "");
-                        setStatusMsg(ok ? "Link copied." : "Copy failed.");
-                      }}
-                    >
-                      Copy AdbS ID Link
-                    </button>
-
-                    <button
-                      style={btnStyle(false)}
-                      onClick={async () => {
-                        const ok = await safeCopy(issued.full_message || "");
-                        setStatusMsg(ok ? "Full message copied." : "Copy failed.");
-                      }}
-                    >
-                      Copy Full Message
-                    </button>
-                  </div>
-
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 12 }}>
-                    <button
-                      style={btnStyle(false)}
-                      disabled={actionLoading === "reissue"}
-                      onClick={() => handleLever("reissue")}
-                    >
-                      {actionLoading === "reissue" ? "Reissuing..." : "Reissue Verification Link"}
-                    </button>
-
-                    <button
-                      style={btnStyle(false)}
-                      disabled={actionLoading === "lock"}
-                      onClick={() => handleLever("lock")}
-                    >
-                      {actionLoading === "lock" ? "Locking..." : "Lock Load Verification"}
-                    </button>
-
-                    <button
-                      style={btnStyle(false)}
-                      disabled={actionLoading === "clear"}
-                      onClick={() => handleLever("clear")}
-                    >
-                      {actionLoading === "clear" ? "Marking..." : "Mark Load Cleared"}
-                    </button>
-
-                    <button
-                      style={btnStyle(false)}
-                      disabled={attemptsLoading}
-                      onClick={loadAttempts}
-                    >
-                      {attemptsLoading ? "Loading..." : "Review Attempts"}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ) : null}
-          </div>
-
-          <div style={cardStyle}>
-            <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 10 }}>Load Activity</div>
-
-            {!attempts.length ? (
-              <div style={{ opacity: 0.75, fontSize: 14 }}>
-                No verification attempts recorded yet.
-              </div>
-            ) : (
-              <div style={{ display: "grid", gap: 10 }}>
-                {attempts.map((a, idx) => (
-                  <div
-                    key={`${a.id || idx}-${idx}`}
-                    style={{
-                      border: "1px solid rgba(255,255,255,0.12)",
-                      borderRadius: 12,
-                      padding: 12,
-                      background: "rgba(255,255,255,0.04)",
-                    }}
-                  >
-                    <div style={{ fontWeight: 900, marginBottom: 6 }}>
-                      {String(a.result || "").toLowerCase().includes("clear") ? "CLEAR" : "ATTEMPT"}
-                    </div>
-                    <div style={{ fontSize: 13, opacity: 0.9, lineHeight: 1.45 }}>
-                      DOT Entered: <b>{a.entered_usdot || "(blank)"}</b>
-                      <br />
-                      Plate Entered: <b>{a.entered_plate || "(blank)"}</b>
-                      <br />
-                      Driver Answered: <b>{String(a.driver_answered ?? "").toUpperCase()}</b>
-                      <br />
-                      Result: <b>{a.result || "(unknown)"}</b>
-                      <br />
-                      Time: <b>{a.created_at || a.checked_at || "(unknown)"}</b>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div style={{ marginTop: 16, opacity: 0.65, fontSize: 12 }}>
-          QueCab AdbS — Truck-Driver verification system. Developed by Omnimobile Inc. for QueCab Inc.
-        </div>
-      </div>
-    </div>
-  );
+const btn=(primary)=>({
+width:"100%",
+padding:12,
+borderRadius:12,
+border:primary?"1px solid rgba(120,180,255,0.45)":"1px solid rgba(255,255,255,0.16)",
+background:primary?"rgba(40,110,190,0.35)":"rgba(255,255,255,0.06)",
+fontWeight:900,
+cursor:"pointer"
+})
+
+return(
+
+<div style={{minHeight:"100vh"}}>
+
+<Header/>
+
+<div style={{maxWidth:1100,margin:"0 auto",padding:"18px 16px 48px"}}>
+
+<div style={{fontSize:26,fontWeight:800,marginBottom:14}}>Control Center</div>
+
+{/* ---------- Protection Summary ---------- */}
+
+<div style={{...card,marginBottom:16}}>
+<div style={{fontWeight:900,fontSize:18,marginBottom:10}}>AdbS Protection Summary</div>
+
+<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,fontSize:15}}>
+
+<div>
+<div style={{opacity:.7}}>Truck-Driver Verifications</div>
+<div style={{fontWeight:900,fontSize:22}}>{protectionSummary.verifications}</div>
+</div>
+
+<div>
+<div style={{opacity:.7}}>Cleared Loads</div>
+<div style={{fontWeight:900,fontSize:22}}>{protectionSummary.cleared}</div>
+</div>
+
+<div>
+<div style={{opacity:.7}}>Caution Alerts</div>
+<div style={{fontWeight:900,fontSize:22}}>{protectionSummary.caution}</div>
+</div>
+
+</div>
+</div>
+
+{/* ---------- Main Grid ---------- */}
+
+<div style={{display:"grid",gridTemplateColumns:"1.1fr .9fr",gap:16}}>
+
+{/* ---------- Issue Panel ---------- */}
+
+<div style={card}>
+
+<div style={{fontWeight:900,fontSize:18,marginBottom:12}}>Issue AdbS Verification</div>
+
+<div style={{display:"grid",gap:10}}>
+
+<input ref={loadIdRef} style={input} placeholder="Load ID" value={loadId} onChange={e=>setLoadId(e.target.value)} />
+
+<input style={input} placeholder="Dock Email" value={dockEmail} onChange={e=>setDockEmail(e.target.value)} />
+
+<input style={input} placeholder="Dock PIN" value={dockPin} onChange={e=>setDockPin(onlyDigits(e.target.value))} />
+
+<input ref={driverPhoneRef} style={input} placeholder="Driver Phone" value={driverPhone} onChange={e=>setDriverPhone(formatPhoneHyphen(e.target.value))} />
+
+<input ref={usdotRef} style={input} placeholder="USDOT#" value={usdotOnRecord} onChange={e=>setUsdotOnRecord(onlyDigits(e.target.value))} />
+
+<input ref={plateRef} style={input} placeholder="Plate" value={plateOnRecord} onChange={e=>setPlateOnRecord(toUpperClean(e.target.value))} />
+
+<button style={btn(true)} onClick={issueLink} disabled={loading}>
+{loading?"Issuing...":"Issue AdbS Verification"}
+</button>
+
+{errorMsg&&<div style={{color:"#ff7b7b"}}>{errorMsg}</div>}
+{statusMsg&&<div>{statusMsg}</div>}
+
+</div>
+
+{issued&&(
+<div style={{marginTop:14}}>
+
+<div style={{fontWeight:900}}>Verification ID</div>
+
+<input style={input} value={issued.verification_id} readOnly />
+
+<div style={{marginTop:10,fontWeight:900}}>AdbS SmartLink</div>
+
+<input style={input} value={issued.verify_url} readOnly />
+
+<div style={{marginTop:14,textAlign:"center"}}>
+
+{issuedQr&&(
+<img src={issuedQr} alt="QR" style={{width:240,background:"#fff",padding:10,borderRadius:10}}/>
+)}
+
+</div>
+
+</div>
+)}
+
+</div>
+
+{/* ---------- Activity Panel ---------- */}
+
+<div style={card}>
+
+<div style={{fontWeight:900,fontSize:18,marginBottom:10}}>Load Activity</div>
+
+{!attempts.length&&(
+<div style={{opacity:.7,fontSize:14}}>
+No verification attempts yet.
+</div>
+)}
+
+{attempts.map((a,i)=>(
+<div key={i} style={{border:"1px solid rgba(255,255,255,0.1)",borderRadius:10,padding:10,marginBottom:8}}>
+
+<div style={{fontWeight:900}}>
+{String(a.result||"").toLowerCase().includes("clear")?"CLEAR":"ATTEMPT"}
+</div>
+
+<div style={{fontSize:13}}>
+DOT: <b>{a.entered_usdot}</b><br/>
+Plate: <b>{a.entered_plate}</b><br/>
+Driver Answered: <b>{String(a.driver_answered)}</b>
+</div>
+
+</div>
+))}
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+)
 }
