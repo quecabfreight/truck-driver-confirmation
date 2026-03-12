@@ -260,10 +260,7 @@ async function handleManageAction(req, body) {
       status: "active",
       starts_at: new Date().toISOString(),
       expires_at: link.expires_at || null,
-      dock_pin,
-      carrier_company: link.carrier_company || null,
-      dispatch_contact: link.dispatch_contact || null,
-      dispatch_phone: link.dispatch_phone || null
+      dock_pin
     };
 
     const inserted = await sbInsertVerifyLink(row);
@@ -337,10 +334,6 @@ export default async function handler(req, res) {
         ? String(body.expires_at)
         : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
-    const carrier_company = String(body.carrier_company || "").trim() || null;
-    const dispatch_contact = String(body.dispatch_contact || "").trim() || null;
-    const dispatch_phone = formatPhoneHyphen(body.dispatch_phone || "");
-
     if (!usdot_on_record) return json(res, 400, { ok: false, error: "Enter USDOT# (digits)." });
     if (!plate_on_record) return json(res, 400, { ok: false, error: "Enter Plate." });
     if (driver_phone_digits.length !== 10) return json(res, 400, { ok: false, error: "Enter Driver Phone (10 digits)." });
@@ -356,10 +349,7 @@ export default async function handler(req, res) {
       status: "active",
       starts_at,
       expires_at,
-      dock_pin,
-      carrier_company,
-      dispatch_contact,
-      dispatch_phone: dispatch_phone || null
+      dock_pin
     };
 
     const inserted = await sbInsertVerifyLink(row);
