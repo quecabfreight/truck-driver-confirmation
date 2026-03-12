@@ -77,9 +77,10 @@ async function sendDockEmail({
     throw new Error("Missing RESEND_API_KEY");
   }
 
-  const subject = `Truck-Driver Verification Required${loadId ? ` — ${loadId}` : ""}`;
+  const subject = `QR TEST 1 — Truck-Driver Verification Required${loadId ? ` — ${loadId}` : ""}`;
 
   const text = [
+    "QR TEST 1",
     "AdbS TRUCK-DRIVER VERIFICATION",
     "",
     loadId ? `Load ID: ${loadId}` : null,
@@ -101,6 +102,7 @@ async function sendDockEmail({
 
   const html = `
     <div style="font-family: Arial, Helvetica, sans-serif; color:#111; line-height:1.45;">
+      <div style="font-size:20px; font-weight:800; margin-bottom:6px;">QR TEST 1</div>
       <div style="font-size:20px; font-weight:800; margin-bottom:12px;">AdbS TRUCK-DRIVER VERIFICATION</div>
       ${loadId ? `<div style="margin-bottom:10px;"><b>Load ID:</b> ${loadId}</div>` : ""}
       <div style="margin:14px 0 8px; font-weight:800;">OPEN AT DOCK:</div>
@@ -187,7 +189,9 @@ export default async function handler(req, res) {
 
     if (!usdot_on_record) return json(res, 400, { ok: false, error: "Enter USDOT# (digits)." });
     if (!plate_on_record) return json(res, 400, { ok: false, error: "Enter Plate." });
-    if (onlyDigits(driver_phone).length !== 10) return json(res, 400, { ok: false, error: "Enter Driver Phone (10 digits)." });
+    if (onlyDigits(driver_phone).length !== 10) {
+      return json(res, 400, { ok: false, error: "Enter Driver Phone (10 digits)." });
+    }
 
     const token = tokenBase64Url(18);
 
@@ -247,4 +251,3 @@ export default async function handler(req, res) {
     return json(res, 500, { ok: false, error: String(e?.message || "Server error") });
   }
 }
-
