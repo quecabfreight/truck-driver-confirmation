@@ -59,6 +59,7 @@
       font-size:18px;
       text-align:center;
       outline:none;
+      text-transform:uppercase;
     }
 
     .callBox{
@@ -312,12 +313,14 @@
           link.href = `tel:${phoneDigits}`;
           link.innerText = data.driver_phone;
         } else {
-          document.getElementById("driverPhoneLink").innerText = "(phone unavailable)";
-          document.getElementById("driverPhoneLink").removeAttribute("href");
+          const link = document.getElementById("driverPhoneLink");
+          link.innerText = "(phone unavailable)";
+          link.removeAttribute("href");
         }
       } catch {
-        document.getElementById("driverPhoneLink").innerText = "(phone unavailable)";
-        document.getElementById("driverPhoneLink").removeAttribute("href");
+        const link = document.getElementById("driverPhoneLink");
+        link.innerText = "(phone unavailable)";
+        link.removeAttribute("href");
       }
     }
 
@@ -326,8 +329,10 @@
 
       const token = getToken();
       const usdot = document.getElementById("usdot").value.trim();
-      const plate = document.getElementById("plate").value.trim();
+      const plate = document.getElementById("plate").value.trim().toUpperCase();
       const result = document.getElementById("result");
+
+      document.getElementById("plate").value = plate;
 
       if (driverAnswered === null) {
         result.innerText = "Select YES or NO for phone answer";
