@@ -149,50 +149,72 @@ async function sendDockEmail({
     throw new Error("Missing RESEND_API_KEY");
   }
 
-  const subject = `HTML ONLY TEST — Truck-Driver Verification Required${loadId ? ` — ${loadId}` : ""}`;
+  const subject = `Truck-Driver Verification Required${loadId ? ` — ${loadId}` : ""}`;
   const qrUrl = buildQrUrl(verifyUrl);
 
   const html = `
-    <div style="font-family: Arial, Helvetica, sans-serif; color:#111; line-height:1.45; padding:8px 0;">
-      <div style="font-size:22px; font-weight:800; margin-bottom:12px;">AdbS TRUCK-DRIVER VERIFICATION</div>
+    <div style="margin:0; padding:24px 0; background:#f3f6fb; font-family:Arial, Helvetica, sans-serif; color:#111;">
+      <div style="max-width:720px; margin:0 auto; background:#ffffff; border:1px solid #d8dee8; border-radius:18px; overflow:hidden;">
+        <div style="background:linear-gradient(135deg, #1b2430, #2f3c4d); color:#ffffff; padding:18px 22px;">
+          <div style="font-size:12px; letter-spacing:0.12em; font-weight:800; text-transform:uppercase; opacity:0.9;">
+            QueCab AdbS
+          </div>
+          <div style="font-size:24px; font-weight:800; margin-top:6px;">
+            Truck-Driver Verification Required
+          </div>
+        </div>
 
-      ${loadId ? `<div style="margin-bottom:12px; font-size:15px;"><b>Load ID:</b> ${loadId}</div>` : ""}
+        <div style="padding:22px;">
+          ${loadId ? `
+            <div style="margin-bottom:14px; font-size:15px;">
+              <span style="color:#4b5563; font-weight:700;">Load ID:</span>
+              <span style="color:#111827; font-weight:800;"> ${loadId}</span>
+            </div>
+          ` : ""}
 
-      <div style="margin:14px 0 8px; font-weight:800; font-size:16px;">AdbS SmartLink</div>
-      <div style="margin-bottom:16px;">
-        <a href="${verifyUrl}" style="font-size:16px; font-weight:700; word-break:break-all; color:#0b57d0; text-decoration:none;">${verifyUrl}</a>
-      </div>
+          <div style="margin:14px 0 8px; font-weight:800; font-size:16px; color:#111827;">AdbS SmartLink</div>
+          <div style="margin-bottom:16px; padding:14px; background:#f8fafc; border:1px solid #d8dee8; border-radius:12px;">
+            <a href="${verifyUrl}" style="font-size:16px; font-weight:700; word-break:break-all; color:#0b57d0; text-decoration:none;">${verifyUrl}</a>
+          </div>
 
-      <div style="display:flex; align-items:center; gap:12px; margin:10px 0 14px;">
-        <div style="flex:1; height:1px; background:#d8dee8;"></div>
-        <div style="font-size:12px; color:#5a6472; font-weight:800; letter-spacing:0.12em;">OR</div>
-        <div style="flex:1; height:1px; background:#d8dee8;"></div>
-      </div>
+          <div style="display:flex; align-items:center; gap:12px; margin:14px 0 18px;">
+            <div style="flex:1; height:1px; background:#d8dee8;"></div>
+            <div style="font-size:12px; color:#5a6472; font-weight:800; letter-spacing:0.12em;">OR</div>
+            <div style="flex:1; height:1px; background:#d8dee8;"></div>
+          </div>
 
-      <div style="margin:0 0 8px; font-weight:800; font-size:16px;">AdbS QR Code</div>
-      <div style="margin-bottom:16px;">
-        <img
-          src="${qrUrl}"
-          alt="AdbS QR Code"
-          width="260"
-          height="260"
-          style="display:block; background:#ffffff; padding:12px; border:1px solid #d8dee8; border-radius:12px;"
-        />
-      </div>
+          <div style="margin:0 0 8px; font-weight:800; font-size:16px; color:#111827;">AdbS QR Code</div>
+          <div style="margin-bottom:18px; padding:18px; background:#f8fafc; border:1px solid #d8dee8; border-radius:12px; text-align:center;">
+            <img
+              src="${qrUrl}"
+              alt="AdbS QR Code"
+              width="260"
+              height="260"
+              style="display:inline-block; background:#ffffff; padding:12px; border:1px solid #d8dee8; border-radius:12px;"
+            />
+            <div style="margin-top:10px; color:#5a6472; font-size:13px;">
+              Same destination as the AdbS SmartLink.
+            </div>
+          </div>
 
-      <div style="font-weight:800; margin-bottom:6px;">Dock Instruction:</div>
-      <div style="margin-bottom:10px;">
-        When the truck arrives, open the link above and complete verification before releasing the load.
-      </div>
-      <div style="margin-bottom:14px;">
-        Enter the DOT and plate shown on the truck, then call the driver using the link.
-      </div>
-      <div style="margin-bottom:14px;">
-        <b>Expires:</b> ${expiresAt || "No Expire"}
-      </div>
-      <div style="color:#444; font-size:12px;">
-        QueCab AdbS<br/>
-        Developed by Omnimobile Inc. for QueCab Inc.
+          <div style="font-weight:800; margin-bottom:6px; color:#111827;">Dock Instruction</div>
+          <div style="margin-bottom:10px; color:#334155; line-height:1.55;">
+            When the truck arrives, open the link above and complete verification before releasing the load.
+          </div>
+          <div style="margin-bottom:16px; color:#334155; line-height:1.55;">
+            Enter the DOT and plate shown on the truck, then call the driver using the link.
+          </div>
+
+          <div style="margin-bottom:18px; font-size:14px;">
+            <span style="color:#4b5563; font-weight:700;">Expires:</span>
+            <span style="color:#111827; font-weight:800;"> ${expiresAt || "No Expire"}</span>
+          </div>
+        </div>
+
+        <div style="padding:14px 22px; border-top:1px solid #e5e7eb; background:#fafbfd; color:#6b7280; font-size:12px; line-height:1.45;">
+          QueCab AdbS<br/>
+          Developed by Omnimobile Inc. for QueCab Inc.
+        </div>
       </div>
     </div>
   `;
