@@ -28,6 +28,12 @@ function tokenBase64Url(bytes = 18) {
   return crypto.randomBytes(bytes).toString("base64url");
 }
 
+function buildQrUrl(value) {
+  const clean = String(value || "").trim();
+  if (!clean) return "";
+  return `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(clean)}`;
+}
+
 async function safeJsonResponse(res) {
   const text = await res.text();
   try {
@@ -144,14 +150,19 @@ async function sendDockEmail({
   }
 
   const subject = `Truck-Driver Verification Required${loadId ? ` — ${loadId}` : ""}`;
+  const qrUrl = buildQrUrl(verifyUrl);
 
   const text = [
     "AdbS TRUCK-DRIVER VERIFICATION",
     "",
     loadId ? `Load ID: ${loadId}` : null,
     "",
-    "OPEN AT DOCK:",
+    "AdbS SmartLink:",
     verifyUrl,
+    "",
+    "OR",
+    "AdbS QR Code:",
+    qrUrl || "(QR unavailable)",
     "",
     "Dock Instruction:",
     "When the truck arrives, open the link above and complete verification before releasing the load.",
@@ -168,11 +179,31 @@ async function sendDockEmail({
   const html = `
     <div style="font-family: Arial, Helvetica, sans-serif; color:#111; line-height:1.45;">
       <div style="font-size:20px; font-weight:800; margin-bottom:12px;">AdbS TRUCK-DRIVER VERIFICATION</div>
+
       ${loadId ? `<div style="margin-bottom:10px;"><b>Load ID:</b> ${loadId}</div>` : ""}
-      <div style="margin:14px 0 8px; font-weight:800;">OPEN AT DOCK:</div>
+
+      <div style="margin:14px 0 8px; font-weight:800;">AdbS SmartLink</div>
       <div style="margin-bottom:16px;">
-        <a href="${verifyUrl}" style="font-size:16px; font-weight:700;">${verifyUrl}</a>
+        <a href="${verifyUrl}" style="font-size:16px; font-weight:700; word-break:break-all;">${verifyUrl}</a>
       </div>
+
+      <div style="display:flex; align-items:center; gap:12px; margin:10px 0 14px;">
+        <div style="flex:1; height:1px; background:#d8dee8;"></div>
+        <div style="font-size:12px; color:#5a6472; font-weight:800; letter-spacing:0.12em;">OR</div>
+        <div style="flex:1; height:1px; background:#d8dee8;"></div>
+      </div>
+
+      <div style="margin:0 0 8px; font-weight:800;">AdbS QR Code</div>
+      <div style="margin-bottom:16px;">
+        <img
+          src="${qrUrl}"
+          alt="AdbS QR Code"
+          width="260"
+          height="260"
+          style="display:block; background:#ffffff; padding:12px; border:1px solid #d8dee8; border-radius:12px;"
+        />
+      </div>
+
       <div style="font-weight:800; margin-bottom:6px;">Dock Instruction:</div>
       <div style="margin-bottom:10px;">
         When the truck arrives, open the link above and complete verification before releasing the load.
