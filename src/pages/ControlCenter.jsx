@@ -1,5 +1,5 @@
 // /src/pages/ControlCenter.jsx
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import Header from "../components/Header.jsx";
@@ -45,7 +45,6 @@ const [dockPin,setDockPin]=useState("")
 const [usdotOnRecord,setUsdotOnRecord]=useState("")
 const [plateOnRecord,setPlateOnRecord]=useState("")
 const [driverPhone,setDriverPhone]=useState("")
-
 const [searchId,setSearchId]=useState("")
 
 const [statusMsg,setStatusMsg]=useState("")
@@ -56,26 +55,29 @@ const [issued,setIssued]=useState(null)
 const [issuedQr,setIssuedQr]=useState("")
 const [attempts,setAttempts]=useState([])
 
-/* ----------- Protection Summary ----------- */
-
-const protectionSummary=useMemo(()=>{
-let verifications=issued?1:0
-let cleared=0
-let caution=0
-
-attempts.forEach(a=>{
-if(String(a.result||"").toLowerCase().includes("clear"))cleared++
-else caution++
+const [totals,setTotals]=useState({
+verifications:0,
+cleared:0,
+caution:0
 })
 
-return{
-verifications,
-cleared,
-caution
-}
-},[attempts,issued])
+useEffect(()=>{
+loadTotals()
+},[])
 
-/* ----------- Search Verification ----------- */
+async function loadTotals(){
+try{
+const res=await fetch("/api/dashboard_totals")
+const data=await res.json()
+if(res.ok){
+setTotals({
+verifications:Number(data.verifications||0),
+cleared:Number(data.cleared||0),
+caution:Number(data.caution||0)
+})
+}
+}catch{}
+}
 
 async function searchVerification(){
 
@@ -123,8 +125,6 @@ setErrorMsg("Search failed")
 
 }
 
-/* ----------- Issue Link ----------- */
-
 async function issueLink(){
 
 setErrorMsg("")
@@ -151,10 +151,19 @@ driver_phone:formatPhoneHyphen(phone_digits),
 dock_pin:dockPin||null
 }
 
-const res=await fetch("/api/issue_verify_link",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)})
+const res=await fetch("/api/issue_verify_link",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify(payload)
+})
+
 const data=await res.json()
 
-if(!res.ok){setErrorMsg(data.error||"Issue failed");setLoading(false);return}
+if(!res.ok){
+setErrorMsg(data.error||"Issue failed")
+setLoading(false)
+return
+}
 
 const verifyUrl=data.verify_url||""
 const qrDataUrl=makeQrDataUrl(verifyUrl)
@@ -167,6 +176,7 @@ status:data.status||"active"
 
 setIssuedQr(qrDataUrl)
 setStatusMsg("AdbS Verification issued")
+loadTotals()
 
 }catch{
 setErrorMsg("Network error")
@@ -174,8 +184,6 @@ setErrorMsg("Network error")
 
 setLoading(false)
 }
-
-/* ----------- Layout Styles ----------- */
 
 const card={
 border:"1px solid rgba(255,255,255,0.12)",
@@ -214,16 +222,10 @@ return(
 
 <div style={{fontSize:26,fontWeight:800,marginBottom:14}}>Control Center</div>
 
-{/* ---------- Verification Search ---------- */}
-
 <div style={{...card,marginBottom:16}}>
-
-<div style={{fontWeight:900,fontSize:18,marginBottom:10}}>
-Find Verification
-</div>
+<div style={{fontWeight:900,fontSize:18,marginBottom:10}}>Find Verification</div>
 
 <div style={{display:"grid",gridTemplateColumns:"1fr auto",gap:10}}>
-
 <input
 style={input}
 placeholder="Verification ID"
@@ -234,41 +236,31 @@ onChange={e=>setSearchId(e.target.value)}
 <button style={btn(true)} onClick={searchVerification}>
 Search
 </button>
-
 </div>
-
 </div>
-
-{/* ---------- Protection Summary ---------- */}
 
 <div style={{...card,marginBottom:16}}>
 <div style={{fontWeight:900,fontSize:18,marginBottom:10}}>AdbS Protection Summary</div>
 
 <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,fontSize:15}}>
-
 <div>
 <div style={{opacity:.7}}>Truck-Driver Verifications</div>
-<div style={{fontWeight:900,fontSize:22}}>{protectionSummary.verifications}</div>
+<div style={{fontWeight:900,fontSize:22}}>{totals.verifications}</div>
 </div>
 
 <div>
 <div style={{opacity:.7}}>Cleared Loads</div>
-<div style={{fontWeight:900,fontSize:22}}>{protectionSummary.cleared}</div>
+<div style={{fontWeight:900,fontSize:22}}>{totals.cleared}</div>
 </div>
 
 <div>
 <div style={{opacity:.7}}>Caution Alerts</div>
-<div style={{fontWeight:900,fontSize:22}}>{protectionSummary.caution}</div>
-</div>
-
+<div style={{fontWeight:900,fontSize:22}}>{totals.caution}</div>
 </div>
 </div>
-
-{/* ---------- Main Grid ---------- */}
+</div>
 
 <div style={{display:"grid",gridTemplateColumns:"1.1fr .9fr",gap:16}}>
-
-{/* ---------- Issue Panel ---------- */}
 
 <div style={card}>
 
@@ -301,27 +293,21 @@ Search
 <div style={{marginTop:14}}>
 
 <div style={{fontWeight:900}}>Verification ID</div>
-
 <input style={input} value={issued.verification_id} readOnly />
 
 <div style={{marginTop:10,fontWeight:900}}>AdbS SmartLink</div>
-
 <input style={input} value={issued.verify_url} readOnly />
 
 <div style={{marginTop:14,textAlign:"center"}}>
-
 {issuedQr&&(
 <img src={issuedQr} alt="QR" style={{width:240,background:"#fff",padding:10,borderRadius:10}}/>
 )}
-
 </div>
 
 </div>
 )}
 
 </div>
-
-{/* ---------- Activity Panel ---------- */}
 
 <div style={card}>
 
@@ -335,7 +321,6 @@ No verification attempts yet.
 
 {attempts.map((a,i)=>(
 <div key={i} style={{border:"1px solid rgba(255,255,255,0.1)",borderRadius:10,padding:10,marginBottom:8}}>
-
 <div style={{fontWeight:900}}>
 {String(a.result||"").toLowerCase().includes("clear")?"CLEAR":"ATTEMPT"}
 </div>
@@ -345,7 +330,6 @@ DOT: <b>{a.entered_usdot}</b><br/>
 Plate: <b>{a.entered_plate}</b><br/>
 Driver Answered: <b>{String(a.driver_answered)}</b>
 </div>
-
 </div>
 ))}
 
