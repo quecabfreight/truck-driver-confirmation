@@ -38,21 +38,83 @@
       line-height:1.45;
     }
 
+    .fieldLabel{
+      text-align:left;
+      font-size:15px;
+      font-weight:800;
+      margin:10px 0 6px;
+      color:#ffffff;
+    }
+
     input{
       width:100%;
       box-sizing:border-box;
       padding:12px;
-      margin-top:8px;
-      margin-bottom:16px;
+      margin-top:0;
+      margin-bottom:12px;
       border-radius:10px;
-      border:1px solid rgba(255,255,255,0.15);
+      border:1px solid rgba(255,255,255,0.28);
       background:rgba(255,255,255,0.05);
       color:#fff;
       font-size:18px;
       text-align:center;
+      outline:none;
     }
 
-    button{
+    .callBox{
+      margin:12px 0 16px;
+      padding:14px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,0.16);
+      background:rgba(255,255,255,0.04);
+      text-align:left;
+    }
+
+    .callTitle{
+      font-size:15px;
+      font-weight:800;
+      margin-bottom:8px;
+    }
+
+    .phoneLink{
+      display:inline-block;
+      font-size:22px;
+      font-weight:900;
+      color:#8fc7ff;
+      text-decoration:none;
+      margin-bottom:12px;
+    }
+
+    .answerGrid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-top:6px;
+    }
+
+    .answerBtn{
+      width:100%;
+      padding:14px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,0.18);
+      background:rgba(255,255,255,0.06);
+      color:#ffffff;
+      font-size:16px;
+      font-weight:900;
+      cursor:pointer;
+    }
+
+    .answerBtn.activeYes{
+      border:1px solid rgba(110,255,150,0.55);
+      background:rgba(40,150,70,0.30);
+    }
+
+    .answerBtn.activeNo{
+      border:1px solid rgba(255,100,100,0.55);
+      background:rgba(170,40,40,0.30);
+    }
+
+    .mainBtn{
       width:100%;
       padding:14px;
       border-radius:12px;
@@ -62,6 +124,7 @@
       font-size:18px;
       font-weight:900;
       cursor:pointer;
+      margin-top:8px;
     }
 
     .result{
@@ -139,10 +202,24 @@
       Complete verification before releasing the load.
     </div>
 
+    <div class="fieldLabel">USDOT#</div>
     <input id="usdot" placeholder="USDOT#" />
+
+    <div class="fieldLabel">Plate</div>
     <input id="plate" placeholder="Plate" />
 
-    <button onclick="verify()">Verify Truck-Driver</button>
+    <div class="callBox">
+      <div class="callTitle">Call Driver / Carrier Contact</div>
+      <a id="driverPhoneLink" class="phoneLink" href="#">Loading...</a>
+
+      <div class="fieldLabel" style="margin-top:0;">Did the driver answer the phone?</div>
+      <div class="answerGrid">
+        <button id="yesBtn" class="answerBtn" type="button" onclick="setAnswered(true)">YES</button>
+        <button id="noBtn" class="answerBtn" type="button" onclick="setAnswered(false)">NO</button>
+      </div>
+    </div>
+
+    <button class="mainBtn" onclick="verify()">Verify Truck-Driver</button>
 
     <div id="result" class="result"></div>
 
@@ -190,6 +267,7 @@
 
   <script>
     let soundEnabled = true;
+    let driverAnswered = null;
 
     function toggleSound() {
       soundEnabled = !soundEnabled;
@@ -199,6 +277,15 @@
     function getToken() {
       const params = new URLSearchParams(location.search);
       return params.get("t");
+    }
+
+    function setAnswered(value) {
+      driverAnswered = value;
+      const yesBtn = document.getElementById("yesBtn");
+      const noBtn = document.getElementById("noBtn");
+
+      yesBtn.className = "answerBtn" + (value === true ? " activeYes" : "");
+      noBtn.className = "answerBtn" + (value === false ? " activeNo" : "");
     }
 
     function setAuthority(data) {
@@ -211,6 +298,29 @@
       authority.style.display = "block";
     }
 
+    async function loadDriverPhone() {
+      const token = getToken();
+      if (!token) return;
+
+      try {
+        const res = await fetch(`/api/verify_driver?token=${encodeURIComponent(token)}`);
+        const data = await res.json();
+
+        if (res.ok && data.driver_phone) {
+          const phoneDigits = String(data.driver_phone).replace(/\D/g, "");
+          const link = document.getElementById("driverPhoneLink");
+          link.href = `tel:${phoneDigits}`;
+          link.innerText = data.driver_phone;
+        } else {
+          document.getElementById("driverPhoneLink").innerText = "(phone unavailable)";
+          document.getElementById("driverPhoneLink").removeAttribute("href");
+        }
+      } catch {
+        document.getElementById("driverPhoneLink").innerText = "(phone unavailable)";
+        document.getElementById("driverPhoneLink").removeAttribute("href");
+      }
+    }
+
     async function verify() {
       document.body.classList.remove("flash");
 
@@ -219,20 +329,27 @@
       const plate = document.getElementById("plate").value.trim();
       const result = document.getElementById("result");
 
+      if (driverAnswered === null) {
+        result.innerText = "Select YES or NO for phone answer";
+        result.className = "result caution";
+        return;
+      }
+
       const res = await fetch("/api/verify_driver", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           token,
           entered_usdot: usdot,
-          entered_plate: plate
+          entered_plate: plate,
+          driver_answered: driverAnswered
         })
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        result.innerText = "Verification Error";
+        result.innerText = data.error || "Verification Error";
         result.className = "result caution";
         return;
       }
@@ -251,6 +368,8 @@
 
       setAuthority(data);
     }
+
+    loadDriverPhone();
   </script>
 </body>
 </html>
