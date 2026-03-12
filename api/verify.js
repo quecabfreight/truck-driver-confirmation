@@ -1,5 +1,3 @@
-// /api/verify.js
-
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 
@@ -61,13 +59,15 @@ export default async function handler(req, res) {
         ? "CLEAR_TO_LOAD"
         : "CAUTION_ALERT";
 
+    const nowIso = new Date().toISOString();
+
     const { error: insertError } = await supabase.from("verify_checks").insert({
       token,
       entered_usdot: enteredDOT,
       entered_plate: enteredPlate,
       driver_answered: phoneMatch,
       result,
-      checked_at: new Date().toISOString()
+      checked_at: nowIso
     });
 
     if (insertError) {
@@ -119,18 +119,10 @@ export default async function handler(req, res) {
         alertError = "Missing ADBS_EMAIL_FROM";
         console.error("verify.js: Missing ADBS_EMAIL_FROM");
       } else if (!alertEmail) {
-        alertError = "No alert recipient found (issuer_email and ADBS_ALERT_EMAIL are both empty)";
+        alertError = "No alert recipient found";
         console.error("verify.js: No alert recipient found");
       } else {
         try {
-          console.log("verify.js: sending silent alert", {
-            to: alertEmail,
-            from: process.env.ADBS_EMAIL_FROM,
-            load_id: link.load_id,
-            token,
-            failedAttempts
-          });
-
           const sendResult = await resend.emails.send({
             from: process.env.ADBS_EMAIL_FROM,
             to: alertEmail,
@@ -139,7 +131,7 @@ export default async function handler(req, res) {
               <h2>AdbS Alert</h2>
               <p>Multiple failed Truck-Driver verification attempts detected.</p>
               <p><strong>Load ID:</strong> ${link.load_id || "(none)"}</p>
-              <p><strong>Verification Token:</strong> ${token}</p>
+              <p><strong>Verification ID:</strong> ${token}</p>
               <p><strong>Failed Attempts:</strong> ${failedAttempts}</p>
               <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
               <p><strong>Verify Page:</strong><br/>https://quecabadbs.com/v.html?t=${token}</p>
@@ -153,7 +145,6 @@ export default async function handler(req, res) {
             console.error("verify.js: resend returned error", sendResult.error);
           } else {
             alertSent = true;
-            console.log("verify.js: silent alert sent", sendResult);
           }
         } catch (err) {
           alertError = err?.message || String(err);
@@ -164,6 +155,11 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       result,
+      verification_id: token,
+      verified_at: new Date(nowIso).toLocaleString(),
+      carrier_company: link.carrier_company || "",
+      carrier_contact_name: link.dispatch_contact || "",
+      carrier_contact_phone: link.dispatch_phone || "",
       debug: {
         dotMatch,
         plateMatch,
