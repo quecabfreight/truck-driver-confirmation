@@ -1,182 +1,105 @@
 import { createClient } from "@supabase/supabase-js";
-import { Resend } from "resend";
 
 const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+process.env.SUPABASE_URL,
+process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
-function normalizeDOT(value) {
-  return String(value || "").replace(/\D/g, "");
+function normalizeDOT(v){
+return String(v||"").replace(/\D/g,"")
 }
 
-function normalizePlate(value) {
-  return String(value || "").trim().toUpperCase();
+function normalizePlate(v){
+return String(v||"").trim().toUpperCase()
 }
 
-function normalizeAnswered(value) {
-  if (value === true) return true;
-  const v = String(value || "").trim().toUpperCase();
-  return v === "YES" || v === "Y" || v === "TRUE";
+export default async function handler(req,res){
+
+if(req.method!=="POST"){
+return res.status(405).json({error:"Method not allowed"})
 }
 
-export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
+try{
 
-  try {
-    const { token, entered_usdot, entered_plate, driver_answered } = req.body || {};
+const {token,entered_usdot,entered_plate}=req.body||{}
 
-    if (!token) {
-      return res.status(400).json({ error: "Missing token" });
-    }
+if(!token){
+return res.status(400).json({error:"Missing token"})
+}
 
-    const { data: link, error: linkError } = await supabase
-      .from("verify_links")
-      .select("*")
-      .eq("token", token)
-      .single();
+const {data:link,error:linkError}=await supabase
+.from("verify_links")
+.select("*")
+.eq("token",token)
+.single()
 
-    if (linkError || !link) {
-      console.error("verify.js: verify_links lookup failed", linkError);
-      return res.status(404).json({ error: "Verification link not found" });
-    }
+if(linkError||!link){
+return res.status(404).json({error:"Verification link not found"})
+}
 
-    const enteredDOT = normalizeDOT(entered_usdot);
-    const enteredPlate = normalizePlate(entered_plate);
-    const recordDOT = normalizeDOT(link.usdot_on_record);
-    const recordPlate = normalizePlate(link.plate_on_record);
-    const phoneMatch = normalizeAnswered(driver_answered);
+/* if already cleared */
 
-    const dotMatch = enteredDOT === recordDOT;
-    const plateMatch = enteredPlate === recordPlate;
+if(link.status==="cleared"){
+return res.status(200).json({
+result:"CLEAR_TO_LOAD",
+verification_id:token,
+verified_at:link.cleared_at||"",
+carrier_company:link.carrier_company||"",
+carrier_contact_name:link.dispatch_contact||"",
+carrier_contact_phone:link.dispatch_phone||""
+})
+}
 
-    const result =
-      dotMatch && plateMatch && phoneMatch
-        ? "CLEAR_TO_LOAD"
-        : "CAUTION_ALERT";
+const dotMatch=
+normalizeDOT(entered_usdot)===normalizeDOT(link.usdot_on_record)
 
-    const nowIso = new Date().toISOString();
+const plateMatch=
+normalizePlate(entered_plate)===normalizePlate(link.plate_on_record)
 
-    const { error: insertError } = await supabase.from("verify_checks").insert({
-      token,
-      entered_usdot: enteredDOT,
-      entered_plate: enteredPlate,
-      driver_answered: phoneMatch,
-      result,
-      checked_at: nowIso
-    });
+const result=(dotMatch&&plateMatch)
+? "CLEAR_TO_LOAD"
+: "CAUTION_ALERT"
 
-    if (insertError) {
-      console.error("verify.js: verify_checks insert failed", insertError);
-      return res.status(500).json({
-        error: "Failed to log verification attempt",
-        detail: insertError.message || String(insertError)
-      });
-    }
+/* record attempt */
 
-    const { data: attempts, error: attemptsError } = await supabase
-      .from("verify_checks")
-      .select("result, checked_at")
-      .eq("token", token)
-      .order("checked_at", { ascending: true });
+await supabase.from("verify_checks").insert({
+token,
+entered_usdot:normalizeDOT(entered_usdot),
+entered_plate:normalizePlate(entered_plate),
+result,
+checked_at:new Date().toISOString()
+})
 
-    if (attemptsError) {
-      console.error("verify.js: verify_checks read failed", attemptsError);
-      return res.status(500).json({
-        error: "Failed to read verification attempts",
-        detail: attemptsError.message || String(attemptsError)
-      });
-    }
+/* auto lock if cleared */
 
-    const failedAttempts = (attempts || []).filter(
-      (a) => a.result === "CAUTION_ALERT"
-    ).length;
+if(result==="CLEAR_TO_LOAD"){
 
-    let alertTriggered = false;
-    let alertSent = false;
-    let alertTo = null;
-    let alertError = null;
-    let resendData = null;
+await supabase
+.from("verify_links")
+.update({
+status:"cleared",
+cleared_at:new Date().toISOString()
+})
+.eq("token",token)
 
-    if (failedAttempts === 3) {
-      alertTriggered = true;
+}
 
-      const alertEmail =
-        String(link.issuer_email || "").trim() ||
-        String(process.env.ADBS_ALERT_EMAIL || "").trim() ||
-        null;
+return res.status(200).json({
+result,
+verification_id:token,
+verified_at:new Date().toLocaleString(),
+carrier_company:link.carrier_company||"",
+carrier_contact_name:link.dispatch_contact||"",
+carrier_contact_phone:link.dispatch_phone||""
+})
 
-      alertTo = alertEmail;
+}catch(e){
 
-      if (!process.env.RESEND_API_KEY) {
-        alertError = "Missing RESEND_API_KEY";
-        console.error("verify.js: Missing RESEND_API_KEY");
-      } else if (!process.env.ADBS_EMAIL_FROM) {
-        alertError = "Missing ADBS_EMAIL_FROM";
-        console.error("verify.js: Missing ADBS_EMAIL_FROM");
-      } else if (!alertEmail) {
-        alertError = "No alert recipient found";
-        console.error("verify.js: No alert recipient found");
-      } else {
-        try {
-          const sendResult = await resend.emails.send({
-            from: process.env.ADBS_EMAIL_FROM,
-            to: alertEmail,
-            subject: "AdbS Fraud Alert — Multiple Failed Verification Attempts",
-            html: `
-              <h2>AdbS Alert</h2>
-              <p>Multiple failed Truck-Driver verification attempts detected.</p>
-              <p><strong>Load ID:</strong> ${link.load_id || "(none)"}</p>
-              <p><strong>Verification ID:</strong> ${token}</p>
-              <p><strong>Failed Attempts:</strong> ${failedAttempts}</p>
-              <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
-              <p><strong>Verify Page:</strong><br/>https://quecabadbs.com/v.html?t=${token}</p>
-            `
-          });
+return res.status(500).json({
+error:"Verification failure",
+detail:String(e?.message||e)
+})
 
-          resendData = sendResult;
+}
 
-          if (sendResult?.error) {
-            alertError = sendResult.error.message || JSON.stringify(sendResult.error);
-            console.error("verify.js: resend returned error", sendResult.error);
-          } else {
-            alertSent = true;
-          }
-        } catch (err) {
-          alertError = err?.message || String(err);
-          console.error("verify.js: silent alert email failed", err);
-        }
-      }
-    }
-
-    return res.status(200).json({
-      result,
-      verification_id: token,
-      verified_at: new Date(nowIso).toLocaleString(),
-      carrier_company: link.carrier_company || "",
-      carrier_contact_name: link.dispatch_contact || "",
-      carrier_contact_phone: link.dispatch_phone || "",
-      debug: {
-        dotMatch,
-        plateMatch,
-        phoneMatch,
-        failedAttempts,
-        alertTriggered,
-        alertSent,
-        alertTo,
-        alertError,
-        resendData
-      }
-    });
-  } catch (err) {
-    console.error("verify.js: unexpected error", err);
-    return res.status(500).json({
-      error: "Unexpected verify error",
-      detail: err?.message || String(err)
-    });
-  }
 }
