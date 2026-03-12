@@ -54,7 +54,7 @@ cursor:pointer;
 
 .result{
 margin-top:24px;
-font-size:32px;
+font-size:34px;
 font-weight:900;
 }
 
@@ -76,6 +76,13 @@ animation:flashbg 0.7s infinite;
 100%{background:#0c121c}
 }
 
+.soundToggle{
+margin-top:12px;
+font-size:14px;
+opacity:.8;
+cursor:pointer;
+}
+
 </style>
 
 </head>
@@ -95,6 +102,10 @@ animation:flashbg 0.7s infinite;
 
 <div id="result" class="result"></div>
 
+<div class="soundToggle" onclick="toggleSound()">
+🔊 Alert Sound: <span id="soundState">ON</span>
+</div>
+
 </div>
 
 <audio id="alertSound">
@@ -102,6 +113,13 @@ animation:flashbg 0.7s infinite;
 </audio>
 
 <script>
+
+let soundEnabled=true
+
+function toggleSound(){
+soundEnabled=!soundEnabled
+document.getElementById("soundState").innerText=soundEnabled?"ON":"OFF"
+}
 
 function getToken(){
 const params=new URLSearchParams(location.search)
@@ -144,7 +162,9 @@ result.className="result clear"
 
 document.body.classList.add("flash")
 
+if(soundEnabled){
 document.getElementById("alertSound").play()
+}
 
 result.innerText="CAUTION — DO NOT LOAD"
 result.className="result caution"
