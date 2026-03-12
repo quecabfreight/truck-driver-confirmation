@@ -8,17 +8,17 @@ import { LS_EMAIL, isBrokerOrShipper } from "../utils/auth.js";
 function onlyDigits(s){return String(s||"").replace(/\D+/g,"")}
 function toUpperClean(s){return String(s||"").toUpperCase()}
 function formatPhoneHyphen(s){
-  const d=onlyDigits(s).slice(0,10)
-  const a=d.slice(0,3),b=d.slice(3,6),c=d.slice(6,10)
-  if(d.length<=3)return a
-  if(d.length<=6)return`${a}-${b}`
-  return`${a}-${b}-${c}`
+const d=onlyDigits(s).slice(0,10)
+const a=d.slice(0,3),b=d.slice(3,6),c=d.slice(6,10)
+if(d.length<=3)return a
+if(d.length<=6)return`${a}-${b}`
+return`${a}-${b}-${c}`
 }
 
 function makeQrDataUrl(value){
-  const clean=String(value||"").trim()
-  if(!clean)return""
-  return`https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(clean)}`
+const clean=String(value||"").trim()
+if(!clean)return""
+return`https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(clean)}`
 }
 
 export default function ControlCenter(){
@@ -46,6 +46,8 @@ const [usdotOnRecord,setUsdotOnRecord]=useState("")
 const [plateOnRecord,setPlateOnRecord]=useState("")
 const [driverPhone,setDriverPhone]=useState("")
 
+const [searchId,setSearchId]=useState("")
+
 const [statusMsg,setStatusMsg]=useState("")
 const [errorMsg,setErrorMsg]=useState("")
 const [loading,setLoading]=useState(false)
@@ -72,6 +74,54 @@ cleared,
 caution
 }
 },[attempts,issued])
+
+/* ----------- Search Verification ----------- */
+
+async function searchVerification(){
+
+setErrorMsg("")
+setStatusMsg("")
+
+if(!searchId){
+setErrorMsg("Enter Verification ID")
+return
+}
+
+try{
+
+const res=await fetch("/api/manage_verify_link",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+action:"lookup",
+token:searchId.trim()
+})
+})
+
+const data=await res.json()
+
+if(!res.ok){
+setErrorMsg(data.error||"Verification not found")
+return
+}
+
+const verifyUrl=data.verify_url||""
+const qrDataUrl=makeQrDataUrl(verifyUrl)
+
+setIssued({
+verification_id:data.token,
+verify_url:verifyUrl,
+status:data.status||"active"
+})
+
+setIssuedQr(qrDataUrl)
+setStatusMsg("Verification loaded")
+
+}catch{
+setErrorMsg("Search failed")
+}
+
+}
 
 /* ----------- Issue Link ----------- */
 
@@ -163,6 +213,31 @@ return(
 <div style={{maxWidth:1100,margin:"0 auto",padding:"18px 16px 48px"}}>
 
 <div style={{fontSize:26,fontWeight:800,marginBottom:14}}>Control Center</div>
+
+{/* ---------- Verification Search ---------- */}
+
+<div style={{...card,marginBottom:16}}>
+
+<div style={{fontWeight:900,fontSize:18,marginBottom:10}}>
+Find Verification
+</div>
+
+<div style={{display:"grid",gridTemplateColumns:"1fr auto",gap:10}}>
+
+<input
+style={input}
+placeholder="Verification ID"
+value={searchId}
+onChange={e=>setSearchId(e.target.value)}
+/>
+
+<button style={btn(true)} onClick={searchVerification}>
+Search
+</button>
+
+</div>
+
+</div>
 
 {/* ---------- Protection Summary ---------- */}
 
