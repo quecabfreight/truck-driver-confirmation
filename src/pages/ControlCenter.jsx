@@ -1,7 +1,6 @@
 // /src/pages/ControlCenter.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import QRCode from "qrcode";
 
 import Header from "../components/Header.jsx";
 import { LS_EMAIL, isBrokerOrShipper } from "../utils/auth.js";
@@ -59,14 +58,10 @@ function plusHoursLocalDatetime(hours) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-async function makeQrDataUrl(value) {
+function makeQrDataUrl(value) {
   const clean = String(value || "").trim();
   if (!clean) return "";
-  return QRCode.toDataURL(clean, {
-    errorCorrectionLevel: "M",
-    margin: 1,
-    width: 260,
-  });
+  return `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(clean)}`;
 }
 
 export default function ControlCenter() {
@@ -258,6 +253,7 @@ export default function ControlCenter() {
     try {
       if (abortRef.current) abortRef.current.abort();
     } catch {}
+
     const ac = new AbortController();
     abortRef.current = ac;
 
@@ -295,7 +291,7 @@ export default function ControlCenter() {
       }
 
       const verifyUrl = data?.verify_url || "";
-      const qrDataUrl = verifyUrl ? await makeQrDataUrl(verifyUrl) : "";
+      const qrDataUrl = verifyUrl ? makeQrDataUrl(verifyUrl) : "";
 
       const msgLines = [
         "AdbS TRUCK-DRIVER VERIFICATION",
@@ -381,7 +377,7 @@ export default function ControlCenter() {
       if (action === "reissue") {
         const newToken = data?.new_token || "";
         const newUrl = data?.verify_url || "";
-        const newQr = newUrl ? await makeQrDataUrl(newUrl) : "";
+        const newQr = newUrl ? makeQrDataUrl(newUrl) : "";
 
         const newMessage = [
           "AdbS TRUCK-DRIVER VERIFICATION",
