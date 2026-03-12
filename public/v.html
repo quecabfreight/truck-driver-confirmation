@@ -1,179 +1,256 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AdbS Truck-Driver Verification</title>
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    body{
+      font-family:Arial,Helvetica,sans-serif;
+      background:#0c121c;
+      color:#e6edf5;
+      margin:0;
+      padding:30px;
+      text-align:center;
+      transition:background 0.2s ease;
+    }
 
-<title>AdbS Truck-Driver Verification</title>
+    .container{
+      max-width:760px;
+      margin:auto;
+      background:rgba(255,255,255,0.05);
+      border-radius:16px;
+      padding:28px;
+      border:1px solid rgba(255,255,255,0.15);
+    }
 
-<style>
+    .hero{
+      font-size:28px;
+      font-weight:900;
+      margin-bottom:10px;
+      letter-spacing:.02em;
+    }
 
-body{
-font-family:Arial,Helvetica,sans-serif;
-background:#0c121c;
-color:#e6edf5;
-margin:0;
-padding:30px;
-text-align:center;
-}
+    .sub{
+      opacity:.82;
+      margin-bottom:22px;
+      line-height:1.45;
+    }
 
-.container{
-max-width:700px;
-margin:auto;
-background:rgba(255,255,255,0.05);
-border-radius:16px;
-padding:28px;
-border:1px solid rgba(255,255,255,0.15);
-}
+    input{
+      width:100%;
+      box-sizing:border-box;
+      padding:12px;
+      margin-top:8px;
+      margin-bottom:16px;
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,0.15);
+      background:rgba(255,255,255,0.05);
+      color:#fff;
+      font-size:18px;
+      text-align:center;
+    }
 
-input{
-width:100%;
-padding:12px;
-margin-top:8px;
-margin-bottom:16px;
-border-radius:10px;
-border:1px solid rgba(255,255,255,0.15);
-background:rgba(255,255,255,0.05);
-color:#fff;
-font-size:18px;
-text-align:center;
-}
+    button{
+      width:100%;
+      padding:14px;
+      border-radius:12px;
+      border:1px solid rgba(120,180,255,0.45);
+      background:rgba(40,110,190,0.35);
+      color:#fff;
+      font-size:18px;
+      font-weight:900;
+      cursor:pointer;
+    }
 
-button{
-width:100%;
-padding:14px;
-border-radius:12px;
-border:1px solid rgba(120,180,255,0.45);
-background:rgba(40,110,190,0.35);
-color:#fff;
-font-size:18px;
-font-weight:900;
-cursor:pointer;
-}
+    .result{
+      margin-top:24px;
+      font-size:34px;
+      font-weight:900;
+      min-height:42px;
+    }
 
-.result{
-margin-top:24px;
-font-size:34px;
-font-weight:900;
-}
+    .clear{ color:#6fff8d; }
+    .caution{ color:#ff4d4d; }
 
-.clear{
-color:#6fff8d;
-}
+    .flash{
+      animation:flashbg 0.7s infinite;
+    }
 
-.caution{
-color:#ff4d4d;
-}
+    @keyframes flashbg{
+      0%{background:#0c121c}
+      50%{background:#3a0000}
+      100%{background:#0c121c}
+    }
 
-.flash{
-animation:flashbg 0.7s infinite;
-}
+    .soundToggle{
+      margin-top:12px;
+      font-size:14px;
+      opacity:.8;
+      cursor:pointer;
+      user-select:none;
+    }
 
-@keyframes flashbg{
-0%{background:#0c121c}
-50%{background:#3a0000}
-100%{background:#0c121c}
-}
+    .authority{
+      margin-top:22px;
+      text-align:left;
+      border:1px solid rgba(255,255,255,0.12);
+      background:rgba(255,255,255,0.04);
+      border-radius:14px;
+      padding:16px;
+      display:none;
+    }
 
-.soundToggle{
-margin-top:12px;
-font-size:14px;
-opacity:.8;
-cursor:pointer;
-}
+    .authorityTitle{
+      font-size:18px;
+      font-weight:900;
+      margin-bottom:10px;
+    }
 
-</style>
+    .authorityRow{
+      font-size:15px;
+      line-height:1.55;
+      margin-bottom:6px;
+    }
 
+    .authorityLabel{
+      opacity:.72;
+      font-weight:700;
+    }
+
+    .authorityValue{
+      font-weight:900;
+      color:#ffffff;
+    }
+
+    .mini{
+      font-size:13px;
+      opacity:.74;
+      margin-top:14px;
+    }
+  </style>
 </head>
-
 <body>
+  <div class="container">
+    <div class="hero">AdbS TRUCK-DRIVER VERIFICATION</div>
+    <div class="sub">
+      Enter the USDOT# and Plate shown on the truck.<br />
+      Complete verification before releasing the load.
+    </div>
 
-<div class="container">
+    <input id="usdot" placeholder="USDOT#" />
+    <input id="plate" placeholder="Plate" />
 
-<h2>AdbS TRUCK-DRIVER VERIFICATION</h2>
+    <button onclick="verify()">Verify Truck-Driver</button>
 
-<p>Enter the USDOT# and Plate shown on the truck.</p>
+    <div id="result" class="result"></div>
 
-<input id="usdot" placeholder="USDOT#" />
-<input id="plate" placeholder="Plate" />
+    <div class="soundToggle" onclick="toggleSound()">
+      🔊 Alert Sound: <span id="soundState">ON</span>
+    </div>
 
-<button onclick="verify()">Verify Truck-Driver</button>
+    <div id="authority" class="authority">
+      <div class="authorityTitle">Verification Authority</div>
 
-<div id="result" class="result"></div>
+      <div class="authorityRow">
+        <span class="authorityLabel">Verified Carrier:</span>
+        <span class="authorityValue" id="carrierCompany">(not provided)</span>
+      </div>
 
-<div class="soundToggle" onclick="toggleSound()">
-🔊 Alert Sound: <span id="soundState">ON</span>
-</div>
+      <div class="authorityRow">
+        <span class="authorityLabel">Carrier Contact:</span>
+        <span class="authorityValue" id="carrierContact">(not provided)</span>
+      </div>
 
-</div>
+      <div class="authorityRow">
+        <span class="authorityLabel">Carrier Contact Phone:</span>
+        <span class="authorityValue" id="carrierPhone">(not provided)</span>
+      </div>
 
-<audio id="alertSound">
-<source src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg">
-</audio>
+      <div class="authorityRow">
+        <span class="authorityLabel">Verification ID:</span>
+        <span class="authorityValue" id="verificationId">(unknown)</span>
+      </div>
 
-<script>
+      <div class="authorityRow">
+        <span class="authorityLabel">Verification Timestamp:</span>
+        <span class="authorityValue" id="verificationTime">(unknown)</span>
+      </div>
+    </div>
 
-let soundEnabled=true
+    <div class="mini">
+      QueCab AdbS — Developed by Omnimobile Inc. for QueCab Inc.
+    </div>
+  </div>
 
-function toggleSound(){
-soundEnabled=!soundEnabled
-document.getElementById("soundState").innerText=soundEnabled?"ON":"OFF"
-}
+  <audio id="alertSound">
+    <source src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" />
+  </audio>
 
-function getToken(){
-const params=new URLSearchParams(location.search)
-return params.get("t")
-}
+  <script>
+    let soundEnabled = true;
 
-async function verify(){
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      document.getElementById("soundState").innerText = soundEnabled ? "ON" : "OFF";
+    }
 
-const token=getToken()
+    function getToken() {
+      const params = new URLSearchParams(location.search);
+      return params.get("t");
+    }
 
-const usdot=document.getElementById("usdot").value.trim()
-const plate=document.getElementById("plate").value.trim()
+    function setAuthority(data) {
+      const authority = document.getElementById("authority");
+      document.getElementById("carrierCompany").innerText = data.carrier_company || "(not provided)";
+      document.getElementById("carrierContact").innerText = data.carrier_contact_name || "(not provided)";
+      document.getElementById("carrierPhone").innerText = data.carrier_contact_phone || "(not provided)";
+      document.getElementById("verificationId").innerText = data.verification_id || "(unknown)";
+      document.getElementById("verificationTime").innerText = data.verified_at || new Date().toLocaleString();
+      authority.style.display = "block";
+    }
 
-const res=await fetch("/api/verify_driver",{
-method:"POST",
-headers:{ "Content-Type":"application/json" },
-body:JSON.stringify({
-token,
-entered_usdot:usdot,
-entered_plate:plate
-})
-})
+    async function verify() {
+      document.body.classList.remove("flash");
 
-const data=await res.json()
+      const token = getToken();
+      const usdot = document.getElementById("usdot").value.trim();
+      const plate = document.getElementById("plate").value.trim();
+      const result = document.getElementById("result");
 
-const result=document.getElementById("result")
+      const res = await fetch("/api/verify_driver", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token,
+          entered_usdot: usdot,
+          entered_plate: plate
+        })
+      });
 
-if(!res.ok){
-result.innerText="Verification Error"
-result.className="result caution"
-return
-}
+      const data = await res.json();
 
-if(data.result==="clear"){
+      if (!res.ok) {
+        result.innerText = "Verification Error";
+        result.className = "result caution";
+        return;
+      }
 
-result.innerText="CLEAR TO LOAD"
-result.className="result clear"
+      if (String(data.result || "").toLowerCase().includes("clear")) {
+        result.innerText = "CLEAR TO LOAD";
+        result.className = "result clear";
+      } else {
+        document.body.classList.add("flash");
+        if (soundEnabled) {
+          try { document.getElementById("alertSound").play(); } catch {}
+        }
+        result.innerText = "CAUTION — DO NOT LOAD";
+        result.className = "result caution";
+      }
 
-}else{
-
-document.body.classList.add("flash")
-
-if(soundEnabled){
-document.getElementById("alertSound").play()
-}
-
-result.innerText="CAUTION — DO NOT LOAD"
-result.className="result caution"
-
-}
-
-}
-
-</script>
-
+      setAuthority(data);
+    }
+  </script>
 </body>
 </html>
