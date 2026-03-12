@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import Header from "../components/Header.jsx";
@@ -28,16 +28,51 @@ function makeQrDataUrl(value) {
   return `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(clean)}`;
 }
 
-function nowIso() {
-  return new Date().toISOString();
+function nowLocalDatetime() {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-function plus24hIso() {
-  return new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+function plusHoursLocalDatetime(hours) {
+  const d = new Date(Date.now() + hours * 60 * 60 * 1000);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function formatDisplayDate(value) {
+  if (!value) return "No Expire";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value);
+  return d.toLocaleString();
+}
+
+async function safeCopy(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
+      ta.style.top = "-9999px";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      const ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+      return ok;
+    } catch {
+      return false;
+    }
+  }
 }
 
 export default function ControlCenter() {
   const nav = useNavigate();
+
   const email = (localStorage.getItem(LS_EMAIL) || "").trim();
   const authorized = !!email && isBrokerOrShipper(email);
 
@@ -64,6 +99,15 @@ export default function ControlCenter() {
   const [usdotOnRecord, setUsdotOnRecord] = useState("");
   const [plateOnRecord, setPlateOnRecord] = useState("");
   const [driverPhone, setDriverPhone] = useState("");
+
+  const [carrierCompany, setCarrierCompany] = useState("");
+  const [carrierContactName, setCarrierContactName] = useState("");
+  const [carrierContactPhone, setCarrierContactPhone] = useState("");
+
+  const [mode, setMode] = useState("auto");
+  const [startsAt, setStartsAt] = useState(() => nowLocalDatetime());
+  const [expiresAt, setExpiresAt] = useState(() => plusHoursLocalDatetime(24));
+
   const [searchId, setSearchId] = useState("");
 
   const [statusMsg, setStatusMsg] = useState("");
@@ -72,35 +116,60 @@ export default function ControlCenter() {
 
   const [issued, setIssued] = useState(null);
   const [issuedQr, setIssuedQr] = useState("");
-  const [attempts] = useState([]);
+  const [attempts, setAttempts] = useState([]);
 
   const [totals, setTotals] = useState({
     verifications: 0,
     cleared: 0,
-    caution: 0,
+    caution: 0
   });
 
   useEffect(() => {
     loadTotals();
   }, []);
 
+  async function safeJson(res) {
+    const text = await res.text();
+    try {
+      return JSON.parse(text);
+    } catch {
+      return { raw: text };
+    }
+  }
+
   async function loadTotals() {
     try {
       const res = await fetch("/api/dashboard_totals");
-      const data = await res.json();
+      const data = await safeJson(res);
       if (res.ok) {
         setTotals({
           verifications: Number(data.verifications || 0),
           cleared: Number(data.cleared || 0),
-          caution: Number(data.caution || 0),
+          caution: Number(data.caution || 0)
         });
       }
     } catch {}
   }
 
+  function clearNextLoadFields() {
+    setLoadId("");
+    setDockEmail("");
+    setDockPin("");
+    setUsdotOnRecord("");
+    setPlateOnRecord("");
+    setDriverPhone("");
+    setCarrierCompany("");
+    setCarrierContactName("");
+    setCarrierContactPhone("");
+    setStartsAt(nowLocalDatetime());
+    setExpiresAt(plusHoursLocalDatetime(24));
+    setMode("auto");
+  }
+
   async function searchVerification() {
     setErrorMsg("");
     setStatusMsg("");
+    setAttempts([]);
 
     if (!searchId.trim()) {
       setErrorMsg("Enter Verification ID");
@@ -113,11 +182,11 @@ export default function ControlCenter() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "lookup",
-          token: searchId.trim(),
-        }),
+          token: searchId.trim()
+        })
       });
 
-      const data = await res.json();
+      const data = await safeJson(res);
 
       if (!res.ok) {
         setErrorMsg(data.error || "Verification not found");
@@ -130,8 +199,13 @@ export default function ControlCenter() {
         verify_url: verifyUrl,
         status: data.status || "active",
         expires_at: data.expires_at || null,
+        load_id: data.load_id || null,
+        carrier_company: data.carrier_company || null,
+        carrier_contact_name: data.carrier_contact_name || null,
+        carrier_contact_phone: data.carrier_contact_phone || null
       });
       setIssuedQr(makeQrDataUrl(verifyUrl));
+      setAttempts(Array.isArray(data.attempts) ? data.attempts : []);
       setStatusMsg("Verification loaded.");
     } catch {
       setErrorMsg("Search failed.");
@@ -141,10 +215,12 @@ export default function ControlCenter() {
   async function issueLink() {
     setErrorMsg("");
     setStatusMsg("");
+    setAttempts([]);
 
     const usdot_digits = onlyDigits(usdotOnRecord);
     const plate_upper = toUpperClean(plateOnRecord).trim();
     const phone_digits = onlyDigits(driverPhone);
+    const carrierPhoneFormatted = formatPhoneHyphen(carrierContactPhone);
 
     if (!usdot_digits) {
       setErrorMsg("Enter USDOT#");
@@ -164,6 +240,26 @@ export default function ControlCenter() {
       return;
     }
 
+    let starts_at = null;
+    let expires_at = null;
+
+    if (mode === "auto") {
+      starts_at = new Date().toISOString();
+      expires_at = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+      setStartsAt(nowLocalDatetime());
+      setExpiresAt(plusHoursLocalDatetime(24));
+    } else if (mode === "pick") {
+      if (!startsAt || !expiresAt) {
+        setErrorMsg("Choose Start and Expire");
+        return;
+      }
+      starts_at = new Date(startsAt).toISOString();
+      expires_at = new Date(expiresAt).toISOString();
+    } else {
+      starts_at = new Date().toISOString();
+      expires_at = null;
+    }
+
     setLoading(true);
 
     try {
@@ -174,17 +270,20 @@ export default function ControlCenter() {
         plate_on_record: plate_upper,
         driver_phone: formatPhoneHyphen(phone_digits),
         dock_pin: dockPin || null,
-        starts_at: nowIso(),
-        expires_at: plus24hIso(),
+        starts_at,
+        expires_at,
+        carrier_company: carrierCompany || null,
+        dispatch_contact: carrierContactName || null,
+        dispatch_phone: carrierPhoneFormatted || null
       };
 
       const res = await fetch("/api/issue_verify_link", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(payload)
       });
 
-      const data = await res.json();
+      const data = await safeJson(res);
 
       if (!res.ok) {
         setErrorMsg(data.error || "Issue failed");
@@ -193,15 +292,22 @@ export default function ControlCenter() {
       }
 
       const verifyUrl = data.verify_url || "";
+
       setIssued({
         verification_id: data.token,
         verify_url: verifyUrl,
         status: data.status || "active",
-        expires_at: data.expires_at || payload.expires_at,
+        expires_at: data.expires_at || expires_at,
+        load_id: payload.load_id,
+        carrier_company: payload.carrier_company,
+        carrier_contact_name: payload.dispatch_contact,
+        carrier_contact_phone: payload.dispatch_phone
       });
+
       setIssuedQr(makeQrDataUrl(verifyUrl));
       setStatusMsg("AdbS Verification issued.");
       loadTotals();
+      clearNextLoadFields();
     } catch {
       setErrorMsg("Network error");
     }
@@ -214,7 +320,7 @@ export default function ControlCenter() {
     background: "rgba(12,18,28,0.72)",
     borderRadius: 16,
     padding: 18,
-    boxShadow: "0 12px 28px rgba(0,0,0,0.28)",
+    boxShadow: "0 12px 28px rgba(0,0,0,0.28)"
   };
 
   const input = {
@@ -226,7 +332,7 @@ export default function ControlCenter() {
     background: "rgba(255,255,255,0.05)",
     color: "#ffffff",
     fontSize: 16,
-    outline: "none",
+    outline: "none"
   };
 
   const btn = (primary) => ({
@@ -241,14 +347,25 @@ export default function ControlCenter() {
       : "rgba(255,255,255,0.06)",
     color: "#ffffff",
     fontWeight: 900,
-    cursor: "pointer",
+    cursor: "pointer"
+  });
+
+  const chip = (active) => ({
+    padding: "10px 12px",
+    borderRadius: 12,
+    border: active ? "1px solid rgba(120,180,255,0.55)" : "1px solid rgba(255,255,255,0.18)",
+    background: active ? "rgba(40,110,190,0.35)" : "rgba(255,255,255,0.06)",
+    color: "#ffffff",
+    fontWeight: 900,
+    textAlign: "center",
+    cursor: "pointer"
   });
 
   const sectionTitle = {
     fontWeight: 900,
     fontSize: 18,
     marginBottom: 12,
-    color: "#ffffff",
+    color: "#ffffff"
   };
 
   return (
@@ -270,10 +387,7 @@ export default function ControlCenter() {
               value={searchId}
               onChange={(e) => setSearchId(e.target.value)}
             />
-
-            <button style={btn(true)} onClick={searchVerification}>
-              Search
-            </button>
+            <button style={btn(true)} onClick={searchVerification}>Search</button>
           </div>
         </div>
 
@@ -349,6 +463,50 @@ export default function ControlCenter() {
                 onChange={(e) => setPlateOnRecord(toUpperClean(e.target.value))}
               />
 
+              <input
+                style={input}
+                placeholder="Carrier Company (optional)"
+                value={carrierCompany}
+                onChange={(e) => setCarrierCompany(e.target.value)}
+              />
+
+              <input
+                style={input}
+                placeholder="Carrier Contact Name (optional)"
+                value={carrierContactName}
+                onChange={(e) => setCarrierContactName(e.target.value)}
+              />
+
+              <input
+                style={input}
+                placeholder="Carrier Contact Phone (optional)"
+                value={carrierContactPhone}
+                onChange={(e) => setCarrierContactPhone(formatPhoneHyphen(e.target.value))}
+              />
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                <div style={chip(mode === "auto")} onClick={() => setMode("auto")}>Auto 24h</div>
+                <div style={chip(mode === "pick")} onClick={() => setMode("pick")}>Pick</div>
+                <div style={chip(mode === "none")} onClick={() => setMode("none")}>No Expire</div>
+              </div>
+
+              {mode === "pick" && (
+                <>
+                  <input
+                    style={input}
+                    type="datetime-local"
+                    value={startsAt}
+                    onChange={(e) => setStartsAt(e.target.value)}
+                  />
+                  <input
+                    style={input}
+                    type="datetime-local"
+                    value={expiresAt}
+                    onChange={(e) => setExpiresAt(e.target.value)}
+                  />
+                </>
+              )}
+
               <button style={btn(true)} onClick={issueLink} disabled={loading}>
                 {loading ? "Issuing..." : "Issue AdbS Verification"}
               </button>
@@ -369,7 +527,31 @@ export default function ControlCenter() {
                 <input style={input} value={issued.status || ""} readOnly />
 
                 <div style={{ marginTop: 10, fontWeight: 900, color: "#ffffff" }}>Expires</div>
-                <input style={input} value={issued.expires_at || "No Expire"} readOnly />
+                <input style={input} value={formatDisplayDate(issued.expires_at)} readOnly />
+
+                {(issued.carrier_company || issued.carrier_contact_name || issued.carrier_contact_phone) && (
+                  <div style={{ marginTop: 14, border: "1px solid rgba(255,255,255,0.12)", borderRadius: 12, padding: 12, background: "rgba(255,255,255,0.04)" }}>
+                    <div style={{ fontWeight: 900, marginBottom: 8, color: "#ffffff" }}>Carrier Contact</div>
+
+                    {issued.carrier_company ? (
+                      <div style={{ marginBottom: 6 }}>
+                        Carrier Company: <b>{issued.carrier_company}</b>
+                      </div>
+                    ) : null}
+
+                    {issued.carrier_contact_name ? (
+                      <div style={{ marginBottom: 6 }}>
+                        Carrier Contact Name: <b>{issued.carrier_contact_name}</b>
+                      </div>
+                    ) : null}
+
+                    {issued.carrier_contact_phone ? (
+                      <div>
+                        Carrier Contact Phone: <b>{issued.carrier_contact_phone}</b>
+                      </div>
+                    ) : null}
+                  </div>
+                )}
 
                 <div style={{ marginTop: 14, textAlign: "center" }}>
                   {issuedQr && (
@@ -400,7 +582,7 @@ export default function ControlCenter() {
                   border: "1px solid rgba(255,255,255,0.1)",
                   borderRadius: 10,
                   padding: 10,
-                  marginBottom: 8,
+                  marginBottom: 8
                 }}
               >
                 <div style={{ fontWeight: 900 }}>
