@@ -93,7 +93,6 @@ export default async function handler(req, res) {
       .single();
 
     if (linkError || !link) {
-      console.error("verify_driver.js: verify_links lookup failed", linkError);
       return res.status(404).json({ error: "Verification link not found" });
     }
 
@@ -135,7 +134,6 @@ export default async function handler(req, res) {
     });
 
     if (insertError) {
-      console.error("verify_driver.js: verify_checks insert failed", insertError);
       return res.status(500).json({
         error: "Failed to log verification attempt",
         detail: insertError.message || String(insertError)
@@ -149,7 +147,6 @@ export default async function handler(req, res) {
       .order("checked_at", { ascending: true });
 
     if (attemptsError) {
-      console.error("verify_driver.js: verify_checks read failed", attemptsError);
       return res.status(500).json({
         error: "Failed to read verification attempts",
         detail: attemptsError.message || String(attemptsError)
@@ -239,7 +236,6 @@ export default async function handler(req, res) {
       }
     });
   } catch (err) {
-    console.error("verify_driver.js: unexpected error", err);
     return res.status(500).json({
       error: "Unexpected verify error",
       detail: err?.message || String(err)
