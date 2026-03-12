@@ -149,11 +149,11 @@ async function sendDockEmail({
     throw new Error("Missing RESEND_API_KEY");
   }
 
-  const subject = `Truck-Driver Verification Required${loadId ? ` — ${loadId}` : ""}`;
+  const subject = `HTML ONLY TEST — Truck-Driver Verification Required${loadId ? ` — ${loadId}` : ""}`;
   const qrUrl = buildQrUrl(verifyUrl);
 
   const html = `
-    <div style="font-family: Arial, Helvetica, sans-serif; color:#111; line-height:1.45; padding: 8px 0;">
+    <div style="font-family: Arial, Helvetica, sans-serif; color:#111; line-height:1.45; padding:8px 0;">
       <div style="font-size:22px; font-weight:800; margin-bottom:12px;">AdbS TRUCK-DRIVER VERIFICATION</div>
 
       ${loadId ? `<div style="margin-bottom:12px; font-size:15px;"><b>Load ID:</b> ${loadId}</div>` : ""}
