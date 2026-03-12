@@ -33,6 +33,14 @@ function formatPhoneHyphen(s) {
   return `${a}-${b}-${c}`;
 }
 
+function bestPhone(link) {
+  return (
+    formatPhoneHyphen(link?.driver_phone || "") ||
+    formatPhoneHyphen(link?.dispatch_phone || "") ||
+    ""
+  );
+}
+
 export default async function handler(req, res) {
   if (req.method === "GET") {
     try {
@@ -53,10 +61,10 @@ export default async function handler(req, res) {
       }
 
       return res.status(200).json({
-        driver_phone: formatPhoneHyphen(link.driver_phone || ""),
+        driver_phone: bestPhone(link),
         carrier_company: link.carrier_company || "",
         carrier_contact_name: link.dispatch_contact || "",
-        carrier_contact_phone: link.dispatch_phone || "",
+        carrier_contact_phone: formatPhoneHyphen(link.dispatch_phone || ""),
         verification_id: token
       });
     } catch (err) {
@@ -94,10 +102,10 @@ export default async function handler(req, res) {
         result: "CLEAR_TO_LOAD",
         verification_id: token,
         verified_at: link.cleared_at || "",
-        driver_phone: formatPhoneHyphen(link.driver_phone || ""),
+        driver_phone: bestPhone(link),
         carrier_company: link.carrier_company || "",
         carrier_contact_name: link.dispatch_contact || "",
-        carrier_contact_phone: link.dispatch_phone || ""
+        carrier_contact_phone: formatPhoneHyphen(link.dispatch_phone || "")
       });
     }
 
@@ -215,10 +223,10 @@ export default async function handler(req, res) {
       result,
       verification_id: token,
       verified_at: new Date(nowIso).toLocaleString(),
-      driver_phone: formatPhoneHyphen(link.driver_phone || ""),
+      driver_phone: bestPhone(link),
       carrier_company: link.carrier_company || "",
       carrier_contact_name: link.dispatch_contact || "",
-      carrier_contact_phone: link.dispatch_phone || "",
+      carrier_contact_phone: formatPhoneHyphen(link.dispatch_phone || ""),
       debug: {
         dotMatch,
         plateMatch,
