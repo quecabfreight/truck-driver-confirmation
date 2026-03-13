@@ -89,6 +89,17 @@ async function sbPatchLinkByToken(token, patch) {
   return data;
 }
 
+function formatPhoneHyphen(s) {
+  const d = String(s || "").replace(/\D/g, "").slice(0, 10);
+  const a = d.slice(0, 3);
+  const b = d.slice(3, 6);
+  const c = d.slice(6, 10);
+  if (!d) return "";
+  if (d.length <= 3) return a;
+  if (d.length <= 6) return `${a}-${b}`;
+  return `${a}-${b}-${c}`;
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return json(res, 405, { ok: false, error: "Method not allowed" });
@@ -99,13 +110,20 @@ export default async function handler(req, res) {
     const action = String(body.action || "").trim().toLowerCase();
     const token = String(body.token || "").trim();
 
-    if (!action) return json(res, 400, { ok: false, error: "Missing action" });
+    if (!action) {
+      return json(res, 400, { ok: false, error: "Missing action" });
+    }
 
     if (action === "lookup") {
-      if (!token) return json(res, 400, { ok: false, error: "Missing Verification ID" });
+      if (!token) {
+        return json(res, 400, { ok: false, error: "Missing Verification ID" });
+      }
 
       const link = await sbFetchOneByToken(token);
-      if (!link) return json(res, 404, { ok: false, error: "Verification not found" });
+
+      if (!link) {
+        return json(res, 404, { ok: false, error: "Verification not found" });
+      }
 
       const attempts = await sbFetchAttemptsByToken(token);
 
@@ -122,24 +140,52 @@ export default async function handler(req, res) {
         expires_at: link.expires_at || null,
         carrier_company: link.carrier_company || "",
         carrier_contact_name: link.dispatch_contact || "",
-        carrier_contact_phone: link.dispatch_phone || "",
+        carrier_contact_phone: formatPhoneHyphen(link.dispatch_phone || ""),
+        driver_phone: formatPhoneHyphen(link.driver_phone || ""),
+        attempts
+      });
+    }
+
+    if (action === "attempts") {
+      if (!token) {
+        return json(res, 400, { ok: false, error: "Missing Verification ID" });
+      }
+
+      const attempts = await sbFetchAttemptsByToken(token);
+      return json(res, 200, {
+        ok: true,
+        token,
         attempts
       });
     }
 
     if (action === "lock") {
-      if (!token) return json(res, 400, { ok: false, error: "Missing Verification ID" });
+      if (!token) {
+        return json(res, 400, { ok: false, error: "Missing Verification ID" });
+      }
+
       await sbPatchLinkByToken(token, { status: "locked" });
-      return json(res, 200, { ok: true, status: "locked" });
+
+      return json(res, 200, {
+        ok: true,
+        status: "locked"
+      });
     }
 
     if (action === "clear") {
-      if (!token) return json(res, 400, { ok: false, error: "Missing Verification ID" });
+      if (!token) {
+        return json(res, 400, { ok: false, error: "Missing Verification ID" });
+      }
+
       await sbPatchLinkByToken(token, {
         status: "cleared",
         cleared_at: new Date().toISOString()
       });
-      return json(res, 200, { ok: true, status: "cleared" });
+
+      return json(res, 200, {
+        ok: true,
+        status: "cleared"
+      });
     }
 
     return json(res, 400, { ok: false, error: "Unknown action" });
