@@ -23,22 +23,25 @@ function normalizeAnswered(value) {
   return v === "YES" || v === "Y" || v === "TRUE";
 }
 
-function formatPhoneHyphen(s) {
-  const d = String(s || "").replace(/\D/g, "").slice(0, 10);
+function digitsOnly(value) {
+  return String(value || "").replace(/\D/g, "");
+}
+
+function formatPhoneHyphen(value) {
+  const d = digitsOnly(value).slice(0, 10);
   const a = d.slice(0, 3);
   const b = d.slice(3, 6);
   const c = d.slice(6, 10);
+  if (!d) return "";
   if (d.length <= 3) return a;
   if (d.length <= 6) return `${a}-${b}`;
   return `${a}-${b}-${c}`;
 }
 
 function bestPhone(link) {
-  return (
-    formatPhoneHyphen(link?.driver_phone || "") ||
-    formatPhoneHyphen(link?.dispatch_phone || "") ||
-    ""
-  );
+  const driver = formatPhoneHyphen(link?.driver_phone || "");
+  const dispatch = formatPhoneHyphen(link?.dispatch_phone || "");
+  return driver || dispatch || "";
 }
 
 export default async function handler(req, res) {
@@ -60,8 +63,10 @@ export default async function handler(req, res) {
         return res.status(404).json({ error: "Verification link not found" });
       }
 
+      const phone = bestPhone(link);
+
       return res.status(200).json({
-        driver_phone: bestPhone(link),
+        driver_phone: phone,
         carrier_company: link.carrier_company || "",
         carrier_contact_name: link.dispatch_contact || "",
         carrier_contact_phone: formatPhoneHyphen(link.dispatch_phone || ""),
@@ -96,12 +101,14 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: "Verification link not found" });
     }
 
-    if (link.status === "cleared") {
+    const phone = bestPhone(link);
+
+    if (link.status === "cleared" || link.status === "used") {
       return res.status(200).json({
         result: "CLEAR_TO_LOAD",
         verification_id: token,
-        verified_at: link.cleared_at || "",
-        driver_phone: bestPhone(link),
+        verified_at: link.cleared_at || link.checked_at || "",
+        driver_phone: phone,
         carrier_company: link.carrier_company || "",
         carrier_contact_name: link.dispatch_contact || "",
         carrier_contact_phone: formatPhoneHyphen(link.dispatch_phone || "")
@@ -220,7 +227,7 @@ export default async function handler(req, res) {
       result,
       verification_id: token,
       verified_at: new Date(nowIso).toLocaleString(),
-      driver_phone: bestPhone(link),
+      driver_phone: phone,
       carrier_company: link.carrier_company || "",
       carrier_contact_name: link.dispatch_contact || "",
       carrier_contact_phone: formatPhoneHyphen(link.dispatch_phone || ""),
