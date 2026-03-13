@@ -146,7 +146,9 @@ async function sendDockEmail({ to, loadId, verifyUrl, expiresAt }) {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.ADBS_EMAIL_FROM || "QueCab AdbS <verify@quecabadbs.com>";
 
-  if (!apiKey) throw new Error("Missing RESEND_API_KEY");
+  if (!apiKey) {
+    throw new Error("Missing RESEND_API_KEY");
+  }
 
   const subject = `Truck-Driver Verification Required${loadId ? ` — ${loadId}` : ""}`;
   const qrUrl = buildQrUrl(verifyUrl);
@@ -212,7 +214,15 @@ async function sendDockEmail({ to, loadId, verifyUrl, expiresAt }) {
   });
 
   const data = await safeJsonResponse(res);
-  if (!res.ok) throw new Error(data?.message || data?.error || `Resend send failed (${res.status})`);
+
+  if (!res.ok) {
+    const msg =
+      data?.message ||
+      data?.error ||
+      `Resend send failed (${res.status})`;
+    throw new Error(msg);
+  }
+
   return data;
 }
 
@@ -260,7 +270,7 @@ async function handleManageAction(req, body) {
       status: "active",
       starts_at: new Date().toISOString(),
       expires_at: link.expires_at || null,
-      dock_pin
+      dock_pin,
     };
 
     const inserted = await sbInsertVerifyLink(row);
