@@ -270,7 +270,7 @@ async function handleManageAction(req, body) {
       status: "active",
       starts_at: new Date().toISOString(),
       expires_at: link.expires_at || null,
-      dock_pin,
+      dock_pin
     };
 
     const inserted = await sbInsertVerifyLink(row);
@@ -284,16 +284,18 @@ async function handleManageAction(req, body) {
 
     let email_status = null;
     let email_error = null;
+    let email_debug = null;
 
     if (dock_email) {
       try {
-        await sendDockEmail({
+        const sendResult = await sendDockEmail({
           to: dock_email,
           loadId: load_id,
           verifyUrl: verify_public,
           expiresAt: inserted?.expires_at || link.expires_at || null,
         });
         email_status = "sent";
+        email_debug = sendResult;
       } catch (e) {
         email_status = "failed";
         email_error = String(e?.message || "Email send failed");
@@ -307,7 +309,8 @@ async function handleManageAction(req, body) {
       new_token: newToken,
       verify_url: verify_public,
       email_status,
-      email_error
+      email_error,
+      email_debug
     };
   }
 
@@ -373,16 +376,18 @@ export default async function handler(req, res) {
 
     let email_status = null;
     let email_error = null;
+    let email_debug = null;
 
     if (dock_email) {
       try {
-        await sendDockEmail({
+        const sendResult = await sendDockEmail({
           to: dock_email,
           loadId: load_id,
           verifyUrl: verify_public,
           expiresAt: inserted?.expires_at || expires_at || null,
         });
         email_status = "sent";
+        email_debug = sendResult;
       } catch (e) {
         email_status = "failed";
         email_error = String(e?.message || "Email send failed");
@@ -400,7 +405,8 @@ export default async function handler(req, res) {
       verify_hash_url: verify_hash,
       dock_email: dock_email || null,
       email_status,
-      email_error
+      email_error,
+      email_debug
     });
   } catch (e) {
     return json(res, 500, { ok: false, error: String(e?.message || "Server error") });
