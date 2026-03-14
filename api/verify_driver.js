@@ -66,11 +66,14 @@ export default async function handler(req, res) {
       const phone = bestPhone(link);
 
       return res.status(200).json({
+        ok: true,
         driver_phone: phone,
         carrier_company: link.carrier_company || "",
         carrier_contact_name: link.dispatch_contact || "",
         carrier_contact_phone: formatPhoneHyphen(link.dispatch_phone || ""),
-        verification_id: token
+        verification_id: token,
+        debug_phone_driver: formatPhoneHyphen(link.driver_phone || ""),
+        debug_phone_dispatch: formatPhoneHyphen(link.dispatch_phone || "")
       });
     } catch (err) {
       return res.status(500).json({
@@ -239,7 +242,9 @@ export default async function handler(req, res) {
         alertTriggered,
         alertSent,
         alertTo,
-        alertError
+        alertError,
+        debug_phone_driver: formatPhoneHyphen(link.driver_phone || ""),
+        debug_phone_dispatch: formatPhoneHyphen(link.dispatch_phone || "")
       }
     });
   } catch (err) {
