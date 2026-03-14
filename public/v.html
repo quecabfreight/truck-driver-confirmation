@@ -23,10 +23,11 @@
       border-radius:16px;
       padding:28px;
       border:1px solid rgba(255,255,255,0.15);
+      box-shadow:0 14px 40px rgba(0,0,0,0.25);
     }
 
     .hero{
-      font-size:28px;
+      font-size:32px;
       font-weight:900;
       margin-bottom:10px;
       letter-spacing:.02em;
@@ -36,6 +37,7 @@
       opacity:.82;
       margin-bottom:22px;
       line-height:1.45;
+      font-size:15px;
     }
 
     .fieldLabel{
@@ -49,24 +51,27 @@
     input{
       width:100%;
       box-sizing:border-box;
-      padding:12px;
+      padding:14px 12px;
       margin-top:0;
-      margin-bottom:12px;
-      border-radius:10px;
-      border:1px solid rgba(255,255,255,0.28);
-      background:rgba(255,255,255,0.05);
+      margin-bottom:16px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,0.22);
+      background:rgba(255,255,255,0.08);
       color:#fff;
       font-size:18px;
       text-align:center;
       outline:none;
+    }
+
+    .plateInput{
       text-transform:uppercase;
     }
 
     .callBox{
-      margin:12px 0 16px;
-      padding:14px;
-      border-radius:12px;
-      border:1px solid rgba(255,255,255,0.16);
+      margin:14px 0 18px;
+      padding:16px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,0.14);
       background:rgba(255,255,255,0.04);
       text-align:left;
     }
@@ -74,31 +79,48 @@
     .callTitle{
       font-size:15px;
       font-weight:800;
-      margin-bottom:8px;
+      margin-bottom:10px;
+      color:#ffffff;
     }
 
     .phoneLink{
       display:inline-block;
-      font-size:22px;
+      font-size:24px;
       font-weight:900;
       color:#8fc7ff;
       text-decoration:none;
-      margin-bottom:12px;
+      margin-bottom:14px;
+      word-break:break-word;
+    }
+
+    .phoneUnavailable{
+      display:inline-block;
+      font-size:24px;
+      font-weight:900;
+      color:#8fc7ff;
+      margin-bottom:14px;
+    }
+
+    .answerTitle{
+      font-size:15px;
+      font-weight:800;
+      margin-bottom:10px;
+      color:#ffffff;
     }
 
     .answerGrid{
       display:grid;
       grid-template-columns:1fr 1fr;
-      gap:10px;
+      gap:12px;
       margin-top:6px;
     }
 
     .answerBtn{
       width:100%;
-      padding:14px;
-      border-radius:12px;
-      border:1px solid rgba(255,255,255,0.18);
-      background:rgba(255,255,255,0.06);
+      padding:16px 14px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,0.16);
+      background:rgba(255,255,255,0.07);
       color:#ffffff;
       font-size:16px;
       font-weight:900;
@@ -117,26 +139,31 @@
 
     .mainBtn{
       width:100%;
-      padding:14px;
-      border-radius:12px;
+      padding:18px 14px;
+      border-radius:16px;
       border:1px solid rgba(120,180,255,0.45);
       background:rgba(40,110,190,0.35);
       color:#fff;
       font-size:18px;
       font-weight:900;
       cursor:pointer;
-      margin-top:8px;
+      margin-top:10px;
     }
 
     .result{
-      margin-top:24px;
-      font-size:34px;
+      margin-top:26px;
+      font-size:36px;
       font-weight:900;
-      min-height:42px;
+      min-height:46px;
     }
 
-    .clear{ color:#6fff8d; }
-    .caution{ color:#ff4d4d; }
+    .clear{
+      color:#6fff8d;
+    }
+
+    .caution{
+      color:#ff4d4d;
+    }
 
     .flash{
       animation:flashbg 0.7s infinite;
@@ -149,19 +176,19 @@
     }
 
     .soundToggle{
-      margin-top:12px;
+      margin-top:18px;
       font-size:14px;
-      opacity:.8;
+      opacity:.84;
       cursor:pointer;
       user-select:none;
     }
 
     .authority{
-      margin-top:22px;
+      margin-top:24px;
       text-align:left;
       border:1px solid rgba(255,255,255,0.12);
       background:rgba(255,255,255,0.04);
-      border-radius:14px;
+      border-radius:16px;
       padding:16px;
       display:none;
     }
@@ -174,7 +201,7 @@
 
     .authorityRow{
       font-size:15px;
-      line-height:1.55;
+      line-height:1.6;
       margin-bottom:6px;
     }
 
@@ -191,29 +218,32 @@
     .mini{
       font-size:13px;
       opacity:.74;
-      margin-top:14px;
+      margin-top:16px;
     }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="hero">AdbS TRUCK-DRIVER VERIFICATION</div>
+
     <div class="sub">
       Enter the USDOT# and Plate shown on the truck.<br />
       Complete verification before releasing the load.
     </div>
 
     <div class="fieldLabel">USDOT#</div>
-    <input id="usdot" placeholder="USDOT#" />
+    <input id="usdot" placeholder="USDOT#" inputmode="numeric" />
 
     <div class="fieldLabel">Plate</div>
-    <input id="plate" placeholder="Plate" />
+    <input id="plate" class="plateInput" placeholder="PLATE" />
 
     <div class="callBox">
       <div class="callTitle">Call Driver / Carrier Contact</div>
-      <a id="driverPhoneLink" class="phoneLink" href="#">Loading...</a>
 
-      <div class="fieldLabel" style="margin-top:0;">Did the driver answer the phone?</div>
+      <a id="driverPhoneLink" class="phoneLink" href="#" style="display:none;"></a>
+      <div id="driverPhoneUnavailable" class="phoneUnavailable">(phone unavailable)</div>
+
+      <div class="answerTitle">Did the driver answer the phone?</div>
       <div class="answerGrid">
         <button id="yesBtn" class="answerBtn" type="button" onclick="setAnswered(true)">YES</button>
         <button id="noBtn" class="answerBtn" type="button" onclick="setAnswered(false)">NO</button>
@@ -276,12 +306,13 @@
     }
 
     function getToken() {
-      const params = new URLSearchParams(location.search);
+      const params = new URLSearchParams(window.location.search);
       return params.get("t");
     }
 
     function setAnswered(value) {
       driverAnswered = value;
+
       const yesBtn = document.getElementById("yesBtn");
       const noBtn = document.getElementById("noBtn");
 
@@ -290,13 +321,32 @@
     }
 
     function setAuthority(data) {
-      const authority = document.getElementById("authority");
       document.getElementById("carrierCompany").innerText = data.carrier_company || "(not provided)";
       document.getElementById("carrierContact").innerText = data.carrier_contact_name || "(not provided)";
       document.getElementById("carrierPhone").innerText = data.carrier_contact_phone || "(not provided)";
       document.getElementById("verificationId").innerText = data.verification_id || "(unknown)";
       document.getElementById("verificationTime").innerText = data.verified_at || new Date().toLocaleString();
-      authority.style.display = "block";
+      document.getElementById("authority").style.display = "block";
+    }
+
+    function renderPhone(phoneValue) {
+      const link = document.getElementById("driverPhoneLink");
+      const unavailable = document.getElementById("driverPhoneUnavailable");
+
+      const digits = String(phoneValue || "").replace(/\D/g, "");
+
+      if (digits.length === 10) {
+        const formatted = `${digits.slice(0,3)}-${digits.slice(3,6)}-${digits.slice(6,10)}`;
+        link.href = `tel:${digits}`;
+        link.innerText = formatted;
+        link.style.display = "inline-block";
+        unavailable.style.display = "none";
+      } else {
+        link.removeAttribute("href");
+        link.innerText = "";
+        link.style.display = "none";
+        unavailable.style.display = "inline-block";
+      }
     }
 
     async function loadDriverPhone() {
@@ -304,23 +354,20 @@
       if (!token) return;
 
       try {
-        const res = await fetch(`/api/verify_driver?token=${encodeURIComponent(token)}`);
+        const res = await fetch(`/api/verify_driver?token=${encodeURIComponent(token)}`, {
+          cache: "no-store"
+        });
+
         const data = await res.json();
 
-        if (res.ok && data.driver_phone) {
-          const phoneDigits = String(data.driver_phone).replace(/\D/g, "");
-          const link = document.getElementById("driverPhoneLink");
-          link.href = `tel:${phoneDigits}`;
-          link.innerText = data.driver_phone;
+        if (res.ok) {
+          renderPhone(data.driver_phone || "");
+          setAuthority(data);
         } else {
-          const link = document.getElementById("driverPhoneLink");
-          link.innerText = "(phone unavailable)";
-          link.removeAttribute("href");
+          renderPhone("");
         }
       } catch {
-        const link = document.getElementById("driverPhoneLink");
-        link.innerText = "(phone unavailable)";
-        link.removeAttribute("href");
+        renderPhone("");
       }
     }
 
@@ -329,10 +376,11 @@
 
       const token = getToken();
       const usdot = document.getElementById("usdot").value.trim();
-      const plate = document.getElementById("plate").value.trim().toUpperCase();
+      const plateInput = document.getElementById("plate");
+      const plate = plateInput.value.trim().toUpperCase();
       const result = document.getElementById("result");
 
-      document.getElementById("plate").value = plate;
+      plateInput.value = plate;
 
       if (driverAnswered === null) {
         result.innerText = "Select YES or NO for phone answer";
@@ -340,38 +388,46 @@
         return;
       }
 
-      const res = await fetch("/api/verify_driver", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          token,
-          entered_usdot: usdot,
-          entered_plate: plate,
-          driver_answered: driverAnswered
-        })
-      });
+      try {
+        const res = await fetch("/api/verify_driver", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            token,
+            entered_usdot: usdot,
+            entered_plate: plate,
+            driver_answered: driverAnswered
+          })
+        });
 
-      const data = await res.json();
+        const data = await res.json();
 
-      if (!res.ok) {
-        result.innerText = data.error || "Verification Error";
-        result.className = "result caution";
-        return;
-      }
-
-      if (String(data.result || "").toLowerCase().includes("clear")) {
-        result.innerText = "CLEAR TO LOAD";
-        result.className = "result clear";
-      } else {
-        document.body.classList.add("flash");
-        if (soundEnabled) {
-          try { document.getElementById("alertSound").play(); } catch {}
+        if (!res.ok) {
+          result.innerText = data.error || "Verification Error";
+          result.className = "result caution";
+          return;
         }
-        result.innerText = "CAUTION — DO NOT LOAD";
+
+        renderPhone(data.driver_phone || "");
+        setAuthority(data);
+
+        if (String(data.result || "").toLowerCase().includes("clear")) {
+          result.innerText = "CLEAR TO LOAD";
+          result.className = "result clear";
+        } else {
+          document.body.classList.add("flash");
+          if (soundEnabled) {
+            try {
+              document.getElementById("alertSound").play();
+            } catch {}
+          }
+          result.innerText = "CAUTION — DO NOT LOAD";
+          result.className = "result caution";
+        }
+      } catch {
+        result.innerText = "Verification Error";
         result.className = "result caution";
       }
-
-      setAuthority(data);
     }
 
     loadDriverPhone();
