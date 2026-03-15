@@ -1,15 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
-import { Resend } from "resend";
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
-
-function getResend() {
-  if (!process.env.RESEND_API_KEY) return null;
-  return new Resend(process.env.RESEND_API_KEY);
-}
 
 function normalizeDOT(value) {
   return String(value || "").replace(/\D/g, "");
@@ -47,61 +41,6 @@ function bestPhone(link) {
   return driver || dispatch || "";
 }
 
-async function sendFraudAlert(link, token, failedAttempts) {
-  try {
-    const alertEmail =
-      String(link?.issuer_email || "").trim() ||
-      String(process.env.ADBS_ALERT_EMAIL || "").trim();
-
-    if (!alertEmail) {
-      return { ok: false, error: "Missing alert recipient (issuer_email / ADBS_ALERT_EMAIL)" };
-    }
-
-    if (!process.env.ADBS_EMAIL_FROM) {
-      return { ok: false, error: "Missing ADBS_EMAIL_FROM" };
-    }
-
-    const resend = getResend();
-    if (!resend) {
-      return { ok: false, error: "Missing RESEND_API_KEY" };
-    }
-
-    const sendResult = await resend.emails.send({
-      from: process.env.ADBS_EMAIL_FROM,
-      to: alertEmail,
-      subject: "AdbS Fraud Alert — Multiple Failed Verification Attempts",
-      html: `
-        <div style="font-family:Arial,Helvetica,sans-serif;line-height:1.5;color:#111;">
-          <h2>AdbS Alert</h2>
-          <p>Multiple failed Truck-Driver verification attempts were detected.</p>
-          <p><strong>Load ID:</strong> ${link?.load_id || "(none)"}</p>
-          <p><strong>Verification ID:</strong> ${token}</p>
-          <p><strong>Failed Attempts:</strong> ${failedAttempts}</p>
-          <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
-          <p><strong>Verify Page:</strong><br/>https://quecabadbs.com/v.html?t=${token}</p>
-        </div>
-      `
-    });
-
-    if (sendResult?.error) {
-      return {
-        ok: false,
-        error: sendResult.error.message || JSON.stringify(sendResult.error)
-      };
-    }
-
-    return {
-      ok: true,
-      data: sendResult
-    };
-  } catch (err) {
-    return {
-      ok: false,
-      error: err?.message || String(err)
-    };
-  }
-}
-
 export default async function handler(req, res) {
   if (req.method === "GET") {
     try {
@@ -113,7 +52,7 @@ export default async function handler(req, res) {
 
       const { data: link, error } = await supabase
         .from("verify_links")
-        .select("*")
+        .select("token,driver_phone,dispatch_phone,carrier_company,dispatch_contact")
         .eq("token", token)
         .maybeSingle();
 
@@ -221,36 +160,6 @@ export default async function handler(req, res) {
       });
     }
 
-    const { data: attempts, error: attemptsError } = await supabase
-      .from("verify_checks")
-      .select("result, checked_at")
-      .eq("token", token)
-      .order("checked_at", { ascending: true });
-
-    if (attemptsError) {
-      return res.status(500).json({
-        error: "Failed to read verification attempts",
-        detail: attemptsError.message || String(attemptsError)
-      });
-    }
-
-    const failedAttempts = (attempts || []).filter(
-      (a) => a.result === "CAUTION_ALERT"
-    ).length;
-
-    let alertTriggered = false;
-    let alertSent = false;
-    let alertError = null;
-
-    if (failedAttempts === 3) {
-      alertTriggered = true;
-
-      const alertResult = await sendFraudAlert(link, token, failedAttempts);
-
-      alertSent = !!alertResult.ok;
-      alertError = alertResult.ok ? null : alertResult.error || "Alert send failed";
-    }
-
     if (result === "CLEAR_TO_LOAD") {
       await supabase
         .from("verify_links")
@@ -272,11 +181,7 @@ export default async function handler(req, res) {
       debug: {
         dotMatch,
         plateMatch,
-        phoneMatch,
-        failedAttempts,
-        alertTriggered,
-        alertSent,
-        alertError
+        phoneMatch
       }
     });
   } catch (err) {
