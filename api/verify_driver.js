@@ -1,6 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-
-let resendClient = null;
+import { Resend } from "resend";
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -9,13 +8,7 @@ const supabase = createClient(
 
 function getResend() {
   if (!process.env.RESEND_API_KEY) return null;
-
-  if (!resendClient) {
-    const { Resend } = require("resend");
-    resendClient = new Resend(process.env.RESEND_API_KEY);
-  }
-
-  return resendClient;
+  return new Resend(process.env.RESEND_API_KEY);
 }
 
 function normalizeDOT(value) {
@@ -55,25 +48,24 @@ function bestPhone(link) {
 }
 
 async function sendFraudAlert(link, token, failedAttempts) {
-  const alertEmail =
-    String(link?.issuer_email || "").trim() ||
-    String(process.env.ADBS_ALERT_EMAIL || "").trim() ||
-    "";
-
-  if (!alertEmail) {
-    return { ok: false, error: "No alert recipient found" };
-  }
-
-  if (!process.env.ADBS_EMAIL_FROM) {
-    return { ok: false, error: "Missing ADBS_EMAIL_FROM" };
-  }
-
-  const resend = getResend();
-  if (!resend) {
-    return { ok: false, error: "Resend not configured" };
-  }
-
   try {
+    const alertEmail =
+      String(link?.issuer_email || "").trim() ||
+      String(process.env.ADBS_ALERT_EMAIL || "").trim();
+
+    if (!alertEmail) {
+      return { ok: false, error: "Missing alert recipient (issuer_email / ADBS_ALERT_EMAIL)" };
+    }
+
+    if (!process.env.ADBS_EMAIL_FROM) {
+      return { ok: false, error: "Missing ADBS_EMAIL_FROM" };
+    }
+
+    const resend = getResend();
+    if (!resend) {
+      return { ok: false, error: "Missing RESEND_API_KEY" };
+    }
+
     const sendResult = await resend.emails.send({
       from: process.env.ADBS_EMAIL_FROM,
       to: alertEmail,
@@ -98,9 +90,15 @@ async function sendFraudAlert(link, token, failedAttempts) {
       };
     }
 
-    return { ok: true, data: sendResult };
+    return {
+      ok: true,
+      data: sendResult
+    };
   } catch (err) {
-    return { ok: false, error: err?.message || String(err) };
+    return {
+      ok: false,
+      error: err?.message || String(err)
+    };
   }
 }
 
@@ -248,6 +246,7 @@ export default async function handler(req, res) {
       alertTriggered = true;
 
       const alertResult = await sendFraudAlert(link, token, failedAttempts);
+
       alertSent = !!alertResult.ok;
       alertError = alertResult.ok ? null : alertResult.error || "Alert send failed";
     }
