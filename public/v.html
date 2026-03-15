@@ -1,436 +1,460 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>AdbS Truck-Driver Verification</title>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>AdbS Truck-Driver Verification</title>
 
-  <style>
-    body{
-      font-family:Arial,Helvetica,sans-serif;
-      background:#0c121c;
-      color:#e6edf5;
-      margin:0;
-      padding:30px;
-      text-align:center;
-      transition:background 0.2s ease;
-    }
+<style>
+body{
+font-family:Arial,Helvetica,sans-serif;
+background:#0c121c;
+color:#e6edf5;
+margin:0;
+padding:30px;
+text-align:center;
+transition:background .2s ease;
+}
 
-    .container{
-      max-width:760px;
-      margin:auto;
-      background:rgba(255,255,255,0.05);
-      border-radius:16px;
-      padding:28px;
-      border:1px solid rgba(255,255,255,0.15);
-      box-shadow:0 14px 40px rgba(0,0,0,0.25);
-    }
+.container{
+max-width:760px;
+margin:auto;
+background:rgba(255,255,255,.05);
+border-radius:16px;
+padding:28px;
+border:1px solid rgba(255,255,255,.15);
+box-shadow:0 14px 40px rgba(0,0,0,.25);
+}
 
-    .hero{
-      font-size:32px;
-      font-weight:900;
-      margin-bottom:10px;
-      letter-spacing:.02em;
-    }
+.hero{
+font-size:32px;
+font-weight:900;
+margin-bottom:10px;
+letter-spacing:.02em;
+}
 
-    .sub{
-      opacity:.82;
-      margin-bottom:22px;
-      line-height:1.45;
-      font-size:15px;
-    }
+.sub{
+opacity:.82;
+margin-bottom:22px;
+line-height:1.45;
+font-size:15px;
+}
 
-    .fieldLabel{
-      text-align:left;
-      font-size:15px;
-      font-weight:800;
-      margin:10px 0 6px;
-      color:#ffffff;
-    }
+.fieldLabel{
+text-align:left;
+font-size:15px;
+font-weight:800;
+margin:10px 0 6px;
+color:#fff;
+}
 
-    input{
-      width:100%;
-      box-sizing:border-box;
-      padding:14px 12px;
-      margin-top:0;
-      margin-bottom:16px;
-      border-radius:14px;
-      border:1px solid rgba(255,255,255,0.22);
-      background:rgba(255,255,255,0.08);
-      color:#fff;
-      font-size:18px;
-      text-align:center;
-      outline:none;
-    }
+input{
+width:100%;
+box-sizing:border-box;
+padding:14px 12px;
+margin-bottom:16px;
+border-radius:14px;
+border:1px solid rgba(255,255,255,.22);
+background:rgba(255,255,255,.08);
+color:#fff;
+font-size:18px;
+text-align:center;
+outline:none;
+}
 
-    .plateInput{
-      text-transform:uppercase;
-    }
+.plateInput{
+text-transform:uppercase;
+}
 
-    .callBox{
-      margin:14px 0 18px;
-      padding:16px;
-      border-radius:16px;
-      border:1px solid rgba(255,255,255,0.14);
-      background:rgba(255,255,255,0.04);
-      text-align:left;
-    }
+.callBox{
+margin:14px 0 18px;
+padding:16px;
+border-radius:16px;
+border:1px solid rgba(255,255,255,.14);
+background:rgba(255,255,255,.04);
+text-align:left;
+}
 
-    .callTitle{
-      font-size:15px;
-      font-weight:800;
-      margin-bottom:10px;
-      color:#ffffff;
-    }
+.callTitle{
+font-size:15px;
+font-weight:800;
+margin-bottom:10px;
+color:#fff;
+}
 
-    .phoneLink{
-      display:inline-block;
-      font-size:24px;
-      font-weight:900;
-      color:#8fc7ff;
-      text-decoration:none;
-      margin-bottom:14px;
-      word-break:break-word;
-    }
+.phoneLink{
+display:inline-block;
+font-size:24px;
+font-weight:900;
+color:#8fc7ff;
+text-decoration:none;
+margin-bottom:14px;
+word-break:break-word;
+}
 
-    .phoneUnavailable{
-      display:inline-block;
-      font-size:24px;
-      font-weight:900;
-      color:#8fc7ff;
-      margin-bottom:14px;
-    }
+.phoneUnavailable{
+display:inline-block;
+font-size:24px;
+font-weight:900;
+color:#8fc7ff;
+margin-bottom:14px;
+}
 
-    .answerTitle{
-      font-size:15px;
-      font-weight:800;
-      margin-bottom:10px;
-      color:#ffffff;
-    }
+.answerTitle{
+font-size:15px;
+font-weight:800;
+margin-bottom:10px;
+color:#fff;
+}
 
-    .answerGrid{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:12px;
-      margin-top:6px;
-    }
+.answerGrid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:12px;
+margin-top:6px;
+}
 
-    .answerBtn{
-      width:100%;
-      padding:16px 14px;
-      border-radius:14px;
-      border:1px solid rgba(255,255,255,0.16);
-      background:rgba(255,255,255,0.07);
-      color:#ffffff;
-      font-size:16px;
-      font-weight:900;
-      cursor:pointer;
-    }
+.answerBtn{
+width:100%;
+padding:16px 14px;
+border-radius:14px;
+border:1px solid rgba(255,255,255,.16);
+background:rgba(255,255,255,.07);
+color:#fff;
+font-size:16px;
+font-weight:900;
+cursor:pointer;
+}
 
-    .answerBtn.activeYes{
-      border:1px solid rgba(110,255,150,0.55);
-      background:rgba(40,150,70,0.30);
-    }
+.answerBtn.activeYes{
+border:1px solid rgba(110,255,150,.55);
+background:rgba(40,150,70,.30);
+}
 
-    .answerBtn.activeNo{
-      border:1px solid rgba(255,100,100,0.55);
-      background:rgba(170,40,40,0.30);
-    }
+.answerBtn.activeNo{
+border:1px solid rgba(255,100,100,.55);
+background:rgba(170,40,40,.30);
+}
 
-    .mainBtn{
-      width:100%;
-      padding:18px 14px;
-      border-radius:16px;
-      border:1px solid rgba(120,180,255,0.45);
-      background:rgba(40,110,190,0.35);
-      color:#fff;
-      font-size:18px;
-      font-weight:900;
-      cursor:pointer;
-      margin-top:10px;
-    }
+.mainBtn{
+width:100%;
+padding:18px 14px;
+border-radius:16px;
+border:1px solid rgba(120,180,255,.45);
+background:rgba(40,110,190,.35);
+color:#fff;
+font-size:18px;
+font-weight:900;
+cursor:pointer;
+margin-top:10px;
+}
 
-    .result{
-      margin-top:26px;
-      font-size:36px;
-      font-weight:900;
-      min-height:46px;
-    }
+.result{
+margin-top:26px;
+font-size:36px;
+font-weight:900;
+min-height:46px;
+}
 
-    .clear{
-      color:#6fff8d;
-    }
+.clear{color:#6fff8d;}
+.caution{color:#ff4d4d;}
 
-    .caution{
-      color:#ff4d4d;
-    }
+.flash{
+animation:flashbg .7s infinite;
+}
 
-    .flash{
-      animation:flashbg 0.7s infinite;
-    }
+@keyframes flashbg{
+0%{background:#0c121c}
+50%{background:#3a0000}
+100%{background:#0c121c}
+}
 
-    @keyframes flashbg{
-      0%{background:#0c121c}
-      50%{background:#3a0000}
-      100%{background:#0c121c}
-    }
+.soundToggle{
+margin-top:18px;
+font-size:14px;
+opacity:.84;
+cursor:pointer;
+user-select:none;
+}
 
-    .soundToggle{
-      margin-top:18px;
-      font-size:14px;
-      opacity:.84;
-      cursor:pointer;
-      user-select:none;
-    }
+.authority{
+margin-top:24px;
+text-align:left;
+border:1px solid rgba(255,255,255,.12);
+background:rgba(255,255,255,.04);
+border-radius:16px;
+padding:16px;
+display:none;
+}
 
-    .authority{
-      margin-top:24px;
-      text-align:left;
-      border:1px solid rgba(255,255,255,0.12);
-      background:rgba(255,255,255,0.04);
-      border-radius:16px;
-      padding:16px;
-      display:none;
-    }
+.authorityTitle{
+font-size:18px;
+font-weight:900;
+margin-bottom:10px;
+}
 
-    .authorityTitle{
-      font-size:18px;
-      font-weight:900;
-      margin-bottom:10px;
-    }
+.authorityRow{
+font-size:15px;
+line-height:1.6;
+margin-bottom:6px;
+}
 
-    .authorityRow{
-      font-size:15px;
-      line-height:1.6;
-      margin-bottom:6px;
-    }
+.authorityLabel{
+opacity:.72;
+font-weight:700;
+}
 
-    .authorityLabel{
-      opacity:.72;
-      font-weight:700;
-    }
+.authorityValue{
+font-weight:900;
+color:#fff;
+}
 
-    .authorityValue{
-      font-weight:900;
-      color:#ffffff;
-    }
-
-    .mini{
-      font-size:13px;
-      opacity:.74;
-      margin-top:16px;
-    }
-  </style>
+.mini{
+font-size:13px;
+opacity:.74;
+margin-top:16px;
+}
+</style>
 </head>
+
 <body>
-  <div class="container">
-    <div class="hero">AdbS TRUCK-DRIVER VERIFICATION</div>
 
-    <div class="sub">
-      Enter the USDOT# and Plate shown on the truck.<br />
-      Complete verification before releasing the load.
-    </div>
+<div class="container">
 
-    <div class="fieldLabel">USDOT#</div>
-    <input id="usdot" placeholder="USDOT#" inputmode="numeric" />
+<div class="hero">AdbS TRUCK-DRIVER VERIFICATION V2 LIVE</div>
 
-    <div class="fieldLabel">Plate</div>
-    <input id="plate" class="plateInput" placeholder="PLATE" />
+<div class="sub">
+Enter the USDOT# and Plate shown on the truck.<br>
+Complete verification before releasing the load.
+</div>
 
-    <div class="callBox">
-      <div class="callTitle">Call Driver / Carrier Contact</div>
+<div class="fieldLabel">USDOT#</div>
+<input id="usdot" placeholder="USDOT#" inputmode="numeric"/>
 
-      <a id="driverPhoneLink" class="phoneLink" href="#" style="display:none;"></a>
-      <div id="driverPhoneUnavailable" class="phoneUnavailable">(phone unavailable)</div>
+<div class="fieldLabel">Plate</div>
+<input id="plate" class="plateInput" placeholder="PLATE"/>
 
-      <div class="answerTitle">Did the driver answer the phone?</div>
-      <div class="answerGrid">
-        <button id="yesBtn" class="answerBtn" type="button" onclick="setAnswered(true)">YES</button>
-        <button id="noBtn" class="answerBtn" type="button" onclick="setAnswered(false)">NO</button>
-      </div>
-    </div>
+<div class="callBox">
 
-    <button class="mainBtn" onclick="verify()">Verify Truck-Driver</button>
+<div class="callTitle">Call Driver / Carrier Contact</div>
 
-    <div id="result" class="result"></div>
+<a id="driverPhoneLink" class="phoneLink" href="#" style="display:none;"></a>
+<div id="driverPhoneUnavailable" class="phoneUnavailable">(phone unavailable)</div>
 
-    <div class="soundToggle" onclick="toggleSound()">
-      🔊 Alert Sound: <span id="soundState">ON</span>
-    </div>
+<div class="answerTitle">Did the driver answer the phone?</div>
 
-    <div id="authority" class="authority">
-      <div class="authorityTitle">Verification Authority</div>
+<div class="answerGrid">
+<button id="yesBtn" class="answerBtn" type="button" onclick="setAnswered(true)">YES</button>
+<button id="noBtn" class="answerBtn" type="button" onclick="setAnswered(false)">NO</button>
+</div>
 
-      <div class="authorityRow">
-        <span class="authorityLabel">Verified Carrier:</span>
-        <span class="authorityValue" id="carrierCompany">(not provided)</span>
-      </div>
+</div>
 
-      <div class="authorityRow">
-        <span class="authorityLabel">Carrier Contact:</span>
-        <span class="authorityValue" id="carrierContact">(not provided)</span>
-      </div>
+<button class="mainBtn" onclick="verify()">Verify Truck-Driver</button>
 
-      <div class="authorityRow">
-        <span class="authorityLabel">Carrier Contact Phone:</span>
-        <span class="authorityValue" id="carrierPhone">(not provided)</span>
-      </div>
+<div id="result" class="result"></div>
 
-      <div class="authorityRow">
-        <span class="authorityLabel">Verification ID:</span>
-        <span class="authorityValue" id="verificationId">(unknown)</span>
-      </div>
+<div class="soundToggle" onclick="toggleSound()">
+🔊 Alert Sound: <span id="soundState">ON</span>
+</div>
 
-      <div class="authorityRow">
-        <span class="authorityLabel">Verification Timestamp:</span>
-        <span class="authorityValue" id="verificationTime">(unknown)</span>
-      </div>
-    </div>
+<div id="authority" class="authority">
 
-    <div class="mini">
-      QueCab AdbS — Developed by Omnimobile Inc. for QueCab Inc.
-    </div>
-  </div>
+<div class="authorityTitle">Verification Authority</div>
 
-  <audio id="alertSound">
-    <source src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" />
-  </audio>
+<div class="authorityRow">
+<span class="authorityLabel">Verified Carrier:</span>
+<span class="authorityValue" id="carrierCompany">(not provided)</span>
+</div>
 
-  <script>
-    let soundEnabled = true;
-    let driverAnswered = null;
+<div class="authorityRow">
+<span class="authorityLabel">Carrier Contact:</span>
+<span class="authorityValue" id="carrierContact">(not provided)</span>
+</div>
 
-    function toggleSound() {
-      soundEnabled = !soundEnabled;
-      document.getElementById("soundState").innerText = soundEnabled ? "ON" : "OFF";
-    }
+<div class="authorityRow">
+<span class="authorityLabel">Carrier Contact Phone:</span>
+<span class="authorityValue" id="carrierPhone">(not provided)</span>
+</div>
 
-    function getToken() {
-      const params = new URLSearchParams(window.location.search);
-      return params.get("t");
-    }
+<div class="authorityRow">
+<span class="authorityLabel">Verification ID:</span>
+<span class="authorityValue" id="verificationId">(unknown)</span>
+</div>
 
-    function setAnswered(value) {
-      driverAnswered = value;
+<div class="authorityRow">
+<span class="authorityLabel">Verification Timestamp:</span>
+<span class="authorityValue" id="verificationTime">(unknown)</span>
+</div>
 
-      const yesBtn = document.getElementById("yesBtn");
-      const noBtn = document.getElementById("noBtn");
+</div>
 
-      yesBtn.className = "answerBtn" + (value === true ? " activeYes" : "");
-      noBtn.className = "answerBtn" + (value === false ? " activeNo" : "");
-    }
+<div class="mini">
+QueCab AdbS — Developed by Omnimobile Inc. for QueCab Inc.
+</div>
 
-    function setAuthority(data) {
-      document.getElementById("carrierCompany").innerText = data.carrier_company || "(not provided)";
-      document.getElementById("carrierContact").innerText = data.carrier_contact_name || "(not provided)";
-      document.getElementById("carrierPhone").innerText = data.carrier_contact_phone || "(not provided)";
-      document.getElementById("verificationId").innerText = data.verification_id || "(unknown)";
-      document.getElementById("verificationTime").innerText = data.verified_at || new Date().toLocaleString();
-      document.getElementById("authority").style.display = "block";
-    }
+</div>
 
-    function renderPhone(phoneValue) {
-      const link = document.getElementById("driverPhoneLink");
-      const unavailable = document.getElementById("driverPhoneUnavailable");
+<audio id="alertSound">
+<source src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg">
+</audio>
 
-      const digits = String(phoneValue || "").replace(/\D/g, "");
+<script>
 
-      if (digits.length === 10) {
-        const formatted = `${digits.slice(0,3)}-${digits.slice(3,6)}-${digits.slice(6,10)}`;
-        link.href = `tel:${digits}`;
-        link.innerText = formatted;
-        link.style.display = "inline-block";
-        unavailable.style.display = "none";
-      } else {
-        link.removeAttribute("href");
-        link.innerText = "";
-        link.style.display = "none";
-        unavailable.style.display = "inline-block";
-      }
-    }
+let soundEnabled=true
+let driverAnswered=null
 
-    async function loadDriverPhone() {
-      const token = getToken();
-      if (!token) return;
+function toggleSound(){
+soundEnabled=!soundEnabled
+document.getElementById("soundState").innerText=soundEnabled?"ON":"OFF"
+}
 
-      try {
-        const res = await fetch(`/api/verify_driver?token=${encodeURIComponent(token)}`, {
-          cache: "no-store"
-        });
+function getToken(){
+const params=new URLSearchParams(window.location.search)
+return params.get("t")
+}
 
-        const data = await res.json();
+function setAnswered(value){
+driverAnswered=value
 
-        if (res.ok) {
-          renderPhone(data.driver_phone || "");
-          setAuthority(data);
-        } else {
-          renderPhone("");
-        }
-      } catch {
-        renderPhone("");
-      }
-    }
+const yesBtn=document.getElementById("yesBtn")
+const noBtn=document.getElementById("noBtn")
 
-    async function verify() {
-      document.body.classList.remove("flash");
+yesBtn.className="answerBtn"+(value===true?" activeYes":"")
+noBtn.className="answerBtn"+(value===false?" activeNo":"")
+}
 
-      const token = getToken();
-      const usdot = document.getElementById("usdot").value.trim();
-      const plateInput = document.getElementById("plate");
-      const plate = plateInput.value.trim().toUpperCase();
-      const result = document.getElementById("result");
+function renderPhone(phone){
 
-      plateInput.value = plate;
+const link=document.getElementById("driverPhoneLink")
+const unavailable=document.getElementById("driverPhoneUnavailable")
 
-      if (driverAnswered === null) {
-        result.innerText = "Select YES or NO for phone answer";
-        result.className = "result caution";
-        return;
-      }
+const digits=String(phone||"").replace(/\D/g,"")
 
-      try {
-        const res = await fetch("/api/verify_driver", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            token,
-            entered_usdot: usdot,
-            entered_plate: plate,
-            driver_answered: driverAnswered
-          })
-        });
+if(digits.length===10){
 
-        const data = await res.json();
+const formatted=`${digits.slice(0,3)}-${digits.slice(3,6)}-${digits.slice(6,10)}`
 
-        if (!res.ok) {
-          result.innerText = data.error || "Verification Error";
-          result.className = "result caution";
-          return;
-        }
+link.href=`tel:${digits}`
+link.innerText=formatted
+link.style.display="inline-block"
+unavailable.style.display="none"
 
-        renderPhone(data.driver_phone || "");
-        setAuthority(data);
+}else{
 
-        if (String(data.result || "").toLowerCase().includes("clear")) {
-          result.innerText = "CLEAR TO LOAD";
-          result.className = "result clear";
-        } else {
-          document.body.classList.add("flash");
-          if (soundEnabled) {
-            try {
-              document.getElementById("alertSound").play();
-            } catch {}
-          }
-          result.innerText = "CAUTION — DO NOT LOAD";
-          result.className = "result caution";
-        }
-      } catch {
-        result.innerText = "Verification Error";
-        result.className = "result caution";
-      }
-    }
+link.style.display="none"
+unavailable.style.display="inline-block"
 
-    loadDriverPhone();
-  </script>
+}
+
+}
+
+async function loadDriverPhone(){
+
+const token=getToken()
+if(!token)return
+
+try{
+
+const res=await fetch(`/api/verify_driver?token=${encodeURIComponent(token)}`,{cache:"no-store"})
+const data=await res.json()
+
+if(res.ok){
+
+renderPhone(data.driver_phone||"")
+
+document.getElementById("carrierCompany").innerText=data.carrier_company||"(not provided)"
+document.getElementById("carrierContact").innerText=data.carrier_contact_name||"(not provided)"
+document.getElementById("carrierPhone").innerText=data.carrier_contact_phone||"(not provided)"
+document.getElementById("verificationId").innerText=data.verification_id||"(unknown)"
+
+document.getElementById("authority").style.display="block"
+
+}
+
+}catch{}
+
+}
+
+async function verify(){
+
+document.body.classList.remove("flash")
+
+const token=getToken()
+const usdot=document.getElementById("usdot").value.trim()
+
+const plateInput=document.getElementById("plate")
+const plate=plateInput.value.trim().toUpperCase()
+
+plateInput.value=plate
+
+const result=document.getElementById("result")
+
+if(driverAnswered===null){
+
+result.innerText="Select YES or NO for phone answer"
+result.className="result caution"
+return
+
+}
+
+try{
+
+const res=await fetch("/api/verify_driver",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+token,
+entered_usdot:usdot,
+entered_plate:plate,
+driver_answered:driverAnswered
+})
+})
+
+const data=await res.json()
+
+renderPhone(data.driver_phone||"")
+
+document.getElementById("carrierCompany").innerText=data.carrier_company||"(not provided)"
+document.getElementById("carrierContact").innerText=data.carrier_contact_name||"(not provided)"
+document.getElementById("carrierPhone").innerText=data.carrier_contact_phone||"(not provided)"
+document.getElementById("verificationId").innerText=data.verification_id||"(unknown)"
+document.getElementById("verificationTime").innerText=data.verified_at||new Date().toLocaleString()
+
+document.getElementById("authority").style.display="block"
+
+if(String(data.result||"").toLowerCase().includes("clear")){
+
+result.innerText="CLEAR TO LOAD"
+result.className="result clear"
+
+}else{
+
+document.body.classList.add("flash")
+
+if(soundEnabled){
+
+try{document.getElementById("alertSound").play()}catch{}
+
+}
+
+result.innerText="CAUTION — DO NOT LOAD"
+result.className="result caution"
+
+}
+
+}catch{
+
+result.innerText="Verification Error"
+result.className="result caution"
+
+}
+
+}
+
+loadDriverPhone()
+
+</script>
+
 </body>
 </html>
