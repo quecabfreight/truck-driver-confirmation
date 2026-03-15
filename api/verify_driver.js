@@ -1,12 +1,22 @@
 import { createClient } from "@supabase/supabase-js";
-import { Resend } from "resend";
+
+let resendClient = null;
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+function getResend() {
+  if (!process.env.RESEND_API_KEY) return null;
+
+  if (!resendClient) {
+    const { Resend } = require("resend");
+    resendClient = new Resend(process.env.RESEND_API_KEY);
+  }
+
+  return resendClient;
+}
 
 function normalizeDOT(value) {
   return String(value || "").replace(/\D/g, "");
@@ -54,12 +64,13 @@ async function sendFraudAlert(link, token, failedAttempts) {
     return { ok: false, error: "No alert recipient found" };
   }
 
-  if (!process.env.RESEND_API_KEY) {
-    return { ok: false, error: "Missing RESEND_API_KEY" };
-  }
-
   if (!process.env.ADBS_EMAIL_FROM) {
     return { ok: false, error: "Missing ADBS_EMAIL_FROM" };
+  }
+
+  const resend = getResend();
+  if (!resend) {
+    return { ok: false, error: "Resend not configured" };
   }
 
   try {
