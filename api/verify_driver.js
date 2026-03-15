@@ -1,9 +1,12 @@
 import { createClient } from "@supabase/supabase-js";
+import { Resend } from "resend";
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 function normalizeDOT(value) {
   return String(value || "").replace(/\D/g, "");
@@ -39,6 +42,55 @@ function bestPhone(link) {
   const driver = formatPhoneHyphen(link?.driver_phone || "");
   const dispatch = formatPhoneHyphen(link?.dispatch_phone || "");
   return driver || dispatch || "";
+}
+
+async function sendFraudAlert(link, token, failedAttempts) {
+  const alertEmail =
+    String(link?.issuer_email || "").trim() ||
+    String(process.env.ADBS_ALERT_EMAIL || "").trim() ||
+    "";
+
+  if (!alertEmail) {
+    return { ok: false, error: "No alert recipient found" };
+  }
+
+  if (!process.env.RESEND_API_KEY) {
+    return { ok: false, error: "Missing RESEND_API_KEY" };
+  }
+
+  if (!process.env.ADBS_EMAIL_FROM) {
+    return { ok: false, error: "Missing ADBS_EMAIL_FROM" };
+  }
+
+  try {
+    const sendResult = await resend.emails.send({
+      from: process.env.ADBS_EMAIL_FROM,
+      to: alertEmail,
+      subject: "AdbS Fraud Alert — Multiple Failed Verification Attempts",
+      html: `
+        <div style="font-family:Arial,Helvetica,sans-serif;line-height:1.5;color:#111;">
+          <h2>AdbS Alert</h2>
+          <p>Multiple failed Truck-Driver verification attempts were detected.</p>
+          <p><strong>Load ID:</strong> ${link?.load_id || "(none)"}</p>
+          <p><strong>Verification ID:</strong> ${token}</p>
+          <p><strong>Failed Attempts:</strong> ${failedAttempts}</p>
+          <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
+          <p><strong>Verify Page:</strong><br/>https://quecabadbs.com/v.html?t=${token}</p>
+        </div>
+      `
+    });
+
+    if (sendResult?.error) {
+      return {
+        ok: false,
+        error: sendResult.error.message || JSON.stringify(sendResult.error)
+      };
+    }
+
+    return { ok: true, data: sendResult };
+  } catch (err) {
+    return { ok: false, error: err?.message || String(err) };
+  }
 }
 
 export default async function handler(req, res) {
@@ -113,7 +165,10 @@ export default async function handler(req, res) {
 
     const phone = bestPhone(link);
 
-    if (String(link.status || "").toLowerCase() === "cleared" || String(link.status || "").toLowerCase() === "used") {
+    if (
+      String(link.status || "").toLowerCase() === "cleared" ||
+      String(link.status || "").toLowerCase() === "used"
+    ) {
       return res.status(200).json({
         result: "CLEAR_TO_LOAD",
         verification_id: token,
@@ -157,6 +212,35 @@ export default async function handler(req, res) {
       });
     }
 
+    const { data: attempts, error: attemptsError } = await supabase
+      .from("verify_checks")
+      .select("result, checked_at")
+      .eq("token", token)
+      .order("checked_at", { ascending: true });
+
+    if (attemptsError) {
+      return res.status(500).json({
+        error: "Failed to read verification attempts",
+        detail: attemptsError.message || String(attemptsError)
+      });
+    }
+
+    const failedAttempts = (attempts || []).filter(
+      (a) => a.result === "CAUTION_ALERT"
+    ).length;
+
+    let alertTriggered = false;
+    let alertSent = false;
+    let alertError = null;
+
+    if (failedAttempts === 3) {
+      alertTriggered = true;
+
+      const alertResult = await sendFraudAlert(link, token, failedAttempts);
+      alertSent = !!alertResult.ok;
+      alertError = alertResult.ok ? null : alertResult.error || "Alert send failed";
+    }
+
     if (result === "CLEAR_TO_LOAD") {
       await supabase
         .from("verify_links")
@@ -174,7 +258,16 @@ export default async function handler(req, res) {
       driver_phone: phone,
       carrier_company: String(link.carrier_company || ""),
       carrier_contact_name: String(link.dispatch_contact || ""),
-      carrier_contact_phone: formatPhoneHyphen(link.dispatch_phone || "")
+      carrier_contact_phone: formatPhoneHyphen(link.dispatch_phone || ""),
+      debug: {
+        dotMatch,
+        plateMatch,
+        phoneMatch,
+        failedAttempts,
+        alertTriggered,
+        alertSent,
+        alertError
+      }
     });
   } catch (err) {
     return res.status(500).json({
