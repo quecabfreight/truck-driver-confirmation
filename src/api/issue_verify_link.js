@@ -1,12 +1,3 @@
-// /api/issue_verify_link.js
-// Creates a Verify Link record in Supabase.
-// If dock_email is provided, also sends the dock an automatic email via Resend.
-// Also handles broker control levers:
-// - reissue
-// - lock
-// - clear
-// - attempts
-
 import crypto from "crypto";
 
 function json(res, code, obj) {
@@ -34,6 +25,24 @@ function buildQrUrl(value) {
   return `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(clean)}`;
 }
 
+function formatPhoneHyphen(s) {
+  const d = String(s || "").replace(/\D/g, "").slice(0, 10);
+  const a = d.slice(0, 3);
+  const b = d.slice(3, 6);
+  const c = d.slice(6, 10);
+  if (!d) return "";
+  if (d.length <= 3) return a;
+  if (d.length <= 6) return `${a}-${b}`;
+  return `${a}-${b}-${c}`;
+}
+
+function formatDisplayDate(value) {
+  if (!value) return "No Expire";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value);
+  return d.toLocaleString();
+}
+
 async function safeJsonResponse(res) {
   const text = await res.text();
   try {
@@ -49,7 +58,7 @@ function sbHeaders() {
     apikey: KEY,
     Authorization: `Bearer ${KEY}`,
     "Content-Type": "application/json",
-    Prefer: "return=representation",
+    Prefer: "return=representation"
   };
 }
 
@@ -62,10 +71,11 @@ async function sbInsertVerifyLink(row) {
   }
 
   const url = `${SUPABASE_URL}/rest/v1/verify_links`;
+
   const res = await fetch(url, {
     method: "POST",
     headers: sbHeaders(),
-    body: JSON.stringify(row),
+    body: JSON.stringify(row)
   });
 
   const data = await safeJsonResponse(res);
@@ -74,10 +84,7 @@ async function sbInsertVerifyLink(row) {
     const msg =
       (data && (data.message || data.error)) ||
       `Supabase insert failed (${res.status})`;
-    const err = new Error(msg);
-    err.status = res.status;
-    err.data = data;
-    throw err;
+    throw new Error(msg);
   }
 
   return Array.isArray(data) ? data[0] : data;
@@ -93,11 +100,15 @@ async function sbFetchOneByToken(token) {
 
   const res = await fetch(url, {
     method: "GET",
-    headers: sbHeaders(),
+    headers: sbHeaders()
   });
 
   const data = await safeJsonResponse(res);
-  if (!res.ok) throw new Error(data?.message || data?.error || "Failed to load verify link.");
+
+  if (!res.ok) {
+    throw new Error(data?.message || data?.error || "Failed to load verify link.");
+  }
+
   return Array.isArray(data) ? data[0] || null : null;
 }
 
@@ -107,15 +118,19 @@ async function sbFetchAttemptsByToken(token) {
     `${SUPABASE_URL}/rest/v1/verify_checks` +
     `?token=eq.${encodeURIComponent(token)}` +
     `&select=*` +
-    `&order=created_at.desc`;
+    `&order=checked_at.desc`;
 
   const res = await fetch(url, {
     method: "GET",
-    headers: sbHeaders(),
+    headers: sbHeaders()
   });
 
   const data = await safeJsonResponse(res);
-  if (!res.ok) throw new Error(data?.message || data?.error || "Failed to load attempts.");
+
+  if (!res.ok) {
+    throw new Error(data?.message || data?.error || "Failed to load attempts.");
+  }
+
   return Array.isArray(data) ? data : [];
 }
 
@@ -128,11 +143,15 @@ async function sbPatchLinkById(id, patch) {
   const res = await fetch(url, {
     method: "PATCH",
     headers: sbHeaders(),
-    body: JSON.stringify(patch),
+    body: JSON.stringify(patch)
   });
 
   const data = await safeJsonResponse(res);
-  if (!res.ok) throw new Error(data?.message || data?.error || "Failed to update verify link.");
+
+  if (!res.ok) {
+    throw new Error(data?.message || data?.error || "Failed to update verify link.");
+  }
+
   return Array.isArray(data) ? data[0] || null : data;
 }
 
@@ -140,7 +159,7 @@ async function sendDockEmail({
   to,
   loadId,
   verifyUrl,
-  expiresAt,
+  expiresAt
 }) {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.ADBS_EMAIL_FROM || "QueCab AdbS <verify@quecabadbs.com>";
@@ -152,71 +171,48 @@ async function sendDockEmail({
   const subject = `Truck-Driver Verification Required${loadId ? ` — ${loadId}` : ""}`;
   const qrUrl = buildQrUrl(verifyUrl);
 
-  const text = [
-    "AdbS TRUCK-DRIVER VERIFICATION",
-    "",
-    loadId ? `Load ID: ${loadId}` : null,
-    "",
-    "AdbS SmartLink:",
-    verifyUrl,
-    "",
-    "OR",
-    "AdbS QR Code:",
-    qrUrl || "(QR unavailable)",
-    "",
-    "Dock Instruction:",
-    "When the truck arrives, open the link above and complete verification before releasing the load.",
-    "Enter the DOT and plate shown on the truck, then call the driver using the link.",
-    "",
-    expiresAt ? `Expires: ${expiresAt}` : "Expires: No Expire",
-    "",
-    "QueCab AdbS",
-    "Developed by Omnimobile Inc. for QueCab Inc.",
-  ]
-    .filter(Boolean)
-    .join("\n");
-
   const html = `
-    <div style="font-family: Arial, Helvetica, sans-serif; color:#111; line-height:1.45;">
-      <div style="font-size:20px; font-weight:800; margin-bottom:12px;">AdbS TRUCK-DRIVER VERIFICATION</div>
+    <div style="margin:0; padding:24px 0; background:#f3f6fb; font-family:Arial, Helvetica, sans-serif; color:#111;">
+      <div style="max-width:720px; margin:0 auto; background:#ffffff; border:1px solid #d8dee8; border-radius:18px; overflow:hidden;">
+        <div style="background:linear-gradient(135deg, #1b2430, #2f3c4d); color:#ffffff; padding:18px 22px;">
+          <div style="font-size:12px; letter-spacing:0.12em; font-weight:800; text-transform:uppercase; opacity:0.9;">QueCab AdbS</div>
+          <div style="font-size:24px; font-weight:800; margin-top:6px;">Truck-Driver Verification Required</div>
+        </div>
 
-      ${loadId ? `<div style="margin-bottom:10px;"><b>Load ID:</b> ${loadId}</div>` : ""}
+        <div style="padding:22px;">
+          ${loadId ? `<div style="margin-bottom:14px; font-size:15px;"><span style="color:#4b5563; font-weight:700;">Load ID:</span><span style="color:#111827; font-weight:800;"> ${loadId}</span></div>` : ""}
 
-      <div style="margin:14px 0 8px; font-weight:800;">AdbS SmartLink</div>
-      <div style="margin-bottom:16px;">
-        <a href="${verifyUrl}" style="font-size:16px; font-weight:700; word-break:break-all;">${verifyUrl}</a>
-      </div>
+          <div style="margin:14px 0 8px; font-weight:800; font-size:16px; color:#111827;">AdbS SmartLink</div>
+          <div style="margin-bottom:16px; padding:14px; background:#f8fafc; border:1px solid #d8dee8; border-radius:12px;">
+            <a href="${verifyUrl}" style="font-size:16px; font-weight:700; word-break:break-all; color:#0b57d0; text-decoration:none;">${verifyUrl}</a>
+          </div>
 
-      <div style="display:flex; align-items:center; gap:12px; margin:10px 0 14px;">
-        <div style="flex:1; height:1px; background:#d8dee8;"></div>
-        <div style="font-size:12px; color:#5a6472; font-weight:800; letter-spacing:0.12em;">OR</div>
-        <div style="flex:1; height:1px; background:#d8dee8;"></div>
-      </div>
+          <div style="display:flex; align-items:center; gap:12px; margin:14px 0 18px;">
+            <div style="flex:1; height:1px; background:#d8dee8;"></div>
+            <div style="font-size:12px; color:#5a6472; font-weight:800; letter-spacing:0.12em;">OR</div>
+            <div style="flex:1; height:1px; background:#d8dee8;"></div>
+          </div>
 
-      <div style="margin:0 0 8px; font-weight:800;">AdbS QR Code</div>
-      <div style="margin-bottom:16px;">
-        <img
-          src="${qrUrl}"
-          alt="AdbS QR Code"
-          width="260"
-          height="260"
-          style="display:block; background:#ffffff; padding:12px; border:1px solid #d8dee8; border-radius:12px;"
-        />
-      </div>
+          <div style="margin:0 0 8px; font-weight:800; font-size:16px; color:#111827;">AdbS QR Code</div>
+          <div style="margin-bottom:18px; padding:18px; background:#f8fafc; border:1px solid #d8dee8; border-radius:12px; text-align:center;">
+            <img src="${qrUrl}" alt="AdbS QR Code" width="260" height="260" style="display:inline-block; background:#ffffff; padding:12px; border:1px solid #d8dee8; border-radius:12px;" />
+            <div style="margin-top:10px; color:#5a6472; font-size:13px;">Same destination as the AdbS SmartLink.</div>
+          </div>
 
-      <div style="font-weight:800; margin-bottom:6px;">Dock Instruction:</div>
-      <div style="margin-bottom:10px;">
-        When the truck arrives, open the link above and complete verification before releasing the load.
-      </div>
-      <div style="margin-bottom:14px;">
-        Enter the DOT and plate shown on the truck, then call the driver using the link.
-      </div>
-      <div style="margin-bottom:14px;">
-        <b>Expires:</b> ${expiresAt || "No Expire"}
-      </div>
-      <div style="color:#444; font-size:12px;">
-        QueCab AdbS<br/>
-        Developed by Omnimobile Inc. for QueCab Inc.
+          <div style="font-weight:800; margin-bottom:6px; color:#111827;">Dock Instruction</div>
+          <div style="margin-bottom:10px; color:#334155; line-height:1.55;">When the truck arrives, open the link above and complete verification before releasing the load.</div>
+          <div style="margin-bottom:16px; color:#334155; line-height:1.55;">Enter the DOT and plate shown on the truck, then call the driver using the link.</div>
+
+          <div style="margin-bottom:18px; font-size:14px;">
+            <span style="color:#4b5563; font-weight:700;">Expires:</span>
+            <span style="color:#111827; font-weight:800;"> ${formatDisplayDate(expiresAt)}</span>
+          </div>
+        </div>
+
+        <div style="padding:14px 22px; border-top:1px solid #e5e7eb; background:#fafbfd; color:#6b7280; font-size:12px; line-height:1.45;">
+          QueCab AdbS<br/>
+          Developed by Omnimobile Inc. for QueCab Inc.
+        </div>
       </div>
     </div>
   `;
@@ -225,15 +221,14 @@ async function sendDockEmail({
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
+      "Content-Type": "application/json"
     },
     body: JSON.stringify({
       from,
       to: [to],
       subject,
-      text,
-      html,
-    }),
+      html
+    })
   });
 
   const data = await safeJsonResponse(res);
@@ -261,44 +256,24 @@ async function handleManageAction(req, body) {
 
   if (action === "attempts") {
     const attempts = await sbFetchAttemptsByToken(token);
-    return {
-      ok: true,
-      token,
-      attempts,
-    };
+    return { ok: true, token, attempts };
   }
 
   if (action === "lock") {
-    const updated = await sbPatchLinkById(link.id, {
-      status: "locked",
-    });
-
-    return {
-      ok: true,
-      action: "lock",
-      token,
-      status: updated?.status || "locked",
-    };
+    const updated = await sbPatchLinkById(link.id, { status: "locked" });
+    return { ok: true, action: "lock", token, status: updated?.status || "locked" };
   }
 
   if (action === "clear") {
-    const updated = await sbPatchLinkById(link.id, {
-      status: "cleared",
-    });
-
-    return {
-      ok: true,
-      action: "clear",
-      token,
-      status: updated?.status || "cleared",
-    };
+    const updated = await sbPatchLinkById(link.id, { status: "cleared" });
+    return { ok: true, action: "clear", token, status: updated?.status || "cleared" };
   }
 
   if (action === "reissue") {
     const load_id = String(link.load_id || "").trim() || null;
     const usdot_on_record = onlyDigits(link.usdot_on_record || "");
     const plate_on_record = toUpper(link.plate_on_record || "").trim();
-    const driver_phone = String(link.driver_phone || "").trim();
+    const driver_phone = formatPhoneHyphen(link.driver_phone || "");
     const dock_pin = String(link.dock_pin || "").trim() || null;
     const dock_email = String(body.dock_email || "").trim().toLowerCase() || null;
 
@@ -313,14 +288,15 @@ async function handleManageAction(req, body) {
       status: "active",
       starts_at: new Date().toISOString(),
       expires_at: link.expires_at || null,
-      dock_pin,
+      dock_pin
     };
 
-    const inserted = await sbInsertVerifyLink(row);
+    if (typeof link.carrier_company !== "undefined") row.carrier_company = link.carrier_company || null;
+    if (typeof link.dispatch_contact !== "undefined") row.dispatch_contact = link.dispatch_contact || null;
+    if (typeof link.dispatch_phone !== "undefined") row.dispatch_phone = link.dispatch_phone || null;
 
-    await sbPatchLinkById(link.id, {
-      status: "reissued",
-    });
+    const inserted = await sbInsertVerifyLink(row);
+    await sbPatchLinkById(link.id, { status: "reissued" });
 
     const origin =
       (req.headers["x-forwarded-proto"] ? `${req.headers["x-forwarded-proto"]}://` : "https://") +
@@ -330,16 +306,18 @@ async function handleManageAction(req, body) {
 
     let email_status = null;
     let email_error = null;
+    let email_debug = null;
 
     if (dock_email) {
       try {
-        await sendDockEmail({
+        const sendResult = await sendDockEmail({
           to: dock_email,
           loadId: load_id,
           verifyUrl: verify_public,
-          expiresAt: inserted?.expires_at || link.expires_at || null,
+          expiresAt: inserted?.expires_at || link.expires_at || null
         });
         email_status = "sent";
+        email_debug = sendResult;
       } catch (e) {
         email_status = "failed";
         email_error = String(e?.message || "Email send failed");
@@ -354,6 +332,7 @@ async function handleManageAction(req, body) {
       verify_url: verify_public,
       email_status,
       email_error,
+      email_debug
     };
   }
 
@@ -377,11 +356,12 @@ export default async function handler(req, res) {
     const usdot_on_record = onlyDigits(body.usdot_on_record);
     const plate_on_record = toUpper(body.plate_on_record).trim();
     const driver_phone_digits = onlyDigits(body.driver_phone);
+    const driver_phone = formatPhoneHyphen(driver_phone_digits);
     const dock_email = String(body.dock_email || "").trim().toLowerCase() || null;
     const dock_pin_digits = onlyDigits(body.dock_pin).slice(0, 6);
     const dock_pin = dock_pin_digits.length >= 4 ? dock_pin_digits : null;
 
-    const starts_at = body.starts_at ? String(body.starts_at) : null;
+    const starts_at = body.starts_at ? String(body.starts_at) : new Date().toISOString();
     const expires_at =
       body.expires_at === null || body.expires_at === ""
         ? null
@@ -391,9 +371,7 @@ export default async function handler(req, res) {
 
     if (!usdot_on_record) return json(res, 400, { ok: false, error: "Enter USDOT# (digits)." });
     if (!plate_on_record) return json(res, 400, { ok: false, error: "Enter Plate." });
-    if (onlyDigits(driver_phone_digits).length !== 10) {
-      return json(res, 400, { ok: false, error: "Enter Driver Phone (10 digits)." });
-    }
+    if (driver_phone_digits.length !== 10) return json(res, 400, { ok: false, error: "Enter Driver Phone (10 digits)." });
 
     const token = tokenBase64Url(18);
 
@@ -402,12 +380,24 @@ export default async function handler(req, res) {
       load_id,
       usdot_on_record,
       plate_on_record,
-      driver_phone: driver_phone_digits,
+      driver_phone,
       status: "active",
       starts_at,
       expires_at,
-      dock_pin,
+      dock_pin
     };
+
+    if (typeof body.carrier_company !== "undefined") {
+      row.carrier_company = String(body.carrier_company || "").trim() || null;
+    }
+
+    if (typeof body.dispatch_contact !== "undefined") {
+      row.dispatch_contact = String(body.dispatch_contact || "").trim() || null;
+    }
+
+    if (typeof body.dispatch_phone !== "undefined") {
+      row.dispatch_phone = formatPhoneHyphen(body.dispatch_phone || "") || null;
+    }
 
     const inserted = await sbInsertVerifyLink(row);
 
@@ -420,16 +410,18 @@ export default async function handler(req, res) {
 
     let email_status = null;
     let email_error = null;
+    let email_debug = null;
 
     if (dock_email) {
       try {
-        await sendDockEmail({
+        const sendResult = await sendDockEmail({
           to: dock_email,
           loadId: load_id,
           verifyUrl: verify_public,
-          expiresAt: inserted?.expires_at || expires_at || null,
+          expiresAt: inserted?.expires_at || expires_at || null
         });
         email_status = "sent";
+        email_debug = sendResult;
       } catch (e) {
         email_status = "failed";
         email_error = String(e?.message || "Email send failed");
@@ -448,6 +440,7 @@ export default async function handler(req, res) {
       dock_email: dock_email || null,
       email_status,
       email_error,
+      email_debug
     });
   } catch (e) {
     return json(res, 500, { ok: false, error: String(e?.message || "Server error") });
