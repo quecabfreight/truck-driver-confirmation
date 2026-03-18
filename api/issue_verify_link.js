@@ -1,4 +1,3 @@
-// /api/issue_verify_link.js
 import crypto from "crypto";
 
 function json(res, code, obj) {
@@ -31,6 +30,7 @@ function formatPhoneHyphen(s) {
   const a = d.slice(0, 3);
   const b = d.slice(3, 6);
   const c = d.slice(6, 10);
+  if (!d) return "";
   if (d.length <= 3) return a;
   if (d.length <= 6) return `${a}-${b}`;
   return `${a}-${b}-${c}`;
@@ -58,7 +58,7 @@ function sbHeaders() {
     apikey: KEY,
     Authorization: `Bearer ${KEY}`,
     "Content-Type": "application/json",
-    Prefer: "return=representation",
+    Prefer: "return=representation"
   };
 }
 
@@ -71,10 +71,11 @@ async function sbInsertVerifyLink(row) {
   }
 
   const url = `${SUPABASE_URL}/rest/v1/verify_links`;
+
   const res = await fetch(url, {
     method: "POST",
     headers: sbHeaders(),
-    body: JSON.stringify(row),
+    body: JSON.stringify(row)
   });
 
   const data = await safeJsonResponse(res);
@@ -99,11 +100,15 @@ async function sbFetchOneByToken(token) {
 
   const res = await fetch(url, {
     method: "GET",
-    headers: sbHeaders(),
+    headers: sbHeaders()
   });
 
   const data = await safeJsonResponse(res);
-  if (!res.ok) throw new Error(data?.message || data?.error || "Failed to load verify link.");
+
+  if (!res.ok) {
+    throw new Error(data?.message || data?.error || "Failed to load verify link.");
+  }
+
   return Array.isArray(data) ? data[0] || null : null;
 }
 
@@ -117,11 +122,15 @@ async function sbFetchAttemptsByToken(token) {
 
   const res = await fetch(url, {
     method: "GET",
-    headers: sbHeaders(),
+    headers: sbHeaders()
   });
 
   const data = await safeJsonResponse(res);
-  if (!res.ok) throw new Error(data?.message || data?.error || "Failed to load attempts.");
+
+  if (!res.ok) {
+    throw new Error(data?.message || data?.error || "Failed to load attempts.");
+  }
+
   return Array.isArray(data) ? data : [];
 }
 
@@ -134,17 +143,26 @@ async function sbPatchLinkById(id, patch) {
   const res = await fetch(url, {
     method: "PATCH",
     headers: sbHeaders(),
-    body: JSON.stringify(patch),
+    body: JSON.stringify(patch)
   });
 
   const data = await safeJsonResponse(res);
-  if (!res.ok) throw new Error(data?.message || data?.error || "Failed to update verify link.");
+
+  if (!res.ok) {
+    throw new Error(data?.message || data?.error || "Failed to update verify link.");
+  }
+
   return Array.isArray(data) ? data[0] || null : data;
 }
 
-async function sendDockEmail({ to, loadId, verifyUrl, expiresAt }) {
+async function sendDockEmail({
+  to,
+  loadId,
+  verifyUrl,
+  expiresAt
+}) {
   const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.ADBS_EMAIL_FROM || "QueCab AdbS <verify@quecabadbs.com>";
+  const from = process.env.ADBS_EMAIL_FROM || "onboarding@resend.dev";
 
   if (!apiKey) {
     throw new Error("Missing RESEND_API_KEY");
@@ -203,14 +221,14 @@ async function sendDockEmail({ to, loadId, verifyUrl, expiresAt }) {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
+      "Content-Type": "application/json"
     },
     body: JSON.stringify({
       from,
       to: [to],
       subject,
-      html,
-    }),
+      html
+    })
   });
 
   const data = await safeJsonResponse(res);
@@ -270,7 +288,10 @@ async function handleManageAction(req, body) {
       status: "active",
       starts_at: new Date().toISOString(),
       expires_at: link.expires_at || null,
-      dock_pin
+      dock_pin,
+      carrier_company: String(link.carrier_company || "").trim() || null,
+      dispatch_contact: String(link.dispatch_contact || "").trim() || null,
+      dispatch_phone: formatPhoneHyphen(link.dispatch_phone || "") || null
     };
 
     const inserted = await sbInsertVerifyLink(row);
@@ -292,7 +313,7 @@ async function handleManageAction(req, body) {
           to: dock_email,
           loadId: load_id,
           verifyUrl: verify_public,
-          expiresAt: inserted?.expires_at || link.expires_at || null,
+          expiresAt: inserted?.expires_at || link.expires_at || null
         });
         email_status = "sent";
         email_debug = sendResult;
@@ -345,7 +366,7 @@ export default async function handler(req, res) {
         ? null
         : body.expires_at
         ? String(body.expires_at)
-        : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+        : null;
 
     if (!usdot_on_record) return json(res, 400, { ok: false, error: "Enter USDOT# (digits)." });
     if (!plate_on_record) return json(res, 400, { ok: false, error: "Enter Plate." });
@@ -362,7 +383,10 @@ export default async function handler(req, res) {
       status: "active",
       starts_at,
       expires_at,
-      dock_pin
+      dock_pin,
+      carrier_company: String(body.carrier_company || "").trim() || null,
+      dispatch_contact: String(body.dispatch_contact || "").trim() || null,
+      dispatch_phone: formatPhoneHyphen(body.dispatch_phone || "") || null
     };
 
     const inserted = await sbInsertVerifyLink(row);
@@ -384,7 +408,7 @@ export default async function handler(req, res) {
           to: dock_email,
           loadId: load_id,
           verifyUrl: verify_public,
-          expiresAt: inserted?.expires_at || expires_at || null,
+          expiresAt: inserted?.expires_at || expires_at || null
         });
         email_status = "sent";
         email_debug = sendResult;
