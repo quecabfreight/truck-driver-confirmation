@@ -31,6 +31,21 @@ function bestPhone(link) {
   return formatPhone(link?.driver_phone) || formatPhone(link?.dispatch_phone) || "";
 }
 
+function cleanText(v) {
+  return String(v || "").trim();
+}
+
+function carrierPayload(link, token, verifiedAt = "") {
+  return {
+    verification_id: token,
+    verified_at: verifiedAt || "",
+    driver_phone: bestPhone(link),
+    carrier_company: cleanText(link?.carrier_company) || "",
+    carrier_contact_name: cleanText(link?.dispatch_contact) || "",
+    carrier_contact_phone: formatPhone(link?.dispatch_phone || "")
+  };
+}
+
 async function sendAlertEmail(link, token, failedAttempts) {
   try {
     const resend = getResend();
@@ -39,14 +54,16 @@ async function sendAlertEmail(link, token, failedAttempts) {
     }
 
     const toEmail =
-      String(process.env.ADBS_ALERT_EMAIL || "").trim() ||
+      cleanText(process.env.ADBS_ALERT_EMAIL) ||
       "quecabadbs@gmail.com";
 
-    const fromEmail = process.env.ADBS_EMAIL_FROM || "onboarding@resend.dev";
+    const fromEmail =
+      cleanText(process.env.ADBS_EMAIL_FROM) ||
+      "onboarding@resend.dev";
 
-    const loadId = String(link?.load_id || "").trim() || "(none)";
-    const carrierCompany = String(link?.carrier_company || "").trim() || "(not provided)";
-    const carrierContact = String(link?.dispatch_contact || "").trim() || "(not provided)";
+    const loadId = cleanText(link?.load_id) || "(none)";
+    const carrierCompany = cleanText(link?.carrier_company) || "(not provided)";
+    const carrierContact = cleanText(link?.dispatch_contact) || "(not provided)";
     const carrierPhone = formatPhone(link?.dispatch_phone || "") || "(not provided)";
 
     const sendResult = await resend.emails.send({
@@ -99,7 +116,7 @@ async function sendAlertEmail(link, token, failedAttempts) {
 export default async function handler(req, res) {
   if (req.method === "GET") {
     try {
-      const token = String(req.query?.token || "").trim();
+      const token = cleanText(req.query?.token);
 
       if (!token) {
         return res.status(400).json({ error: "Missing token" });
@@ -124,11 +141,7 @@ export default async function handler(req, res) {
 
       return res.status(200).json({
         ok: true,
-        driver_phone: bestPhone(link),
-        carrier_company: String(link.carrier_company || ""),
-        carrier_contact_name: String(link.dispatch_contact || ""),
-        carrier_contact_phone: formatPhone(link.dispatch_phone || ""),
-        verification_id: token
+        ...carrierPayload(link, token, "")
       });
     } catch (err) {
       return res.status(500).json({
@@ -143,7 +156,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const token = String(req.body?.token || "").trim();
+    const token = cleanText(req.body?.token);
     const enteredDOT = onlyDigits(req.body?.entered_usdot);
     const enteredPlate = upper(req.body?.entered_plate);
     const driverAnswered = !!req.body?.driver_answered;
@@ -169,17 +182,10 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: "Verification link not found" });
     }
 
-    const phone = bestPhone(link);
-
     if (String(link.status || "").toLowerCase() === "cleared") {
       return res.status(200).json({
         result: "CLEAR_TO_LOAD",
-        verification_id: token,
-        driver_phone: phone,
-        verified_at: link.cleared_at || "",
-        carrier_company: link.carrier_company || "",
-        carrier_contact_name: link.dispatch_contact || "",
-        carrier_contact_phone: formatPhone(link.dispatch_phone || "")
+        ...carrierPayload(link, token, link.cleared_at || "")
       });
     }
 
@@ -191,7 +197,7 @@ export default async function handler(req, res) {
     const result = match ? "CLEAR_TO_LOAD" : "CAUTION_ALERT";
     const now = new Date().toISOString();
 
-    await supabase.from("verify_checks").insert({
+    const { error: insertError } = await supabase.from("verify_checks").insert({
       token,
       entered_usdot: enteredDOT,
       entered_plate: enteredPlate,
@@ -200,14 +206,19 @@ export default async function handler(req, res) {
       checked_at: now
     });
 
+    if (insertError) {
+      return res.status(500).json({
+        error: "Failed to log verification attempt",
+        detail: insertError.message || String(insertError)
+      });
+    }
+
     const { data: attempts } = await supabase
       .from("verify_checks")
       .select("result")
       .eq("token", token);
 
-    const fails = (attempts || []).filter(
-      (a) => a.result === "CAUTION_ALERT"
-    ).length;
+    const fails = (attempts || []).filter((a) => a.result === "CAUTION_ALERT").length;
 
     let alertTriggered = false;
     let alertSent = false;
@@ -229,12 +240,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       result,
-      verification_id: token,
-      driver_phone: phone,
-      verified_at: new Date().toLocaleString(),
-      carrier_company: link.carrier_company || "",
-      carrier_contact_name: link.dispatch_contact || "",
-      carrier_contact_phone: formatPhone(link.dispatch_phone || ""),
+      ...carrierPayload(link, token, new Date().toLocaleString()),
       debug: {
         failedAttempts: fails,
         alertTriggered,
