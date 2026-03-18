@@ -301,8 +301,7 @@ async function handleManageAction(req, body) {
       (req.headers["x-forwarded-proto"] ? `${req.headers["x-forwarded-proto"]}://` : "https://") +
       (req.headers["x-forwarded-host"] || req.headers.host || "localhost");
 
-    const verify_public = `${origin}/v.html?t=${newToken}`;
-
+    const verify_public = `${origin}/v.html?t=${newToken}&cv=4`;
     let email_status = null;
     let email_error = null;
     let email_debug = null;
@@ -396,8 +395,7 @@ export default async function handler(req, res) {
       (req.headers["x-forwarded-host"] || req.headers.host || "localhost");
 
     const verify_hash = `${origin}/#/verify/${token}`;
-    const verify_public = `${origin}/v.html?t=${token}`;
-
+    const verify_public = `${origin}/v.html?t=${token}&cv=4`;
     let email_status = null;
     let email_error = null;
     let email_debug = null;
