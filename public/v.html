@@ -300,7 +300,6 @@ QueCab AdbS — Developed by Omnimobile Inc. for QueCab Inc.
 </audio>
 
 <script>
-
 let soundEnabled=true
 let driverAnswered=null
 
@@ -325,81 +324,71 @@ noBtn.className="answerBtn"+(value===false?" activeNo":"")
 }
 
 function renderPhone(phone){
-
 const link=document.getElementById("driverPhoneLink")
 const unavailable=document.getElementById("driverPhoneUnavailable")
 
 const digits=String(phone||"").replace(/\D/g,"")
 
 if(digits.length===10){
-
 const formatted=`${digits.slice(0,3)}-${digits.slice(3,6)}-${digits.slice(6,10)}`
-
 link.href=`tel:${digits}`
 link.innerText=formatted
 link.style.display="inline-block"
 unavailable.style.display="none"
-
 }else{
-
+link.removeAttribute("href")
+link.innerText=""
 link.style.display="none"
 unavailable.style.display="inline-block"
-
+}
 }
 
-}
-
-async function loadDriverPhone(){
-
-const token=getToken()
-if(!token)return
-
-try{
-
-const res=await fetch(`/api/verify_driver?token=${encodeURIComponent(token)}`,{cache:"no-store"})
-const data=await res.json()
-
-if(res.ok){
-
-renderPhone(data.driver_phone||"")
-
+function setAuthority(data){
 document.getElementById("carrierCompany").innerText=data.carrier_company||"(not provided)"
 document.getElementById("carrierContact").innerText=data.carrier_contact_name||"(not provided)"
 document.getElementById("carrierPhone").innerText=data.carrier_contact_phone||"(not provided)"
 document.getElementById("verificationId").innerText=data.verification_id||"(unknown)"
-
+document.getElementById("verificationTime").innerText=data.verified_at||"(unknown)"
 document.getElementById("authority").style.display="block"
-
 }
 
-}catch{}
+async function loadDriverPhone(){
+const token=getToken()
+if(!token)return
 
+try{
+const res=await fetch(`/api/verify_driver?token=${encodeURIComponent(token)}`,{cache:"no-store"})
+const data=await res.json()
+
+if(res.ok){
+renderPhone(data.driver_phone||"")
+setAuthority(data)
+}else{
+renderPhone("")
+}
+}catch{
+renderPhone("")
+}
 }
 
 async function verify(){
-
 document.body.classList.remove("flash")
 
 const token=getToken()
 const usdot=document.getElementById("usdot").value.trim()
-
 const plateInput=document.getElementById("plate")
 const plate=plateInput.value.trim().toUpperCase()
+const result=document.getElementById("result")
 
 plateInput.value=plate
 
-const result=document.getElementById("result")
-
 if(driverAnswered===null){
-
 result.innerText="Select YES or NO for phone answer"
 result.className="result caution"
 return
-
 }
 
 try{
-
 const res=await fetch("/api/verify_driver",{
 method:"POST",
 headers:{"Content-Type":"application/json"},
@@ -413,47 +402,33 @@ driver_answered:driverAnswered
 
 const data=await res.json()
 
+if(!res.ok){
+result.innerText=data.error||"Verification Error"
+result.className="result caution"
+return
+}
+
 renderPhone(data.driver_phone||"")
-
-document.getElementById("carrierCompany").innerText=data.carrier_company||"(not provided)"
-document.getElementById("carrierContact").innerText=data.carrier_contact_name||"(not provided)"
-document.getElementById("carrierPhone").innerText=data.carrier_contact_phone||"(not provided)"
-document.getElementById("verificationId").innerText=data.verification_id||"(unknown)"
-document.getElementById("verificationTime").innerText=data.verified_at||new Date().toLocaleString()
-
-document.getElementById("authority").style.display="block"
+setAuthority(data)
 
 if(String(data.result||"").toLowerCase().includes("clear")){
-
 result.innerText="CLEAR TO LOAD"
 result.className="result clear"
-
 }else{
-
 document.body.classList.add("flash")
-
 if(soundEnabled){
-
 try{document.getElementById("alertSound").play()}catch{}
-
 }
-
 result.innerText="CAUTION — DO NOT LOAD"
 result.className="result caution"
-
 }
-
 }catch{
-
 result.innerText="Verification Error"
 result.className="result caution"
-
 }
-
 }
 
 loadDriverPhone()
-
 </script>
 
 </body>
