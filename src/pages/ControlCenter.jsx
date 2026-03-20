@@ -230,8 +230,7 @@ export default function ControlCenter() {
         carrier_contact_name: payload.dispatch_contact || "",
         carrier_contact_phone: payload.dispatch_phone || "",
         email_status: data?.email_status || "",
-        email_error: data?.email_error || "",
-        email_debug: data?.email_debug || null
+        email_error: data?.email_error || ""
       });
 
       setIssuedQr(qrDataUrl);
@@ -281,8 +280,7 @@ export default function ControlCenter() {
         carrier_contact_name: data?.carrier_contact_name || "",
         carrier_contact_phone: data?.carrier_contact_phone || "",
         email_status: "",
-        email_error: "",
-        email_debug: null
+        email_error: ""
       });
 
       setIssuedQr(makeQrDataUrl(data?.verify_url || ""));
@@ -545,7 +543,7 @@ export default function ControlCenter() {
                       background: "rgba(255,255,255,0.04)"
                     }}
                   >
-                    <div style={{ fontWeight: 900, marginBottom: 8 }}>Carrier Contact</div>
+                    <div style={{ fontSize: 15, fontWeight: 900, marginBottom: 8 }}>Carrier Contact</div>
                     <div style={{ marginBottom: 6 }}>
                       Carrier Company: <b>{issued.carrier_company || "(not provided)"}</b>
                     </div>
@@ -571,23 +569,6 @@ export default function ControlCenter() {
                     {issued.email_error ? (
                       <div style={{ marginTop: 6, color: "#ff9c9c" }}>
                         Email Error: <b>{issued.email_error}</b>
-                      </div>
-                    ) : null}
-                    {issued.email_debug ? (
-                      <div style={{ marginTop: 8, fontSize: 12, opacity: 0.84 }}>
-                        Email Debug:
-                        <pre
-                          style={{
-                            whiteSpace: "pre-wrap",
-                            wordBreak: "break-word",
-                            marginTop: 6,
-                            background: "rgba(0,0,0,0.18)",
-                            padding: 10,
-                            borderRadius: 10
-                          }}
-                        >
-{JSON.stringify(issued.email_debug, null, 2)}
-                        </pre>
                       </div>
                     ) : null}
                   </div>
