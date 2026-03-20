@@ -1,260 +1,669 @@
-// /src/pages/Login.jsx
-import React, { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import React, { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import Header from "../components/Header.jsx";
-import {
-  getAuthEmail,
-  getAuthCode,
-  setAuthEmail,
-  setAuthCode,
-  setAuthRole,
-  normalizeEmail,
-  normalizeAccessCode,
-  formatAccessCodeTyping,
-} from "../utils/auth.js";
+import { LS_EMAIL, isBrokerOrShipper } from "../utils/auth.js";
 
-function looksLikeEmail(v) {
-  const s = String(v || "").trim();
-  return s.includes("@") && s.includes(".");
+function onlyDigits(s) {
+  return String(s || "").replace(/\D+/g, "");
 }
 
-async function safeJson(res) {
-  const text = await res.text();
+function toUpperClean(s) {
+  return String(s || "").toUpperCase();
+}
+
+function formatPhoneHyphen(s) {
+  const d = onlyDigits(s).slice(0, 10);
+  const a = d.slice(0, 3);
+  const b = d.slice(3, 6);
+  const c = d.slice(6, 10);
+  if (d.length <= 3) return a;
+  if (d.length <= 6) return `${a}-${b}`;
+  return `${a}-${b}-${c}`;
+}
+
+function makeQrDataUrl(value) {
+  const clean = String(value || "").trim();
+  if (!clean) return "";
+  return `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(clean)}`;
+}
+
+function nowLocalDatetime() {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function plusHoursLocalDatetime(hours) {
+  const d = new Date(Date.now() + hours * 60 * 60 * 1000);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function formatDisplayDate(value) {
+  if (!value) return "No Expire";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value);
+  return d.toLocaleString();
+}
+
+async function safeCopy(text) {
   try {
-    return JSON.parse(text);
+    await navigator.clipboard.writeText(text);
+    return true;
   } catch {
-    return { raw: text };
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
+      ta.style.top = "-9999px";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      const ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+      return ok;
+    } catch {
+      return false;
+    }
   }
 }
 
-export default function Login() {
+export default function ControlCenter() {
   const nav = useNavigate();
-  const loc = useLocation();
 
-  const [email, setEmail] = useState(() => getAuthEmail() || "");
-  const [code, setCode] = useState(() => getAuthCode() || "");
-  const [remember, setRemember] = useState(true);
+  const email = (localStorage.getItem(LS_EMAIL) || "").trim();
+  const authorized = !!email && isBrokerOrShipper(email);
 
+  const loadIdRef = useRef(null);
+  const usdotRef = useRef(null);
+  const plateRef = useRef(null);
+  const driverPhoneRef = useRef(null);
+
+  const [loadId, setLoadId] = useState("");
+  const [dockEmail, setDockEmail] = useState("");
+  const [carrierCompany, setCarrierCompany] = useState("");
+  const [carrierContact, setCarrierContact] = useState("");
+  const [carrierPhone, setCarrierPhone] = useState("");
+  const [driverPhone, setDriverPhone] = useState("");
+  const [usdotOnRecord, setUsdotOnRecord] = useState("");
+  const [plateOnRecord, setPlateOnRecord] = useState("");
+  const [dockPin, setDockPin] = useState("");
+
+  const [mode, setMode] = useState("auto");
+  const [startsAt, setStartsAt] = useState(() => nowLocalDatetime());
+  const [expiresAt, setExpiresAt] = useState(() => plusHoursLocalDatetime(24));
+
+  const [searchId, setSearchId] = useState("");
+
+  const [statusMsg, setStatusMsg] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState("");
+
+  const [issued, setIssued] = useState(null);
+  const [issuedQr, setIssuedQr] = useState("");
+  const [attempts, setAttempts] = useState([]);
 
   useEffect(() => {
-    document.title = "Log In — QueCab AdbS";
-  }, []);
+    if (!authorized) {
+      nav("/login", { replace: true });
+      return;
+    }
+    const t = setTimeout(() => {
+      loadIdRef.current?.focus();
+      loadIdRef.current?.select?.();
+    }, 0);
+    return () => clearTimeout(t);
+  }, [authorized, nav]);
 
-  // If we came from a protected route, go back there after login
-  const from = useMemo(() => {
-    const p = loc?.state?.from;
-    return typeof p === "string" && p.startsWith("/") ? p : "/dashboard";
-  }, [loc]);
+  if (!authorized) return null;
 
-  const clean = useMemo(() => {
-    const e = normalizeEmail(email);
-    const c = normalizeAccessCode(code);
-    return { e, c };
-  }, [email, code]);
+  async function safeJson(res) {
+    const text = await res.text();
+    try {
+      return JSON.parse(text);
+    } catch {
+      return { raw: text };
+    }
+  }
 
-  const canSubmit = useMemo(() => {
-    if (!looksLikeEmail(clean.e)) return false;
-    // Require at least some digits after QC-
-    const digits = clean.c.replace(/\D+/g, "");
-    if (digits.length < 4) return false;
-    return true;
-  }, [clean]);
+  function clearIssuedForm() {
+    setLoadId("");
+    setDockEmail("");
+    setCarrierCompany("");
+    setCarrierContact("");
+    setCarrierPhone("");
+    setDriverPhone("");
+    setUsdotOnRecord("");
+    setPlateOnRecord("");
+    setDockPin("");
+    setMode("auto");
+    setStartsAt(nowLocalDatetime());
+    setExpiresAt(plusHoursLocalDatetime(24));
+  }
 
-  async function doLogin(e) {
-    e?.preventDefault?.();
-    setErr("");
+  async function issueLink() {
+    setErrorMsg("");
+    setStatusMsg("");
+    setAttempts([]);
+    setIssuedQr("");
 
-    if (!canSubmit) {
-      setErr("Enter a valid Business Email and Access Code.");
+    const usdot_digits = onlyDigits(usdotOnRecord);
+    const plate_upper = toUpperClean(plateOnRecord).trim();
+    const driver_digits = onlyDigits(driverPhone);
+
+    if (!usdot_digits) {
+      setErrorMsg("Enter USDOT#");
+      usdotRef.current?.focus();
       return;
     }
 
+    if (!plate_upper) {
+      setErrorMsg("Enter Plate");
+      plateRef.current?.focus();
+      return;
+    }
+
+    if (driver_digits.length !== 10) {
+      setErrorMsg("Enter Driver Phone");
+      driverPhoneRef.current?.focus();
+      return;
+    }
+
+    let starts_at = new Date().toISOString();
+    let expires_at = null;
+
+    if (mode === "auto") {
+      expires_at = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    } else if (mode === "pick") {
+      if (!startsAt || !expiresAt) {
+        setErrorMsg("Choose Start and Expire");
+        return;
+      }
+      starts_at = new Date(startsAt).toISOString();
+      expires_at = new Date(expiresAt).toISOString();
+    } else {
+      expires_at = null;
+    }
+
     setLoading(true);
+
     try {
-      // Server is the real bouncer.
-      // If your API name differs later, we’ll adjust ONE line right here.
-      const res = await fetch("/api/login", {
+      const payload = {
+        load_id: String(loadId || "").trim() || null,
+        dock_email: String(dockEmail || "").trim() || null,
+        carrier_company: String(carrierCompany || "").trim() || null,
+        dispatch_contact: String(carrierContact || "").trim() || null,
+        dispatch_phone: formatPhoneHyphen(carrierPhone),
+        driver_phone: formatPhoneHyphen(driverPhone),
+        usdot_on_record: usdot_digits,
+        plate_on_record: plate_upper,
+        dock_pin: String(dockPin || "").trim() || null,
+        starts_at,
+        expires_at
+      };
+
+      const res = await fetch("/api/issue_verify_link", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: clean.e,
-          access_code: clean.c,
-        }),
+        body: JSON.stringify(payload)
       });
 
       const data = await safeJson(res);
 
       if (!res.ok) {
-        const msg =
-          data?.error ||
-          data?.message ||
-          "Access denied";
-        setErr(msg);
+        setErrorMsg(data?.error || "Issue failed");
         setLoading(false);
         return;
       }
 
-      // If API returns role, save it; otherwise default to broker for now
-      const role = String(data?.role || data?.user?.role || "broker").trim().toLowerCase();
+      const verifyUrl = data?.verify_url || "";
+      const qrDataUrl = makeQrDataUrl(verifyUrl);
 
-      // Persist to the chosen store
-      setAuthEmail(clean.e, remember);
-      setAuthCode(clean.c, remember);
-      setAuthRole(role, remember);
+      setIssued({
+        verification_id: data?.token || "",
+        verify_url: verifyUrl,
+        status: data?.status || "active",
+        expires_at: data?.expires_at || expires_at || null,
+        carrier_company: payload.carrier_company || "",
+        carrier_contact_name: payload.dispatch_contact || "",
+        carrier_contact_phone: payload.dispatch_phone || "",
+        email_status: data?.email_status || "",
+        email_error: data?.email_error || ""
+      });
 
-      nav(from, { replace: true });
+      setIssuedQr(qrDataUrl);
+      setStatusMsg("AdbS Verification issued");
+      clearIssuedForm();
     } catch {
-      setErr("Network error. Try again.");
-    } finally {
-      setLoading(false);
+      setErrorMsg("Network error");
+    }
+
+    setLoading(false);
+  }
+
+  async function searchVerification() {
+    setErrorMsg("");
+    setStatusMsg("");
+    setAttempts([]);
+
+    const raw = String(searchId || "").trim();
+    if (!raw) {
+      setErrorMsg("Enter Verification ID, SmartLink, or Load ID");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/manage_verify_link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "lookup",
+          token: raw
+        })
+      });
+
+      const data = await safeJson(res);
+
+      if (!res.ok) {
+        setErrorMsg(data?.error || "Verification not found");
+        return;
+      }
+
+      setIssued({
+        verification_id: data?.token || "",
+        verify_url: data?.verify_url || "",
+        status: data?.status || "active",
+        expires_at: data?.expires_at || null,
+        carrier_company: data?.carrier_company || "",
+        carrier_contact_name: data?.carrier_contact_name || "",
+        carrier_contact_phone: data?.carrier_contact_phone || "",
+        email_status: "",
+        email_error: ""
+      });
+
+      setIssuedQr(makeQrDataUrl(data?.verify_url || ""));
+      setAttempts(Array.isArray(data?.attempts) ? data.attempts : []);
+      setStatusMsg("Verification loaded.");
+    } catch {
+      setErrorMsg("Search failed");
     }
   }
 
-  const page = { minHeight: "100vh" };
-  const wrap = { maxWidth: 540, margin: "0 auto", padding: "18px 16px 60px" };
+  const pageWrap = {
+    minHeight: "100vh",
+    background: "transparent"
+  };
+
+  const outer = {
+    maxWidth: 1120,
+    margin: "0 auto",
+    padding: "18px 16px 48px"
+  };
+
+  const heroLogoWrap = {
+    display: "flex",
+    justifyContent: "center",
+    marginTop: 90,
+    marginBottom: 10
+  };
+
+  const heroLogo = {
+    width: 220,
+    maxWidth: "90%"
+  };
 
   const card = {
-    border: "1px solid rgba(140,190,255,0.14)",
-    background: "rgba(12, 18, 28, 0.72)",
-    borderRadius: 16,
+    border: "1px solid rgba(255,255,255,0.12)",
+    background: "rgba(12,18,28,0.72)",
+    borderRadius: 18,
     padding: 18,
-    boxShadow: "0 16px 38px rgba(0,0,0,0.38)",
-    position: "relative",
-    overflow: "hidden",
+    boxShadow: "0 12px 28px rgba(0,0,0,0.28)"
   };
 
-  // Tiny industrial vibe: subtle “brushed metal” strip at top (doesn't change layout)
-  const metalStrip = {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 6,
-    background:
-      "linear-gradient(90deg, rgba(255,255,255,0.10), rgba(255,255,255,0.02), rgba(255,255,255,0.10))",
-    opacity: 0.7,
-  };
-
-  const h1 = { fontSize: 26, fontWeight: 950, margin: 0, letterSpacing: 0.2 };
-  const sub = { fontSize: 13, opacity: 0.82, marginTop: 8, lineHeight: 1.4 };
-
-  const label = { fontSize: 13, opacity: 0.85, marginBottom: 6, fontWeight: 800 };
   const input = {
     width: "100%",
-    padding: "14px 12px",
+    padding: 12,
     borderRadius: 12,
-    border: "1px solid rgba(140,190,255,0.18)",
-    background: "rgba(255,255,255,0.04)",
-    color: "inherit",
-    fontSize: 18,
-    outline: "none",
-  };
-
-  const codeInput = {
-    ...input,
-    letterSpacing: 1.2,
-    fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-    textTransform: "uppercase",
-  };
-
-  const row = { display: "grid", gap: 12, marginTop: 14 };
-
-  const btn = {
-    width: "100%",
-    padding: "14px 14px",
-    borderRadius: 12,
-    border: "1px solid rgba(140,190,255,0.42)",
-    background: "linear-gradient(180deg, rgba(40,110,200,0.85), rgba(20,70,140,0.75))",
-    color: "#e6edf5",
+    border: "1px solid rgba(255,255,255,0.32)",
+    boxSizing: "border-box",
+    background: "rgba(255,255,255,0.05)",
+    color: "#fff",
     fontSize: 16,
-    fontWeight: 950,
-    cursor: canSubmit && !loading ? "pointer" : "not-allowed",
-    letterSpacing: 0.2,
-    opacity: canSubmit && !loading ? 1 : 0.55,
+    outline: "none"
+  };
+
+  const buttonPrimary = {
+    width: "100%",
+    padding: 13,
+    borderRadius: 12,
+    border: "1px solid rgba(120,180,255,0.55)",
+    background: "rgba(40,110,190,0.35)",
+    color: "#ffffff",
+    fontSize: 16,
+    fontWeight: 900,
+    cursor: "pointer"
+  };
+
+  const buttonSoft = {
+    width: "100%",
+    padding: 12,
+    borderRadius: 12,
+    border: "1px solid rgba(255,255,255,0.18)",
+    background: "rgba(255,255,255,0.06)",
+    color: "#ffffff",
+    fontSize: 15,
+    fontWeight: 900,
+    cursor: "pointer"
+  };
+
+  const chip = (active) => ({
+    padding: "10px 12px",
+    borderRadius: 12,
+    border: active
+      ? "1px solid rgba(120,180,255,0.55)"
+      : "1px solid rgba(255,255,255,0.18)",
+    background: active
+      ? "rgba(40,110,190,0.35)"
+      : "rgba(255,255,255,0.06)",
+    color: "#fff",
+    fontWeight: 900,
+    textAlign: "center",
+    cursor: "pointer"
+  });
+
+  const title = {
+    fontSize: 26,
+    fontWeight: 800,
+    marginBottom: 14,
+    color: "#fff"
+  };
+
+  const sectionTitle = {
+    fontWeight: 900,
+    fontSize: 18,
+    marginBottom: 12,
+    color: "#fff"
   };
 
   return (
-    <div style={page}>
+    <div style={pageWrap}>
       <Header />
 
-      <div style={wrap}>
-        <div style={card}>
-          <div style={metalStrip} aria-hidden="true" />
+      <div style={heroLogoWrap}>
+        <img src="/qc-logo.png" alt="QueCab AdbS" style={heroLogo} />
+      </div>
 
-          <h1 style={h1}>Log In</h1>
-          <div style={sub}>
-            Use your <b>Business Email</b> and your assigned <b>Access Code</b>.
-            <br />
-            Email is not case-sensitive. Access Code auto-formats as <b>QC-######</b>.
+      <div style={outer}>
+        <div style={title}>Control Center</div>
+
+        <div style={{ ...card, marginBottom: 16 }}>
+          <div style={sectionTitle}>Find Verification</div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 170px", gap: 10 }}>
+            <input
+              style={input}
+              placeholder="Verification ID, SmartLink, or Load ID"
+              value={searchId}
+              onChange={(e) => setSearchId(e.target.value)}
+            />
+            <button style={buttonPrimary} onClick={searchVerification}>
+              Search
+            </button>
           </div>
+        </div>
 
-          <form onSubmit={doLogin} style={{ marginTop: 14 }}>
-            <div style={row}>
-              <div>
-                <div style={label}>Business Email</div>
-                <input
-                  style={input}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  onBlur={(e) => setEmail(normalizeEmail(e.target.value))}
-                  placeholder="name@company.com"
-                  inputMode="email"
-                  autoComplete="email"
-                />
+        <div style={{ display: "grid", gridTemplateColumns: "1.12fr 0.88fr", gap: 16 }}>
+          <div style={card}>
+            <div style={sectionTitle}>Issue AdbS Verification</div>
+
+            <div style={{ display: "grid", gap: 10 }}>
+              <input
+                ref={loadIdRef}
+                style={input}
+                placeholder="Load ID"
+                value={loadId}
+                onChange={(e) => setLoadId(e.target.value)}
+              />
+
+              <input
+                style={input}
+                placeholder="Dock Email"
+                value={dockEmail}
+                onChange={(e) => setDockEmail(e.target.value)}
+              />
+
+              <input
+                style={input}
+                placeholder="Carrier Company"
+                value={carrierCompany}
+                onChange={(e) => setCarrierCompany(e.target.value)}
+              />
+
+              <input
+                style={input}
+                placeholder="Carrier Contact Name"
+                value={carrierContact}
+                onChange={(e) => setCarrierContact(e.target.value)}
+              />
+
+              <input
+                style={input}
+                placeholder="Carrier Contact Phone"
+                value={carrierPhone}
+                onChange={(e) => setCarrierPhone(formatPhoneHyphen(e.target.value))}
+              />
+
+              <input
+                ref={driverPhoneRef}
+                style={input}
+                placeholder="Driver Phone"
+                value={driverPhone}
+                onChange={(e) => setDriverPhone(formatPhoneHyphen(e.target.value))}
+              />
+
+              <input
+                ref={usdotRef}
+                style={input}
+                placeholder="USDOT#"
+                value={usdotOnRecord}
+                onChange={(e) => setUsdotOnRecord(onlyDigits(e.target.value))}
+              />
+
+              <input
+                ref={plateRef}
+                style={input}
+                placeholder="Plate"
+                value={plateOnRecord}
+                onChange={(e) => setPlateOnRecord(toUpperClean(e.target.value))}
+              />
+
+              <input
+                style={input}
+                placeholder="Dock PIN (optional)"
+                value={dockPin}
+                onChange={(e) => setDockPin(onlyDigits(e.target.value).slice(0, 6))}
+              />
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                <div style={chip(mode === "auto")} onClick={() => setMode("auto")}>Auto 24h</div>
+                <div style={chip(mode === "pick")} onClick={() => setMode("pick")}>Pick</div>
+                <div style={chip(mode === "none")} onClick={() => setMode("none")}>No Expire</div>
               </div>
 
-              <div>
-                <div style={label}>Access Code</div>
-                <input
-                  style={codeInput}
-                  value={code}
-                  onChange={(e) => setCode(formatAccessCodeTyping(e.target.value))}
-                  onBlur={(e) => setCode(normalizeAccessCode(e.target.value))}
-                  placeholder="QC-757376"
-                  inputMode="text"
-                  autoComplete="off"
-                />
-                <div style={{ marginTop: 8, fontSize: 12, opacity: 0.72 }}>
-                  Tip: you can type <b>qc757376</b> — it will convert automatically.
-                </div>
-              </div>
+              {mode === "pick" ? (
+                <>
+                  <input
+                    style={input}
+                    type="datetime-local"
+                    value={startsAt}
+                    onChange={(e) => setStartsAt(e.target.value)}
+                  />
+                  <input
+                    style={input}
+                    type="datetime-local"
+                    value={expiresAt}
+                    onChange={(e) => setExpiresAt(e.target.value)}
+                  />
+                </>
+              ) : null}
 
-              <label style={{ display: "flex", gap: 10, alignItems: "center", fontSize: 14, opacity: 0.92 }}>
-                <input
-                  type="checkbox"
-                  checked={remember}
-                  onChange={(e) => setRemember(e.target.checked)}
-                />
-                Remember this device
-              </label>
-
-              <button type="submit" style={btn} disabled={!canSubmit || loading}>
-                {loading ? "Signing in..." : "Log In"}
+              <button style={buttonPrimary} onClick={issueLink} disabled={loading}>
+                {loading ? "Issuing..." : "Issue AdbS Verification"}
               </button>
 
-              {err ? (
-                <div
-                  style={{
-                    border: "1px solid rgba(255,90,90,0.35)",
-                    background: "rgba(255,90,90,0.08)",
-                    padding: 12,
-                    borderRadius: 12,
-                    fontSize: 14,
-                  }}
-                >
-                  <b>Error:</b> {err}
-                </div>
+              {errorMsg ? (
+                <div style={{ color: "#ff9c9c", fontWeight: 700 }}>{errorMsg}</div>
+              ) : null}
+
+              {statusMsg ? (
+                <div style={{ color: "#ffffff" }}>{statusMsg}</div>
               ) : null}
             </div>
-          </form>
+          </div>
+
+          <div style={card}>
+            <div style={sectionTitle}>Issued Verification</div>
+
+            {!issued ? (
+              <div style={{ opacity: 0.74 }}>No verification selected yet.</div>
+            ) : (
+              <div style={{ display: "grid", gap: 10 }}>
+                <div>
+                  <div style={{ fontWeight: 900, marginBottom: 6 }}>Verification ID</div>
+                  <input style={input} value={issued.verification_id || ""} readOnly />
+                </div>
+
+                <div>
+                  <div style={{ fontWeight: 900, marginBottom: 6 }}>AdbS SmartLink</div>
+                  <input style={input} value={issued.verify_url || ""} readOnly />
+                </div>
+
+                <div>
+                  <div style={{ fontWeight: 900, marginBottom: 6 }}>Status</div>
+                  <input style={input} value={issued.status || ""} readOnly />
+                </div>
+
+                <div>
+                  <div style={{ fontWeight: 900, marginBottom: 6 }}>Expires</div>
+                  <input style={input} value={formatDisplayDate(issued.expires_at)} readOnly />
+                </div>
+
+                {(issued.carrier_company || issued.carrier_contact_name || issued.carrier_contact_phone) ? (
+                  <div
+                    style={{
+                      border: "1px solid rgba(255,255,255,0.12)",
+                      borderRadius: 12,
+                      padding: 12,
+                      background: "rgba(255,255,255,0.04)"
+                    }}
+                  >
+                    <div style={{ fontSize: 15, fontWeight: 900, marginBottom: 8 }}>Carrier Contact</div>
+                    <div style={{ marginBottom: 6 }}>
+                      Carrier Company: <b>{issued.carrier_company || "(not provided)"}</b>
+                    </div>
+                    <div style={{ marginBottom: 6 }}>
+                      Carrier Contact Name: <b>{issued.carrier_contact_name || "(not provided)"}</b>
+                    </div>
+                    <div>
+                      Carrier Contact Phone: <b>{issued.carrier_contact_phone || "(not provided)"}</b>
+                    </div>
+                  </div>
+                ) : null}
+
+                {issued.email_status ? (
+                  <div
+                    style={{
+                      border: "1px solid rgba(255,255,255,0.12)",
+                      borderRadius: 12,
+                      padding: 12,
+                      background: "rgba(255,255,255,0.04)"
+                    }}
+                  >
+                    <div>Email Status: <b>{issued.email_status}</b></div>
+                    {issued.email_error ? (
+                      <div style={{ marginTop: 6, color: "#ff9c9c" }}>
+                        Email Error: <b>{issued.email_error}</b>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                <div style={{ textAlign: "center", marginTop: 4 }}>
+                  {issuedQr ? (
+                    <img
+                      src={issuedQr}
+                      alt="QR"
+                      style={{
+                        width: 240,
+                        background: "#ffffff",
+                        padding: 10,
+                        borderRadius: 12
+                      }}
+                    />
+                  ) : null}
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <button
+                    style={buttonSoft}
+                    onClick={async () => {
+                      const ok = await safeCopy(issued.verify_url || "");
+                      setStatusMsg(ok ? "AdbS SmartLink copied." : "Copy failed.");
+                    }}
+                  >
+                    Copy AdbS SmartLink
+                  </button>
+
+                  <button
+                    style={buttonSoft}
+                    onClick={async () => {
+                      const ok = await safeCopy(issued.verification_id || "");
+                      setStatusMsg(ok ? "Verification ID copied." : "Copy failed.");
+                    }}
+                  >
+                    Copy Verification ID
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
-        <div style={{ marginTop: 14, fontSize: 12, opacity: 0.65, lineHeight: 1.45 }}>
-          If you don’t have an access code yet, use <b>Request Access</b> on the Home page.
-        </div>
+        {attempts.length ? (
+          <div style={{ ...card, marginTop: 16 }}>
+            <div style={sectionTitle}>Load Activity</div>
+
+            <div style={{ display: "grid", gap: 10 }}>
+              {attempts.map((a, i) => (
+                <div
+                  key={i}
+                  style={{
+                    border: "1px solid rgba(255,255,255,0.10)",
+                    borderRadius: 12,
+                    padding: 12,
+                    background: "rgba(255,255,255,0.04)"
+                  }}
+                >
+                  <div style={{ fontWeight: 900, marginBottom: 6 }}>
+                    {String(a.result || "").toLowerCase().includes("clear") ? "CLEAR" : "ATTEMPT"}
+                  </div>
+
+                  <div style={{ fontSize: 14, lineHeight: 1.5 }}>
+                    DOT: <b>{a.entered_usdot || "(blank)"}</b>
+                    <br />
+                    Plate: <b>{a.entered_plate || "(blank)"}</b>
+                    <br />
+                    Driver Answered: <b>{String(a.driver_answered ?? "")}</b>
+                    <br />
+                    Result: <b>{a.result || "(unknown)"}</b>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );
