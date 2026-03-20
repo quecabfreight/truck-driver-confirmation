@@ -302,6 +302,18 @@ export default function ControlCenter() {
     padding: "18px 16px 48px"
   };
 
+  const heroLogoWrap = {
+    display: "flex",
+    justifyContent: "center",
+    marginTop: 90,
+    marginBottom: 10
+  };
+
+  const heroLogo = {
+    width: 220,
+    maxWidth: "90%"
+  };
+
   const card = {
     border: "1px solid rgba(255,255,255,0.12)",
     background: "rgba(12,18,28,0.72)",
@@ -378,6 +390,10 @@ export default function ControlCenter() {
   return (
     <div style={pageWrap}>
       <Header />
+
+      <div style={heroLogoWrap}>
+        <img src="/qc-logo.png" alt="QueCab AdbS" style={heroLogo} />
+      </div>
 
       <div style={outer}>
         <div style={title}>Control Center</div>
