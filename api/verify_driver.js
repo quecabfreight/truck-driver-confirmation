@@ -1,15 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
-import { Resend } from "resend";
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
-
-function getResend() {
-  if (!process.env.RESEND_API_KEY) return null;
-  return new Resend(process.env.RESEND_API_KEY);
-}
 
 function onlyDigits(v) {
   return String(v || "").replace(/\D/g, "");
@@ -17,6 +11,10 @@ function onlyDigits(v) {
 
 function upper(v) {
   return String(v || "").toUpperCase().trim();
+}
+
+function cleanText(v) {
+  return String(v || "").trim();
 }
 
 function formatPhone(v) {
@@ -29,10 +27,6 @@ function formatPhone(v) {
 
 function bestPhone(link) {
   return formatPhone(link?.driver_phone) || formatPhone(link?.dispatch_phone) || "";
-}
-
-function cleanText(v) {
-  return String(v || "").trim();
 }
 
 function carrierPayload(link, token, verifiedAt = "") {
@@ -48,10 +42,12 @@ function carrierPayload(link, token, verifiedAt = "") {
 
 async function sendAlertEmail(link, token, failedAttempts) {
   try {
-    const resend = getResend();
-    if (!resend) {
+    if (!process.env.RESEND_API_KEY) {
       return { ok: false, error: "Missing RESEND_API_KEY" };
     }
+
+    const { Resend } = await import("resend");
+    const resend = new Resend(process.env.RESEND_API_KEY);
 
     const toEmail =
       cleanText(process.env.ADBS_ALERT_EMAIL) ||
@@ -69,33 +65,21 @@ async function sendAlertEmail(link, token, failedAttempts) {
     const sendResult = await resend.emails.send({
       from: fromEmail,
       to: [toEmail],
-      subject: "AdbS ALERT — 3 Failed Verification Attempts",
+      subject: `AdbS ALERT — 3 Failed Verification Attempts [${token}]`,
       html: `
         <div style="font-family:Arial,Helvetica,sans-serif;line-height:1.5;color:#111;">
           <h2>AdbS Alert</h2>
           <p>Three failed Truck-Driver verification attempts were detected.</p>
-
           <p><strong>Load ID:</strong> ${loadId}</p>
           <p><strong>Verification ID:</strong> ${token}</p>
           <p><strong>Failed Attempts:</strong> ${failedAttempts}</p>
-
           <hr style="margin:18px 0; border:none; border-top:1px solid #ddd;" />
-
           <p><strong>Carrier Company:</strong> ${carrierCompany}</p>
           <p><strong>Carrier Contact:</strong> ${carrierContact}</p>
           <p><strong>Carrier Contact Phone:</strong> ${carrierPhone}</p>
-
           <hr style="margin:18px 0; border:none; border-top:1px solid #ddd;" />
-
-          <p><strong>Next Step:</strong></p>
           <p>Open Control Center and search this Verification ID:</p>
           <p style="font-size:18px; font-weight:800;">${token}</p>
-
-          <p style="margin-top:18px;">
-            <a href="https://quecabadbs.com/" style="display:inline-block;padding:10px 14px;background:#1f4f8a;color:#fff;text-decoration:none;border-radius:8px;">
-              Open Control Center
-            </a>
-          </p>
         </div>
       `
     });
@@ -107,7 +91,7 @@ async function sendAlertEmail(link, token, failedAttempts) {
       };
     }
 
-    return { ok: true, data: sendResult };
+    return { ok: true };
   } catch (err) {
     return { ok: false, error: err?.message || String(err) };
   }
@@ -195,16 +179,18 @@ export default async function handler(req, res) {
       driverAnswered;
 
     const result = match ? "CLEAR_TO_LOAD" : "CAUTION_ALERT";
-    const now = new Date().toISOString();
+    const nowIso = new Date().toISOString();
 
-    const { error: insertError } = await supabase.from("verify_checks").insert({
-      token,
-      entered_usdot: enteredDOT,
-      entered_plate: enteredPlate,
-      driver_answered: driverAnswered,
-      result,
-      checked_at: now
-    });
+    const { error: insertError } = await supabase
+      .from("verify_checks")
+      .insert({
+        token,
+        entered_usdot: enteredDOT,
+        entered_plate: enteredPlate,
+        driver_answered: driverAnswered,
+        result,
+        checked_at: nowIso
+      });
 
     if (insertError) {
       return res.status(500).json({
@@ -213,10 +199,17 @@ export default async function handler(req, res) {
       });
     }
 
-    const { data: attempts } = await supabase
+    const { data: attempts, error: attemptsError } = await supabase
       .from("verify_checks")
       .select("result")
       .eq("token", token);
+
+    if (attemptsError) {
+      return res.status(500).json({
+        error: "Failed to read verification attempts",
+        detail: attemptsError.message || String(attemptsError)
+      });
+    }
 
     const fails = (attempts || []).filter((a) => a.result === "CAUTION_ALERT").length;
 
@@ -234,7 +227,7 @@ export default async function handler(req, res) {
     if (result === "CLEAR_TO_LOAD") {
       await supabase
         .from("verify_links")
-        .update({ status: "cleared", cleared_at: now })
+        .update({ status: "cleared", cleared_at: nowIso })
         .eq("token", token);
     }
 
@@ -251,7 +244,7 @@ export default async function handler(req, res) {
   } catch (err) {
     return res.status(500).json({
       error: "verify failed",
-      detail: err.message
+      detail: err?.message || String(err)
     });
   }
 }
