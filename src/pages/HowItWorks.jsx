@@ -1,9 +1,13 @@
 import { Link } from "react-router-dom";
+import Header from "../components/Header.jsx";
 
 export default function HowItWorks() {
   return (
     <div style={styles.wrapper}>
+      <Header />
+
       <div style={styles.container}>
+        <img src="/qc-logo.png" alt="QueCab AdbS" style={styles.logo} />
 
         <div style={styles.title}>How It Works</div>
 
@@ -15,7 +19,6 @@ export default function HowItWorks() {
         </div>
 
         <div style={styles.steps}>
-
           <div style={styles.card}>
             <div style={styles.stepNumber}>1</div>
             <div style={styles.cardTitle}>Issue</div>
@@ -39,13 +42,17 @@ export default function HowItWorks() {
               System returns a clear verdict: CLEAR TO LOAD or CAUTION ALERT — DO NOT LOAD.
             </div>
           </div>
-
         </div>
 
-        <Link to="/join" style={styles.button}>
-          Request Access
-        </Link>
+        <div style={styles.actions}>
+          <Link to="/join" style={styles.button}>
+            Request Access
+          </Link>
 
+          <Link to="/login" style={styles.buttonSecondary}>
+            Log In
+          </Link>
+        </div>
       </div>
     </div>
   );
@@ -55,16 +62,18 @@ const styles = {
   wrapper: {
     minHeight: "100vh",
     background: "#0c121c",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 20
+    color: "#e6edf5"
   },
   container: {
-    maxWidth: 800,
-    width: "100%",
-    textAlign: "center",
-    color: "#e6edf5"
+    maxWidth: 900,
+    margin: "0 auto",
+    padding: "110px 20px 40px",
+    textAlign: "center"
+  },
+  logo: {
+    width: 220,
+    maxWidth: "100%",
+    marginBottom: 20
   },
   title: {
     fontSize: 34,
@@ -105,11 +114,27 @@ const styles = {
     opacity: 0.8,
     lineHeight: 1.5
   },
+  actions: {
+    display: "flex",
+    gap: 12,
+    justifyContent: "center",
+    flexWrap: "wrap"
+  },
   button: {
     display: "inline-block",
     padding: "12px 22px",
     borderRadius: 10,
     background: "#2a6df4",
+    color: "#fff",
+    textDecoration: "none",
+    fontWeight: 800
+  },
+  buttonSecondary: {
+    display: "inline-block",
+    padding: "12px 22px",
+    borderRadius: 10,
+    background: "rgba(255,255,255,0.08)",
+    border: "1px solid rgba(255,255,255,0.16)",
     color: "#fff",
     textDecoration: "none",
     fontWeight: 800
