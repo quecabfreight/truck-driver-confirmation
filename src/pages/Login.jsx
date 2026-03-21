@@ -1,15 +1,35 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import Header from "../components/Header.jsx";
-import { LS_EMAIL, isBrokerOrShipper } from "../utils/auth.js";
+import {
+  LS_EMAIL,
+  isBrokerOrShipper,
+  clearAuth,
+  setAuthEmail,
+  setAuthRole,
+  setAuthCode,
+  setRememberDevice
+} from "../utils/auth.js";
+
+const ALLOWED_ACCESS_CODES = [
+  "QC-39",
+  "QC-40",
+  "QC-42"
+];
+
+function normalizeCode(v) {
+  const raw = String(v || "").toUpperCase().trim();
+  const digits = raw.replace(/\D+/g, "");
+  if (!digits) return raw.replace(/\s+/g, "").replace(/-+/g, "-");
+  return `QC-${digits}`;
+}
 
 export default function Login() {
   const nav = useNavigate();
 
   const [email, setEmail] = useState("");
   const [accessCode, setAccessCode] = useState("");
-  const [rememberDevice, setRememberDevice] = useState(true);
+  const [rememberDevice, setRememberDeviceState] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
@@ -26,7 +46,7 @@ export default function Login() {
     setErrorMsg("");
 
     const cleanEmail = String(email || "").trim().toLowerCase();
-    const cleanCode = String(accessCode || "").trim();
+    const cleanCode = normalizeCode(accessCode);
 
     if (!cleanEmail) {
       setErrorMsg("Enter your business email.");
@@ -43,16 +63,17 @@ export default function Login() {
       return;
     }
 
-    try {
-      localStorage.setItem(LS_EMAIL, cleanEmail);
-      localStorage.setItem("qc_access_code", cleanCode);
-      localStorage.setItem("qc_role", "broker");
+    if (!ALLOWED_ACCESS_CODES.includes(cleanCode)) {
+      setErrorMsg("Access code is incorrect.");
+      return;
+    }
 
-      if (rememberDevice) {
-        localStorage.setItem("qc_remember_device", "true");
-      } else {
-        localStorage.removeItem("qc_remember_device");
-      }
+    try {
+      clearAuth();
+      setAuthEmail(cleanEmail, rememberDevice);
+      setAuthRole("broker", rememberDevice);
+      setAuthCode(cleanCode, rememberDevice);
+      setRememberDevice(rememberDevice, rememberDevice);
     } catch {}
 
     nav("/", { replace: true });
@@ -97,7 +118,7 @@ export default function Login() {
               <input
                 type="checkbox"
                 checked={rememberDevice}
-                onChange={(e) => setRememberDevice(e.target.checked)}
+                onChange={(e) => setRememberDeviceState(e.target.checked)}
               />
               <span>Remember this device</span>
             </label>
