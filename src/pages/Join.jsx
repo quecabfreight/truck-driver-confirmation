@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-
 import Header from "../components/Header.jsx";
 
 function onlyDigits(s) {
@@ -30,6 +29,7 @@ export default function Join() {
   function handleSubmit(e) {
     e.preventDefault();
     setErrorMsg("");
+    setStatusMsg("");
 
     if (!String(legalName || "").trim()) {
       setErrorMsg("Enter Legal Name.");
