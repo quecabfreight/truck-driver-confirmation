@@ -1,169 +1,114 @@
-// /src/components/Header.jsx
-import React, { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { getAuthEmail, isBrokerOrShipper, clearAuth } from "../utils/auth.js";
+import React from "react";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function Header() {
   const nav = useNavigate();
-  const loc = useLocation();
 
-  const [email, setEmail] = useState(() => getAuthEmail());
-
-  // Keep header synced (same tab + cross-tab)
-  useEffect(() => {
-    let alive = true;
-
-    const tick = () => {
-      if (!alive) return;
-      const current = getAuthEmail();
-      setEmail((prev) => (prev === current ? prev : current));
-    };
-
-    tick();
-    const id = setInterval(tick, 500);
-
-    const onStorage = () => tick();
-    window.addEventListener("storage", onStorage);
-
-    const onVis = () => {
-      if (document.visibilityState === "visible") tick();
-    };
-    document.addEventListener("visibilitychange", onVis);
-
-    return () => {
-      alive = false;
-      clearInterval(id);
-      window.removeEventListener("storage", onStorage);
-      document.removeEventListener("visibilitychange", onVis);
-    };
-  }, [loc.pathname]);
-
-  const authorized = useMemo(() => {
-    const e = String(email || "").trim();
-    return !!e && isBrokerOrShipper(e);
-  }, [email]);
+  const signedIn =
+    !!localStorage.getItem("qc_email") ||
+    !!localStorage.getItem("userEmail");
 
   function logout() {
-    clearAuth();
-    setEmail("");
+    try {
+      localStorage.removeItem("qc_email");
+      localStorage.removeItem("qc_access_code");
+      localStorage.removeItem("qc_role");
+      localStorage.removeItem("qc_remember_device");
+      localStorage.removeItem("userEmail");
+      localStorage.removeItem("accessCode");
+      localStorage.removeItem("role");
+    } catch {}
     nav("/login", { replace: true });
   }
 
-  const bar = {
-    position: "sticky",
-    top: 0,
-    zIndex: 100,
-    background: "rgba(8, 12, 18, 0.82)",
-    backdropFilter: "blur(10px)",
-    borderBottom: "1px solid rgba(140,190,255,0.12)",
-  };
-
-  const inner = {
-    maxWidth: 1100,
-    margin: "0 auto",
-    padding: "12px 16px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-    flexWrap: "wrap",
-  };
-
-  const brand = {
-    display: "flex",
-    alignItems: "center",
-    gap: 12,
-    cursor: "pointer",
-    userSelect: "none",
-  };
-
-  const title = { fontSize: 15, fontWeight: 950, letterSpacing: 0.2, margin: 0 };
-
-  // ✅ THIS is the “strong sentence” line under the logo
-  // (Doesn’t reveal sensitive match info; it’s branding + purpose.)
-  const sub = {
-    fontSize: 12,
-    opacity: 0.78,
-    marginTop: 2,
-    letterSpacing: 0.1,
-  };
-
-  const row = { display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" };
-
-  const btn = (primary) => ({
-    padding: "10px 12px",
-    borderRadius: 12,
-    border: primary
-      ? "1px solid rgba(140,190,255,0.42)"
-      : "1px solid rgba(140,190,255,0.20)",
-    background: primary
-      ? "linear-gradient(180deg, rgba(40,110,200,0.85), rgba(20,70,140,0.75))"
-      : "rgba(0,0,0,0.18)",
-    color: "#e6edf5",
-    fontSize: 14,
-    fontWeight: 900,
-    cursor: "pointer",
-    letterSpacing: 0.2,
-    whiteSpace: "nowrap",
-  });
-
   return (
-    <div style={bar}>
-      <div style={inner}>
-        <div
-          style={brand}
-          onClick={() => nav(authorized ? "/dashboard" : "/")}
-          title="QueCab AdbS"
-        >
-          {/* 🚫 DO NOT CHANGE LOGO SIZE (locked) */}
-          <img
-            src="/qc-logo.png"
-            alt="QueCab AdbS"
-            style={{ width: 34, height: 34, objectFit: "contain" }}
-            onError={(e) => (e.currentTarget.style.display = "none")}
-          />
-          <div>
-            <div style={title}>QueCab AdbS</div>
-            <div style={sub}>
-              Anti-Double-Brokering System • Truck-Driver verification
-            </div>
-          </div>
-        </div>
+    <div style={styles.header}>
+      <div style={styles.left}>
+        <Link to="/" style={styles.brand}>
+          QueCab AdbS
+        </Link>
+      </div>
 
-        <div style={row}>
-          {authorized ? (
-            <>
-              <button style={btn(true)} onClick={() => nav("/dashboard")}>
-                Control Center
-              </button>
-              <button style={btn(false)} onClick={() => nav("/admin")}>
-                Admin
-              </button>
-              <button style={btn(false)} onClick={() => nav("/how-it-works")}>
-                How It Works
-              </button>
-              <button style={btn(false)} onClick={logout}>
-                Log Out
-              </button>
-            </>
-          ) : (
-            <>
-              <button style={btn(true)} onClick={() => nav("/")}>
-                Home
-              </button>
-              <button style={btn(false)} onClick={() => nav("/how-it-works")}>
-                How It Works
-              </button>
-              <button style={btn(false)} onClick={() => nav("/login")}>
-                Log In
-              </button>
-              <button style={btn(false)} onClick={() => nav("/join")}>
-                Request Access
-              </button>
-            </>
-          )}
-        </div>
+      <div style={styles.right}>
+        <Link to="/" style={styles.link}>
+          Home
+        </Link>
+
+        <Link to="/how-it-works" style={styles.link}>
+          How It Works
+        </Link>
+
+        <Link to="/feedback" style={styles.link}>
+          Feedback
+        </Link>
+
+        {signedIn ? (
+          <>
+            <Link to="/" style={styles.link}>
+              Control Center
+            </Link>
+            <button onClick={logout} style={styles.logoutBtn}>
+              Log Out
+            </button>
+          </>
+        ) : (
+          <>
+            <Link to="/join" style={styles.link}>
+              Request Access
+            </Link>
+            <Link to="/login" style={styles.link}>
+              Log In
+            </Link>
+          </>
+        )}
       </div>
     </div>
   );
 }
+
+const styles = {
+  header: {
+    position: "sticky",
+    top: 0,
+    zIndex: 50,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "14px 20px",
+    background: "rgba(12,18,28,0.94)",
+    borderBottom: "1px solid rgba(255,255,255,0.10)",
+    backdropFilter: "blur(8px)"
+  },
+  left: {
+    display: "flex",
+    alignItems: "center"
+  },
+  brand: {
+    color: "#ffffff",
+    textDecoration: "none",
+    fontSize: 18,
+    fontWeight: 900
+  },
+  right: {
+    display: "flex",
+    alignItems: "center",
+    gap: 14,
+    flexWrap: "wrap",
+    justifyContent: "flex-end"
+  },
+  link: {
+    color: "#e6edf5",
+    textDecoration: "none",
+    fontSize: 14,
+    fontWeight: 800
+  },
+  logoutBtn: {
+    padding: "8px 12px",
+    borderRadius: 10,
+    border: "1px solid rgba(255,255,255,0.16)",
+    background: "rgba(255,255,255,0.06)",
+    color: "#fff",
+    fontWeight: 800,
+    cursor: "pointer"
+  }
+};
