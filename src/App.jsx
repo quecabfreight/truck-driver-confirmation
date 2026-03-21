@@ -1,76 +1,24 @@
-// /src/App.jsx
 import React from "react";
-import {
-  HashRouter,
-  Routes,
-  Route,
-  Navigate,
-  useLocation,
-} from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Home from "./pages/Home.jsx";
 import Login from "./pages/Login.jsx";
 import Join from "./pages/Join.jsx";
-import ControlCenter from "./pages/ControlCenter.jsx";
-import Verify from "./pages/Verify.jsx";
-import Admin from "./pages/Admin.jsx";
 import HowItWorks from "./pages/HowItWorks.jsx";
-import About from "./pages/About.jsx";
-
-import { isBrokerOrShipper, LS_EMAIL } from "./utils/auth.js";
-
-function RequireAuth({ children }) {
-  const loc = useLocation();
-  const email = (localStorage.getItem(LS_EMAIL) || "").trim();
-
-  if (!email || !isBrokerOrShipper(email)) {
-    return <Navigate to="/login" replace state={{ from: loc.pathname }} />;
-  }
-
-  return children;
-}
+import ControlCenter from "./pages/ControlCenter.jsx";
+import Feedback from "./pages/Feedback.jsx";
 
 export default function App() {
   return (
-    <HashRouter>
+    <BrowserRouter>
       <Routes>
-        {/* Public */}
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<ControlCenter />} />
         <Route path="/login" element={<Login />} />
         <Route path="/join" element={<Join />} />
         <Route path="/how-it-works" element={<HowItWorks />} />
-        <Route path="/about" element={<About />} />
-
-        {/* Authorized */}
-        <Route
-          path="/dashboard"
-          element={
-            <RequireAuth>
-              <ControlCenter />
-            </RequireAuth>
-          }
-        />
-
-        <Route
-          path="/admin"
-          element={
-            <RequireAuth>
-              <Admin />
-            </RequireAuth>
-          }
-        />
-
-        {/* Verify should be reachable from dock devices (public link). */}
-        {/* The page itself handles "Dock Authorization Required" (PIN) logic. */}
-        <Route path="/verify/:token" element={<Verify />} />
-
-        {/* Legacy routes: keep hidden */}
-        <Route path="/smartlink" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/driverlink" element={<Navigate to="/dashboard" replace />} />
-
-        {/* Catch-all */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="/feedback" element={<Feedback />} />
+        <Route path="*" element={<Home />} />
       </Routes>
-    </HashRouter>
+    </BrowserRouter>
   );
 }
