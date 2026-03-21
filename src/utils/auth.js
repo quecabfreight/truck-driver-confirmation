@@ -1,9 +1,12 @@
-// /src/utils/auth.js
-
 export const LS_EMAIL = "qc_email";
 export const LS_ROLE = "qc_role";
 export const LS_CODE = "qc_access_code";
 export const LS_REMEMBER = "qc_remember_device";
+
+const ALLOWED_BROKER_EMAILS = [
+  "quecabinc@gmail.com",
+  "quecabadbs@gmail.com"
+];
 
 function safeGet(store, key) {
   try {
@@ -135,7 +138,7 @@ export function clearAuth() {
     "role",
     "access_code",
     "qc_access_code",
-    "qc_role",
+    "qc_role"
   ];
 
   for (const k of keys) {
@@ -148,6 +151,8 @@ export function isBrokerOrShipper(emailOrRole = "") {
   const v = String(emailOrRole || "").trim().toLowerCase();
   if (!v) return false;
 
-  if (v.includes("@")) return true;
-  return v === "broker" || v === "shipper";
+  if (v === "broker") return true;
+  if (v === "shipper") return false;
+
+  return ALLOWED_BROKER_EMAILS.includes(v);
 }
