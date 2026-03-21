@@ -1,12 +1,8 @@
+
 import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import Header from "../components/Header.jsx";
-
-const LS_EMAIL = "qc_email";
-
-function isBrokerEmail(email) {
-  return String(email || "").trim().includes("@");
-}
+import { LS_EMAIL, isBrokerOrShipper } from "../utils/auth.js";
 
 export default function Login() {
   const nav = useNavigate();
@@ -18,8 +14,8 @@ export default function Login() {
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(LS_EMAIL);
-      if (saved && isBrokerEmail(saved)) {
+      const saved = (localStorage.getItem(LS_EMAIL) || "").trim();
+      if (saved && isBrokerOrShipper(saved)) {
         nav("/", { replace: true });
       }
     } catch {}
@@ -42,8 +38,8 @@ export default function Login() {
       return;
     }
 
-    if (!isBrokerEmail(cleanEmail)) {
-      setErrorMsg("Enter a valid business email.");
+    if (!isBrokerOrShipper(cleanEmail)) {
+      setErrorMsg("This email is not authorized.");
       return;
     }
 
