@@ -1,101 +1,160 @@
-// /api/admin_beta_approve.js
-// POST { id } -> sets approved=true and access_code=<generated>
-// Requires header: x-adbs-admin-key
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 function json(res, code, obj) {
-  res.status(code);
-  res.setHeader("Content-Type", "application/json; charset=utf-8");
+  res.status(code).setHeader("Content-Type", "application/json; charset=utf-8");
   res.setHeader("Cache-Control", "no-store");
   res.end(JSON.stringify(obj));
 }
 
-function getAdminKey(req) {
-  const h = req.headers || {};
-  return String(h["x-adbs-admin-key"] || h["X-Adbs-Admin-Key"] || "").trim();
+function safeStr(v) {
+  return String(v ?? "").trim();
 }
 
-function isAuthorized(req) {
-  const want = String(process.env.ADBS_ADMIN_KEY || "").trim();
-  const got = getAdminKey(req);
-  return !!want && !!got && got === want;
+function normalizeEmail(v) {
+  return safeStr(v).toLowerCase();
 }
 
-function makeCode() {
-  // readable + short; change later if you want
-  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let out = "QC-";
-  for (let i = 0; i < 8; i++) {
-    out += alphabet[Math.floor(Math.random() * alphabet.length)];
+function digitsOnly(v) {
+  return String(v || "").replace(/\D+/g, "");
+}
+
+function formatPhoneHyphen(v) {
+  const d = digitsOnly(v).slice(0, 10);
+  const a = d.slice(0, 3);
+  const b = d.slice(3, 6);
+  const c = d.slice(6, 10);
+  if (!d) return "";
+  if (d.length <= 3) return a;
+  if (d.length <= 6) return `${a}-${b}`;
+  return `${a}-${b}-${c}`;
+}
+
+function randomQcCode() {
+  const n = Math.floor(100000 + Math.random() * 900000);
+  return `QC-${n}`;
+}
+
+function isAdminAuthorized(req) {
+  const supplied = safeStr(req.headers["x-adbs-admin-key"]);
+  const expected = safeStr(process.env.ADBS_ADMIN_KEY);
+  return !!supplied && !!expected && supplied === expected;
+}
+
+async function generateUniqueAccessCode() {
+  for (let i = 0; i < 20; i += 1) {
+    const code = randomQcCode();
+
+    const { data, error } = await supabase
+      .from("broker_accounts")
+      .select("id")
+      .eq("access_code", code)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message || "Could not verify generated access code.");
+    }
+
+    if (!data) return code;
   }
-  return out;
-}
 
-function safeId(v) {
-  return String(v || "").trim();
+  throw new Error("Could not generate a unique access code.");
 }
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") return json(res, 405, { error: "Method not allowed" });
-
-  if (!isAuthorized(req)) return json(res, 401, { error: "Unauthorized (bad admin key)." });
-
-  const SUPABASE_URL = String(process.env.SUPABASE_URL || "").trim();
-  const SERVICE_ROLE = String(process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
-
-  if (!SUPABASE_URL || !SERVICE_ROLE) {
-    return json(res, 500, { error: "Server missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY." });
+  if (req.method !== "POST") {
+    return json(res, 405, { ok: false, error: "Method not allowed" });
   }
 
-  let body = {};
-  try {
-    body = typeof req.body === "string" ? JSON.parse(req.body) : (req.body || {});
-  } catch {
-    body = {};
+  if (!isAdminAuthorized(req)) {
+    return json(res, 401, { ok: false, error: "Unauthorized admin request." });
   }
 
-  const id = safeId(body.id);
-  if (!id) return json(res, 400, { error: "Missing id." });
-
-  const access_code = makeCode();
-
-  // PATCH beta_requests?id=eq.<id>
-  const url = `${SUPABASE_URL}/rest/v1/beta_requests?id=eq.${encodeURIComponent(id)}`;
-
   try {
-    const r = await fetch(url, {
-      method: "PATCH",
-      headers: {
-        apikey: SERVICE_ROLE,
-        Authorization: `Bearer ${SERVICE_ROLE}`,
-        "Content-Type": "application/json",
-        Prefer: "return=representation",
-      },
-      body: JSON.stringify({
-        approved: true,
-        access_code,
-      }),
-    });
+    const body = typeof req.body === "string" ? JSON.parse(req.body) : (req.body || {});
+    const id = safeStr(body.id);
 
-    const text = await r.text();
-
-    if (!r.ok) {
-      return json(res, r.status, {
-        error: "Supabase update failed.",
-        details: text?.slice(0, 800) || "",
-      });
+    if (!id) {
+      return json(res, 400, { ok: false, error: "Missing beta request id." });
     }
 
-    // return updated row(s)
-    let rows = [];
-    try { rows = JSON.parse(text); } catch { rows = []; }
+    const { data: requestRow, error: requestError } = await supabase
+      .from("beta_requests")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (requestError) {
+      return json(res, 500, { ok: false, error: requestError.message || "Could not load beta request." });
+    }
+
+    if (!requestRow) {
+      return json(res, 404, { ok: false, error: "Beta request not found." });
+    }
+
+    const businessEmail = normalizeEmail(
+      requestRow.business_email || requestRow.email || requestRow.contact_email
+    );
+
+    if (!businessEmail) {
+      return json(res, 400, { ok: false, error: "Approved request is missing business email." });
+    }
+
+    const companyName = safeStr(
+      requestRow.legal_business_name ||
+      requestRow.legal_name ||
+      requestRow.business_name ||
+      requestRow.company_name
+    );
+
+    const contactName = safeStr(requestRow.contact_name);
+    const businessPhone = formatPhoneHyphen(requestRow.business_phone || requestRow.phone || "");
+    const accessCode = await generateUniqueAccessCode();
+
+    const { error: betaUpdateError } = await supabase
+      .from("beta_requests")
+      .update({
+        status: "approved",
+        role: "broker",
+        email: businessEmail,
+        access_code: accessCode
+      })
+      .eq("id", id);
+
+    if (betaUpdateError) {
+      return json(res, 500, { ok: false, error: betaUpdateError.message || "Could not approve beta request." });
+    }
+
+    const brokerRow = {
+      company_name: companyName || null,
+      business_email: businessEmail,
+      access_code: accessCode,
+      role: "broker",
+      status: "active",
+      contact_name: contactName || null,
+      business_phone: businessPhone || null,
+      updated_at: new Date().toISOString()
+    };
+
+    const { error: upsertError } = await supabase
+      .from("broker_accounts")
+      .upsert(brokerRow, { onConflict: "business_email" });
+
+    if (upsertError) {
+      return json(res, 500, { ok: false, error: upsertError.message || "Could not sync broker account." });
+    }
 
     return json(res, 200, {
       ok: true,
       id,
-      access_code,
-      rows,
+      email: businessEmail,
+      access_code: accessCode
     });
-  } catch {
-    return json(res, 500, { error: "Network/server error updating Supabase." });
+  } catch (e) {
+    return json(res, 500, { ok: false, error: String(e?.message || "Server error") });
   }
 }
