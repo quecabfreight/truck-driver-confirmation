@@ -63,6 +63,10 @@ export default function Header() {
               Admin
             </Link>
 
+            <Link to="/account" style={styles.link}>
+              Account
+            </Link>
+
             <button onClick={logout} style={styles.logoutBtn}>
               Log Out
             </button>
