@@ -1,16 +1,33 @@
-import React from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { LS_EMAIL, isBrokerOrShipper } from "../utils/auth.js";
 
 export default function Header() {
   const nav = useNavigate();
+  const location = useLocation();
+  const [signedIn, setSignedIn] = useState(false);
 
-  const signedIn =
-    !!localStorage.getItem("qc_email") ||
-    !!localStorage.getItem("userEmail");
+  useEffect(() => {
+    function refreshAuthState() {
+      try {
+        const email = (localStorage.getItem(LS_EMAIL) || "").trim();
+        setSignedIn(!!email && isBrokerOrShipper(email));
+      } catch {
+        setSignedIn(false);
+      }
+    }
+
+    refreshAuthState();
+    window.addEventListener("storage", refreshAuthState);
+
+    return () => {
+      window.removeEventListener("storage", refreshAuthState);
+    };
+  }, [location.pathname]);
 
   function logout() {
     try {
-      localStorage.removeItem("qc_email");
+      localStorage.removeItem(LS_EMAIL);
       localStorage.removeItem("qc_access_code");
       localStorage.removeItem("qc_role");
       localStorage.removeItem("qc_remember_device");
@@ -18,6 +35,8 @@ export default function Header() {
       localStorage.removeItem("accessCode");
       localStorage.removeItem("role");
     } catch {}
+
+    setSignedIn(false);
     nav("/login", { replace: true });
   }
 
@@ -47,6 +66,15 @@ export default function Header() {
             <Link to="/" style={styles.link}>
               Control Center
             </Link>
+
+            <Link to="/admin" style={styles.link}>
+              Admin
+            </Link>
+
+            <Link to="/account" style={styles.link}>
+              Account
+            </Link>
+
             <button onClick={logout} style={styles.logoutBtn}>
               Log Out
             </button>
@@ -56,6 +84,7 @@ export default function Header() {
             <Link to="/join" style={styles.link}>
               Request Access
             </Link>
+
             <Link to="/login" style={styles.link}>
               Log In
             </Link>
