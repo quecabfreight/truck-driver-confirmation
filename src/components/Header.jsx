@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 
-function getSignedIn() {
+function isSignedIn() {
   try {
     const email =
       (localStorage.getItem("qc_email") || "").trim() ||
@@ -12,9 +12,9 @@ function getSignedIn() {
   }
 }
 
-function doLogout() {
+function logout() {
   try {
-    const keys = [
+    [
       "qc_email",
       "qc_role",
       "qc_access_code",
@@ -24,9 +24,7 @@ function doLogout() {
       "role",
       "access_code",
       "userEmail"
-    ];
-
-    keys.forEach((k) => {
+    ].forEach((k) => {
       localStorage.removeItem(k);
       sessionStorage.removeItem(k);
     });
@@ -36,7 +34,7 @@ function doLogout() {
 }
 
 export default function Header() {
-  const signedIn = getSignedIn();
+  const signedIn = isSignedIn();
 
   return (
     <div style={styles.header}>
@@ -47,36 +45,18 @@ export default function Header() {
       </div>
 
       <div style={styles.right}>
-        <Link to="/home" style={styles.link}>
-          Home
+        <Link to="/" style={styles.link}>
+          Control Center
         </Link>
 
         <Link to="/how-it-works" style={styles.link}>
           How It Works
         </Link>
 
-        <Link to="/feedback" style={styles.link}>
-          Feedback
-        </Link>
-
         {signedIn ? (
-          <>
-            <Link to="/" style={styles.link}>
-              Control Center
-            </Link>
-
-            <Link to="/admin" style={styles.link}>
-              Admin
-            </Link>
-
-            <Link to="/account" style={styles.link}>
-              Account
-            </Link>
-
-            <button onClick={doLogout} style={styles.logoutBtn}>
-              Log Out
-            </button>
-          </>
+          <button onClick={logout} style={styles.logoutBtn}>
+            Log Out
+          </button>
         ) : (
           <>
             <Link to="/join" style={styles.link}>
