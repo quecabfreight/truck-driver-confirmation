@@ -3,26 +3,13 @@ import { useNavigate, Link } from "react-router-dom";
 import Header from "../components/Header.jsx";
 import {
   LS_EMAIL,
-  isBrokerOrShipper,
-  clearAuth,
   setAuthEmail,
   setAuthRole,
   setAuthCode,
-  setRememberDevice
+  setRememberDevice,
+  clearAuth,
+  formatAccessCodeTyping
 } from "../utils/auth.js";
-
-const ALLOWED_ACCESS_CODES = [
-  "QC-39",
-  "QC-40",
-  "QC-42"
-];
-
-function normalizeCode(v) {
-  const raw = String(v || "").toUpperCase().trim();
-  const digits = raw.replace(/\D+/g, "");
-  if (!digits) return raw.replace(/\s+/g, "").replace(/-+/g, "-");
-  return `QC-${digits}`;
-}
 
 export default function Login() {
   const nav = useNavigate();
@@ -31,52 +18,52 @@ export default function Login() {
   const [accessCode, setAccessCode] = useState("");
   const [rememberDevice, setRememberDeviceState] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     try {
       const saved = (localStorage.getItem(LS_EMAIL) || "").trim();
-      if (saved && isBrokerOrShipper(saved)) {
+      if (saved) {
         nav("/", { replace: true });
       }
     } catch {}
   }, [nav]);
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     setErrorMsg("");
-
-    const cleanEmail = String(email || "").trim().toLowerCase();
-    const cleanCode = normalizeCode(accessCode);
-
-    if (!cleanEmail) {
-      setErrorMsg("Enter your business email.");
-      return;
-    }
-
-    if (!cleanCode) {
-      setErrorMsg("Enter your access code.");
-      return;
-    }
-
-    if (!isBrokerOrShipper(cleanEmail)) {
-      setErrorMsg("This email is not authorized.");
-      return;
-    }
-
-    if (!ALLOWED_ACCESS_CODES.includes(cleanCode)) {
-      setErrorMsg("Access code is incorrect.");
-      return;
-    }
+    setLoading(true);
 
     try {
-      clearAuth();
-      setAuthEmail(cleanEmail, rememberDevice);
-      setAuthRole("broker", rememberDevice);
-      setAuthCode(cleanCode, rememberDevice);
-      setRememberDevice(rememberDevice, rememberDevice);
-    } catch {}
+      const res = await fetch("/api/login_broker", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          access_code: accessCode
+        })
+      });
 
-    nav("/", { replace: true });
+      const data = await res.json();
+
+      if (!res.ok || !data?.ok) {
+        setErrorMsg(data?.error || "Login failed.");
+        setLoading(false);
+        return;
+      }
+
+      clearAuth();
+      setAuthEmail(data.email, rememberDevice);
+      setAuthRole(data.role || "broker", rememberDevice);
+      setAuthCode(accessCode, rememberDevice);
+      setRememberDevice(rememberDevice, rememberDevice);
+
+      nav("/", { replace: true });
+    } catch {
+      setErrorMsg("Network error during login.");
+    }
+
+    setLoading(false);
   }
 
   return (
@@ -110,7 +97,7 @@ export default function Login() {
               type="text"
               placeholder="Access Code"
               value={accessCode}
-              onChange={(e) => setAccessCode(e.target.value)}
+              onChange={(e) => setAccessCode(formatAccessCodeTyping(e.target.value))}
               autoComplete="off"
             />
 
@@ -125,8 +112,8 @@ export default function Login() {
 
             {errorMsg ? <div style={styles.error}>{errorMsg}</div> : null}
 
-            <button type="submit" style={styles.button}>
-              Log In
+            <button type="submit" style={styles.button} disabled={loading}>
+              {loading ? "Logging In..." : "Log In"}
             </button>
           </form>
 
