@@ -1,11 +1,11 @@
 import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-import ControlCenter from "./pages/ControlCenter.jsx";
 import Home from "./pages/Home.jsx";
 import Login from "./pages/Login.jsx";
 import Join from "./pages/Join.jsx";
 import HowItWorks from "./pages/HowItWorks.jsx";
+import ControlCenter from "./pages/ControlCenter.jsx";
 import Feedback from "./pages/Feedback.jsx";
 import Account from "./pages/Account.jsx";
 import Admin from "./pages/Admin.jsx";
