@@ -54,9 +54,15 @@ export default function Header() {
         </Link>
 
         {signedIn ? (
-          <button onClick={logout} style={styles.logoutBtn}>
-            Log Out
-          </button>
+          <>
+            <Link to="/admin" style={styles.link}>
+              Admin
+            </Link>
+
+            <button onClick={logout} style={styles.logoutBtn}>
+              Log Out
+            </button>
+          </>
         ) : (
           <>
             <Link to="/join" style={styles.link}>
