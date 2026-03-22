@@ -1,42 +1,23 @@
-import React, { useEffect, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { LS_EMAIL, isBrokerOrShipper } from "../utils/auth.js";
+import React from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { clearAuth, getAuthEmail, isBrokerOrShipper } from "../utils/auth.js";
 
 export default function Header() {
   const nav = useNavigate();
-  const location = useLocation();
-  const [signedIn, setSignedIn] = useState(false);
 
-  useEffect(() => {
-    function refreshAuthState() {
-      try {
-        const email = (localStorage.getItem(LS_EMAIL) || "").trim();
-        setSignedIn(!!email && isBrokerOrShipper(email));
-      } catch {
-        setSignedIn(false);
-      }
-    }
+  let signedIn = false;
 
-    refreshAuthState();
-    window.addEventListener("storage", refreshAuthState);
-
-    return () => {
-      window.removeEventListener("storage", refreshAuthState);
-    };
-  }, [location.pathname]);
+  try {
+    const email = (getAuthEmail() || "").trim();
+    signedIn = !!email && isBrokerOrShipper(email);
+  } catch {
+    signedIn = false;
+  }
 
   function logout() {
     try {
-      localStorage.removeItem(LS_EMAIL);
-      localStorage.removeItem("qc_access_code");
-      localStorage.removeItem("qc_role");
-      localStorage.removeItem("qc_remember_device");
-      localStorage.removeItem("userEmail");
-      localStorage.removeItem("accessCode");
-      localStorage.removeItem("role");
+      clearAuth();
     } catch {}
-
-    setSignedIn(false);
     nav("/login", { replace: true });
   }
 
@@ -49,7 +30,7 @@ export default function Header() {
       </div>
 
       <div style={styles.right}>
-        <Link to="/" style={styles.link}>
+        <Link to="/home" style={styles.link}>
           Home
         </Link>
 
