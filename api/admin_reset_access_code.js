@@ -1,108 +1,117 @@
-// /api/admin_reset_access_code.js
-// POST { email } -> finds request row by email/business_email and resets access_code
-// Requires header: x-adbs-admin-key
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 function json(res, code, obj) {
-  res.status(code);
-  res.setHeader("Content-Type", "application/json; charset=utf-8");
+  res.status(code).setHeader("Content-Type", "application/json; charset=utf-8");
   res.setHeader("Cache-Control", "no-store");
   res.end(JSON.stringify(obj));
 }
 
-function getAdminKey(req) {
-  const h = req.headers || {};
-  return String(h["x-adbs-admin-key"] || h["X-Adbs-Admin-Key"] || "").trim();
+function safeStr(v) {
+  return String(v ?? "").trim();
 }
 
-function isAuthorized(req) {
-  const want = String(process.env.ADBS_ADMIN_KEY || "").trim();
-  const got = getAdminKey(req);
-  return !!want && !!got && got === want;
+function normalizeEmail(v) {
+  return safeStr(v).toLowerCase();
 }
 
-function makeCode() {
-  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let out = "QC-";
-  for (let i = 0; i < 8; i++) {
-    out += alphabet[Math.floor(Math.random() * alphabet.length)];
+function randomQcCode() {
+  const n = Math.floor(100000 + Math.random() * 900000);
+  return `QC-${n}`;
+}
+
+function isAdminAuthorized(req) {
+  const supplied = safeStr(req.headers["x-adbs-admin-key"]);
+  const expected = safeStr(process.env.ADBS_ADMIN_KEY);
+  return !!supplied && !!expected && supplied === expected;
+}
+
+async function generateUniqueAccessCode() {
+  for (let i = 0; i < 20; i += 1) {
+    const code = randomQcCode();
+
+    const { data, error } = await supabase
+      .from("broker_accounts")
+      .select("id")
+      .eq("access_code", code)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message || "Could not verify generated access code.");
+    }
+
+    if (!data) return code;
   }
-  return out;
-}
 
-function safeEmail(v) {
-  return String(v || "").trim().toLowerCase();
-}
-
-function enc(v) {
-  return encodeURIComponent(String(v));
+  throw new Error("Could not generate a unique access code.");
 }
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") return json(res, 405, { error: "Method not allowed" });
-
-  if (!isAuthorized(req)) return json(res, 401, { error: "Unauthorized (bad admin key)." });
-
-  const SUPABASE_URL = String(process.env.SUPABASE_URL || "").trim();
-  const SERVICE_ROLE = String(process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
-
-  if (!SUPABASE_URL || !SERVICE_ROLE) {
-    return json(res, 500, { error: "Server missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY." });
+  if (req.method !== "POST") {
+    return json(res, 405, { ok: false, error: "Method not allowed" });
   }
 
-  let body = {};
-  try {
-    body = typeof req.body === "string" ? JSON.parse(req.body) : (req.body || {});
-  } catch {
-    body = {};
+  if (!isAdminAuthorized(req)) {
+    return json(res, 401, { ok: false, error: "Unauthorized admin request." });
   }
 
-  const email = safeEmail(body.email);
-  if (!email) return json(res, 400, { error: "Missing email." });
-
-  const access_code = makeCode();
-
-  // Try to update by (email OR business_email) to be schema-flexible.
-  // PostgREST supports or=()
-  const url = `${SUPABASE_URL}/rest/v1/beta_requests?or=(${enc(`email.eq.${email}`)},${enc(`business_email.eq.${email}`)})`;
-
   try {
-    const r = await fetch(url, {
-      method: "PATCH",
-      headers: {
-        apikey: SERVICE_ROLE,
-        Authorization: `Bearer ${SERVICE_ROLE}`,
-        "Content-Type": "application/json",
-        Prefer: "return=representation",
-      },
-      body: JSON.stringify({
-        access_code,
-        approved: true,
-      }),
-    });
+    const body = typeof req.body === "string" ? JSON.parse(req.body) : (req.body || {});
+    const email = normalizeEmail(body.email);
 
-    const text = await r.text();
-
-    if (!r.ok) {
-      return json(res, r.status, {
-        error: "Supabase update failed.",
-        details: text?.slice(0, 800) || "",
-      });
+    if (!email) {
+      return json(res, 400, { ok: false, error: "Missing email." });
     }
 
-    let rows = [];
-    try { rows = JSON.parse(text); } catch { rows = []; }
+    const { data: existing, error: lookupError } = await supabase
+      .from("broker_accounts")
+      .select("*")
+      .eq("business_email", email)
+      .maybeSingle();
 
-    if (!Array.isArray(rows) || rows.length === 0) {
-      return json(res, 404, { error: "No matching beta request found for that email." });
+    if (lookupError) {
+      return json(res, 500, { ok: false, error: lookupError.message || "Could not load broker account." });
+    }
+
+    if (!existing) {
+      return json(res, 404, { ok: false, error: "Broker account not found." });
+    }
+
+    const accessCode = await generateUniqueAccessCode();
+
+    const { error: updateBrokerError } = await supabase
+      .from("broker_accounts")
+      .update({
+        access_code: accessCode,
+        updated_at: new Date().toISOString()
+      })
+      .eq("business_email", email);
+
+    if (updateBrokerError) {
+      return json(res, 500, { ok: false, error: updateBrokerError.message || "Could not reset broker access code." });
+    }
+
+    const { error: updateBetaError } = await supabase
+      .from("beta_requests")
+      .update({
+        access_code: accessCode
+      })
+      .eq("business_email", email);
+
+    if (updateBetaError) {
+      return json(res, 500, { ok: false, error: updateBetaError.message || "Could not sync beta request access code." });
     }
 
     return json(res, 200, {
       ok: true,
       email,
-      access_code,
-      rows,
+      access_code: accessCode
     });
-  } catch {
-    return json(res, 500, { error: "Network/server error updating Supabase." });
+  } catch (e) {
+    return json(res, 500, { ok: false, error: String(e?.message || "Server error") });
   }
 }
