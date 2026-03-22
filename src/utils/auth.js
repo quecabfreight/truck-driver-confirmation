@@ -3,11 +3,6 @@ export const LS_ROLE = "qc_role";
 export const LS_CODE = "qc_access_code";
 export const LS_REMEMBER = "qc_remember_device";
 
-const ALLOWED_BROKER_EMAILS = [
-  "quecabinc@gmail.com",
-  "quecabadbs@gmail.com"
-];
-
 function safeGet(store, key) {
   try {
     return (store.getItem(key) || "").trim();
@@ -95,36 +90,17 @@ export function isRememberedDevice() {
 
 export function getAuthEmail() {
   const primary = safeGet(localStorage, LS_EMAIL) || safeGet(sessionStorage, LS_EMAIL);
-  if (primary) return normalizeEmail(primary);
-
-  const legacy =
-    safeGet(localStorage, "email") ||
-    safeGet(sessionStorage, "email") ||
-    safeGet(localStorage, "business_email") ||
-    safeGet(sessionStorage, "business_email");
-
-  return legacy ? normalizeEmail(legacy) : "";
+  return primary ? normalizeEmail(primary) : "";
 }
 
 export function getAuthRole() {
   const primary = safeGet(localStorage, LS_ROLE) || safeGet(sessionStorage, LS_ROLE);
-  if (primary) return String(primary).trim().toLowerCase();
-
-  const legacy = safeGet(localStorage, "role") || safeGet(sessionStorage, "role");
-  return legacy ? String(legacy).trim().toLowerCase() : "";
+  return primary ? String(primary).trim().toLowerCase() : "";
 }
 
 export function getAuthCode() {
   const primary = safeGet(localStorage, LS_CODE) || safeGet(sessionStorage, LS_CODE);
-  if (primary) return normalizeAccessCode(primary);
-
-  const legacy =
-    safeGet(localStorage, "access_code") ||
-    safeGet(sessionStorage, "access_code") ||
-    safeGet(localStorage, "qc_access_code") ||
-    safeGet(sessionStorage, "qc_access_code");
-
-  return legacy ? normalizeAccessCode(legacy) : "";
+  return primary ? normalizeAccessCode(primary) : "";
 }
 
 export function clearAuth() {
@@ -138,7 +114,9 @@ export function clearAuth() {
     "role",
     "access_code",
     "qc_access_code",
-    "qc_role"
+    "qc_role",
+    "userEmail",
+    "accessCode"
   ];
 
   for (const k of keys) {
@@ -150,9 +128,5 @@ export function clearAuth() {
 export function isBrokerOrShipper(emailOrRole = "") {
   const v = String(emailOrRole || "").trim().toLowerCase();
   if (!v) return false;
-
-  if (v === "broker") return true;
-  if (v === "shipper") return false;
-
-  return ALLOWED_BROKER_EMAILS.includes(v);
+  return v === "broker" || v === "shipper" || v.includes("@");
 }
