@@ -53,6 +53,10 @@ export default function Header() {
           How It Works
         </Link>
 
+        <Link to="/feedback" style={styles.link}>
+          Feedback
+        </Link>
+
         {signedIn ? (
           <>
             <Link to="/admin" style={styles.link}>
