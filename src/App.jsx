@@ -7,6 +7,7 @@ import Join from "./pages/Join.jsx";
 import HowItWorks from "./pages/HowItWorks.jsx";
 import ControlCenter from "./pages/ControlCenter.jsx";
 import Admin from "./pages/Admin.jsx";
+import Feedback from "./pages/Feedback.jsx";
 
 export default function App() {
   return (
@@ -17,6 +18,7 @@ export default function App() {
         <Route path="/join" element={<Join />} />
         <Route path="/how-it-works" element={<HowItWorks />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/feedback" element={<Feedback />} />
         <Route path="*" element={<Home />} />
       </Routes>
     </BrowserRouter>
