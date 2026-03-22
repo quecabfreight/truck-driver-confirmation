@@ -1,25 +1,42 @@
 import React from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { clearAuth, getAuthEmail, isBrokerOrShipper } from "../utils/auth.js";
+import { Link } from "react-router-dom";
+
+function getSignedIn() {
+  try {
+    const email =
+      (localStorage.getItem("qc_email") || "").trim() ||
+      (sessionStorage.getItem("qc_email") || "").trim();
+    return !!email;
+  } catch {
+    return false;
+  }
+}
+
+function doLogout() {
+  try {
+    const keys = [
+      "qc_email",
+      "qc_role",
+      "qc_access_code",
+      "qc_remember_device",
+      "email",
+      "business_email",
+      "role",
+      "access_code",
+      "userEmail"
+    ];
+
+    keys.forEach((k) => {
+      localStorage.removeItem(k);
+      sessionStorage.removeItem(k);
+    });
+  } catch {}
+
+  window.location.href = "/login";
+}
 
 export default function Header() {
-  const nav = useNavigate();
-
-  let signedIn = false;
-
-  try {
-    const email = (getAuthEmail() || "").trim();
-    signedIn = !!email && isBrokerOrShipper(email);
-  } catch {
-    signedIn = false;
-  }
-
-  function logout() {
-    try {
-      clearAuth();
-    } catch {}
-    nav("/login", { replace: true });
-  }
+  const signedIn = getSignedIn();
 
   return (
     <div style={styles.header}>
@@ -56,7 +73,7 @@ export default function Header() {
               Account
             </Link>
 
-            <button onClick={logout} style={styles.logoutBtn}>
+            <button onClick={doLogout} style={styles.logoutBtn}>
               Log Out
             </button>
           </>
