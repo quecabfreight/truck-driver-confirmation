@@ -6,8 +6,8 @@ export default function Feedback() {
   const [email, setEmail] = useState("");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
-  const [statusMsg, setStatusMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
+  const [statusMsg, setStatusMsg] = useState("");
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -42,11 +42,10 @@ export default function Feedback() {
       message
     ].join("\n");
 
-    const mailto = `mailto:quecabadbs@gmail.com?subject=${encodeURIComponent(
-      `AdbS Feedback — ${subject}`
-    )}&body=${encodeURIComponent(body)}`;
+    window.location.href =
+      `mailto:quecabadbs@gmail.com?subject=${encodeURIComponent(`AdbS Feedback — ${subject}`)}` +
+      `&body=${encodeURIComponent(body)}`;
 
-    window.location.href = mailto;
     setStatusMsg("Your email app should open now.");
   }
 
@@ -63,7 +62,7 @@ export default function Feedback() {
           <div style={styles.title}>Feedback / Support</div>
 
           <div style={styles.subtitle}>
-            Found a problem? Have an idea? Need help? Send it here.
+            Found a problem? Need help? Have an idea? Send it here.
           </div>
 
           <form onSubmit={handleSubmit} style={styles.form}>
@@ -90,7 +89,7 @@ export default function Feedback() {
 
             <textarea
               style={styles.textarea}
-              placeholder="Tell us what happened, what you expected, or what you'd like changed."
+              placeholder="Tell us what happened or what you’d like changed."
               value={message}
               onChange={(e) => setMessage(e.target.value)}
             />
@@ -105,9 +104,6 @@ export default function Feedback() {
 
           <div style={styles.altBox}>
             <div style={styles.altTitle}>Direct Contact</div>
-            <div style={styles.altText}>
-              If your email app does not open, email:
-            </div>
             <a href="mailto:quecabadbs@gmail.com" style={styles.link}>
               quecabadbs@gmail.com
             </a>
@@ -218,11 +214,6 @@ const styles = {
     fontSize: 16,
     fontWeight: 900,
     marginBottom: 6
-  },
-  altText: {
-    fontSize: 14,
-    opacity: 0.8,
-    marginBottom: 8
   },
   link: {
     color: "#8fc7ff",
