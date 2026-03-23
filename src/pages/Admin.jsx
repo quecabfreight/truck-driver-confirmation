@@ -1,4 +1,3 @@
-// /src/pages/Admin.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -56,7 +55,6 @@ export default function Admin() {
   const email = useMemo(() => safeStr(getAuthEmail()).toLowerCase(), []);
   const authorized = useMemo(() => !!email && isBrokerOrShipper(email), [email]);
 
-  // Defensive (App.jsx already guards it)
   useEffect(() => {
     if (!authorized) nav("/login", { replace: true });
   }, [authorized, nav]);
@@ -69,7 +67,9 @@ export default function Admin() {
     }
   });
 
-  const [mode, setMode] = useState("pending"); // pending | approved | all
+  const [showAdminKey, setShowAdminKey] = useState(false);
+
+  const [mode, setMode] = useState("pending");
   const [rows, setRows] = useState([]);
   const [total, setTotal] = useState(null);
 
@@ -131,7 +131,6 @@ export default function Admin() {
   }
 
   useEffect(() => {
-    // only load if there's a key typed in
     if (!safeStr(adminKey)) return;
     loadList();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -163,7 +162,6 @@ export default function Admin() {
 
       setStatusMsg(`Approved. Access code: ${data.access_code || "(none returned)"}`);
       setBusyId("");
-      // refresh list
       loadList();
     } catch {
       setBusyId("");
@@ -203,8 +201,6 @@ export default function Admin() {
       setLoading(false);
       setStatusMsg(`Reset OK. Access code: ${data.access_code || "(none returned)"}`);
       setResetEmail("");
-
-      // refresh list (in case it affects it)
       loadList();
     } catch {
       setLoading(false);
@@ -314,21 +310,30 @@ export default function Admin() {
               </div>
             </div>
             <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-              <button style={btn(false)} onClick={() => nav("/dashboard")}>Control Center</button>
+              <button style={btn(false)} onClick={() => nav("/")}>Control Center</button>
             </div>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1.1fr 0.9fr", gap: 14, marginTop: 14 }}>
             <div>
               <div style={label}>Admin Key (required for actions)</div>
-              <input
-                style={input}
-                value={adminKey}
-                onChange={(e) => saveAdminKey(e.target.value)}
-                placeholder="Enter ADBS_ADMIN_KEY"
-                type="password"
-                autoComplete="off"
-              />
+              <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8 }}>
+                <input
+                  style={input}
+                  value={adminKey}
+                  onChange={(e) => saveAdminKey(e.target.value)}
+                  placeholder="Enter ADBS_ADMIN_KEY"
+                  type={showAdminKey ? "text" : "password"}
+                  autoComplete="off"
+                />
+                <button
+                  type="button"
+                  style={btn(false)}
+                  onClick={() => setShowAdminKey((v) => !v)}
+                >
+                  {showAdminKey ? "Hide" : "Show"}
+                </button>
+              </div>
               <div style={muted}>Saved in this tab only. Current: {adminKey ? maskKey(adminKey) : "(none)"}.</div>
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 10 }}>
                 <button
@@ -488,8 +493,6 @@ export default function Admin() {
                   rows.map((r) => {
                     const id = safeStr(r.id);
                     const created = fmtDate(r.created_at);
-
-                    // try common column names without assuming your schema is perfect
                     const rEmail = safeStr(r.email || r.business_email || r.contact_email);
                     const name = safeStr(
                       r.legal_business_name ||
@@ -502,7 +505,7 @@ export default function Admin() {
                     const dot = safeStr(r.usdot || r.usdot_number || r.usdot_on_record);
                     const phone = safeStr(r.business_phone || r.phone);
                     const code = safeStr(r.access_code);
-                    const approved = r.approved === true;
+                    const approved = r.approved === true || safeStr(r.status).toLowerCase() === "approved";
 
                     return (
                       <tr key={id || created}>
@@ -571,7 +574,7 @@ export default function Admin() {
             </table>
 
             <div style={{ marginTop: 10, ...muted }}>
-              Tip: This page does not auto-refresh (on purpose). Use Load / Refresh.
+              Tip: This page does not auto-refresh. Use Load / Refresh.
             </div>
           </div>
         </div>
