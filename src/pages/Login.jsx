@@ -17,12 +17,16 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [accessCode, setAccessCode] = useState("");
   const [rememberDevice, setRememberDeviceState] = useState(true);
+  const [showAccessCode, setShowAccessCode] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     try {
-      const saved = (localStorage.getItem(LS_EMAIL) || "").trim();
+      const saved =
+        (localStorage.getItem(LS_EMAIL) || "").trim() ||
+        (sessionStorage.getItem(LS_EMAIL) || "").trim();
+
       if (saved) {
         nav("/", { replace: true });
       }
@@ -92,14 +96,24 @@ export default function Login() {
               autoComplete="email"
             />
 
-            <input
-              style={styles.input}
-              type="text"
-              placeholder="Access Code"
-              value={accessCode}
-              onChange={(e) => setAccessCode(formatAccessCodeTyping(e.target.value))}
-              autoComplete="off"
-            />
+            <div style={styles.codeWrap}>
+              <input
+                style={styles.input}
+                type={showAccessCode ? "text" : "password"}
+                placeholder="Access Code"
+                value={accessCode}
+                onChange={(e) => setAccessCode(formatAccessCodeTyping(e.target.value))}
+                autoComplete="off"
+              />
+
+              <button
+                type="button"
+                style={styles.toggleBtn}
+                onClick={() => setShowAccessCode((v) => !v)}
+              >
+                {showAccessCode ? "Hide" : "Show"}
+              </button>
+            </div>
 
             <label style={styles.checkRow}>
               <input
@@ -174,6 +188,12 @@ const styles = {
     display: "grid",
     gap: 12
   },
+  codeWrap: {
+    display: "grid",
+    gridTemplateColumns: "1fr auto",
+    gap: 8,
+    alignItems: "center"
+  },
   input: {
     width: "100%",
     padding: 13,
@@ -184,6 +204,17 @@ const styles = {
     fontSize: 16,
     boxSizing: "border-box",
     outline: "none"
+  },
+  toggleBtn: {
+    padding: "12px 14px",
+    borderRadius: 12,
+    border: "1px solid rgba(255,255,255,0.16)",
+    background: "rgba(255,255,255,0.06)",
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: 800,
+    cursor: "pointer",
+    whiteSpace: "nowrap"
   },
   checkRow: {
     display: "flex",
