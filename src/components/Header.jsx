@@ -49,6 +49,10 @@ export default function Header() {
           Control Center
         </Link>
 
+        <Link to="/activity" style={styles.link}>
+          Live Activity
+        </Link>
+
         <Link to="/how-it-works" style={styles.link}>
           How It Works
         </Link>
