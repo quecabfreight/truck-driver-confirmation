@@ -8,6 +8,7 @@ import HowItWorks from "./pages/HowItWorks.jsx";
 import ControlCenter from "./pages/ControlCenter.jsx";
 import Admin from "./pages/Admin.jsx";
 import Feedback from "./pages/Feedback.jsx";
+import LiveActivity from "./pages/LiveActivity.jsx";
 
 export default function App() {
   return (
@@ -19,6 +20,7 @@ export default function App() {
         <Route path="/how-it-works" element={<HowItWorks />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/feedback" element={<Feedback />} />
+        <Route path="/activity" element={<LiveActivity />} />
         <Route path="*" element={<Home />} />
       </Routes>
     </BrowserRouter>
