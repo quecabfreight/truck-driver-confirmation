@@ -149,23 +149,23 @@ export default function ControlCenter() {
     setAttempts([]);
     setIssuedQr("");
 
-    const usdot_digits = onlyDigits(usdotOnRecord);
-    const plate_upper = toUpperClean(plateOnRecord).trim();
-    const driver_digits = onlyDigits(driverPhone);
+    const usdotDigits = onlyDigits(usdotOnRecord);
+    const plateUpper = toUpperClean(plateOnRecord).trim();
+    const driverDigits = onlyDigits(driverPhone);
 
-    if (!usdot_digits) {
+    if (!usdotDigits) {
       setErrorMsg("Enter USDOT#");
       usdotRef.current?.focus();
       return;
     }
 
-    if (!plate_upper) {
+    if (!plateUpper) {
       setErrorMsg("Enter Plate");
       plateRef.current?.focus();
       return;
     }
 
-    if (driver_digits.length !== 10) {
+    if (driverDigits.length !== 10) {
       setErrorMsg("Enter Driver Phone");
       driverPhoneRef.current?.focus();
       return;
@@ -197,8 +197,8 @@ export default function ControlCenter() {
         dispatch_contact: String(carrierContact || "").trim() || null,
         dispatch_phone: formatPhoneHyphen(carrierPhone),
         driver_phone: formatPhoneHyphen(driverPhone),
-        usdot_on_record: usdot_digits,
-        plate_on_record: plate_upper,
+        usdot_on_record: usdotDigits,
+        plate_on_record: plateUpper,
         dock_pin: String(dockPin || "").trim() || null,
         starts_at,
         expires_at
@@ -226,6 +226,11 @@ export default function ControlCenter() {
         verify_url: verifyUrl,
         status: data?.status || "active",
         expires_at: data?.expires_at || expires_at || null,
+        load_id: payload.load_id || "",
+        dock_email: payload.dock_email || "",
+        driver_phone: payload.driver_phone || "",
+        usdot_on_record: payload.usdot_on_record || "",
+        plate_on_record: payload.plate_on_record || "",
         carrier_company: payload.carrier_company || "",
         carrier_contact_name: payload.dispatch_contact || "",
         carrier_contact_phone: payload.dispatch_phone || "",
@@ -250,7 +255,7 @@ export default function ControlCenter() {
 
     const raw = String(searchId || "").trim();
     if (!raw) {
-      setErrorMsg("Enter Verification ID, SmartLink, or Load ID");
+      setErrorMsg("Enter Verification ID, AdbS Verify Link, Load ID, email, phone, DOT, plate, or carrier");
       return;
     }
 
@@ -276,6 +281,11 @@ export default function ControlCenter() {
         verify_url: data?.verify_url || "",
         status: data?.status || "active",
         expires_at: data?.expires_at || null,
+        load_id: data?.load_id || "",
+        dock_email: data?.dock_email || "",
+        driver_phone: data?.driver_phone || "",
+        usdot_on_record: data?.usdot_on_record || "",
+        plate_on_record: data?.plate_on_record || "",
         carrier_company: data?.carrier_company || "",
         carrier_contact_name: data?.carrier_contact_name || "",
         carrier_contact_phone: data?.carrier_contact_phone || "",
@@ -404,7 +414,7 @@ export default function ControlCenter() {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 170px", gap: 10 }}>
             <input
               style={input}
-              placeholder="Verification ID, SmartLink, or Load ID"
+              placeholder="Verification ID, AdbS Verify Link, Load ID, email, phone, DOT, plate, or carrier"
               value={searchId}
               onChange={(e) => setSearchId(e.target.value)}
             />
@@ -524,7 +534,7 @@ export default function ControlCenter() {
           </div>
 
           <div style={card}>
-            <div style={sectionTitle}>Issued Verification</div>
+            <div style={sectionTitle}>Selected Verification</div>
 
             {!issued ? (
               <div style={{ opacity: 0.74 }}>No verification selected yet.</div>
@@ -536,7 +546,7 @@ export default function ControlCenter() {
                 </div>
 
                 <div>
-                  <div style={{ fontWeight: 900, marginBottom: 6 }}>AdbS SmartLink</div>
+                  <div style={{ fontWeight: 900, marginBottom: 6 }}>AdbS Verify Link</div>
                   <input style={input} value={issued.verify_url || ""} readOnly />
                 </div>
 
@@ -546,31 +556,32 @@ export default function ControlCenter() {
                 </div>
 
                 <div>
+                  <div style={{ fontWeight: 900, marginBottom: 6 }}>Load ID</div>
+                  <input style={input} value={issued.load_id || ""} readOnly />
+                </div>
+
+                <div>
                   <div style={{ fontWeight: 900, marginBottom: 6 }}>Expires</div>
                   <input style={input} value={formatDisplayDate(issued.expires_at)} readOnly />
                 </div>
 
-                {(issued.carrier_company || issued.carrier_contact_name || issued.carrier_contact_phone) ? (
-                  <div
-                    style={{
-                      border: "1px solid rgba(255,255,255,0.12)",
-                      borderRadius: 12,
-                      padding: 12,
-                      background: "rgba(255,255,255,0.04)"
-                    }}
-                  >
-                    <div style={{ fontSize: 15, fontWeight: 900, marginBottom: 8 }}>Carrier Contact</div>
-                    <div style={{ marginBottom: 6 }}>
-                      Carrier Company: <b>{issued.carrier_company || "(not provided)"}</b>
-                    </div>
-                    <div style={{ marginBottom: 6 }}>
-                      Carrier Contact Name: <b>{issued.carrier_contact_name || "(not provided)"}</b>
-                    </div>
-                    <div>
-                      Carrier Contact Phone: <b>{issued.carrier_contact_phone || "(not provided)"}</b>
-                    </div>
-                  </div>
-                ) : null}
+                <div
+                  style={{
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    borderRadius: 12,
+                    padding: 12,
+                    background: "rgba(255,255,255,0.04)"
+                  }}
+                >
+                  <div style={{ fontSize: 15, fontWeight: 900, marginBottom: 8 }}>Assigned Record</div>
+                  <div style={{ marginBottom: 6 }}>Dock Email: <b>{issued.dock_email || "(not provided)"}</b></div>
+                  <div style={{ marginBottom: 6 }}>Driver Phone: <b>{issued.driver_phone || "(not provided)"}</b></div>
+                  <div style={{ marginBottom: 6 }}>USDOT#: <b>{issued.usdot_on_record || "(not provided)"}</b></div>
+                  <div style={{ marginBottom: 6 }}>Plate: <b>{issued.plate_on_record || "(not provided)"}</b></div>
+                  <div style={{ marginBottom: 6 }}>Carrier Company: <b>{issued.carrier_company || "(not provided)"}</b></div>
+                  <div style={{ marginBottom: 6 }}>Carrier Contact: <b>{issued.carrier_contact_name || "(not provided)"}</b></div>
+                  <div>Carrier Contact Phone: <b>{issued.carrier_contact_phone || "(not provided)"}</b></div>
+                </div>
 
                 {issued.email_status ? (
                   <div
@@ -610,10 +621,10 @@ export default function ControlCenter() {
                     style={buttonSoft}
                     onClick={async () => {
                       const ok = await safeCopy(issued.verify_url || "");
-                      setStatusMsg(ok ? "AdbS SmartLink copied." : "Copy failed.");
+                      setStatusMsg(ok ? "AdbS Verify Link copied." : "Copy failed.");
                     }}
                   >
-                    Copy AdbS SmartLink
+                    Copy AdbS Verify Link
                   </button>
 
                   <button
@@ -650,10 +661,12 @@ export default function ControlCenter() {
                     {String(a.result || "").toLowerCase().includes("clear") ? "CLEAR" : "ATTEMPT"}
                   </div>
 
-                  <div style={{ fontSize: 14, lineHeight: 1.5 }}>
-                    DOT: <b>{a.entered_usdot || "(blank)"}</b>
+                  <div style={{ fontSize: 14, lineHeight: 1.55 }}>
+                    Time: <b>{a.checked_at ? new Date(a.checked_at).toLocaleString() : "(unknown)"}</b>
                     <br />
-                    Plate: <b>{a.entered_plate || "(blank)"}</b>
+                    DOT Entered: <b>{a.entered_usdot || "(blank)"}</b>
+                    <br />
+                    Plate Entered: <b>{a.entered_plate || "(blank)"}</b>
                     <br />
                     Driver Answered: <b>{String(a.driver_answered ?? "")}</b>
                     <br />
