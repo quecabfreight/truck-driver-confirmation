@@ -158,6 +158,7 @@ async function sbPatchLinkById(id, patch) {
 async function sendDockEmail({
   to,
   loadId,
+  token,
   verifyUrl,
   expiresAt
 }) {
@@ -168,7 +169,7 @@ async function sendDockEmail({
     throw new Error("Missing RESEND_API_KEY");
   }
 
-  const subject = `Truck-Driver Verification Required${loadId ? ` — ${loadId}` : ""}`;
+  const subject = `Truck-Driver Verification Required${loadId ? ` — ${loadId}` : ""} [${token}]`;
   const qrUrl = buildQrUrl(verifyUrl);
 
   const html = `
@@ -181,8 +182,9 @@ async function sendDockEmail({
 
         <div style="padding:22px;">
           ${loadId ? `<div style="margin-bottom:14px; font-size:15px;"><span style="color:#4b5563; font-weight:700;">Load ID:</span><span style="color:#111827; font-weight:800;"> ${loadId}</span></div>` : ""}
+          <div style="margin-bottom:14px; font-size:15px;"><span style="color:#4b5563; font-weight:700;">Verification ID:</span><span style="color:#111827; font-weight:800;"> ${token}</span></div>
 
-          <div style="margin:14px 0 8px; font-weight:800; font-size:16px; color:#111827;">AdbS SmartLink</div>
+          <div style="margin:14px 0 8px; font-weight:800; font-size:16px; color:#111827;">AdbS Verify Link</div>
           <div style="margin-bottom:16px; padding:14px; background:#f8fafc; border:1px solid #d8dee8; border-radius:12px;">
             <a href="${verifyUrl}" style="font-size:16px; font-weight:700; word-break:break-all; color:#0b57d0; text-decoration:none;">${verifyUrl}</a>
           </div>
@@ -196,7 +198,7 @@ async function sendDockEmail({
           <div style="margin:0 0 8px; font-weight:800; font-size:16px; color:#111827;">AdbS QR Code</div>
           <div style="margin-bottom:18px; padding:18px; background:#f8fafc; border:1px solid #d8dee8; border-radius:12px; text-align:center;">
             <img src="${qrUrl}" alt="AdbS QR Code" width="260" height="260" style="display:inline-block; background:#ffffff; padding:12px; border:1px solid #d8dee8; border-radius:12px;" />
-            <div style="margin-top:10px; color:#5a6472; font-size:13px;">Same destination as the AdbS SmartLink.</div>
+            <div style="margin-top:10px; color:#5a6472; font-size:13px;">Same destination as the AdbS Verify Link.</div>
           </div>
 
           <div style="font-weight:800; margin-bottom:6px; color:#111827;">Dock Instruction</div>
@@ -311,6 +313,7 @@ async function handleManageAction(req, body) {
         const sendResult = await sendDockEmail({
           to: dock_email,
           loadId: load_id,
+          token: newToken,
           verifyUrl: verify_public,
           expiresAt: inserted?.expires_at || link.expires_at || null
         });
@@ -405,6 +408,7 @@ export default async function handler(req, res) {
         const sendResult = await sendDockEmail({
           to: dock_email,
           loadId: load_id,
+          token,
           verifyUrl: verify_public,
           expiresAt: inserted?.expires_at || expires_at || null
         });
