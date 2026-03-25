@@ -24,6 +24,13 @@ function fmtDate(v) {
   }
 }
 
+function shortResult(v) {
+  const s = String(v || "").toUpperCase();
+  if (s.includes("CLEAR")) return "CLEAR";
+  if (s.includes("CAUTION")) return "CAUTION";
+  return s || "ACTIVE";
+}
+
 export default function LiveActivity() {
   const nav = useNavigate();
 
@@ -36,6 +43,7 @@ export default function LiveActivity() {
   const [statusMsg, setStatusMsg] = useState("");
   const [record, setRecord] = useState(null);
   const [attempts, setAttempts] = useState([]);
+  const [matches, setMatches] = useState([]);
 
   useEffect(() => {
     if (!authorized) {
@@ -45,6 +53,50 @@ export default function LiveActivity() {
 
   if (!authorized) return null;
 
+  async function safeJson(res) {
+    const text = await res.text();
+    try {
+      return JSON.parse(text);
+    } catch {
+      return { raw: text };
+    }
+  }
+
+  async function loadDetailByToken(token) {
+    if (!token) return;
+
+    setLoading(true);
+    setErrorMsg("");
+    setStatusMsg("");
+
+    try {
+      const res = await fetch("/api/manage_verify_link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "detail",
+          token
+        })
+      });
+
+      const data = await safeJson(res);
+
+      if (!res.ok || !data?.ok) {
+        setLoading(false);
+        setErrorMsg(data?.error || "Verification detail not found.");
+        return;
+      }
+
+      setRecord(data);
+      setAttempts(Array.isArray(data.attempts) ? data.attempts : []);
+      setStatusMsg("Verification loaded.");
+      setLoading(false);
+    } catch {
+      setLoading(false);
+      setErrorMsg("Network error loading verification.");
+    }
+  }
+
   async function runSearch() {
     const q = safeStr(query);
     if (!q) {
@@ -52,6 +104,7 @@ export default function LiveActivity() {
       setStatusMsg("");
       setRecord(null);
       setAttempts([]);
+      setMatches([]);
       return;
     }
 
@@ -60,6 +113,7 @@ export default function LiveActivity() {
     setStatusMsg("");
     setRecord(null);
     setAttempts([]);
+    setMatches([]);
 
     try {
       const res = await fetch("/api/manage_verify_link", {
@@ -71,7 +125,7 @@ export default function LiveActivity() {
         })
       });
 
-      const data = await res.json();
+      const data = await safeJson(res);
 
       if (!res.ok || !data?.ok) {
         setLoading(false);
@@ -79,9 +133,15 @@ export default function LiveActivity() {
         return;
       }
 
-      setRecord(data);
-      setAttempts(Array.isArray(data.attempts) ? data.attempts : []);
-      setStatusMsg("Verification loaded.");
+      const rows = Array.isArray(data.rows) ? data.rows : [];
+      setMatches(rows);
+
+      if (rows.length === 1) {
+        await loadDetailByToken(rows[0].token);
+        return;
+      }
+
+      setStatusMsg(`${rows.length} matching records found.`);
       setLoading(false);
     } catch {
       setLoading(false);
@@ -178,11 +238,45 @@ export default function LiveActivity() {
               placeholder="Search by Verification ID, AdbS Verify Link, Load ID, email, phone, DOT, plate, or carrier"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  runSearch();
+                }
+              }}
             />
             <button style={buttonPrimary} onClick={runSearch} disabled={loading}>
               {loading ? "Searching..." : "Search"}
             </button>
           </div>
+
+          {matches.length > 1 ? (
+            <div style={{ marginTop: 14, display: "grid", gap: 8 }}>
+              {matches.map((m) => (
+                <button
+                  key={m.token}
+                  type="button"
+                  onClick={() => loadDetailByToken(m.token)}
+                  style={{
+                    textAlign: "left",
+                    padding: "12px 14px",
+                    borderRadius: 12,
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    background: "rgba(255,255,255,0.04)",
+                    color: "#fff",
+                    cursor: "pointer"
+                  }}
+                >
+                  <div style={{ fontWeight: 900 }}>
+                    {m.load_id || "(no load id)"} | {shortResult(m.result_summary)} | {m.status || "active"}
+                  </div>
+                  <div style={{ opacity: 0.86, fontSize: 14, marginTop: 4, lineHeight: 1.5 }}>
+                    {m.carrier_company || "(no carrier)"} | DOT {m.usdot_on_record || "—"} | Plate {m.plate_on_record || "—"} | Phone {m.driver_phone || "—"} | {m.created_at ? new Date(m.created_at).toLocaleString() : "(unknown time)"}
+                  </div>
+                </button>
+              ))}
+            </div>
+          ) : null}
 
           {errorMsg ? <div style={{ marginTop: 12, color: "#ff9c9c", fontWeight: 700 }}>{errorMsg}</div> : null}
           {statusMsg ? <div style={{ marginTop: 12, color: "#ffffff" }}>{statusMsg}</div> : null}
@@ -197,6 +291,7 @@ export default function LiveActivity() {
                   Verification ID: <b>{fmt(record.token)}</b><br />
                   Load ID: <b>{fmt(record.load_id)}</b><br />
                   Status: <b>{fmt(record.status)}</b><br />
+                  Created: <b>{fmtDate(record.created_at)}</b><br />
                   Expires: <b>{record.expires_at ? fmtDate(record.expires_at) : "No Expire"}</b><br />
                   Dock Email: <b>{fmt(record.dock_email)}</b><br />
                   Driver Phone: <b>{fmt(record.driver_phone)}</b><br />
