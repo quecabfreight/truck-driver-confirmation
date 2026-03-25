@@ -56,76 +56,7 @@ function buildVerifyUrl(req, token) {
   return `${origin}/v.html?t=${token}&cv=4`;
 }
 
-async function lookupByToken(token) {
-  return await supabase
-    .from("verify_links")
-    .select("*")
-    .eq("token", token)
-    .maybeSingle();
-}
-
-async function lookupByLoadId(loadId) {
-  return await supabase
-    .from("verify_links")
-    .select("*")
-    .eq("load_id", loadId)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-}
-
-async function lookupByEmail(email) {
-  return await supabase
-    .from("verify_links")
-    .select("*")
-    .eq("dock_email", email)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-}
-
-async function lookupByDriverPhone(phone) {
-  const pretty = formatPhoneHyphen(phone);
-  return await supabase
-    .from("verify_links")
-    .select("*")
-    .eq("driver_phone", pretty)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-}
-
-async function lookupByCarrierCompany(company) {
-  return await supabase
-    .from("verify_links")
-    .select("*")
-    .ilike("carrier_company", company)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-}
-
-async function lookupByUsdot(usdot) {
-  return await supabase
-    .from("verify_links")
-    .select("*")
-    .eq("usdot_on_record", onlyDigits(usdot))
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-}
-
-async function lookupByPlate(plate) {
-  return await supabase
-    .from("verify_links")
-    .select("*")
-    .eq("plate_on_record", safeStr(plate).toUpperCase())
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-}
-
-async function lookupAttempts(token) {
+async function fetchAttemptsForToken(token) {
   const { data, error } = await supabase
     .from("verify_checks")
     .select("*")
@@ -136,62 +67,113 @@ async function lookupAttempts(token) {
   return Array.isArray(data) ? data : [];
 }
 
-async function broadLookup(raw) {
+function summarizeResult(attempts, status) {
+  if (Array.isArray(attempts) && attempts.length > 0) {
+    const latest = attempts[0];
+    return safeStr(latest.result || status || "active");
+  }
+  return safeStr(status || "active");
+}
+
+function compactRow(req, link, attempts = []) {
+  return {
+    token: link.token,
+    verification_id: link.token,
+    verify_url: buildVerifyUrl(req, link.token),
+    load_id: safeStr(link.load_id),
+    status: safeStr(link.status || "active"),
+    result_summary: summarizeResult(attempts, link.status),
+    attempts_count: Array.isArray(attempts) ? attempts.length : 0,
+    dock_email: safeStr(link.dock_email),
+    driver_phone: safeStr(link.driver_phone),
+    usdot_on_record: safeStr(link.usdot_on_record),
+    plate_on_record: safeStr(link.plate_on_record),
+    carrier_company: safeStr(link.carrier_company),
+    carrier_contact_name: safeStr(link.dispatch_contact),
+    carrier_contact_phone: safeStr(link.dispatch_phone),
+    created_at: link.created_at || "",
+    expires_at: link.expires_at || null
+  };
+}
+
+async function fetchLinkByToken(token) {
+  const { data, error } = await supabase
+    .from("verify_links")
+    .select("*")
+    .eq("token", token)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message || "Token lookup failed.");
+  return data || null;
+}
+
+async function fetchManyByField(field, value, mode = "eq") {
+  let query = supabase
+    .from("verify_links")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(25);
+
+  if (mode === "ilike") {
+    query = query.ilike(field, value);
+  } else {
+    query = query.eq(field, value);
+  }
+
+  const { data, error } = await query;
+  if (error) throw new Error(error.message || `${field} lookup failed.`);
+  return Array.isArray(data) ? data : [];
+}
+
+async function broadLookupMany(raw) {
   const q = safeStr(raw);
-  if (!q) return null;
+  if (!q) return [];
 
   const directToken = tokenFromAny(q);
 
-  // 1) token / verify link / verification id
+  // 1) token / verify link / verification id -> unique
   {
-    const { data, error } = await lookupByToken(directToken);
-    if (error) throw new Error(error.message || "Token lookup failed.");
-    if (data) return data;
+    const link = await fetchLinkByToken(directToken);
+    if (link) return [link];
   }
 
   // 2) load id
   {
-    const { data, error } = await lookupByLoadId(q);
-    if (error) throw new Error(error.message || "Load ID lookup failed.");
-    if (data) return data;
+    const rows = await fetchManyByField("load_id", q, "eq");
+    if (rows.length) return rows;
   }
 
   // 3) email
   if (q.includes("@")) {
-    const { data, error } = await lookupByEmail(q.toLowerCase());
-    if (error) throw new Error(error.message || "Email lookup failed.");
-    if (data) return data;
+    const rows = await fetchManyByField("dock_email", q.toLowerCase(), "eq");
+    if (rows.length) return rows;
   }
 
   // 4) phone
   if (onlyDigits(q).length >= 7) {
-    const { data, error } = await lookupByDriverPhone(q);
-    if (error) throw new Error(error.message || "Phone lookup failed.");
-    if (data) return data;
+    const rows = await fetchManyByField("driver_phone", formatPhoneHyphen(q), "eq");
+    if (rows.length) return rows;
   }
 
   // 5) usdot
   if (onlyDigits(q).length >= 4) {
-    const { data, error } = await lookupByUsdot(q);
-    if (error) throw new Error(error.message || "USDOT lookup failed.");
-    if (data) return data;
+    const rows = await fetchManyByField("usdot_on_record", onlyDigits(q), "eq");
+    if (rows.length) return rows;
   }
 
   // 6) plate
   {
-    const { data, error } = await lookupByPlate(q);
-    if (error) throw new Error(error.message || "Plate lookup failed.");
-    if (data) return data;
+    const rows = await fetchManyByField("plate_on_record", q.toUpperCase(), "eq");
+    if (rows.length) return rows;
   }
 
   // 7) carrier company
   {
-    const { data, error } = await lookupByCarrierCompany(q);
-    if (error) throw new Error(error.message || "Carrier company lookup failed.");
-    if (data) return data;
+    const rows = await fetchManyByField("carrier_company", `%${q}%`, "ilike");
+    if (rows.length) return rows;
   }
 
-  return null;
+  return [];
 }
 
 export default async function handler(req, res) {
@@ -203,39 +185,67 @@ export default async function handler(req, res) {
     const body = typeof req.body === "string" ? JSON.parse(req.body) : (req.body || {});
     const action = safeStr(body.action).toLowerCase();
 
-    if (action !== "lookup") {
-      return json(res, 400, { ok: false, error: "Unknown action." });
+    if (action === "lookup") {
+      const raw = safeStr(body.token || body.query || body.search || "");
+      if (!raw) {
+        return json(res, 400, {
+          ok: false,
+          error: "Enter Verification ID, AdbS Verify Link, Load ID, email, phone, DOT, plate, or carrier"
+        });
+      }
+
+      const rows = await broadLookupMany(raw);
+
+      if (!rows.length) {
+        return json(res, 404, { ok: false, error: "Verification not found." });
+      }
+
+      const compactRows = [];
+      for (const row of rows) {
+        const attempts = await fetchAttemptsForToken(row.token);
+        compactRows.push(compactRow(req, row, attempts));
+      }
+
+      return json(res, 200, {
+        ok: true,
+        mode: compactRows.length > 1 ? "multi" : "single",
+        rows: compactRows
+      });
     }
 
-    const raw = safeStr(body.token || body.query || body.search || "");
-    if (!raw) {
-      return json(res, 400, { ok: false, error: "Enter Verification ID, AdbS Verify Link, Load ID, email, phone, DOT, plate, or carrier." });
+    if (action === "detail") {
+      const token = safeStr(body.token);
+      if (!token) {
+        return json(res, 400, { ok: false, error: "Missing token." });
+      }
+
+      const link = await fetchLinkByToken(token);
+      if (!link) {
+        return json(res, 404, { ok: false, error: "Verification not found." });
+      }
+
+      const attempts = await fetchAttemptsForToken(token);
+
+      return json(res, 200, {
+        ok: true,
+        token: link.token,
+        verify_url: buildVerifyUrl(req, link.token),
+        status: link.status || "active",
+        expires_at: link.expires_at || null,
+        load_id: link.load_id || "",
+        dock_email: link.dock_email || "",
+        driver_phone: link.driver_phone || "",
+        usdot_on_record: link.usdot_on_record || "",
+        plate_on_record: link.plate_on_record || "",
+        carrier_company: link.carrier_company || "",
+        carrier_contact_name: link.dispatch_contact || "",
+        carrier_contact_phone: link.dispatch_phone || "",
+        created_at: link.created_at || "",
+        attempts
+      });
     }
 
-    const link = await broadLookup(raw);
-
-    if (!link) {
-      return json(res, 404, { ok: false, error: "Verification not found." });
-    }
-
-    const attempts = await lookupAttempts(link.token);
-
-    return json(res, 200, {
-      ok: true,
-      token: link.token,
-      verify_url: buildVerifyUrl(req, link.token),
-      status: link.status || "active",
-      expires_at: link.expires_at || null,
-      load_id: link.load_id || "",
-      dock_email: link.dock_email || "",
-      driver_phone: link.driver_phone || "",
-      usdot_on_record: link.usdot_on_record || "",
-      plate_on_record: link.plate_on_record || "",
-      carrier_company: link.carrier_company || "",
-      carrier_contact_name: link.dispatch_contact || "",
-      carrier_contact_phone: link.dispatch_phone || "",
-      attempts
-    });
+    return json(res, 400, { ok: false, error: "Unknown action." });
   } catch (e) {
     return json(res, 500, { ok: false, error: String(e?.message || "Server error") });
   }
