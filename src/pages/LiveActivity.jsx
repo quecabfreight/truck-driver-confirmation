@@ -214,4 +214,145 @@ export default function LiveActivity() {
     background: "rgba(40,110,190,0.35)",
     color: "#ffffff",
     fontSize: 16,
-    fontWeight: 900
+    fontWeight: 900,
+    cursor: "pointer"
+  };
+
+  return (
+    <div style={pageWrap}>
+      <Header />
+
+      <div style={heroLogoWrap}>
+        <img src="/qc-logo.png" alt="QueCab AdbS" style={heroLogo} />
+      </div>
+
+      <div style={outer}>
+        <div style={title}>Live Activity</div>
+
+        <div style={{ ...card, marginBottom: 16 }}>
+          <div style={sectionTitle}>Universal Verification Lookup</div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 180px", gap: 10 }}>
+            <input
+              style={input}
+              placeholder="Search by Verification ID, AdbS Verify Link, Load ID, email, phone, DOT, plate, or carrier"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  runSearch();
+                }
+              }}
+            />
+            <button style={buttonPrimary} onClick={runSearch} disabled={loading}>
+              {loading ? "Searching..." : "Search"}
+            </button>
+          </div>
+
+          {matches.length > 1 ? (
+            <div style={{ marginTop: 14, display: "grid", gap: 8 }}>
+              {matches.map((m) => (
+                <button
+                  key={m.token}
+                  type="button"
+                  onClick={() => loadDetailByToken(m.token)}
+                  style={{
+                    textAlign: "left",
+                    padding: "12px 14px",
+                    borderRadius: 12,
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    background: "rgba(255,255,255,0.04)",
+                    color: "#fff",
+                    cursor: "pointer"
+                  }}
+                >
+                  <div style={{ fontWeight: 900 }}>
+                    {m.load_id || "(no load id)"} | {shortResult(m.result_summary)} | {m.status || "active"}
+                  </div>
+                  <div style={{ opacity: 0.86, fontSize: 14, marginTop: 4, lineHeight: 1.5 }}>
+                    {m.carrier_company || "(no carrier)"} | DOT {m.usdot_on_record || "—"} | Plate {m.plate_on_record || "—"} | Phone {m.driver_phone || "—"} | {m.created_at ? new Date(m.created_at).toLocaleString() : "(unknown time)"}
+                  </div>
+                </button>
+              ))}
+            </div>
+          ) : null}
+
+          {errorMsg ? <div style={{ marginTop: 12, color: "#ff9c9c", fontWeight: 700 }}>{errorMsg}</div> : null}
+          {statusMsg ? <div style={{ marginTop: 12, color: "#ffffff" }}>{statusMsg}</div> : null}
+        </div>
+
+        {record ? (
+          <>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              <div style={card}>
+                <div style={sectionTitle}>What Was Assigned?</div>
+                <div style={{ lineHeight: 1.7, fontSize: 15 }}>
+                  Verification ID: <b>{fmt(record.token)}</b><br />
+                  Load ID: <b>{fmt(record.load_id)}</b><br />
+                  Status: <b>{fmt(record.status)}</b><br />
+                  Created: <b>{fmtDate(record.created_at)}</b><br />
+                  Expires: <b>{record.expires_at ? fmtDate(record.expires_at) : "No Expire"}</b><br />
+                  Dock Email: <b>{fmt(record.dock_email)}</b><br />
+                  Driver Phone: <b>{fmt(record.driver_phone)}</b><br />
+                  Assigned USDOT#: <b>{fmt(record.usdot_on_record)}</b><br />
+                  Assigned Plate: <b>{fmt(record.plate_on_record)}</b><br />
+                  Carrier Company: <b>{fmt(record.carrier_company)}</b><br />
+                  Carrier Contact: <b>{fmt(record.carrier_contact_name)}</b><br />
+                  Carrier Contact Phone: <b>{fmt(record.carrier_contact_phone)}</b><br />
+                  AdbS Verify Link: <b style={{ wordBreak: "break-all" }}>{fmt(record.verify_url)}</b>
+                </div>
+              </div>
+
+              <div style={card}>
+                <div style={sectionTitle}>What Actually Happened?</div>
+
+                {attempts.length === 0 ? (
+                  <div style={{ opacity: 0.8 }}>No attempts logged yet.</div>
+                ) : (
+                  <div style={{ display: "grid", gap: 10 }}>
+                    {attempts.map((a, i) => (
+                      <div
+                        key={i}
+                        style={{
+                          border: "1px solid rgba(255,255,255,0.10)",
+                          borderRadius: 12,
+                          padding: 12,
+                          background: "rgba(255,255,255,0.04)"
+                        }}
+                      >
+                        <div style={{ fontWeight: 900, marginBottom: 6 }}>
+                          {String(a.result || "").toLowerCase().includes("clear") ? "CLEAR" : "ATTEMPT"}
+                        </div>
+
+                        <div style={{ fontSize: 14, lineHeight: 1.6 }}>
+                          Time: <b>{fmtDate(a.checked_at)}</b><br />
+                          Entered DOT: <b>{fmt(a.entered_usdot)}</b><br />
+                          Entered Plate: <b>{fmt(a.entered_plate)}</b><br />
+                          Driver Answered: <b>{String(a.driver_answered)}</b><br />
+                          Result: <b>{fmt(a.result)}</b>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div style={{ ...card, marginTop: 16 }}>
+              <div style={sectionTitle}>Why This Matters</div>
+              <div style={{ lineHeight: 1.7, fontSize: 15 }}>
+                This page gives a broker a defensible record of:
+                <br />• what was assigned
+                <br />• what the dock actually entered
+                <br />• whether the driver-answer check passed
+                <br />• what the system concluded
+                <br />• when each attempt happened
+              </div>
+            </div>
+          </>
+        ) : null}
+      </div>
+    </div>
+  );
+}
