@@ -84,9 +84,14 @@ export default function ControlCenter() {
   const authorized = !!email && isBrokerOrShipper(email);
 
   const loadIdRef = useRef(null);
+  const dockEmailRef = useRef(null);
+  const carrierCompanyRef = useRef(null);
+  const carrierContactRef = useRef(null);
+  const carrierPhoneRef = useRef(null);
+  const driverPhoneRef = useRef(null);
   const usdotRef = useRef(null);
   const plateRef = useRef(null);
-  const driverPhoneRef = useRef(null);
+  const dockPinRef = useRef(null);
 
   const [loadId, setLoadId] = useState("");
   const [dockEmail, setDockEmail] = useState("");
@@ -149,6 +154,23 @@ export default function ControlCenter() {
     setMode("auto");
     setStartsAt(nowLocalDatetime());
     setExpiresAt(plusHoursLocalDatetime(24));
+  }
+
+  function focusRef(ref) {
+    if (ref?.current) {
+      ref.current.focus();
+      ref.current.select?.();
+    }
+  }
+
+  function handleFieldEnter(e, nextRef = null, submit = false) {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    if (submit) {
+      issueLink();
+      return;
+    }
+    focusRef(nextRef);
   }
 
   async function issueLink() {
@@ -251,6 +273,7 @@ export default function ControlCenter() {
       setIssuedQr(qrDataUrl);
       setStatusMsg("AdbS Verification issued");
       clearIssuedForm();
+      focusRef(loadIdRef);
     } catch {
       setErrorMsg("Network error");
     }
@@ -470,6 +493,12 @@ export default function ControlCenter() {
               placeholder="Verification ID, AdbS Verify Link, Load ID, email, phone, DOT, plate, or carrier"
               value={searchId}
               onChange={(e) => setSearchId(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  searchVerification();
+                }
+              }}
             />
             <button style={buttonPrimary} onClick={searchVerification}>
               Search
@@ -524,34 +553,43 @@ export default function ControlCenter() {
                 placeholder="Load ID"
                 value={loadId}
                 onChange={(e) => setLoadId(e.target.value)}
+                onKeyDown={(e) => handleFieldEnter(e, dockEmailRef)}
               />
 
               <input
+                ref={dockEmailRef}
                 style={input}
                 placeholder="Dock Email"
                 value={dockEmail}
                 onChange={(e) => setDockEmail(e.target.value)}
+                onKeyDown={(e) => handleFieldEnter(e, carrierCompanyRef)}
               />
 
               <input
+                ref={carrierCompanyRef}
                 style={input}
                 placeholder="Carrier Company"
                 value={carrierCompany}
                 onChange={(e) => setCarrierCompany(e.target.value)}
+                onKeyDown={(e) => handleFieldEnter(e, carrierContactRef)}
               />
 
               <input
+                ref={carrierContactRef}
                 style={input}
                 placeholder="Carrier Contact Name"
                 value={carrierContact}
                 onChange={(e) => setCarrierContact(e.target.value)}
+                onKeyDown={(e) => handleFieldEnter(e, carrierPhoneRef)}
               />
 
               <input
+                ref={carrierPhoneRef}
                 style={input}
                 placeholder="Carrier Contact Phone"
                 value={carrierPhone}
                 onChange={(e) => setCarrierPhone(formatPhoneHyphen(e.target.value))}
+                onKeyDown={(e) => handleFieldEnter(e, driverPhoneRef)}
               />
 
               <input
@@ -560,6 +598,7 @@ export default function ControlCenter() {
                 placeholder="Driver Phone"
                 value={driverPhone}
                 onChange={(e) => setDriverPhone(formatPhoneHyphen(e.target.value))}
+                onKeyDown={(e) => handleFieldEnter(e, usdotRef)}
               />
 
               <input
@@ -568,6 +607,7 @@ export default function ControlCenter() {
                 placeholder="USDOT#"
                 value={usdotOnRecord}
                 onChange={(e) => setUsdotOnRecord(onlyDigits(e.target.value))}
+                onKeyDown={(e) => handleFieldEnter(e, plateRef)}
               />
 
               <input
@@ -576,13 +616,16 @@ export default function ControlCenter() {
                 placeholder="Plate"
                 value={plateOnRecord}
                 onChange={(e) => setPlateOnRecord(toUpperClean(e.target.value))}
+                onKeyDown={(e) => handleFieldEnter(e, dockPinRef)}
               />
 
               <input
+                ref={dockPinRef}
                 style={input}
                 placeholder="Dock PIN (optional)"
                 value={dockPin}
                 onChange={(e) => setDockPin(onlyDigits(e.target.value).slice(0, 6))}
+                onKeyDown={(e) => handleFieldEnter(e, null, true)}
               />
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
