@@ -47,6 +47,13 @@ function formatDisplayDate(value) {
   return d.toLocaleString();
 }
 
+function shortResult(v) {
+  const s = String(v || "").toUpperCase();
+  if (s.includes("CLEAR")) return "CLEAR";
+  if (s.includes("CAUTION")) return "CAUTION";
+  return s || "ACTIVE";
+}
+
 async function safeCopy(text) {
   try {
     await navigator.clipboard.writeText(text);
@@ -104,6 +111,7 @@ export default function ControlCenter() {
   const [issued, setIssued] = useState(null);
   const [issuedQr, setIssuedQr] = useState("");
   const [attempts, setAttempts] = useState([]);
+  const [matches, setMatches] = useState([]);
 
   useEffect(() => {
     if (!authorized) {
@@ -147,6 +155,7 @@ export default function ControlCenter() {
     setErrorMsg("");
     setStatusMsg("");
     setAttempts([]);
+    setMatches([]);
     setIssuedQr("");
 
     const usdotDigits = onlyDigits(usdotOnRecord);
@@ -192,7 +201,7 @@ export default function ControlCenter() {
     try {
       const payload = {
         load_id: String(loadId || "").trim() || null,
-        dock_email: String(dockEmail || "").trim() || null,
+        dock_email: String(dockEmail || "").trim().toLowerCase() || null,
         carrier_company: String(carrierCompany || "").trim() || null,
         dispatch_contact: String(carrierContact || "").trim() || null,
         dispatch_phone: formatPhoneHyphen(carrierPhone),
@@ -235,7 +244,8 @@ export default function ControlCenter() {
         carrier_contact_name: payload.dispatch_contact || "",
         carrier_contact_phone: payload.dispatch_phone || "",
         email_status: data?.email_status || "",
-        email_error: data?.email_error || ""
+        email_error: data?.email_error || "",
+        created_at: new Date().toISOString()
       });
 
       setIssuedQr(qrDataUrl);
@@ -248,10 +258,63 @@ export default function ControlCenter() {
     setLoading(false);
   }
 
+  async function loadDetailByToken(token) {
+    if (!token) return;
+
+    setErrorMsg("");
+    setStatusMsg("");
+    setAttempts([]);
+    setIssuedQr("");
+
+    try {
+      const res = await fetch("/api/manage_verify_link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "detail",
+          token
+        })
+      });
+
+      const data = await safeJson(res);
+
+      if (!res.ok) {
+        setErrorMsg(data?.error || "Verification detail not found");
+        return;
+      }
+
+      setIssued({
+        verification_id: data?.token || "",
+        verify_url: data?.verify_url || "",
+        status: data?.status || "active",
+        expires_at: data?.expires_at || null,
+        load_id: data?.load_id || "",
+        dock_email: data?.dock_email || "",
+        driver_phone: data?.driver_phone || "",
+        usdot_on_record: data?.usdot_on_record || "",
+        plate_on_record: data?.plate_on_record || "",
+        carrier_company: data?.carrier_company || "",
+        carrier_contact_name: data?.carrier_contact_name || "",
+        carrier_contact_phone: data?.carrier_contact_phone || "",
+        email_status: "",
+        email_error: "",
+        created_at: data?.created_at || ""
+      });
+
+      setIssuedQr(makeQrDataUrl(data?.verify_url || ""));
+      setAttempts(Array.isArray(data?.attempts) ? data.attempts : []);
+      setStatusMsg("Verification loaded.");
+    } catch {
+      setErrorMsg("Detail load failed");
+    }
+  }
+
   async function searchVerification() {
     setErrorMsg("");
     setStatusMsg("");
     setAttempts([]);
+    setMatches([]);
+    setIssuedQr("");
 
     const raw = String(searchId || "").trim();
     if (!raw) {
@@ -276,26 +339,16 @@ export default function ControlCenter() {
         return;
       }
 
-      setIssued({
-        verification_id: data?.token || "",
-        verify_url: data?.verify_url || "",
-        status: data?.status || "active",
-        expires_at: data?.expires_at || null,
-        load_id: data?.load_id || "",
-        dock_email: data?.dock_email || "",
-        driver_phone: data?.driver_phone || "",
-        usdot_on_record: data?.usdot_on_record || "",
-        plate_on_record: data?.plate_on_record || "",
-        carrier_company: data?.carrier_company || "",
-        carrier_contact_name: data?.carrier_contact_name || "",
-        carrier_contact_phone: data?.carrier_contact_phone || "",
-        email_status: "",
-        email_error: ""
-      });
+      const rows = Array.isArray(data?.rows) ? data.rows : [];
+      setMatches(rows);
 
-      setIssuedQr(makeQrDataUrl(data?.verify_url || ""));
-      setAttempts(Array.isArray(data?.attempts) ? data.attempts : []);
-      setStatusMsg("Verification loaded.");
+      if (rows.length === 1) {
+        await loadDetailByToken(rows[0].token);
+      } else {
+        setIssued(null);
+        setAttempts([]);
+        setStatusMsg(`${rows.length} matching records found.`);
+      }
     } catch {
       setErrorMsg("Search failed");
     }
@@ -422,6 +475,42 @@ export default function ControlCenter() {
               Search
             </button>
           </div>
+
+          {matches.length > 1 ? (
+            <div style={{ marginTop: 14, display: "grid", gap: 8 }}>
+              {matches.map((m) => (
+                <button
+                  key={m.token}
+                  type="button"
+                  onClick={() => loadDetailByToken(m.token)}
+                  style={{
+                    textAlign: "left",
+                    padding: "12px 14px",
+                    borderRadius: 12,
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    background: "rgba(255,255,255,0.04)",
+                    color: "#fff",
+                    cursor: "pointer"
+                  }}
+                >
+                  <div style={{ fontWeight: 900 }}>
+                    {m.load_id || "(no load id)"} | {shortResult(m.result_summary)} | {m.status || "active"}
+                  </div>
+                  <div style={{ opacity: 0.86, fontSize: 14, marginTop: 4, lineHeight: 1.5 }}>
+                    {m.carrier_company || "(no carrier)"} | DOT {m.usdot_on_record || "—"} | Plate {m.plate_on_record || "—"} | Phone {m.driver_phone || "—"} | {m.created_at ? new Date(m.created_at).toLocaleString() : "(unknown time)"}
+                  </div>
+                </button>
+              ))}
+            </div>
+          ) : null}
+
+          {errorMsg ? (
+            <div style={{ color: "#ff9c9c", fontWeight: 700, marginTop: 12 }}>{errorMsg}</div>
+          ) : null}
+
+          {statusMsg ? (
+            <div style={{ color: "#ffffff", marginTop: 12 }}>{statusMsg}</div>
+          ) : null}
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1.12fr 0.88fr", gap: 16 }}>
@@ -522,14 +611,6 @@ export default function ControlCenter() {
               <button style={buttonPrimary} onClick={issueLink} disabled={loading}>
                 {loading ? "Issuing..." : "Issue AdbS Verification"}
               </button>
-
-              {errorMsg ? (
-                <div style={{ color: "#ff9c9c", fontWeight: 700 }}>{errorMsg}</div>
-              ) : null}
-
-              {statusMsg ? (
-                <div style={{ color: "#ffffff" }}>{statusMsg}</div>
-              ) : null}
             </div>
           </div>
 
