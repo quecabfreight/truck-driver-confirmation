@@ -131,43 +131,36 @@ async function broadLookupMany(raw) {
 
   const directToken = tokenFromAny(q);
 
-  // 1) token / verify link / verification id -> unique
   {
     const link = await fetchLinkByToken(directToken);
     if (link) return [link];
   }
 
-  // 2) load id
   {
     const rows = await fetchManyByField("load_id", q, "eq");
     if (rows.length) return rows;
   }
 
-  // 3) email
   if (q.includes("@")) {
     const rows = await fetchManyByField("dock_email", q.toLowerCase(), "eq");
     if (rows.length) return rows;
   }
 
-  // 4) phone
   if (onlyDigits(q).length >= 7) {
     const rows = await fetchManyByField("driver_phone", formatPhoneHyphen(q), "eq");
     if (rows.length) return rows;
   }
 
-  // 5) usdot
   if (onlyDigits(q).length >= 4) {
     const rows = await fetchManyByField("usdot_on_record", onlyDigits(q), "eq");
     if (rows.length) return rows;
   }
 
-  // 6) plate
   {
     const rows = await fetchManyByField("plate_on_record", q.toUpperCase(), "eq");
     if (rows.length) return rows;
   }
 
-  // 7) carrier company
   {
     const rows = await fetchManyByField("carrier_company", `%${q}%`, "ilike");
     if (rows.length) return rows;
@@ -242,6 +235,36 @@ export default async function handler(req, res) {
         carrier_contact_phone: link.dispatch_phone || "",
         created_at: link.created_at || "",
         attempts
+      });
+    }
+
+    if (action === "set_status") {
+      const token = safeStr(body.token);
+      const status = safeStr(body.status).toLowerCase();
+
+      if (!token || !status) {
+        return json(res, 400, { ok: false, error: "Missing token or status." });
+      }
+
+      if (!["active", "revoked", "locked", "cleared"].includes(status)) {
+        return json(res, 400, { ok: false, error: "Invalid status." });
+      }
+
+      const { data, error } = await supabase
+        .from("verify_links")
+        .update({ status })
+        .eq("token", token)
+        .select("*")
+        .maybeSingle();
+
+      if (error) {
+        return json(res, 500, { ok: false, error: error.message || "Could not update status." });
+      }
+
+      return json(res, 200, {
+        ok: true,
+        token,
+        status: data?.status || status
       });
     }
 
