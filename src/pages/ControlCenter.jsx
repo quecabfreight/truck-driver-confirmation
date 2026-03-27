@@ -377,6 +377,44 @@ export default function ControlCenter() {
     }
   }
 
+  async function setVerificationStatus(nextStatus) {
+    if (!issued?.verification_id) return;
+
+    try {
+      const res = await fetch("/api/manage_verify_link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "set_status",
+          token: issued.verification_id,
+          status: nextStatus
+        })
+      });
+
+      const data = await safeJson(res);
+
+      if (!res.ok || !data?.ok) {
+        setErrorMsg(data?.error || "Status update failed.");
+        return;
+      }
+
+      setIssued((prev) => ({
+        ...prev,
+        status: data.status || nextStatus
+      }));
+
+      setStatusMsg(
+        nextStatus === "revoked"
+          ? "Verification revoked."
+          : nextStatus === "active"
+          ? "Verification reactivated."
+          : "Verification updated."
+      );
+    } catch {
+      setErrorMsg("Status update failed.");
+    }
+  }
+
   const pageWrap = {
     minHeight: "100vh",
     background: "transparent"
@@ -438,6 +476,30 @@ export default function ControlCenter() {
     borderRadius: 12,
     border: "1px solid rgba(255,255,255,0.18)",
     background: "rgba(255,255,255,0.06)",
+    color: "#ffffff",
+    fontSize: 15,
+    fontWeight: 900,
+    cursor: "pointer"
+  };
+
+  const buttonDanger = {
+    width: "100%",
+    padding: 12,
+    borderRadius: 12,
+    border: "1px solid rgba(255,80,80,0.55)",
+    background: "rgba(160,30,30,0.28)",
+    color: "#ffffff",
+    fontSize: 15,
+    fontWeight: 900,
+    cursor: "pointer"
+  };
+
+  const buttonSuccess = {
+    width: "100%",
+    padding: 12,
+    borderRadius: 12,
+    border: "1px solid rgba(80,200,120,0.55)",
+    background: "rgba(30,120,60,0.28)",
     color: "#ffffff",
     fontSize: 15,
     fontWeight: 900,
@@ -759,6 +821,22 @@ export default function ControlCenter() {
                     }}
                   >
                     Copy Verification ID
+                  </button>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <button
+                    style={buttonDanger}
+                    onClick={() => setVerificationStatus("revoked")}
+                  >
+                    Revoke Verification
+                  </button>
+
+                  <button
+                    style={buttonSuccess}
+                    onClick={() => setVerificationStatus("active")}
+                  >
+                    Reactivate Verification
                   </button>
                 </div>
               </div>
