@@ -214,12 +214,42 @@ font-size:13px;
 opacity:.74;
 margin-top:16px;
 }
+
+.revokedWrap{
+display:flex;
+align-items:center;
+justify-content:center;
+min-height:70vh;
+}
+
+.revokedBox{
+max-width:760px;
+margin:auto;
+background:rgba(120,0,0,.28);
+border:1px solid rgba(255,80,80,.45);
+border-radius:18px;
+padding:34px 26px;
+box-shadow:0 14px 40px rgba(0,0,0,.35);
+}
+
+.revokedTitle{
+font-size:34px;
+font-weight:900;
+color:#ff6666;
+margin-bottom:12px;
+}
+
+.revokedSub{
+font-size:22px;
+font-weight:900;
+color:#fff;
+}
 </style>
 </head>
 
 <body>
 
-<div class="container">
+<div class="container" id="appContainer">
 
 <div class="hero">AdbS TRUCK-DRIVER VERIFICATION</div>
 
@@ -302,6 +332,7 @@ QueCab AdbS — Developed by Omnimobile Inc. for QueCab Inc.
 <script>
 let soundEnabled=true
 let driverAnswered=null
+let verificationRevoked=false
 
 function toggleSound(){
 soundEnabled=!soundEnabled
@@ -336,20 +367,20 @@ link.innerText=formatted
 link.style.display="inline-block"
 unavailable.style.display="none"
 }else{
-link.removeAttribute("href")
-link.innerText=""
 link.style.display="none"
 unavailable.style.display="inline-block"
 }
 }
 
-function setAuthority(data){
-document.getElementById("carrierCompany").innerText=data.carrier_company||"(not provided)"
-document.getElementById("carrierContact").innerText=data.carrier_contact_name||"(not provided)"
-document.getElementById("carrierPhone").innerText=data.carrier_contact_phone||"(not provided)"
-document.getElementById("verificationId").innerText=data.verification_id||"(unknown)"
-document.getElementById("verificationTime").innerText=data.verified_at||"(unknown)"
-document.getElementById("authority").style.display="block"
+function showRevokedScreen(){
+document.body.innerHTML = `
+  <div class="revokedWrap">
+    <div class="revokedBox">
+      <div class="revokedTitle">⚠️ VERIFICATION REVOKED</div>
+      <div class="revokedSub">DO NOT LOAD</div>
+    </div>
+  </div>
+`;
 }
 
 async function loadDriverPhone(){
@@ -357,30 +388,53 @@ const token=getToken()
 if(!token)return
 
 try{
-const res=await fetch(`/api/verify_driver?token=${encodeURIComponent(token)}`,{cache:"no-store"})
+const res=await fetch("/api/manage_verify_link",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+action:"detail",
+token
+})
+})
+
 const data=await res.json()
 
 if(res.ok){
+if(String(data.status||"").toLowerCase()==="revoked"){
+verificationRevoked=true
+showRevokedScreen()
+return
+}
+
 renderPhone(data.driver_phone||"")
-setAuthority(data)
-}else{
-renderPhone("")
+
+document.getElementById("carrierCompany").innerText=data.carrier_company||"(not provided)"
+document.getElementById("carrierContact").innerText=data.carrier_contact_name||"(not provided)"
+document.getElementById("carrierPhone").innerText=data.carrier_contact_phone||"(not provided)"
+document.getElementById("verificationId").innerText=data.token||"(unknown)"
+
+document.getElementById("authority").style.display="block"
 }
-}catch{
-renderPhone("")
-}
+}catch{}
 }
 
 async function verify(){
+if(verificationRevoked){
+showRevokedScreen()
+return
+}
+
 document.body.classList.remove("flash")
 
 const token=getToken()
 const usdot=document.getElementById("usdot").value.trim()
+
 const plateInput=document.getElementById("plate")
 const plate=plateInput.value.trim().toUpperCase()
-const result=document.getElementById("result")
 
 plateInput.value=plate
+
+const result=document.getElementById("result")
 
 if(driverAnswered===null){
 result.innerText="Select YES or NO for phone answer"
@@ -389,6 +443,22 @@ return
 }
 
 try{
+const detailRes=await fetch("/api/manage_verify_link",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+action:"detail",
+token
+})
+})
+const detailData=await detailRes.json().catch(()=>({}))
+
+if(detailRes.ok && String(detailData.status||"").toLowerCase()==="revoked"){
+verificationRevoked=true
+showRevokedScreen()
+return
+}
+
 const res=await fetch("/api/verify_driver",{
 method:"POST",
 headers:{"Content-Type":"application/json"},
@@ -402,23 +472,26 @@ driver_answered:driverAnswered
 
 const data=await res.json()
 
-if(!res.ok){
-result.innerText=data.error||"Verification Error"
-result.className="result caution"
-return
-}
-
 renderPhone(data.driver_phone||"")
-setAuthority(data)
+
+document.getElementById("carrierCompany").innerText=data.carrier_company||"(not provided)"
+document.getElementById("carrierContact").innerText=data.carrier_contact_name||"(not provided)"
+document.getElementById("carrierPhone").innerText=data.carrier_contact_phone||"(not provided)"
+document.getElementById("verificationId").innerText=data.verification_id||"(unknown)"
+document.getElementById("verificationTime").innerText=data.verified_at||new Date().toLocaleString()
+
+document.getElementById("authority").style.display="block"
 
 if(String(data.result||"").toLowerCase().includes("clear")){
 result.innerText="CLEAR TO LOAD"
 result.className="result clear"
 }else{
 document.body.classList.add("flash")
+
 if(soundEnabled){
 try{document.getElementById("alertSound").play()}catch{}
 }
+
 result.innerText="CAUTION — DO NOT LOAD"
 result.className="result caution"
 }
