@@ -49,6 +49,10 @@ export default function Header() {
           Control Center
         </Link>
 
+        <Link to="/live" style={styles.link}>
+          Live Sessions
+        </Link>
+
         <Link to="/activity" style={styles.link}>
           Live Activity
         </Link>
