@@ -10,13 +10,13 @@ export default async function handler(req, res) {
   try {
     const apiKey = String(process.env.RESEND_API_KEY || "").trim();
     const from = String(process.env.ADBS_EMAIL_FROM || "").trim();
-    const to = String(process.env.ADBS_ALERT_EMAIL || "").trim(); // use your own test email here
+    const to = String(process.env.ADBS_ALERT_EMAIL || "").trim();
 
     if (!apiKey) {
       return json(res, 500, {
         ok: false,
         step: "env",
-        error: "Missing RESEND_API_KEY in Vercel environment variables."
+        error: "Missing RESEND_API_KEY in Vercel."
       });
     }
 
@@ -24,7 +24,7 @@ export default async function handler(req, res) {
       return json(res, 500, {
         ok: false,
         step: "env",
-        error: "Missing ADBS_EMAIL_FROM in Vercel environment variables."
+        error: "Missing ADBS_EMAIL_FROM in Vercel."
       });
     }
 
@@ -32,7 +32,7 @@ export default async function handler(req, res) {
       return json(res, 500, {
         ok: false,
         step: "env",
-        error: "Missing ADBS_ALERT_EMAIL in Vercel environment variables."
+        error: "Missing ADBS_ALERT_EMAIL in Vercel."
       });
     }
 
@@ -43,14 +43,17 @@ export default async function handler(req, res) {
       to,
       subject: "AdbS Test Email",
       html: `
-        <div style="font-family: Arial, sans-serif; padding: 20px;">
+        <div style="font-family: Arial, sans-serif; padding: 20px; background: #0b0f14; color: #ffffff;">
           <h2>AdbS Test Email</h2>
-          <p>If you received this, Resend is connected correctly.</p>
+          <p>If you received this, the QueCab AdbS email system is connected correctly.</p>
         </div>
       `
     });
 
-    return json(res, 200, { ok: true, result });
+    return json(res, 200, {
+      ok: true,
+      result
+    });
   } catch (err) {
     return json(res, 500, {
       ok: false,
