@@ -39,7 +39,7 @@ export default async function handler(req, res) {
   try {
     const body = typeof req.body === "string" ? JSON.parse(req.body) : (req.body || {});
 
-    const legal_name = safe(body.legal_name || body.business_name || body.name);
+    const legal_name = safe(body.legal_name || body.name);
     const contact_name = safe(body.contact_name);
     const business_email = normalizeEmail(body.business_email || body.email);
     const business_phone = formatPhone(body.business_phone || body.phone);
@@ -70,13 +70,10 @@ export default async function handler(req, res) {
     const payload = {
       legal_name,
       contact_name,
-      business_name: legal_name,
       business_email,
       email: business_email,
       business_phone,
-      phone: business_phone,
       mc_number,
-      mc: mc_number,
       ein: ein || null,
       role,
       status: "pending",
@@ -85,7 +82,7 @@ export default async function handler(req, res) {
 
     const { data, error } = await supabase
       .from("beta_requests")
-      .upsert(payload, { onConflict: "business_email" })
+      .insert(payload)
       .select("*")
       .single();
 
