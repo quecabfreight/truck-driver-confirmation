@@ -1,0 +1,110 @@
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+function json(res, code, obj) {
+  res.status(code).setHeader("Content-Type", "application/json; charset=utf-8");
+  res.setHeader("Cache-Control", "no-store");
+  res.end(JSON.stringify(obj));
+}
+
+function safe(v) {
+  return String(v ?? "").trim();
+}
+
+function digits(v) {
+  return String(v || "").replace(/\D+/g, "");
+}
+
+function formatPhone(v) {
+  const d = digits(v).slice(0, 10);
+  if (!d) return "";
+  if (d.length <= 3) return d;
+  if (d.length <= 6) return `${d.slice(0, 3)}-${d.slice(3)}`;
+  return `${d.slice(0, 3)}-${d.slice(3, 6)}-${d.slice(6)}`;
+}
+
+function normalizeEmail(v) {
+  return safe(v).toLowerCase();
+}
+
+export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    return json(res, 405, { ok: false, error: "Method not allowed" });
+  }
+
+  try {
+    const body = typeof req.body === "string" ? JSON.parse(req.body) : (req.body || {});
+
+    const legal_name = safe(body.legal_name || body.business_name || body.name);
+    const contact_name = safe(body.contact_name);
+    const business_email = normalizeEmail(body.business_email || body.email);
+    const business_phone = formatPhone(body.business_phone || body.phone);
+    const mc_number = digits(body.mc_number || body.mc || body.mc_digits);
+    const ein = safe(body.ein);
+    const role = "broker";
+
+    if (!legal_name) {
+      return json(res, 400, { ok: false, error: "Business name is required." });
+    }
+
+    if (!contact_name) {
+      return json(res, 400, { ok: false, error: "Contact name is required." });
+    }
+
+    if (!business_email) {
+      return json(res, 400, { ok: false, error: "Business email is required." });
+    }
+
+    if (!business_phone) {
+      return json(res, 400, { ok: false, error: "Business phone is required." });
+    }
+
+    if (!mc_number) {
+      return json(res, 400, { ok: false, error: "MC number is required." });
+    }
+
+    const payload = {
+      legal_name,
+      contact_name,
+      business_name: legal_name,
+      business_email,
+      email: business_email,
+      business_phone,
+      phone: business_phone,
+      mc_number,
+      mc: mc_number,
+      ein: ein || null,
+      role,
+      status: "pending",
+      approved: false
+    };
+
+    const { data, error } = await supabase
+      .from("beta_requests")
+      .upsert(payload, { onConflict: "business_email" })
+      .select("*")
+      .single();
+
+    if (error) {
+      return json(res, 500, {
+        ok: false,
+        error: error.message || "Could not save access request."
+      });
+    }
+
+    return json(res, 200, {
+      ok: true,
+      message: "Access request submitted.",
+      row: data
+    });
+  } catch (err) {
+    return json(res, 500, {
+      ok: false,
+      error: err?.message || "Server error."
+    });
+  }
+}
