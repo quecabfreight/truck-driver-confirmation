@@ -20,13 +20,15 @@ export default function Join() {
   const [legalName, setLegalName] = useState("");
   const [contactName, setContactName] = useState("");
   const [role, setRole] = useState("broker");
+  const [businessEmail, setBusinessEmail] = useState("");
   const [mcNumber, setMcNumber] = useState("");
   const [ein, setEin] = useState("");
   const [businessPhone, setBusinessPhone] = useState("");
   const [statusMsg, setStatusMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     setErrorMsg("");
     setStatusMsg("");
@@ -41,6 +43,11 @@ export default function Join() {
       return;
     }
 
+    if (!String(businessEmail || "").trim()) {
+      setErrorMsg("Enter Business Email.");
+      return;
+    }
+
     if (!String(mcNumber || "").trim()) {
       setErrorMsg("Enter MC#.");
       return;
@@ -51,7 +58,48 @@ export default function Join() {
       return;
     }
 
-    setStatusMsg("Request submitted.");
+    setSubmitting(true);
+
+    try {
+      const payload = {
+        legal_name: String(legalName || "").trim(),
+        contact_name: String(contactName || "").trim(),
+        business_email: String(businessEmail || "").trim().toLowerCase(),
+        business_phone: String(businessPhone || "").trim(),
+        mc_number: onlyDigits(mcNumber),
+        ein: String(ein || "").trim(),
+        role: String(role || "broker").trim().toLowerCase()
+      };
+
+      const res = await fetch("/api/request_access", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data?.ok) {
+        setErrorMsg(data?.error || "Could not submit request.");
+        setSubmitting(false);
+        return;
+      }
+
+      setStatusMsg("Request submitted.");
+      setLegalName("");
+      setContactName("");
+      setRole("broker");
+      setBusinessEmail("");
+      setMcNumber("");
+      setEin("");
+      setBusinessPhone("");
+      setSubmitting(false);
+    } catch (err) {
+      setErrorMsg("Network error submitting request.");
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -95,6 +143,14 @@ export default function Join() {
 
             <input
               style={styles.input}
+              placeholder="Business Email"
+              type="email"
+              value={businessEmail}
+              onChange={(e) => setBusinessEmail(e.target.value)}
+            />
+
+            <input
+              style={styles.input}
               placeholder="MC#"
               value={mcNumber}
               onChange={(e) => setMcNumber(onlyDigits(e.target.value))}
@@ -117,8 +173,8 @@ export default function Join() {
             {errorMsg ? <div style={styles.error}>{errorMsg}</div> : null}
             {statusMsg ? <div style={styles.status}>{statusMsg}</div> : null}
 
-            <button type="submit" style={styles.button}>
-              Request Access
+            <button type="submit" style={styles.button} disabled={submitting}>
+              {submitting ? "Submitting..." : "Request Access"}
             </button>
           </form>
 
@@ -199,7 +255,8 @@ const styles = {
     color: "#fff",
     fontSize: 16,
     fontWeight: 900,
-    cursor: "pointer"
+    cursor: "pointer",
+    opacity: 1
   },
   error: {
     color: "#ff9c9c",
