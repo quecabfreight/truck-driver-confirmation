@@ -1,9 +1,12 @@
 import { createClient } from "@supabase/supabase-js";
+import { Resend } from "resend";
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 function json(res, code, obj) {
   res.status(code).setHeader("Content-Type", "application/json; charset=utf-8");
@@ -29,6 +32,42 @@ function formatPhone(v) {
 
 function normalizeEmail(v) {
   return safe(v).toLowerCase();
+}
+
+async function sendRequestReceivedEmail(toEmail, contactName) {
+  try {
+    const from = process.env.ADBS_EMAIL_FROM;
+
+    const html = `
+      <div style="font-family: Arial, sans-serif; background:#0b0f14; color:#fff; padding:20px;">
+        <h2>QueCab AdbS</h2>
+
+        <p>Hello ${contactName || ""},</p>
+
+        <p>Your access request has been received and is currently under review.</p>
+
+        <p>You will be notified once your access has been approved.</p>
+
+        <br/>
+
+        <p style="color:#888;">
+          QueCab AdbS — Verification happens before freight moves.
+        </p>
+      </div>
+    `;
+
+    const result = await resend.emails.send({
+      from,
+      to: toEmail,
+      subject: "QueCab AdbS — Access Request Received",
+      html
+    });
+
+    return result;
+  } catch (err) {
+    console.error("Email send failed:", err.message);
+    return null;
+  }
 }
 
 export default async function handler(req, res) {
@@ -92,6 +131,9 @@ export default async function handler(req, res) {
         error: error.message || "Could not save access request."
       });
     }
+
+    // 🔥 SEND EMAIL HERE (NEW)
+    await sendRequestReceivedEmail(business_email, contact_name);
 
     return json(res, 200, {
       ok: true,
