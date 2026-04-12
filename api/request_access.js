@@ -39,15 +39,15 @@ export default async function handler(req, res) {
   try {
     const body = typeof req.body === "string" ? JSON.parse(req.body) : (req.body || {});
 
-    const legal_name = safe(body.legal_name || body.name);
+    const legal_business_name = safe(body.legal_name || body.legal_business_name);
     const contact_name = safe(body.contact_name);
     const business_email = normalizeEmail(body.business_email || body.email);
     const business_phone = formatPhone(body.business_phone || body.phone);
-    const mc_number = digits(body.mc_number || body.mc || body.mc_digits);
+    const mc_number = digits(body.mc_number || body.mc);
     const ein = safe(body.ein);
     const role = "broker";
 
-    if (!legal_name) {
+    if (!legal_business_name) {
       return json(res, 400, { ok: false, error: "Business name is required." });
     }
 
@@ -68,7 +68,7 @@ export default async function handler(req, res) {
     }
 
     const payload = {
-      legal_name,
+      legal_business_name,
       contact_name,
       business_email,
       email: business_email,
@@ -98,6 +98,7 @@ export default async function handler(req, res) {
       message: "Access request submitted.",
       row: data
     });
+
   } catch (err) {
     return json(res, 500, {
       ok: false,
