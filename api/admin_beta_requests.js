@@ -11,7 +11,9 @@ function json(res, code, obj) {
 
 function getAdminKey(req) {
   const h = req.headers || {};
-  return String(h["x-adbs-admin-key"] || h["X-Adbs-Admin-Key"] || "").trim();
+  return String(
+    h["x-adbs-admin-key"] || h["X-Adbs-Admin-Key"] || ""
+  ).trim();
 }
 
 function isAuthorized(req) {
@@ -27,26 +29,48 @@ function qsInt(v, d) {
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
-    return json(res, 405, { ok: false, error: "Method not allowed" });
+    return json(res, 405, {
+      ok: false,
+      error: "Method not allowed",
+    });
   }
 
   if (!isAuthorized(req)) {
-    return json(res, 401, { ok: false, error: "Unauthorized (bad admin key)." });
+    return json(res, 401, {
+      ok: false,
+      error: "Unauthorized (bad admin key).",
+    });
   }
 
-  const SUPABASE_URL = String(process.env.SUPABASE_URL || "").trim();
-  const SUPABASE_SERVICE_ROLE_KEY = String(process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
+  const SUPABASE_URL = String(
+    process.env.SUPABASE_URL || ""
+  ).trim();
+
+  const SUPABASE_SERVICE_ROLE_KEY = String(
+    process.env.SUPABASE_SERVICE_ROLE_KEY || ""
+  ).trim();
 
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     return json(res, 500, {
       ok: false,
-      error: "Missing env: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY",
+      error:
+        "Missing env: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY",
     });
   }
 
-  const status = String(req.query?.status || "pending").trim().toLowerCase();
-  const limit = Math.min(100, Math.max(1, qsInt(req.query?.limit, 25)));
-  const offset = Math.max(0, qsInt(req.query?.offset, 0));
+  const status = String(
+    req.query?.status || "pending"
+  ).trim().toLowerCase();
+
+  const limit = Math.min(
+    100,
+    Math.max(1, qsInt(req.query?.limit, 25))
+  );
+
+  const offset = Math.max(
+    0,
+    qsInt(req.query?.offset, 0)
+  );
 
   try {
     let url =
@@ -57,15 +81,18 @@ export default async function handler(req, res) {
       &offset=${offset};
 
     if (status === "pending") {
-      url += &or=(status.eq.pending,approved.is.null,approved.eq.false);
+      url +=
+        &or=(status.eq.pending,approved.is.null,approved.eq.false);
     } else if (status === "approved") {
-      url += &or=(status.eq.approved,approved.eq.true);
+      url +=
+        &or=(status.eq.approved,approved.eq.true);
     } else if (status === "all") {
-      // no extra filter
+      // no filter
     } else {
       return json(res, 400, {
         ok: false,
-        error: "Invalid status. Use pending, approved, or all.",
+        error:
+          "Invalid status. Use pending, approved, or all.",
       });
     }
 
@@ -79,6 +106,7 @@ export default async function handler(req, res) {
     });
 
     const text = await r.text();
+
     let rows = [];
 
     try {
@@ -95,13 +123,18 @@ export default async function handler(req, res) {
       });
     }
 
-    const contentRange = r.headers.get("content-range") || "";
+    const contentRange =
+      r.headers.get("content-range") || "";
+
     let total = null;
 
     if (contentRange.includes("/")) {
       const parts = contentRange.split("/");
       const maybeTotal = Number.parseInt(parts[1], 10);
-      if (Number.isFinite(maybeTotal)) total = maybeTotal;
+
+      if (Number.isFinite(maybeTotal)) {
+        total = maybeTotal;
+      }
     }
 
     return json(res, 200, {
