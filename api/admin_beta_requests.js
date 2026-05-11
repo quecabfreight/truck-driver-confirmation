@@ -74,18 +74,18 @@ export default async function handler(req, res) {
 
   try {
     let url =
-      ${SUPABASE_URL}/rest/v1/beta_requests +
-      ?select=* +
-      &order=created_at.desc +
-      &limit=${limit} +
-      &offset=${offset};
+      `${SUPABASE_URL}/rest/v1/beta_requests` +
+      `?select=*` +
+      `&order=created_at.desc` +
+      `&limit=${limit}` +
+      `&offset=${offset}`;
 
     if (status === "pending") {
       url +=
-        &or=(status.eq.pending,approved.is.null,approved.eq.false);
+        `&or=(status.eq.pending,approved.is.null,approved.eq.false)`;
     } else if (status === "approved") {
       url +=
-        &or=(status.eq.approved,approved.eq.true);
+        `&or=(status.eq.approved,approved.eq.true)`;
     } else if (status === "all") {
       // no filter
     } else {
@@ -100,7 +100,7 @@ export default async function handler(req, res) {
       method: "GET",
       headers: {
         apikey: SUPABASE_SERVICE_ROLE_KEY,
-        Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY},
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
         Prefer: "count=exact",
       },
     });
