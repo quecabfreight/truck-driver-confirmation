@@ -156,7 +156,16 @@ export default function Admin() {
 
       if (!res.ok) {
         setBusyId("");
-        setErrorMsg(data?.error || data?.message || `Approve failed (${res.status}).`);
+
+        alert(JSON.stringify(data, null, 2));
+
+        setErrorMsg(
+          data?.detail ||
+            data?.error ||
+            data?.message ||
+            `Approve failed (${res.status}).`
+        );
+
         return;
       }
 
