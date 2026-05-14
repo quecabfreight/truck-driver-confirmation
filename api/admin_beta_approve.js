@@ -1,4 +1,7 @@
 // /api/admin_beta_approve.js
+// POST /api/admin_beta_approve
+// Requires header: x-adbs-admin-key
+// Body: { id: "beta_request_id" }
 
 import { supabaseAdmin } from "./_supabaseAdmin.js";
 
@@ -9,197 +12,144 @@ function json(res, code, obj) {
   res.end(JSON.stringify(obj));
 }
 
-function normalizeEmail(v) {
-  return String(v || "").trim().toLowerCase();
+function getAdminKey(req) {
+  return String(req.headers?.["x-adbs-admin-key"] || "").trim();
 }
 
-function makeCode() {
+function normalizeEmail(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function cleanPhone(value) {
+  return String(value || "").trim();
+}
+
+function makeAccessCode() {
   return `QC-${Math.floor(100000 + Math.random() * 900000)}`;
 }
 
-async function generateUniqueCode() {
-  for (let i = 0; i < 20; i++) {
-    const code = makeCode();
+async function generateUniqueAccessCode() {
+  for (let i = 0; i < 10; i++) {
+    const code = makeAccessCode();
 
-    const { data } = await supabaseAdmin
+    const { data, error } = await supabaseAdmin
       .from("broker_accounts")
       .select("id")
       .eq("access_code", code)
-      .limit(1);
+      .maybeSingle();
 
-    if (!data || data.length === 0) {
+    if (error) {
+      throw error;
+    }
+
+    if (!data) {
       return code;
     }
   }
 
-  throw new Error("Unable to generate unique access code.");
+  throw new Error("Could not generate a unique access code.");
 }
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
-    return json(res, 405, {
-      ok: false,
-      error: "Method not allowed.",
-    });
+    return json(res, 405, { ok: false, error: "Method not allowed." });
   }
 
   try {
-    const adminKey = String(req.headers["x-adbs-admin-key"] || "").trim();
     const expectedKey = String(process.env.ADBS_ADMIN_KEY || "").trim();
+    const providedKey = getAdminKey(req);
 
-    if (!adminKey || adminKey !== expectedKey) {
-      return json(res, 401, {
-        ok: false,
-        error: "Unauthorized.",
-      });
+    if (!expectedKey || providedKey !== expectedKey) {
+      return json(res, 401, { ok: false, error: "Unauthorized." });
     }
 
-    const body =
-      typeof req.body === "string"
-        ? JSON.parse(req.body || "{}")
-        : (req.body || {});
-
+    const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
     const id = String(body.id || "").trim();
 
     if (!id) {
-      return json(res, 400, {
-        ok: false,
-        error: "Missing request id.",
-      });
+      return json(res, 400, { ok: false, error: "Missing beta request id." });
     }
 
-    // LOAD REQUEST
-
-    const requestResult = await supabaseAdmin
+    const { data: request, error: requestError } = await supabaseAdmin
       .from("beta_requests")
       .select("*")
       .eq("id", id)
-      .limit(1);
+      .maybeSingle();
 
-    if (requestResult.error) {
+    if (requestError) {
       return json(res, 500, {
         ok: false,
-        error: "Failed loading beta request.",
-        detail: requestResult.error.message,
+        error: "Could not load beta request.",
+        detail: requestError.message,
       });
     }
-
-    const request = requestResult.data?.[0];
 
     if (!request) {
-      return json(res, 404, {
-        ok: false,
-        error: "Beta request not found.",
-      });
+      return json(res, 404, { ok: false, error: "Beta request not found." });
     }
 
-    const businessEmail = normalizeEmail(
-      request.business_email ||
-      request.email
-    );
+    const businessEmail = normalizeEmail(request.business_email || request.email);
 
     if (!businessEmail) {
       return json(res, 400, {
         ok: false,
-        error: "No business email found on request.",
+        error: "This request has no business email.",
       });
     }
-
-    const accessCode =
-      String(request.access_code || "").trim() ||
-      await generateUniqueCode();
 
     const companyName = String(
       request.legal_business_name ||
-      request.business_name ||
-      ""
+        request.business_name ||
+        request.company_name ||
+        ""
     ).trim();
 
-    const contactName = String(
-      request.contact_name || ""
-    ).trim();
+    const contactName = String(request.contact_name || "").trim();
+    const businessPhone = cleanPhone(request.business_phone || request.phone);
+    const accessCode = request.access_code || (await generateUniqueAccessCode());
 
-    const businessPhone = String(
-      request.business_phone || ""
-    ).trim();
+    const betaUpdate = {
+      status: "approved",
+      approved: true,
+      role: "broker",
+      email: businessEmail,
+      business_email: businessEmail,
+      access_code: accessCode,
+    };
 
-    // UPDATE beta_requests
-
-    const betaUpdate = await supabaseAdmin
+    const { error: betaUpdateError } = await supabaseAdmin
       .from("beta_requests")
-      .update({
-        approved: true,
-        status: "approved",
-        role: "broker",
-        email: businessEmail,
-        business_email: businessEmail,
-        access_code: accessCode,
-      })
+      .update(betaUpdate)
       .eq("id", id);
 
-    if (betaUpdate.error) {
+    if (betaUpdateError) {
       return json(res, 500, {
         ok: false,
-        error: "Failed updating beta_requests.",
-        detail: betaUpdate.error.message,
+        error: "Could not approve beta request.",
+        detail: betaUpdateError.message,
       });
     }
 
-    // CHECK EXISTING BROKER ACCOUNT
+    const brokerAccount = {
+      business_email: businessEmail,
+      access_code: accessCode,
+      company_name: companyName,
+      role: "broker",
+      status: "active",
+      contact_name: contactName,
+      business_phone: businessPhone,
+      updated_at: new Date().toISOString(),
+    };
 
-    const existingBroker = await supabaseAdmin
+    const { error: brokerError } = await supabaseAdmin
       .from("broker_accounts")
-      .select("id")
-      .eq("business_email", businessEmail)
-      .limit(1);
+      .upsert(brokerAccount, { onConflict: "business_email" });
 
-    if (existingBroker.error) {
+    if (brokerError) {
       return json(res, 500, {
         ok: false,
-        error: "Failed checking broker_accounts.",
-        detail: existingBroker.error.message,
-      });
-    }
-
-    const exists =
-      Array.isArray(existingBroker.data) &&
-      existingBroker.data.length > 0;
-
-    let brokerResult;
-
-    if (exists) {
-      brokerResult = await supabaseAdmin
-        .from("broker_accounts")
-        .update({
-          access_code: accessCode,
-          company_name: companyName,
-          role: "broker",
-          status: "active",
-          contact_name: contactName,
-          business_phone: businessPhone,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("business_email", businessEmail);
-    } else {
-      brokerResult = await supabaseAdmin
-        .from("broker_accounts")
-        .insert({
-          business_email: businessEmail,
-          access_code: accessCode,
-          company_name: companyName,
-          role: "broker",
-          status: "active",
-          contact_name: contactName,
-          business_phone: businessPhone,
-          updated_at: new Date().toISOString(),
-        });
-    }
-
-    if (brokerResult.error) {
-      return json(res, 500, {
-        ok: false,
-        error: "Failed writing broker_accounts.",
-        detail: brokerResult.error.message,
+        error: "Beta request was approved, but broker account could not be created.",
+        detail: brokerError.message,
       });
     }
 
@@ -207,12 +157,13 @@ export default async function handler(req, res) {
       ok: true,
       access_code: accessCode,
       business_email: businessEmail,
+      company_name: companyName,
+      status: "approved",
     });
-
   } catch (err) {
     return json(res, 500, {
       ok: false,
-      error: "Approval crashed.",
+      error: "Approval failed.",
       detail: err?.message || String(err),
     });
   }
