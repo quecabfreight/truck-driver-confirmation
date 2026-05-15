@@ -11,20 +11,34 @@ import Feedback from "./pages/Feedback.jsx";
 import LiveActivity from "./pages/LiveActivity.jsx";
 import LiveSessions from "./pages/LiveSessions.jsx";
 
+import Footer from "./components/Footer.jsx";
+
 export default function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<ControlCenter />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/join" element={<Join />} />
-        <Route path="/how-it-works" element={<HowItWorks />} />
-        <Route path="/admin" element={<Admin />} />
-        <Route path="/feedback" element={<Feedback />} />
-        <Route path="/activity" element={<LiveActivity />} />
-        <Route path="/live" element={<LiveSessions />} />
-        <Route path="*" element={<Home />} />
-      </Routes>
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <div style={{ flex: 1 }}>
+          <Routes>
+            <Route path="/" element={<ControlCenter />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/join" element={<Join />} />
+            <Route path="/how-it-works" element={<HowItWorks />} />
+            <Route path="/admin" element={<Admin />} />
+            <Route path="/feedback" element={<Feedback />} />
+            <Route path="/activity" element={<LiveActivity />} />
+            <Route path="/live" element={<LiveSessions />} />
+            <Route path="*" element={<Home />} />
+          </Routes>
+        </div>
+
+        <Footer />
+      </div>
     </BrowserRouter>
   );
 }
