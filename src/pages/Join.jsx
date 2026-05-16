@@ -11,6 +11,7 @@ function formatPhoneHyphen(s) {
   const a = d.slice(0, 3);
   const b = d.slice(3, 6);
   const c = d.slice(6, 10);
+
   if (d.length <= 3) return a;
   if (d.length <= 6) return `${a}-${b}`;
   return `${a}-${b}-${c}`;
@@ -24,12 +25,15 @@ export default function Join() {
   const [mcNumber, setMcNumber] = useState("");
   const [ein, setEin] = useState("");
   const [businessPhone, setBusinessPhone] = useState("");
+  const [acceptedBeta, setAcceptedBeta] = useState(false);
+
   const [statusMsg, setStatusMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
+
     setErrorMsg("");
     setStatusMsg("");
 
@@ -55,6 +59,11 @@ export default function Join() {
 
     if (onlyDigits(businessPhone).length !== 10) {
       setErrorMsg("Enter Business Phone.");
+      return;
+    }
+
+    if (!acceptedBeta) {
+      setErrorMsg("You must acknowledge the beta notice.");
       return;
     }
 
@@ -88,6 +97,7 @@ export default function Join() {
       }
 
       setStatusMsg("Request submitted.");
+
       setLegalName("");
       setContactName("");
       setRole("broker");
@@ -95,6 +105,8 @@ export default function Join() {
       setMcNumber("");
       setEin("");
       setBusinessPhone("");
+      setAcceptedBeta(false);
+
       setSubmitting(false);
     } catch (err) {
       setErrorMsg("Network error submitting request.");
@@ -170,6 +182,29 @@ export default function Join() {
               onChange={(e) => setBusinessPhone(formatPhoneHyphen(e.target.value))}
             />
 
+            <div style={styles.betaBox}>
+              <label style={styles.checkboxWrap}>
+                <input
+                  type="checkbox"
+                  checked={acceptedBeta}
+                  onChange={(e) => setAcceptedBeta(e.target.checked)}
+                  style={styles.checkbox}
+                />
+
+                <span>
+                  I understand that QueCab AdbS™ is currently operating in beta
+                  and that verification decisions remain the responsibility of
+                  the broker.
+                </span>
+              </label>
+
+              <div style={styles.betaNotice}>
+                QueCab AdbS™ assists pre-load Truck-Driver verification workflows
+                but does not guarantee prevention of fraud, cargo theft, double
+                brokering, or operational loss in every circumstance.
+              </div>
+            </div>
+
             {errorMsg ? <div style={styles.error}>{errorMsg}</div> : null}
             {statusMsg ? <div style={styles.status}>{statusMsg}</div> : null}
 
@@ -196,21 +231,25 @@ const styles = {
     background: "#0c121c",
     color: "#e6edf5"
   },
+
   heroLogoWrap: {
     display: "flex",
     justifyContent: "center",
     marginTop: 90,
     marginBottom: 10
   },
+
   heroLogo: {
     width: 220,
     maxWidth: "90%"
   },
+
   container: {
     maxWidth: 620,
     margin: "0 auto",
     padding: "0 20px 40px"
   },
+
   card: {
     background: "rgba(255,255,255,0.05)",
     border: "1px solid rgba(255,255,255,0.15)",
@@ -218,12 +257,14 @@ const styles = {
     padding: 24,
     boxShadow: "0 12px 28px rgba(0,0,0,0.28)"
   },
+
   title: {
     fontSize: 30,
     fontWeight: 900,
     marginBottom: 10,
     textAlign: "center"
   },
+
   subtitle: {
     fontSize: 15,
     opacity: 0.82,
@@ -231,10 +272,12 @@ const styles = {
     textAlign: "center",
     marginBottom: 22
   },
+
   form: {
     display: "grid",
     gap: 12
   },
+
   input: {
     width: "100%",
     padding: 13,
@@ -246,6 +289,37 @@ const styles = {
     boxSizing: "border-box",
     outline: "none"
   },
+
+  betaBox: {
+    marginTop: 4,
+    padding: 14,
+    borderRadius: 14,
+    border: "1px solid rgba(255,255,255,0.12)",
+    background: "rgba(255,255,255,0.03)"
+  },
+
+  checkboxWrap: {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: 10,
+    fontSize: 14,
+    lineHeight: 1.5,
+    cursor: "pointer"
+  },
+
+  checkbox: {
+    marginTop: 3,
+    transform: "scale(1.15)",
+    cursor: "pointer"
+  },
+
+  betaNotice: {
+    marginTop: 12,
+    fontSize: 13,
+    lineHeight: 1.5,
+    opacity: 0.72
+  },
+
   button: {
     width: "100%",
     padding: 13,
@@ -258,22 +332,26 @@ const styles = {
     cursor: "pointer",
     opacity: 1
   },
+
   error: {
     color: "#ff9c9c",
     fontWeight: 700,
     fontSize: 14
   },
+
   status: {
     color: "#ffffff",
     fontWeight: 700,
     fontSize: 14
   },
+
   bottomText: {
     marginTop: 16,
     textAlign: "center",
     fontSize: 14,
     opacity: 0.88
   },
+
   link: {
     color: "#8fc7ff",
     textDecoration: "none",
