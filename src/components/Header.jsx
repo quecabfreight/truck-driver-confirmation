@@ -6,6 +6,7 @@ function isSignedIn() {
     const email =
       (localStorage.getItem("qc_email") || "").trim() ||
       (sessionStorage.getItem("qc_email") || "").trim();
+
     return !!email;
   } catch {
     return false;
@@ -67,6 +68,10 @@ export default function Header() {
 
         {signedIn ? (
           <>
+            <Link to="/account" style={styles.link}>
+              Account
+            </Link>
+
             <Link to="/admin" style={styles.link}>
               Admin
             </Link>
@@ -104,16 +109,19 @@ const styles = {
     borderBottom: "1px solid rgba(255,255,255,0.10)",
     backdropFilter: "blur(8px)"
   },
+
   left: {
     display: "flex",
     alignItems: "center"
   },
+
   brand: {
     color: "#ffffff",
     textDecoration: "none",
     fontSize: 18,
     fontWeight: 900
   },
+
   right: {
     display: "flex",
     alignItems: "center",
@@ -121,12 +129,14 @@ const styles = {
     flexWrap: "wrap",
     justifyContent: "flex-end"
   },
+
   link: {
     color: "#e6edf5",
     textDecoration: "none",
     fontSize: 14,
     fontWeight: 800
   },
+
   logoutBtn: {
     padding: "8px 12px",
     borderRadius: 10,
