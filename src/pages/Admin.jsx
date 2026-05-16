@@ -68,19 +68,15 @@ export default function Admin() {
   });
 
   const [showAdminKey, setShowAdminKey] = useState(false);
-
   const [mode, setMode] = useState("pending");
   const [rows, setRows] = useState([]);
   const [total, setTotal] = useState(null);
-
   const [pageSize, setPageSize] = useState(25);
   const [page, setPage] = useState(0);
-
   const [loading, setLoading] = useState(false);
   const [busyId, setBusyId] = useState("");
   const [statusMsg, setStatusMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
-
   const [resetEmail, setResetEmail] = useState("");
 
   const offset = page * pageSize;
@@ -104,9 +100,7 @@ export default function Admin() {
       qs.set("offset", String(offset));
 
       const res = await fetch(`/api/admin_beta_requests?${qs.toString()}`, {
-        headers: {
-          "x-adbs-admin-key": adminKey || "",
-        },
+        headers: { "x-adbs-admin-key": adminKey || "" },
       });
 
       const data = await res.json().catch(() => ({}));
@@ -138,6 +132,7 @@ export default function Admin() {
 
   async function approveRow(rowId) {
     if (!rowId) return;
+
     setErrorMsg("");
     setStatusMsg("");
     setBusyId(rowId);
@@ -156,16 +151,12 @@ export default function Admin() {
 
       if (!res.ok) {
         setBusyId("");
-
-        alert(JSON.stringify(data, null, 2));
-
         setErrorMsg(
           data?.detail ||
             data?.error ||
             data?.message ||
             `Approve failed (${res.status}).`
         );
-
         return;
       }
 
@@ -230,8 +221,8 @@ export default function Admin() {
 
   const h1 = { fontSize: 26, fontWeight: 950, margin: 0 };
   const sub = { opacity: 0.8, marginTop: 6, fontSize: 14, lineHeight: 1.45 };
-
   const label = { fontSize: 13, opacity: 0.9, marginBottom: 6 };
+
   const input = {
     width: "100%",
     padding: "12px 12px",
@@ -302,7 +293,6 @@ export default function Admin() {
   };
 
   const muted = { opacity: 0.72, fontSize: 12 };
-
   const canLoad = !!safeStr(adminKey);
 
   return (
@@ -335,11 +325,7 @@ export default function Admin() {
                   type={showAdminKey ? "text" : "password"}
                   autoComplete="off"
                 />
-                <button
-                  type="button"
-                  style={btn(false)}
-                  onClick={() => setShowAdminKey((v) => !v)}
-                >
+                <button type="button" style={btn(false)} onClick={() => setShowAdminKey((v) => !v)}>
                   {showAdminKey ? "Hide" : "Show"}
                 </button>
               </div>
@@ -382,11 +368,7 @@ export default function Admin() {
                 autoComplete="off"
               />
               <div style={{ display: "flex", gap: 10, marginTop: 10, flexWrap: "wrap" }}>
-                <button
-                  style={btn(true)}
-                  onClick={resetAccessCode}
-                  disabled={!canLoad || loading}
-                >
+                <button style={btn(true)} onClick={resetAccessCode} disabled={!canLoad || loading}>
                   Reset Code
                 </button>
                 <button
@@ -440,30 +422,19 @@ export default function Admin() {
             </button>
 
             <div style={{ marginLeft: "auto", display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
-              <div style={muted}>
-                {total === null ? "Total: —" : `Total: ${total}`}
-              </div>
+              <div style={muted}>{total === null ? "Total: —" : `Total: ${total}`}</div>
 
               <select
                 value={pageSize}
                 onChange={(e) => { setPageSize(Number(e.target.value) || 25); setPage(0); }}
-                style={{
-                  ...input,
-                  width: 120,
-                  padding: "10px 10px",
-                  fontSize: 13,
-                }}
+                style={{ ...input, width: 120, padding: "10px 10px", fontSize: 13 }}
               >
                 <option value={10}>10 / page</option>
                 <option value={25}>25 / page</option>
                 <option value={50}>50 / page</option>
               </select>
 
-              <button
-                style={btn(false)}
-                onClick={() => setPage((p) => Math.max(0, p - 1))}
-                disabled={page === 0}
-              >
+              <button style={btn(false)} onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0}>
                 Prev
               </button>
 
@@ -503,12 +474,7 @@ export default function Admin() {
                     const id = safeStr(r.id);
                     const created = fmtDate(r.created_at);
                     const rEmail = safeStr(r.email || r.business_email || r.contact_email);
-                    const name = safeStr(
-                      r.legal_business_name ||
-                        r.legal_name ||
-                        r.name ||
-                        r.business_name
-                    );
+                    const name = safeStr(r.legal_business_name || r.legal_name || r.name || r.business_name);
                     const role = safeStr(r.role);
                     const mc = safeStr(r.mc_number || r.mc || r.mc_num);
                     const dot = safeStr(r.usdot || r.usdot_number || r.usdot_on_record);
