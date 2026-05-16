@@ -10,6 +10,7 @@ import Admin from "./pages/Admin.jsx";
 import Feedback from "./pages/Feedback.jsx";
 import LiveActivity from "./pages/LiveActivity.jsx";
 import LiveSessions from "./pages/LiveSessions.jsx";
+import Account from "./pages/Account.jsx";
 
 import Footer from "./components/Footer.jsx";
 
@@ -33,6 +34,7 @@ export default function App() {
             <Route path="/feedback" element={<Feedback />} />
             <Route path="/activity" element={<LiveActivity />} />
             <Route path="/live" element={<LiveSessions />} />
+            <Route path="/account" element={<Account />} />
             <Route path="*" element={<Home />} />
           </Routes>
         </div>
