@@ -28,13 +28,14 @@ export default function Login() {
         (sessionStorage.getItem(LS_EMAIL) || "").trim();
 
       if (saved) {
-        nav("/", { replace: true });
+        nav("/dashboard", { replace: true });
       }
     } catch {}
   }, [nav]);
 
   async function handleSubmit(e) {
     e.preventDefault();
+
     setErrorMsg("");
     setLoading(true);
 
@@ -57,12 +58,13 @@ export default function Login() {
       }
 
       clearAuth();
+
       setAuthEmail(data.email, rememberDevice);
       setAuthRole(data.role || "broker", rememberDevice);
       setAuthCode(accessCode, rememberDevice);
       setRememberDevice(rememberDevice, rememberDevice);
 
-      nav("/", { replace: true });
+      nav("/dashboard", { replace: true });
     } catch {
       setErrorMsg("Network error during login.");
     }
@@ -102,7 +104,9 @@ export default function Login() {
                 type={showAccessCode ? "text" : "password"}
                 placeholder="Access Code"
                 value={accessCode}
-                onChange={(e) => setAccessCode(formatAccessCodeTyping(e.target.value))}
+                onChange={(e) =>
+                  setAccessCode(formatAccessCodeTyping(e.target.value))
+                }
                 autoComplete="off"
               />
 
@@ -149,21 +153,25 @@ const styles = {
     background: "#0c121c",
     color: "#e6edf5"
   },
+
   heroLogoWrap: {
     display: "flex",
     justifyContent: "center",
     marginTop: 90,
     marginBottom: 10
   },
+
   heroLogo: {
     width: 220,
     maxWidth: "90%"
   },
+
   container: {
     maxWidth: 620,
     margin: "0 auto",
     padding: "0 20px 40px"
   },
+
   card: {
     background: "rgba(255,255,255,0.05)",
     border: "1px solid rgba(255,255,255,0.15)",
@@ -171,12 +179,14 @@ const styles = {
     padding: 24,
     boxShadow: "0 12px 28px rgba(0,0,0,0.28)"
   },
+
   title: {
     fontSize: 30,
     fontWeight: 900,
     marginBottom: 10,
     textAlign: "center"
   },
+
   subtitle: {
     fontSize: 15,
     opacity: 0.82,
@@ -184,16 +194,19 @@ const styles = {
     textAlign: "center",
     marginBottom: 22
   },
+
   form: {
     display: "grid",
     gap: 12
   },
+
   codeWrap: {
     display: "grid",
     gridTemplateColumns: "1fr auto",
     gap: 8,
     alignItems: "center"
   },
+
   input: {
     width: "100%",
     padding: 13,
@@ -205,6 +218,7 @@ const styles = {
     boxSizing: "border-box",
     outline: "none"
   },
+
   toggleBtn: {
     padding: "12px 14px",
     borderRadius: 12,
@@ -216,6 +230,7 @@ const styles = {
     cursor: "pointer",
     whiteSpace: "nowrap"
   },
+
   checkRow: {
     display: "flex",
     alignItems: "center",
@@ -223,6 +238,7 @@ const styles = {
     fontSize: 14,
     opacity: 0.9
   },
+
   button: {
     width: "100%",
     padding: 13,
@@ -234,17 +250,20 @@ const styles = {
     fontWeight: 900,
     cursor: "pointer"
   },
+
   error: {
     color: "#ff9c9c",
     fontWeight: 700,
     fontSize: 14
   },
+
   bottomText: {
     marginTop: 16,
     textAlign: "center",
     fontSize: 14,
     opacity: 0.88
   },
+
   link: {
     color: "#8fc7ff",
     textDecoration: "none",
