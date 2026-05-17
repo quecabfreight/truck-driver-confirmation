@@ -46,7 +46,7 @@ export default function Header() {
       </div>
 
       <div style={styles.right}>
-        <Link to="/" style={styles.link}>
+        <Link to="/dashboard" style={styles.link}>
           Control Center
         </Link>
 
