@@ -76,7 +76,10 @@ export default async function handler(req, res) {
   }
 
   try {
-    const body = typeof req.body === "string" ? JSON.parse(req.body) : (req.body || {});
+    const body =
+      typeof req.body === "string"
+        ? JSON.parse(req.body)
+        : req.body || {};
 
     const legal_business_name = safe(body.legal_name || body.legal_business_name);
     const contact_name = safe(body.contact_name);
@@ -85,6 +88,10 @@ export default async function handler(req, res) {
     const mc_number = digits(body.mc_number || body.mc);
     const ein = safe(body.ein);
     const role = "broker";
+
+    const accepted_beta_notice =
+      body.accepted_beta_notice === true ||
+      body.accepted_beta_notice === "true";
 
     if (!legal_business_name) {
       return json(res, 400, { ok: false, error: "Business name is required." });
@@ -106,6 +113,13 @@ export default async function handler(req, res) {
       return json(res, 400, { ok: false, error: "MC number is required." });
     }
 
+    if (!accepted_beta_notice) {
+      return json(res, 400, {
+        ok: false,
+        error: "Beta notice acknowledgment is required."
+      });
+    }
+
     const payload = {
       legal_business_name,
       contact_name,
@@ -116,7 +130,9 @@ export default async function handler(req, res) {
       ein: ein || null,
       role,
       status: "pending",
-      approved: false
+      approved: false,
+      accepted_beta_notice: true,
+      accepted_beta_notice_at: new Date().toISOString()
     };
 
     const { data, error } = await supabase
@@ -132,7 +148,6 @@ export default async function handler(req, res) {
       });
     }
 
-    // 🔥 SEND EMAIL HERE (NEW)
     await sendRequestReceivedEmail(business_email, contact_name);
 
     return json(res, 200, {
@@ -140,7 +155,6 @@ export default async function handler(req, res) {
       message: "Access request submitted.",
       row: data
     });
-
   } catch (err) {
     return json(res, 500, {
       ok: false,
