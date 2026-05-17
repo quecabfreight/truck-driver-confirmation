@@ -27,7 +27,9 @@ export default function App() {
       >
         <div style={{ flex: 1 }}>
           <Routes>
-            <Route path="/" element={<ControlCenter />} />
+            <Route path="/" element={<Home />} />
+            <Route path="/dashboard" element={<ControlCenter />} />
+            <Route path="/control-center" element={<ControlCenter />} />
             <Route path="/login" element={<Login />} />
             <Route path="/join" element={<Join />} />
             <Route path="/how-it-works" element={<HowItWorks />} />
