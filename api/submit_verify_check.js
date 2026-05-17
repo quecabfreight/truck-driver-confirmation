@@ -140,7 +140,7 @@ export default async function handler(req, res) {
     let alert_triggered = false;
     let alert_error = "";
 
-    if (failed_attempts_next >= 3) {
+    if (failed_attempts_next === 3) {
       const alert_to = String(
         pickFirst(
           link.issuer_email,
@@ -169,12 +169,13 @@ export default async function handler(req, res) {
             html: `
               <div style="font-family:Arial,sans-serif;line-height:1.5;">
                 <h2>AdbS Fraud Alert</h2>
-                <p>Three or more failed Truck-Driver verification attempts were recorded.</p>
+                <p>Three failed Truck-Driver verification attempts were recorded.</p>
                 <p><strong>Load ID:</strong> ${link.load_id || "(none)"}</p>
                 <p><strong>Failed Attempts:</strong> ${failed_attempts_next}</p>
                 <p><strong>Token:</strong> ${token}</p>
                 <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
                 <p><strong>Verify URL:</strong><br/>https://quecabadbs.com/v.html?t=${token}</p>
+                <p style="color:#b00020;"><strong>Recommended Action:</strong> Do not release the load until the broker has reviewed the verification attempt history.</p>
               </div>
             `
           });
@@ -194,7 +195,7 @@ export default async function handler(req, res) {
       failed_attempts: failed_attempts_next,
       load_id: link.load_id || null,
       note: alert_triggered
-        ? "Silent alert triggered (3 failed attempts). Load should NOT be released."
+        ? "Silent alert triggered on third failed attempt. Load should NOT be released."
         : "Verification recorded.",
       alert_error
     });
