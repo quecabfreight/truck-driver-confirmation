@@ -31,11 +31,18 @@ export default function Join() {
   const [errorMsg, setErrorMsg] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  const canSubmit = acceptedBeta && !submitting;
+
   async function handleSubmit(e) {
     e.preventDefault();
 
     setErrorMsg("");
     setStatusMsg("");
+
+    if (!acceptedBeta) {
+      setErrorMsg("You must acknowledge the beta notice before requesting access.");
+      return;
+    }
 
     if (!String(legalName || "").trim()) {
       setErrorMsg("Enter Legal Name.");
@@ -62,11 +69,6 @@ export default function Join() {
       return;
     }
 
-    if (!acceptedBeta) {
-      setErrorMsg("You must acknowledge the beta notice.");
-      return;
-    }
-
     setSubmitting(true);
 
     try {
@@ -77,7 +79,8 @@ export default function Join() {
         business_phone: String(businessPhone || "").trim(),
         mc_number: onlyDigits(mcNumber),
         ein: String(ein || "").trim(),
-        role: String(role || "broker").trim().toLowerCase()
+        role: String(role || "broker").trim().toLowerCase(),
+        accepted_beta_notice: true
       };
 
       const res = await fetch("/api/request_access", {
@@ -97,7 +100,6 @@ export default function Join() {
       }
 
       setStatusMsg("Request submitted.");
-
       setLegalName("");
       setContactName("");
       setRole("broker");
@@ -106,7 +108,6 @@ export default function Join() {
       setEin("");
       setBusinessPhone("");
       setAcceptedBeta(false);
-
       setSubmitting(false);
     } catch (err) {
       setErrorMsg("Network error submitting request.");
@@ -208,7 +209,16 @@ export default function Join() {
             {errorMsg ? <div style={styles.error}>{errorMsg}</div> : null}
             {statusMsg ? <div style={styles.status}>{statusMsg}</div> : null}
 
-            <button type="submit" style={styles.button} disabled={submitting}>
+            <button
+              type="submit"
+              style={canSubmit ? styles.button : styles.buttonDisabled}
+              disabled={!canSubmit}
+              title={
+                acceptedBeta
+                  ? "Submit request access form"
+                  : "Check the beta acknowledgment box before requesting access."
+              }
+            >
               {submitting ? "Submitting..." : "Request Access"}
             </button>
           </form>
@@ -231,25 +241,21 @@ const styles = {
     background: "#0c121c",
     color: "#e6edf5"
   },
-
   heroLogoWrap: {
     display: "flex",
     justifyContent: "center",
     marginTop: 90,
     marginBottom: 10
   },
-
   heroLogo: {
     width: 220,
     maxWidth: "90%"
   },
-
   container: {
     maxWidth: 620,
     margin: "0 auto",
     padding: "0 20px 40px"
   },
-
   card: {
     background: "rgba(255,255,255,0.05)",
     border: "1px solid rgba(255,255,255,0.15)",
@@ -257,14 +263,12 @@ const styles = {
     padding: 24,
     boxShadow: "0 12px 28px rgba(0,0,0,0.28)"
   },
-
   title: {
     fontSize: 30,
     fontWeight: 900,
     marginBottom: 10,
     textAlign: "center"
   },
-
   subtitle: {
     fontSize: 15,
     opacity: 0.82,
@@ -272,12 +276,10 @@ const styles = {
     textAlign: "center",
     marginBottom: 22
   },
-
   form: {
     display: "grid",
     gap: 12
   },
-
   input: {
     width: "100%",
     padding: 13,
@@ -289,7 +291,6 @@ const styles = {
     boxSizing: "border-box",
     outline: "none"
   },
-
   betaBox: {
     marginTop: 4,
     padding: 14,
@@ -297,7 +298,6 @@ const styles = {
     border: "1px solid rgba(255,255,255,0.12)",
     background: "rgba(255,255,255,0.03)"
   },
-
   checkboxWrap: {
     display: "flex",
     alignItems: "flex-start",
@@ -306,20 +306,17 @@ const styles = {
     lineHeight: 1.5,
     cursor: "pointer"
   },
-
   checkbox: {
     marginTop: 3,
     transform: "scale(1.15)",
     cursor: "pointer"
   },
-
   betaNotice: {
     marginTop: 12,
     fontSize: 13,
     lineHeight: 1.5,
     opacity: 0.72
   },
-
   button: {
     width: "100%",
     padding: 13,
@@ -332,26 +329,34 @@ const styles = {
     cursor: "pointer",
     opacity: 1
   },
-
+  buttonDisabled: {
+    width: "100%",
+    padding: 13,
+    borderRadius: 12,
+    border: "1px solid rgba(255,255,255,0.12)",
+    background: "rgba(120,120,120,0.18)",
+    color: "rgba(255,255,255,0.45)",
+    fontSize: 16,
+    fontWeight: 900,
+    cursor: "not-allowed",
+    opacity: 0.65
+  },
   error: {
     color: "#ff9c9c",
     fontWeight: 700,
     fontSize: 14
   },
-
   status: {
     color: "#ffffff",
     fontWeight: 700,
     fontSize: 14
   },
-
   bottomText: {
     marginTop: 16,
     textAlign: "center",
     fontSize: 14,
     opacity: 0.88
   },
-
   link: {
     color: "#8fc7ff",
     textDecoration: "none",
