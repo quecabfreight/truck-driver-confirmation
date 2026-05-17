@@ -11,6 +11,7 @@ import Feedback from "./pages/Feedback.jsx";
 import LiveActivity from "./pages/LiveActivity.jsx";
 import LiveSessions from "./pages/LiveSessions.jsx";
 import Account from "./pages/Account.jsx";
+import BetaNotice from "./pages/BetaNotice.jsx";
 
 import Footer from "./components/Footer.jsx";
 
@@ -35,6 +36,7 @@ export default function App() {
             <Route path="/activity" element={<LiveActivity />} />
             <Route path="/live" element={<LiveSessions />} />
             <Route path="/account" element={<Account />} />
+            <Route path="/beta-notice" element={<BetaNotice />} />
             <Route path="*" element={<Home />} />
           </Routes>
         </div>
