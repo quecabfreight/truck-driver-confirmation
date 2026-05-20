@@ -402,7 +402,7 @@ export default function ControlCenter() {
                 style={styles.input}
                 placeholder="Carrier Contact Phone"
                 value={carrierPhone}
-                onChange={(e) => setCarrierPhone(formatPhone(carrierPhone))}
+                onChange={(e) => setCarrierPhone(formatPhone(e.target.value))}
               />
 
               <input
