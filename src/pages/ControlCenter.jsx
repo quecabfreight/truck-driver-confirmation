@@ -5,7 +5,7 @@ import Header from "../components/Header.jsx";
 import { getAuthEmail, isBrokerOrShipper } from "../utils/auth.js";
 
 function onlyDigits(s) {
-  return String(s || "").replace(/\D+/g, "");
+  return String(s || "").replace(/\D/g, "");
 }
 
 function upper(s) {
@@ -20,7 +20,9 @@ function formatPhone(v) {
 }
 
 function buildQrUrl(text) {
-  return `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(text || "")}`;
+  return `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(
+    text || ""
+  )}`;
 }
 
 function localNowInput() {
@@ -46,7 +48,6 @@ async function safeCopy(text) {
 
 export default function ControlCenter() {
   const nav = useNavigate();
-
   const email = getAuthEmail();
   const authorized = !!email && isBrokerOrShipper(email);
 
@@ -67,6 +68,7 @@ export default function ControlCenter() {
   const [expireAt, setExpireAt] = useState(plus24hInput());
 
   const [search, setSearch] = useState("");
+  const [matches, setMatches] = useState([]);
   const [statusMsg, setStatusMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
@@ -96,9 +98,104 @@ export default function ControlCenter() {
     }
   }
 
+  function makeSelected(row) {
+    const token = row?.token || row?.verification_id || "";
+    const verifyUrl =
+      row?.verify_url ||
+      `https://quecabadbs.com/v.html?t=${encodeURIComponent(token)}&cv=4`;
+
+    return {
+      verification_id: token,
+      verify_url: verifyUrl,
+      status: row?.status || "active",
+      load_id: row?.load_id || "",
+      expires_at: row?.expires_at || null,
+      dock_email: row?.dock_email || "",
+      driver_phone: row?.driver_phone || "",
+      usdot_on_record: row?.usdot_on_record || "",
+      plate_on_record: row?.plate_on_record || "",
+      carrier_company: row?.carrier_company || "",
+      carrier_contact_name: row?.dispatch_contact || row?.carrier_contact_name || "",
+      carrier_contact_phone: row?.dispatch_phone || row?.carrier_contact_phone || "",
+      email_status: row?.email_status || "",
+      email_error: row?.email_error || ""
+    };
+  }
+
+  async function loadVerificationByToken(token) {
+    setStatusMsg("");
+    setErrorMsg("");
+
+    const res = await fetch("/api/manage_verify_link", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "detail", token })
+    });
+
+    const data = await safeJson(res);
+
+    if (!res.ok) {
+      setErrorMsg(data?.error || "Verification not found.");
+      return;
+    }
+
+    const next = makeSelected(data);
+    setSelected(next);
+    setQrUrl(buildQrUrl(next.verify_url));
+    setStatusMsg("Verification loaded.");
+  }
+
+  async function searchVerification() {
+    const q = String(search || "").trim();
+
+    setStatusMsg("");
+    setErrorMsg("");
+    setMatches([]);
+
+    if (!q) {
+      setErrorMsg("Enter a Verification ID, AdbS Verify Link, Load ID, email, phone, DOT, plate, or carrier.");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/manage_verify_link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "lookup", token: q })
+      });
+
+      const data = await safeJson(res);
+
+      if (!res.ok || !data?.ok) {
+        setErrorMsg(data?.error || "Verification not found.");
+        return;
+      }
+
+      const rows = Array.isArray(data.rows) ? data.rows : [];
+
+      if (rows.length === 1) {
+        await loadVerificationByToken(rows[0].token || rows[0].verification_id);
+        return;
+      }
+
+      if (rows.length > 1) {
+        setMatches(rows);
+        setSelected(null);
+        setQrUrl("");
+        setStatusMsg(`${rows.length} matching records found.`);
+        return;
+      }
+
+      setErrorMsg("Verification not found.");
+    } catch {
+      setErrorMsg("Search failed.");
+    }
+  }
+
   async function issueVerification() {
     setStatusMsg("");
     setErrorMsg("");
+    setMatches([]);
 
     const payload = {
       load_id: loadId.trim(),
@@ -110,10 +207,7 @@ export default function ControlCenter() {
       usdot_on_record: onlyDigits(usdot),
       plate_on_record: upper(plate),
       dock_pin: onlyDigits(dockPin),
-      starts_at:
-        mode === "pick"
-          ? new Date(startAt).toISOString()
-          : new Date().toISOString(),
+      starts_at: mode === "pick" ? new Date(startAt).toISOString() : new Date().toISOString(),
       expires_at:
         mode === "none"
           ? null
@@ -142,9 +236,7 @@ export default function ControlCenter() {
     try {
       const res = await fetch("/api/issue_verify_link", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
 
@@ -156,12 +248,10 @@ export default function ControlCenter() {
         return;
       }
 
-      const verifyUrl = data.verify_url || "";
-
-      setSelected({
-        verification_id: data.token || "",
-        verify_url: verifyUrl,
-        status: data.status || "active",
+      const next = makeSelected({
+        token: data.token,
+        verify_url: data.verify_url,
+        status: data.status,
         load_id: payload.load_id,
         expires_at: data.expires_at,
         dock_email: payload.dock_email,
@@ -169,13 +259,14 @@ export default function ControlCenter() {
         usdot_on_record: payload.usdot_on_record,
         plate_on_record: payload.plate_on_record,
         carrier_company: payload.carrier_company,
-        carrier_contact_name: payload.dispatch_contact,
-        carrier_contact_phone: payload.dispatch_phone,
-        email_status: data.email_status || "",
-        email_error: data.email_error || ""
+        dispatch_contact: payload.dispatch_contact,
+        dispatch_phone: payload.dispatch_phone,
+        email_status: data.email_status,
+        email_error: data.email_error
       });
 
-      setQrUrl(buildQrUrl(verifyUrl));
+      setSelected(next);
+      setQrUrl(buildQrUrl(next.verify_url));
       setStatusMsg("AdbS Verification issued");
 
       setLoadId("");
@@ -205,9 +296,7 @@ export default function ControlCenter() {
     try {
       const res = await fetch("/api/manage_verify_link", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "set_status",
           token: selected.verification_id,
@@ -227,42 +316,18 @@ export default function ControlCenter() {
         status: data.status || nextStatus
       }));
 
-      setStatusMsg(
-        nextStatus === "revoked"
-          ? "Verification revoked."
-          : "Verification reactivated."
-      );
+      setStatusMsg(nextStatus === "revoked" ? "Verification revoked." : "Verification reactivated.");
     } catch {
       setErrorMsg("Status update failed.");
     }
   }
 
   const styles = {
-    page: {
-      minHeight: "100vh",
-      background: "#0c121c",
-      color: "#e6edf5"
-    },
-    wrap: {
-      maxWidth: 1120,
-      margin: "0 auto",
-      padding: "18px 16px 48px"
-    },
-    logoWrap: {
-      display: "flex",
-      justifyContent: "center",
-      marginTop: 90,
-      marginBottom: 10
-    },
-    logo: {
-      width: 220,
-      maxWidth: "90%"
-    },
-    title: {
-      fontSize: 30,
-      fontWeight: 900,
-      marginBottom: 18
-    },
+    page: { minHeight: "100vh", background: "#0c121c", color: "#e6edf5" },
+    wrap: { maxWidth: 1120, margin: "0 auto", padding: "18px 16px 48px" },
+    logoWrap: { display: "flex", justifyContent: "center", marginTop: 90, marginBottom: 10 },
+    logo: { width: 220, maxWidth: "90%" },
+    title: { fontSize: 30, fontWeight: 900, marginBottom: 18 },
     card: {
       background: "rgba(255,255,255,0.05)",
       border: "1px solid rgba(255,255,255,0.15)",
@@ -270,11 +335,7 @@ export default function ControlCenter() {
       padding: 18,
       boxShadow: "0 12px 28px rgba(0,0,0,0.28)"
     },
-    sectionTitle: {
-      fontSize: 20,
-      fontWeight: 900,
-      marginBottom: 12
-    },
+    sectionTitle: { fontSize: 20, fontWeight: 900, marginBottom: 12 },
     input: {
       width: "100%",
       padding: 13,
@@ -347,12 +408,8 @@ export default function ControlCenter() {
     modeChip: (active) => ({
       padding: "10px 12px",
       borderRadius: 12,
-      border: active
-        ? "1px solid rgba(120,180,255,0.55)"
-        : "1px solid rgba(255,255,255,0.18)",
-      background: active
-        ? "rgba(40,110,190,0.35)"
-        : "rgba(255,255,255,0.06)",
+      border: active ? "1px solid rgba(120,180,255,0.55)" : "1px solid rgba(255,255,255,0.18)",
+      background: active ? "rgba(40,110,190,0.35)" : "rgba(255,255,255,0.06)",
       textAlign: "center",
       fontWeight: 900,
       cursor: "pointer"
@@ -379,10 +436,33 @@ export default function ControlCenter() {
               placeholder="Verification ID, AdbS Verify Link, Load ID, email, phone, DOT, plate, or carrier"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  searchVerification();
+                }
+              }}
             />
 
-            <button style={styles.primaryBtn}>Search</button>
+            <button style={styles.primaryBtn} onClick={searchVerification}>
+              Search
+            </button>
           </div>
+
+          {matches.length > 1 ? (
+            <div style={{ marginTop: 12, display: "grid", gap: 8 }}>
+              {matches.map((m) => (
+                <button
+                  key={m.token || m.verification_id}
+                  type="button"
+                  style={styles.softBtn}
+                  onClick={() => loadVerificationByToken(m.token || m.verification_id)}
+                >
+                  {(m.load_id || "No Load ID") + " — " + (m.carrier_company || "Unknown Carrier")}
+                </button>
+              ))}
+            </div>
+          ) : null}
 
           {errorMsg ? (
             <div style={{ marginTop: 12, color: "#ff9c9c", fontWeight: 700 }}>
@@ -467,7 +547,11 @@ export default function ControlCenter() {
                 {selected.email_status ? (
                   <div style={{ border: "1px solid rgba(255,255,255,0.12)", borderRadius: 12, padding: 12, background: "rgba(255,255,255,0.04)" }}>
                     Email Status: <b>{selected.email_status}</b>
-                    {selected.email_error ? <div style={{ marginTop: 6, color: "#ff9c9c" }}>Email Error: <b>{selected.email_error}</b></div> : null}
+                    {selected.email_error ? (
+                      <div style={{ marginTop: 6, color: "#ff9c9c" }}>
+                        Email Error: <b>{selected.email_error}</b>
+                      </div>
+                    ) : null}
                   </div>
                 ) : null}
 
@@ -478,17 +562,11 @@ export default function ControlCenter() {
                 ) : null}
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                  <button style={styles.softBtn} onClick={async () => {
-                    const ok = await safeCopy(selected.verify_url || "");
-                    setStatusMsg(ok ? "AdbS Verify Link copied." : "Copy failed.");
-                  }}>
+                  <button style={styles.softBtn} onClick={async () => setStatusMsg((await safeCopy(selected.verify_url || "")) ? "AdbS Verify Link copied." : "Copy failed.")}>
                     Copy AdbS Verify Link
                   </button>
 
-                  <button style={styles.softBtn} onClick={async () => {
-                    const ok = await safeCopy(selected.verification_id || "");
-                    setStatusMsg(ok ? "Verification ID copied." : "Copy failed.");
-                  }}>
+                  <button style={styles.softBtn} onClick={async () => setStatusMsg((await safeCopy(selected.verification_id || "")) ? "Verification ID copied." : "Copy failed.")}>
                     Copy Verification ID
                   </button>
                 </div>
