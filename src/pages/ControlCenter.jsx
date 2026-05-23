@@ -14,17 +14,13 @@ function upper(s) {
 
 function formatPhone(v) {
   const d = onlyDigits(v).slice(0, 10);
-
   if (d.length <= 3) return d;
   if (d.length <= 6) return `${d.slice(0, 3)}-${d.slice(3)}`;
-
   return `${d.slice(0, 3)}-${d.slice(3, 6)}-${d.slice(6)}`;
 }
 
 function buildQrUrl(text) {
-  return `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(
-    text || ""
-  )}`;
+  return `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(text || "")}`;
 }
 
 function localNowInput() {
@@ -71,10 +67,8 @@ export default function ControlCenter() {
   const [expireAt, setExpireAt] = useState(plus24hInput());
 
   const [search, setSearch] = useState("");
-
   const [statusMsg, setStatusMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
-
   const [loading, setLoading] = useState(false);
 
   const [selected, setSelected] = useState(null);
@@ -95,7 +89,6 @@ export default function ControlCenter() {
 
   async function safeJson(res) {
     const text = await res.text();
-
     try {
       return JSON.parse(text);
     } catch {
@@ -183,7 +176,6 @@ export default function ControlCenter() {
       });
 
       setQrUrl(buildQrUrl(verifyUrl));
-
       setStatusMsg("AdbS Verification issued");
 
       setLoadId("");
@@ -204,37 +196,73 @@ export default function ControlCenter() {
     setLoading(false);
   }
 
+  async function setVerificationStatus(nextStatus) {
+    if (!selected?.verification_id) return;
+
+    setStatusMsg("");
+    setErrorMsg("");
+
+    try {
+      const res = await fetch("/api/manage_verify_link", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          action: "set_status",
+          token: selected.verification_id,
+          status: nextStatus
+        })
+      });
+
+      const data = await safeJson(res);
+
+      if (!res.ok || !data?.ok) {
+        setErrorMsg(data?.error || "Status update failed.");
+        return;
+      }
+
+      setSelected((prev) => ({
+        ...prev,
+        status: data.status || nextStatus
+      }));
+
+      setStatusMsg(
+        nextStatus === "revoked"
+          ? "Verification revoked."
+          : "Verification reactivated."
+      );
+    } catch {
+      setErrorMsg("Status update failed.");
+    }
+  }
+
   const styles = {
     page: {
       minHeight: "100vh",
       background: "#0c121c",
       color: "#e6edf5"
     },
-
     wrap: {
       maxWidth: 1120,
       margin: "0 auto",
       padding: "18px 16px 48px"
     },
-
     logoWrap: {
       display: "flex",
       justifyContent: "center",
       marginTop: 90,
       marginBottom: 10
     },
-
     logo: {
       width: 220,
       maxWidth: "90%"
     },
-
     title: {
       fontSize: 30,
       fontWeight: 900,
       marginBottom: 18
     },
-
     card: {
       background: "rgba(255,255,255,0.05)",
       border: "1px solid rgba(255,255,255,0.15)",
@@ -242,13 +270,11 @@ export default function ControlCenter() {
       padding: 18,
       boxShadow: "0 12px 28px rgba(0,0,0,0.28)"
     },
-
     sectionTitle: {
       fontSize: 20,
       fontWeight: 900,
       marginBottom: 12
     },
-
     input: {
       width: "100%",
       padding: 13,
@@ -260,7 +286,6 @@ export default function ControlCenter() {
       boxSizing: "border-box",
       outline: "none"
     },
-
     linkBox: {
       display: "block",
       width: "100%",
@@ -275,7 +300,6 @@ export default function ControlCenter() {
       textDecoration: "none",
       wordBreak: "break-all"
     },
-
     primaryBtn: {
       width: "100%",
       padding: 13,
@@ -287,7 +311,6 @@ export default function ControlCenter() {
       fontWeight: 900,
       cursor: "pointer"
     },
-
     softBtn: {
       width: "100%",
       padding: 12,
@@ -299,7 +322,6 @@ export default function ControlCenter() {
       fontWeight: 900,
       cursor: "pointer"
     },
-
     dangerBtn: {
       width: "100%",
       padding: 12,
@@ -311,7 +333,6 @@ export default function ControlCenter() {
       fontWeight: 900,
       cursor: "pointer"
     },
-
     successBtn: {
       width: "100%",
       padding: 12,
@@ -323,7 +344,6 @@ export default function ControlCenter() {
       fontWeight: 900,
       cursor: "pointer"
     },
-
     modeChip: (active) => ({
       padding: "10px 12px",
       borderRadius: 12,
@@ -361,9 +381,7 @@ export default function ControlCenter() {
               onChange={(e) => setSearch(e.target.value)}
             />
 
-            <button style={styles.primaryBtn}>
-              Search
-            </button>
+            <button style={styles.primaryBtn}>Search</button>
           </div>
 
           {errorMsg ? (
@@ -372,11 +390,7 @@ export default function ControlCenter() {
             </div>
           ) : null}
 
-          {statusMsg ? (
-            <div style={{ marginTop: 12 }}>
-              {statusMsg}
-            </div>
-          ) : null}
+          {statusMsg ? <div style={{ marginTop: 12 }}>{statusMsg}</div> : null}
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1.12fr 0.88fr", gap: 16 }}>
@@ -384,107 +398,30 @@ export default function ControlCenter() {
             <div style={styles.sectionTitle}>Issue AdbS Verification</div>
 
             <div style={{ display: "grid", gap: 10 }}>
-              <input
-                ref={loadRef}
-                style={styles.input}
-                placeholder="Load ID"
-                value={loadId}
-                onChange={(e) => setLoadId(e.target.value)}
-              />
-
-              <input
-                style={styles.input}
-                placeholder="Dock Email"
-                value={dockEmail}
-                onChange={(e) => setDockEmail(e.target.value)}
-              />
-
-              <input
-                style={styles.input}
-                placeholder="Carrier Company"
-                value={carrierCompany}
-                onChange={(e) => setCarrierCompany(e.target.value)}
-              />
-
-              <input
-                style={styles.input}
-                placeholder="Carrier Contact Name"
-                value={carrierContact}
-                onChange={(e) => setCarrierContact(e.target.value)}
-              />
-
-              <input
-                style={styles.input}
-                placeholder="Carrier Contact Phone"
-                value={carrierPhone}
-                onChange={(e) => setCarrierPhone(formatPhone(e.target.value))}
-              />
-
-              <input
-                style={styles.input}
-                placeholder="Driver Phone"
-                value={driverPhone}
-                onChange={(e) => setDriverPhone(formatPhone(e.target.value))}
-              />
-
-              <input
-                style={styles.input}
-                placeholder="USDOT#"
-                value={usdot}
-                onChange={(e) => setUsdot(onlyDigits(e.target.value))}
-              />
-
-              <input
-                style={styles.input}
-                placeholder="Plate"
-                value={plate}
-                onChange={(e) => setPlate(upper(e.target.value))}
-              />
-
-              <input
-                style={styles.input}
-                placeholder="Dock PIN (optional)"
-                value={dockPin}
-                onChange={(e) => setDockPin(onlyDigits(e.target.value))}
-              />
+              <input ref={loadRef} style={styles.input} placeholder="Load ID" value={loadId} onChange={(e) => setLoadId(e.target.value)} />
+              <input style={styles.input} placeholder="Dock Email" value={dockEmail} onChange={(e) => setDockEmail(e.target.value)} />
+              <input style={styles.input} placeholder="Carrier Company" value={carrierCompany} onChange={(e) => setCarrierCompany(e.target.value)} />
+              <input style={styles.input} placeholder="Carrier Contact Name" value={carrierContact} onChange={(e) => setCarrierContact(e.target.value)} />
+              <input style={styles.input} placeholder="Carrier Contact Phone" value={carrierPhone} onChange={(e) => setCarrierPhone(formatPhone(e.target.value))} />
+              <input style={styles.input} placeholder="Driver Phone" value={driverPhone} onChange={(e) => setDriverPhone(formatPhone(e.target.value))} />
+              <input style={styles.input} placeholder="USDOT#" value={usdot} onChange={(e) => setUsdot(onlyDigits(e.target.value))} />
+              <input style={styles.input} placeholder="Plate" value={plate} onChange={(e) => setPlate(upper(e.target.value))} />
+              <input style={styles.input} placeholder="Dock PIN (optional)" value={dockPin} onChange={(e) => setDockPin(onlyDigits(e.target.value))} />
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-                <div style={styles.modeChip(mode === "auto")} onClick={() => setMode("auto")}>
-                  Auto 24h
-                </div>
-
-                <div style={styles.modeChip(mode === "pick")} onClick={() => setMode("pick")}>
-                  Pick
-                </div>
-
-                <div style={styles.modeChip(mode === "none")} onClick={() => setMode("none")}>
-                  No Expire
-                </div>
+                <div style={styles.modeChip(mode === "auto")} onClick={() => setMode("auto")}>Auto 24h</div>
+                <div style={styles.modeChip(mode === "pick")} onClick={() => setMode("pick")}>Pick</div>
+                <div style={styles.modeChip(mode === "none")} onClick={() => setMode("none")}>No Expire</div>
               </div>
 
               {mode === "pick" ? (
                 <>
-                  <input
-                    style={styles.input}
-                    type="datetime-local"
-                    value={startAt}
-                    onChange={(e) => setStartAt(e.target.value)}
-                  />
-
-                  <input
-                    style={styles.input}
-                    type="datetime-local"
-                    value={expireAt}
-                    onChange={(e) => setExpireAt(e.target.value)}
-                  />
+                  <input style={styles.input} type="datetime-local" value={startAt} onChange={(e) => setStartAt(e.target.value)} />
+                  <input style={styles.input} type="datetime-local" value={expireAt} onChange={(e) => setExpireAt(e.target.value)} />
                 </>
               ) : null}
 
-              <button
-                style={styles.primaryBtn}
-                onClick={issueVerification}
-                disabled={loading}
-              >
+              <button style={styles.primaryBtn} onClick={issueVerification} disabled={loading}>
                 {loading ? "Issuing..." : "Issue AdbS Verification"}
               </button>
             </div>
@@ -494,68 +431,32 @@ export default function ControlCenter() {
             <div style={styles.sectionTitle}>Selected Verification</div>
 
             {!selected ? (
-              <div style={{ opacity: 0.72 }}>
-                No verification selected yet.
-              </div>
+              <div style={{ opacity: 0.72 }}>No verification selected yet.</div>
             ) : (
               <div style={{ display: "grid", gap: 10 }}>
                 <div>
-                  <div style={{ fontWeight: 900, marginBottom: 6 }}>
-                    Verification ID
-                  </div>
-
-                  <input
-                    style={styles.input}
-                    value={selected.verification_id || ""}
-                    readOnly
-                  />
+                  <div style={{ fontWeight: 900, marginBottom: 6 }}>Verification ID</div>
+                  <input style={styles.input} value={selected.verification_id || ""} readOnly />
                 </div>
 
                 <div>
-                  <div style={{ fontWeight: 900, marginBottom: 6 }}>
-                    AdbS Verify Link
-                  </div>
-
-                  <a
-                    href={selected.verify_url || "#"}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={styles.linkBox}
-                  >
+                  <div style={{ fontWeight: 900, marginBottom: 6 }}>AdbS Verify Link</div>
+                  <a href={selected.verify_url || "#"} target="_blank" rel="noreferrer" style={styles.linkBox}>
                     {selected.verify_url || ""}
                   </a>
                 </div>
 
                 <div>
-                  <div style={{ fontWeight: 900, marginBottom: 6 }}>
-                    Status
-                  </div>
-
-                  <input
-                    style={styles.input}
-                    value={selected.status || ""}
-                    readOnly
-                  />
+                  <div style={{ fontWeight: 900, marginBottom: 6 }}>Status</div>
+                  <input style={styles.input} value={selected.status || ""} readOnly />
                 </div>
 
                 <div>
-                  <div style={{ fontWeight: 900, marginBottom: 6 }}>
-                    Load ID
-                  </div>
-
-                  <input
-                    style={styles.input}
-                    value={selected.load_id || ""}
-                    readOnly
-                  />
+                  <div style={{ fontWeight: 900, marginBottom: 6 }}>Load ID</div>
+                  <input style={styles.input} value={selected.load_id || ""} readOnly />
                 </div>
 
-                <div style={{
-                  border: "1px solid rgba(255,255,255,0.12)",
-                  borderRadius: 12,
-                  padding: 12,
-                  background: "rgba(255,255,255,0.04)"
-                }}>
+                <div style={{ border: "1px solid rgba(255,255,255,0.12)", borderRadius: 12, padding: 12, background: "rgba(255,255,255,0.04)" }}>
                   <div>Dock Email: <b>{selected.dock_email || "(not provided)"}</b></div>
                   <div>Driver Phone: <b>{selected.driver_phone || "(not provided)"}</b></div>
                   <div>USDOT#: <b>{selected.usdot_on_record || "(not provided)"}</b></div>
@@ -564,59 +465,40 @@ export default function ControlCenter() {
                 </div>
 
                 {selected.email_status ? (
-                  <div style={{
-                    border: "1px solid rgba(255,255,255,0.12)",
-                    borderRadius: 12,
-                    padding: 12,
-                    background: "rgba(255,255,255,0.04)"
-                  }}>
+                  <div style={{ border: "1px solid rgba(255,255,255,0.12)", borderRadius: 12, padding: 12, background: "rgba(255,255,255,0.04)" }}>
                     Email Status: <b>{selected.email_status}</b>
+                    {selected.email_error ? <div style={{ marginTop: 6, color: "#ff9c9c" }}>Email Error: <b>{selected.email_error}</b></div> : null}
                   </div>
                 ) : null}
 
                 {qrUrl ? (
                   <div style={{ textAlign: "center" }}>
-                    <img
-                      src={qrUrl}
-                      alt="QR"
-                      style={{
-                        width: 240,
-                        background: "#fff",
-                        padding: 10,
-                        borderRadius: 12
-                      }}
-                    />
+                    <img src={qrUrl} alt="QR" style={{ width: 240, background: "#fff", padding: 10, borderRadius: 12 }} />
                   </div>
                 ) : null}
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                  <button
-                    style={styles.softBtn}
-                    onClick={async () => {
-                      const ok = await safeCopy(selected.verify_url || "");
-                      setStatusMsg(ok ? "AdbS Verify Link copied." : "Copy failed.");
-                    }}
-                  >
+                  <button style={styles.softBtn} onClick={async () => {
+                    const ok = await safeCopy(selected.verify_url || "");
+                    setStatusMsg(ok ? "AdbS Verify Link copied." : "Copy failed.");
+                  }}>
                     Copy AdbS Verify Link
                   </button>
 
-                  <button
-                    style={styles.softBtn}
-                    onClick={async () => {
-                      const ok = await safeCopy(selected.verification_id || "");
-                      setStatusMsg(ok ? "Verification ID copied." : "Copy failed.");
-                    }}
-                  >
+                  <button style={styles.softBtn} onClick={async () => {
+                    const ok = await safeCopy(selected.verification_id || "");
+                    setStatusMsg(ok ? "Verification ID copied." : "Copy failed.");
+                  }}>
                     Copy Verification ID
                   </button>
                 </div>
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                  <button style={styles.dangerBtn}>
+                  <button style={styles.dangerBtn} onClick={() => setVerificationStatus("revoked")}>
                     Revoke Verification
                   </button>
 
-                  <button style={styles.successBtn}>
+                  <button style={styles.successBtn} onClick={() => setVerificationStatus("active")}>
                     Reactivate Verification
                   </button>
                 </div>
