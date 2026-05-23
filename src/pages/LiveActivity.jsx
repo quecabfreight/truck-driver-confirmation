@@ -13,6 +13,17 @@ function fmt(v) {
   return String(v);
 }
 
+function pickTime(row) {
+  return (
+    row?.checked_at ||
+    row?.created_at ||
+    row?.timestamp ||
+    row?.inserted_at ||
+    row?.verification_timestamp ||
+    ""
+  );
+}
+
 function fmtDate(v) {
   if (!v) return "(unknown)";
   try {
@@ -271,7 +282,7 @@ export default function LiveActivity() {
                     {m.load_id || "(no load id)"} | {shortResult(m.result_summary)} | {m.status || "active"}
                   </div>
                   <div style={{ opacity: 0.86, fontSize: 14, marginTop: 4, lineHeight: 1.5 }}>
-                    {m.carrier_company || "(no carrier)"} | DOT {m.usdot_on_record || "—"} | Plate {m.plate_on_record || "—"} | Phone {m.driver_phone || "—"} | {m.created_at ? new Date(m.created_at).toLocaleString() : "(unknown time)"}
+                    {m.carrier_company || "(no carrier)"} | DOT {m.usdot_on_record || "—"} | Plate {m.plate_on_record || "—"} | Phone {m.driver_phone || "—"} | {fmtDate(pickTime(m))}
                   </div>
                 </button>
               ))}
@@ -291,7 +302,7 @@ export default function LiveActivity() {
                   Verification ID: <b>{fmt(record.token)}</b><br />
                   Load ID: <b>{fmt(record.load_id)}</b><br />
                   Status: <b>{fmt(record.status)}</b><br />
-                  Created: <b>{fmtDate(record.created_at)}</b><br />
+                  Created: <b>{fmtDate(pickTime(record))}</b><br />
                   Expires: <b>{record.expires_at ? fmtDate(record.expires_at) : "No Expire"}</b><br />
                   Dock Email: <b>{fmt(record.dock_email)}</b><br />
                   Driver Phone: <b>{fmt(record.driver_phone)}</b><br />
@@ -326,7 +337,7 @@ export default function LiveActivity() {
                         </div>
 
                         <div style={{ fontSize: 14, lineHeight: 1.6 }}>
-                          Time: <b>{fmtDate(a.checked_at)}</b><br />
+                          Verification Timestamp: <b>{fmtDate(pickTime(a))}</b><br />
                           Entered DOT: <b>{fmt(a.entered_usdot)}</b><br />
                           Entered Plate: <b>{fmt(a.entered_plate)}</b><br />
                           Driver Answered: <b>{String(a.driver_answered)}</b><br />
