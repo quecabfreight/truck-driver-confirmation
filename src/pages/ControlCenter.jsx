@@ -261,6 +261,21 @@ export default function ControlCenter() {
       outline: "none"
     },
 
+    linkBox: {
+      display: "block",
+      width: "100%",
+      padding: 13,
+      borderRadius: 12,
+      border: "1px solid rgba(120,180,255,0.45)",
+      background: "rgba(40,110,190,0.16)",
+      color: "#8fc7ff",
+      fontSize: 15,
+      fontWeight: 900,
+      boxSizing: "border-box",
+      textDecoration: "none",
+      wordBreak: "break-all"
+    },
+
     primaryBtn: {
       width: "100%",
       padding: 13,
@@ -501,11 +516,14 @@ export default function ControlCenter() {
                     AdbS Verify Link
                   </div>
 
-                  <input
-                    style={styles.input}
-                    value={selected.verify_url || ""}
-                    readOnly
-                  />
+                  <a
+                    href={selected.verify_url || "#"}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={styles.linkBox}
+                  >
+                    {selected.verify_url || ""}
+                  </a>
                 </div>
 
                 <div>
