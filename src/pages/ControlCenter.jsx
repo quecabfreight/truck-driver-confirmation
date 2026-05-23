@@ -72,6 +72,7 @@ export default function ControlCenter() {
   const [statusMsg, setStatusMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
+  const [statusLoading, setStatusLoading] = useState("");
 
   const [selected, setSelected] = useState(null);
   const [qrUrl, setQrUrl] = useState("");
@@ -292,6 +293,7 @@ export default function ControlCenter() {
 
     setStatusMsg("");
     setErrorMsg("");
+    setStatusLoading(nextStatus);
 
     try {
       const res = await fetch("/api/manage_verify_link", {
@@ -308,6 +310,7 @@ export default function ControlCenter() {
 
       if (!res.ok || !data?.ok) {
         setErrorMsg(data?.error || "Status update failed.");
+        setStatusLoading("");
         return;
       }
 
@@ -320,6 +323,8 @@ export default function ControlCenter() {
     } catch {
       setErrorMsg("Status update failed.");
     }
+
+    setStatusLoading("");
   }
 
   const styles = {
@@ -572,12 +577,28 @@ export default function ControlCenter() {
                 </div>
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                  <button style={styles.dangerBtn} onClick={() => setVerificationStatus("revoked")}>
-                    Revoke Verification
+                  <button
+                    style={{
+                      ...styles.dangerBtn,
+                      opacity: statusLoading ? 0.7 : 1,
+                      cursor: statusLoading ? "not-allowed" : "pointer"
+                    }}
+                    onClick={() => setVerificationStatus("revoked")}
+                    disabled={!!statusLoading}
+                  >
+                    {statusLoading === "revoked" ? "Revoking..." : "Revoke Verification"}
                   </button>
 
-                  <button style={styles.successBtn} onClick={() => setVerificationStatus("active")}>
-                    Reactivate Verification
+                  <button
+                    style={{
+                      ...styles.successBtn,
+                      opacity: statusLoading ? 0.7 : 1,
+                      cursor: statusLoading ? "not-allowed" : "pointer"
+                    }}
+                    onClick={() => setVerificationStatus("active")}
+                    disabled={!!statusLoading}
+                  >
+                    {statusLoading === "active" ? "Reactivating..." : "Reactivate Verification"}
                   </button>
                 </div>
               </div>
