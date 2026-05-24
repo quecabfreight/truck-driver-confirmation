@@ -4,7 +4,6 @@ export default async function handler(req, res) {
       return json(res, 405, { ok: false, error: "Use POST." });
     }
 
-    // Safe body parsing
     let body = {};
     try {
       if (typeof req.body === "object") body = req.body;
@@ -32,12 +31,9 @@ export default async function handler(req, res) {
       return json(res, 400, { ok: false, error: "Missing id." });
     }
 
-    // 1) Fetch the row first so we can:
-    // - keep existing access_code (no regeneration)
-    // - avoid re-approving/re-writing if already approved
     const getUrl =
       `${SUPABASE_URL}/rest/v1/beta_requests` +
-      `?select=id,business_email,status,approved,access_code` +
+      `?select=id,business_email,email,contact_name,legal_business_name,status,approved,access_code` +
       `&id=eq.${encodeURIComponent(id)}` +
       `&limit=1`;
 
@@ -66,25 +62,35 @@ export default async function handler(req, res) {
       return json(res, 404, { ok: false, error: "Request not found." });
     }
 
+    const businessEmail = String(row.business_email || row.email || "").trim().toLowerCase();
+    const contactName = String(row.contact_name || "").trim();
+    const companyName = String(row.legal_business_name || "").trim();
+
     const existingCode = String(row.access_code || "").trim();
     const alreadyApproved =
       row.approved === true || String(row.status || "").toLowerCase().trim() === "approved";
 
-    // If already approved, do NOT change code/status. Just return what's already there.
     if (alreadyApproved) {
+      const emailResult = await sendApprovalEmail({
+        to: businessEmail,
+        contactName,
+        companyName,
+        accessCode: existingCode,
+      });
+
       return json(res, 200, {
         ok: true,
         note: "Already approved (no changes made).",
         access_code: existingCode || null,
         id: row.id,
-        business_email: row.business_email || null,
+        business_email: businessEmail || null,
+        email_status: emailResult.ok ? "sent" : "not_sent",
+        email_error: emailResult.ok ? null : emailResult.error,
       });
     }
 
-    // If no code exists, generate one; otherwise keep existing.
     const finalCode = existingCode || makeCode();
 
-    // 2) Patch approve + (maybe) set code
     const patchUrl = `${SUPABASE_URL}/rest/v1/beta_requests?id=eq.${encodeURIComponent(id)}`;
 
     const p = await fetch(patchUrl, {
@@ -114,10 +120,19 @@ export default async function handler(req, res) {
       return json(res, 500, { ok: false, error: "Supabase error (approve).", details: pData });
     }
 
+    const emailResult = await sendApprovalEmail({
+      to: businessEmail,
+      contactName,
+      companyName,
+      accessCode: finalCode,
+    });
+
     return json(res, 200, {
       ok: true,
       access_code: finalCode,
       updated: pData,
+      email_status: emailResult.ok ? "sent" : "not_sent",
+      email_error: emailResult.ok ? null : emailResult.error,
     });
   } catch (err) {
     return json(res, 500, {
@@ -131,6 +146,129 @@ export default async function handler(req, res) {
 function makeCode() {
   const n = Math.floor(100000 + Math.random() * 900000);
   return `QC-${n}`;
+}
+
+async function sendApprovalEmail({ to, contactName, companyName, accessCode }) {
+  try {
+    const RESEND_API_KEY = String(process.env.RESEND_API_KEY || "").trim();
+    const from = String(process.env.ADBS_EMAIL_FROM || "QueCab AdbS <verify@quecabadbs.com>").trim();
+
+    if (!RESEND_API_KEY) {
+      return { ok: false, error: "Missing RESEND_API_KEY" };
+    }
+
+    if (!to) {
+      return { ok: false, error: "Missing approval email recipient." };
+    }
+
+    const loginUrl = "https://quecabadbs.com/login";
+
+    const html = `
+      <div style="font-family:Arial,sans-serif;background:#0b111b;color:#ffffff;padding:24px;">
+        <div style="max-width:640px;margin:0 auto;background:#101a28;border:1px solid rgba(255,255,255,0.14);border-radius:18px;padding:24px;">
+          <h1 style="margin:0 0 10px;font-size:26px;">QueCab AdbS</h1>
+          <div style="color:#9fb2cc;margin-bottom:22px;">Anti-Double-Broker System</div>
+
+          <h2 style="margin:0 0 14px;font-size:22px;">Access Approved</h2>
+
+          <p style="line-height:1.6;">
+            Hello ${escapeHtml(contactName || "there")},
+          </p>
+
+          <p style="line-height:1.6;">
+            Your QueCab AdbS broker access has been approved${companyName ? ` for <b>${escapeHtml(companyName)}</b>` : ""}.
+          </p>
+
+          <div style="background:#07101c;border:1px solid rgba(120,180,255,0.35);border-radius:14px;padding:18px;margin:22px 0;">
+            <div style="color:#9fb2cc;font-size:13px;margin-bottom:6px;">Your Access Code</div>
+            <div style="font-size:28px;font-weight:900;letter-spacing:1px;color:#8fc7ff;">${escapeHtml(accessCode)}</div>
+          </div>
+
+          <p style="line-height:1.6;">
+            Use your approved business email and access code to log in.
+          </p>
+
+          <p style="text-align:center;margin:28px 0;">
+            <a href="${loginUrl}" style="display:inline-block;background:#245fba;color:#ffffff;text-decoration:none;font-weight:900;padding:14px 22px;border-radius:12px;border:1px solid rgba(120,180,255,0.55);">
+              Log In to QueCab AdbS
+            </a>
+          </p>
+
+          <p style="line-height:1.6;color:#c9d6e6;">
+            Founding beta access is active during the beta period. Future pricing begins at $149/month.
+          </p>
+
+          <div style="border-top:1px solid rgba(255,255,255,0.12);margin-top:24px;padding-top:16px;color:#9fb2cc;font-size:13px;line-height:1.6;">
+            QueCab AdbS™ — Verification happens before freight moves.<br/>
+            © 2026 Omnimobile Inc. All Rights Reserved. Patent Pending.
+          </div>
+        </div>
+      </div>
+    `;
+
+    const text = `
+QueCab AdbS — Access Approved
+
+Hello ${contactName || "there"},
+
+Your QueCab AdbS broker access has been approved${companyName ? ` for ${companyName}` : ""}.
+
+Business Email: ${to}
+Access Code: ${accessCode}
+
+Log in:
+${loginUrl}
+
+Founding beta access is active during the beta period.
+Future pricing begins at $149/month.
+
+QueCab AdbS — Verification happens before freight moves.
+© 2026 Omnimobile Inc. All Rights Reserved. Patent Pending.
+    `.trim();
+
+    const r = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from,
+        to,
+        subject: "QueCab AdbS — Access Approved",
+        html,
+        text,
+      }),
+    });
+
+    const rText = await r.text();
+    let rData;
+    try {
+      rData = JSON.parse(rText);
+    } catch {
+      rData = rText;
+    }
+
+    if (!r.ok) {
+      return {
+        ok: false,
+        error: typeof rData === "string" ? rData : rData?.message || "Approval email failed.",
+      };
+    }
+
+    return { ok: true, data: rData };
+  } catch (err) {
+    return { ok: false, error: String(err?.message || err) };
+  }
+}
+
+function escapeHtml(v) {
+  return String(v || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
 function json(res, status, obj) {
