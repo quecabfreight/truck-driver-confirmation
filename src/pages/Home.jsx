@@ -3,59 +3,143 @@ import { Link } from "react-router-dom";
 export default function Home() {
   return (
     <div style={styles.wrapper}>
+      <div style={styles.overlay} />
+
       <div style={styles.container}>
         <img src="/qc-logo.png" alt="QueCab AdbS" style={styles.logo} />
 
-        <div style={styles.kicker}>Pre-load Truck-Driver verification</div>
-
-        <div style={styles.title}>
+        <div style={styles.heroTitle}>
           Stop double brokering before the truck gets loaded.
         </div>
 
-        <div style={styles.subtitle}>
+        <div style={styles.heroSub}>
           QueCab AdbS™ helps brokers verify the Truck-Driver at the dock before freight is released.
         </div>
 
-        <div style={styles.verdictBar}>
-          <span>CLEAR TO LOAD</span>
-          <span style={styles.divider}>|</span>
-          <span>CAUTION — DO NOT LOAD</span>
+        <div style={styles.heroResultWrap}>
+          <div style={styles.clearBox}>
+            CLEAR TO LOAD
+          </div>
+
+          <div style={styles.divider}>|</div>
+
+          <div style={styles.cautionBox}>
+            CAUTION — DO NOT LOAD
+          </div>
         </div>
 
-        <div style={styles.section}>
+        <div style={styles.sectionGrid}>
           <div style={styles.card}>
-            <div style={styles.cardTitle}>Request Access</div>
+            <div style={styles.cardTitle}>
+              Request Access
+            </div>
+
             <div style={styles.cardText}>
               Broker beta access is reviewed before approval. Submit your business details to begin.
             </div>
-            <Link to="/join" style={styles.button}>
+
+            <Link to="/join" style={styles.primaryBtn}>
               Request Access
             </Link>
           </div>
 
           <div style={styles.card}>
-            <div style={styles.cardTitle}>Already Authorized?</div>
+            <div style={styles.cardTitle}>
+              Already Authorized?
+            </div>
+
             <div style={styles.cardText}>
               Enter with your approved business email and QueCab AdbS access code.
             </div>
-            <Link to="/login" style={styles.button}>
+
+            <Link to="/login" style={styles.primaryBtn}>
               Log In
             </Link>
           </div>
 
           <div style={styles.card}>
-            <div style={styles.cardTitle}>How It Works</div>
+            <div style={styles.cardTitle}>
+              How It Works
+            </div>
+
             <div style={styles.cardText}>
               See the high-level process behind real-time Truck-Driver verification at the dock.
             </div>
-            <Link to="/how-it-works" style={styles.buttonSecondary}>
+
+            <Link to="/how-it-works" style={styles.primaryBtn}>
               View Process
             </Link>
           </div>
         </div>
 
-        <div style={styles.note}>
-          Built for brokers who need cleaner confirmation before freight moves.
+        <div style={styles.pricingWrap}>
+          <div style={styles.pricingTitle}>
+            Founding Beta Access
+          </div>
+
+          <div style={styles.betaPrice}>
+            $49/month during beta
+          </div>
+
+          <div style={styles.betaText}>
+            • Unlimited Truck-Driver verifications during beta
+            <br />
+            • Founding-user pricing
+            <br />
+            • Early feature access
+            <br />
+            • Direct founder support
+          </div>
+
+          <div style={styles.futurePricing}>
+            Future pricing begins at $149/month.
+          </div>
+
+          <div style={styles.tierGrid}>
+            <div style={styles.tierCard}>
+              <div style={styles.tierName}>Starter</div>
+              <div style={styles.tierPrice}>$149/month</div>
+              <div style={styles.tierDesc}>
+                Up to 100 verifications
+              </div>
+            </div>
+
+            <div style={styles.tierCard}>
+              <div style={styles.tierName}>Growth</div>
+              <div style={styles.tierPrice}>$249/month</div>
+              <div style={styles.tierDesc}>
+                Up to 250 verifications
+              </div>
+            </div>
+
+            <div style={styles.tierCard}>
+              <div style={styles.tierName}>Pro</div>
+              <div style={styles.tierPrice}>$399/month</div>
+              <div style={styles.tierDesc}>
+                Up to 500 verifications
+              </div>
+            </div>
+
+            <div style={styles.tierCard}>
+              <div style={styles.tierName}>Scale</div>
+              <div style={styles.tierPrice}>$599/month</div>
+              <div style={styles.tierDesc}>
+                Up to 1,000 verifications
+              </div>
+            </div>
+
+            <div style={styles.tierCard}>
+              <div style={styles.tierName}>Enterprise</div>
+              <div style={styles.tierPrice}>Custom</div>
+              <div style={styles.tierDesc}>
+                High-volume broker operations
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style={styles.footerText}>
+          QueCab AdbS™ — Verification happens before freight moves.
         </div>
       </div>
     </div>
@@ -64,134 +148,206 @@ export default function Home() {
 
 const styles = {
   wrapper: {
+    position: "relative",
     minHeight: "100vh",
     background:
-      "radial-gradient(circle at top, rgba(45,95,145,0.22), transparent 34%), #0c121c",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 20,
+      "linear-gradient(180deg, #0a1018 0%, #0f1724 55%, #121d2d 100%)",
+    overflow: "hidden",
+    padding: "40px 18px 80px"
+  },
+
+  overlay: {
+    position: "absolute",
+    inset: 0,
+    background:
+      "radial-gradient(circle at top, rgba(60,120,220,0.14), transparent 40%)"
   },
 
   container: {
-    maxWidth: 980,
-    width: "100%",
-    textAlign: "center",
-    color: "#e6edf5",
+    position: "relative",
+    zIndex: 2,
+    maxWidth: 1180,
+    margin: "0 auto",
+    color: "#ffffff"
   },
 
   logo: {
     width: 220,
-    maxWidth: "90%",
-    marginBottom: 18,
+    maxWidth: "92%",
+    display: "block",
+    margin: "30px auto 20px"
   },
 
-  kicker: {
-    display: "inline-block",
-    marginBottom: 12,
-    padding: "8px 12px",
-    borderRadius: 999,
-    border: "1px solid rgba(140,190,255,0.22)",
-    background: "rgba(255,255,255,0.04)",
-    color: "rgba(230,237,245,0.82)",
-    fontSize: 13,
+  heroTitle: {
+    textAlign: "center",
+    fontSize: 42,
     fontWeight: 900,
-    letterSpacing: "0.4px",
-    textTransform: "uppercase",
+    lineHeight: 1.1,
+    maxWidth: 900,
+    margin: "0 auto"
   },
 
-  title: {
-    maxWidth: 820,
-    margin: "0 auto 12px",
-    fontSize: "clamp(34px, 6vw, 56px)",
-    lineHeight: 1.05,
-    fontWeight: 950,
-    letterSpacing: "-1.2px",
-  },
-
-  subtitle: {
-    maxWidth: 720,
-    margin: "0 auto 22px",
+  heroSub: {
+    textAlign: "center",
+    marginTop: 18,
     fontSize: 18,
-    opacity: 0.84,
-    lineHeight: 1.5,
+    lineHeight: 1.6,
+    color: "#c8d4e6",
+    maxWidth: 860,
+    marginLeft: "auto",
+    marginRight: "auto"
   },
 
-  verdictBar: {
-    display: "inline-flex",
-    gap: 12,
-    alignItems: "center",
+  heroResultWrap: {
+    marginTop: 34,
+    display: "flex",
     justifyContent: "center",
-    flexWrap: "wrap",
-    marginBottom: 28,
-    padding: "12px 18px",
+    alignItems: "center",
+    gap: 16,
+    flexWrap: "wrap"
+  },
+
+  clearBox: {
+    padding: "16px 26px",
     borderRadius: 14,
-    border: "1px solid rgba(255,255,255,0.13)",
-    background: "rgba(0,0,0,0.22)",
-    fontSize: 14,
-    fontWeight: 950,
-    letterSpacing: "0.5px",
+    border: "1px solid rgba(90,220,130,0.45)",
+    background: "rgba(20,90,40,0.34)",
+    fontWeight: 900,
+    fontSize: 20
+  },
+
+  cautionBox: {
+    padding: "16px 26px",
+    borderRadius: 14,
+    border: "1px solid rgba(255,90,90,0.45)",
+    background: "rgba(110,25,25,0.34)",
+    fontWeight: 900,
+    fontSize: 20
   },
 
   divider: {
-    opacity: 0.4,
+    fontSize: 28,
+    opacity: 0.6,
+    fontWeight: 900
   },
 
-  section: {
+  sectionGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+    gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
     gap: 18,
+    marginTop: 44
   },
 
   card: {
-    background: "rgba(255,255,255,0.055)",
-    border: "1px solid rgba(255,255,255,0.15)",
+    background: "rgba(255,255,255,0.05)",
+    border: "1px solid rgba(255,255,255,0.12)",
     borderRadius: 18,
-    padding: 22,
-    boxShadow: "0 12px 28px rgba(0,0,0,0.24)",
+    padding: 24,
+    backdropFilter: "blur(8px)",
+    boxShadow: "0 12px 30px rgba(0,0,0,0.28)"
   },
 
   cardTitle: {
-    fontSize: 20,
-    fontWeight: 950,
-    marginBottom: 9,
+    fontSize: 22,
+    fontWeight: 900,
+    marginBottom: 10
   },
 
   cardText: {
-    minHeight: 62,
+    fontSize: 15,
+    lineHeight: 1.6,
+    color: "#d6dfeb",
+    marginBottom: 18
+  },
+
+  primaryBtn: {
+    display: "inline-block",
+    padding: "13px 22px",
+    borderRadius: 12,
+    background: "rgba(40,110,190,0.42)",
+    border: "1px solid rgba(120,180,255,0.5)",
+    color: "#ffffff",
+    textDecoration: "none",
+    fontWeight: 900,
+    fontSize: 15
+  },
+
+  pricingWrap: {
+    marginTop: 60,
+    padding: 28,
+    borderRadius: 22,
+    border: "1px solid rgba(255,255,255,0.12)",
+    background: "rgba(255,255,255,0.05)",
+    boxShadow: "0 14px 34px rgba(0,0,0,0.30)"
+  },
+
+  pricingTitle: {
+    textAlign: "center",
+    fontSize: 34,
+    fontWeight: 900
+  },
+
+  betaPrice: {
+    textAlign: "center",
+    fontSize: 40,
+    fontWeight: 900,
+    marginTop: 10,
+    color: "#8fc7ff"
+  },
+
+  betaText: {
+    marginTop: 20,
+    textAlign: "center",
+    fontSize: 16,
+    lineHeight: 1.9,
+    color: "#d5e1f0"
+  },
+
+  futurePricing: {
+    marginTop: 22,
+    textAlign: "center",
+    fontSize: 18,
+    fontWeight: 800,
+    color: "#ffffff"
+  },
+
+  tierGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
+    gap: 16,
+    marginTop: 34
+  },
+
+  tierCard: {
+    borderRadius: 18,
+    border: "1px solid rgba(255,255,255,0.12)",
+    background: "rgba(255,255,255,0.04)",
+    padding: 22,
+    textAlign: "center"
+  },
+
+  tierName: {
+    fontSize: 22,
+    fontWeight: 900
+  },
+
+  tierPrice: {
+    fontSize: 28,
+    fontWeight: 900,
+    marginTop: 12,
+    color: "#8fc7ff"
+  },
+
+  tierDesc: {
+    marginTop: 12,
+    color: "#d2dceb",
+    lineHeight: 1.5
+  },
+
+  footerText: {
+    textAlign: "center",
+    marginTop: 40,
     fontSize: 14,
-    opacity: 0.82,
-    marginBottom: 18,
-    lineHeight: 1.45,
-  },
-
-  button: {
-    display: "inline-block",
-    padding: "12px 20px",
-    borderRadius: 12,
-    border: "1px solid rgba(140,190,255,0.42)",
-    background:
-      "linear-gradient(180deg, rgba(40,110,200,0.88), rgba(20,70,140,0.78))",
-    color: "#fff",
-    textDecoration: "none",
-    fontWeight: 900,
-    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.10)",
-  },
-
-  buttonSecondary: {
-    display: "inline-block",
-    padding: "12px 20px",
-    borderRadius: 12,
-    border: "1px solid rgba(255,255,255,0.16)",
-    background: "rgba(0,0,0,0.18)",
-    color: "#e6edf5",
-    textDecoration: "none",
-    fontWeight: 900,
-  },
-
-  note: {
-    marginTop: 26,
-    fontSize: 13,
-    opacity: 0.66,
-  },
+    color: "#b9c7da"
+  }
 };
