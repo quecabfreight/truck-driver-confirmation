@@ -99,6 +99,12 @@ export default function ControlCenter() {
     }
   }
 
+  function handleIssueEnter(e) {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    if (!loading) issueVerification();
+  }
+
   function makeSelected(row) {
     const token = row?.token || row?.verification_id || "";
     const verifyUrl =
@@ -483,15 +489,15 @@ export default function ControlCenter() {
             <div style={styles.sectionTitle}>Issue AdbS Verification</div>
 
             <div style={{ display: "grid", gap: 10 }}>
-              <input ref={loadRef} style={styles.input} placeholder="Load ID" value={loadId} onChange={(e) => setLoadId(e.target.value)} />
-              <input style={styles.input} placeholder="Dock Email" value={dockEmail} onChange={(e) => setDockEmail(e.target.value)} />
-              <input style={styles.input} placeholder="Carrier Company" value={carrierCompany} onChange={(e) => setCarrierCompany(e.target.value)} />
-              <input style={styles.input} placeholder="Carrier Contact Name" value={carrierContact} onChange={(e) => setCarrierContact(e.target.value)} />
-              <input style={styles.input} placeholder="Carrier Contact Phone" value={carrierPhone} onChange={(e) => setCarrierPhone(formatPhone(e.target.value))} />
-              <input style={styles.input} placeholder="Driver Phone" value={driverPhone} onChange={(e) => setDriverPhone(formatPhone(e.target.value))} />
-              <input style={styles.input} placeholder="USDOT#" value={usdot} onChange={(e) => setUsdot(onlyDigits(e.target.value))} />
-              <input style={styles.input} placeholder="Plate" value={plate} onChange={(e) => setPlate(upper(e.target.value))} />
-              <input style={styles.input} placeholder="Dock PIN (optional)" value={dockPin} onChange={(e) => setDockPin(onlyDigits(e.target.value))} />
+              <input ref={loadRef} style={styles.input} placeholder="Load ID" value={loadId} onChange={(e) => setLoadId(e.target.value)} onKeyDown={handleIssueEnter} />
+              <input style={styles.input} placeholder="Dock Email" value={dockEmail} onChange={(e) => setDockEmail(e.target.value)} onKeyDown={handleIssueEnter} />
+              <input style={styles.input} placeholder="Carrier Company" value={carrierCompany} onChange={(e) => setCarrierCompany(e.target.value)} onKeyDown={handleIssueEnter} />
+              <input style={styles.input} placeholder="Carrier Contact Name" value={carrierContact} onChange={(e) => setCarrierContact(e.target.value)} onKeyDown={handleIssueEnter} />
+              <input style={styles.input} placeholder="Carrier Contact Phone" value={carrierPhone} onChange={(e) => setCarrierPhone(formatPhone(e.target.value))} onKeyDown={handleIssueEnter} />
+              <input style={styles.input} placeholder="Driver Phone" value={driverPhone} onChange={(e) => setDriverPhone(formatPhone(e.target.value))} onKeyDown={handleIssueEnter} />
+              <input style={styles.input} placeholder="USDOT#" value={usdot} onChange={(e) => setUsdot(onlyDigits(e.target.value))} onKeyDown={handleIssueEnter} />
+              <input style={styles.input} placeholder="Plate" value={plate} onChange={(e) => setPlate(upper(e.target.value))} onKeyDown={handleIssueEnter} />
+              <input style={styles.input} placeholder="Dock PIN (optional)" value={dockPin} onChange={(e) => setDockPin(onlyDigits(e.target.value))} onKeyDown={handleIssueEnter} />
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
                 <div style={styles.modeChip(mode === "auto")} onClick={() => setMode("auto")}>Auto 24h</div>
@@ -501,8 +507,8 @@ export default function ControlCenter() {
 
               {mode === "pick" ? (
                 <>
-                  <input style={styles.input} type="datetime-local" value={startAt} onChange={(e) => setStartAt(e.target.value)} />
-                  <input style={styles.input} type="datetime-local" value={expireAt} onChange={(e) => setExpireAt(e.target.value)} />
+                  <input style={styles.input} type="datetime-local" value={startAt} onChange={(e) => setStartAt(e.target.value)} onKeyDown={handleIssueEnter} />
+                  <input style={styles.input} type="datetime-local" value={expireAt} onChange={(e) => setExpireAt(e.target.value)} onKeyDown={handleIssueEnter} />
                 </>
               ) : null}
 
