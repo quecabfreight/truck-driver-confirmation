@@ -46,6 +46,11 @@ async function safeCopy(text) {
   }
 }
 
+function num(v) {
+  const n = Number(v || 0);
+  return Number.isFinite(n) ? n : 0;
+}
+
 export default function ControlCenter() {
   const nav = useNavigate();
   const email = getAuthEmail();
@@ -77,11 +82,16 @@ export default function ControlCenter() {
   const [selected, setSelected] = useState(null);
   const [qrUrl, setQrUrl] = useState("");
 
+  const [totals, setTotals] = useState(null);
+  const [totalsError, setTotalsError] = useState("");
+
   useEffect(() => {
     if (!authorized) {
       nav("/login", { replace: true });
       return;
     }
+
+    loadDashboardTotals();
 
     setTimeout(() => {
       loadRef.current?.focus();
@@ -96,6 +106,24 @@ export default function ControlCenter() {
       return JSON.parse(text);
     } catch {
       return {};
+    }
+  }
+
+  async function loadDashboardTotals() {
+    setTotalsError("");
+
+    try {
+      const res = await fetch("/api/dashboard_totals");
+      const data = await safeJson(res);
+
+      if (!res.ok || data?.ok === false) {
+        setTotalsError(data?.error || "Could not load dashboard totals.");
+        return;
+      }
+
+      setTotals(data);
+    } catch {
+      setTotalsError("Could not load dashboard totals.");
     }
   }
 
@@ -286,6 +314,7 @@ export default function ControlCenter() {
       setPlate("");
       setDockPin("");
 
+      loadDashboardTotals();
       loadRef.current?.focus();
     } catch {
       setErrorMsg("Network error.");
@@ -326,6 +355,7 @@ export default function ControlCenter() {
       }));
 
       setStatusMsg(nextStatus === "revoked" ? "Verification revoked." : "Verification reactivated.");
+      loadDashboardTotals();
     } catch {
       setErrorMsg("Status update failed.");
     }
@@ -347,6 +377,29 @@ export default function ControlCenter() {
       boxShadow: "0 12px 28px rgba(0,0,0,0.28)"
     },
     sectionTitle: { fontSize: 20, fontWeight: 900, marginBottom: 12 },
+    metricGrid: {
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+      gap: 12
+    },
+    metricCard: {
+      border: "1px solid rgba(255,255,255,0.12)",
+      background: "rgba(255,255,255,0.045)",
+      borderRadius: 16,
+      padding: 14
+    },
+    metricNumber: {
+      fontSize: 26,
+      fontWeight: 900,
+      color: "#ffffff"
+    },
+    metricLabel: {
+      marginTop: 6,
+      fontSize: 13,
+      lineHeight: 1.35,
+      color: "#cdd8e8",
+      fontWeight: 800
+    },
     input: {
       width: "100%",
       padding: 13,
@@ -437,6 +490,48 @@ export default function ControlCenter() {
 
       <div style={styles.wrap}>
         <div style={styles.title}>Control Center</div>
+
+        <div style={{ ...styles.card, marginBottom: 16 }}>
+          <div style={styles.sectionTitle}>AdbS Protection Summary</div>
+
+          <div style={styles.metricGrid}>
+            <div style={styles.metricCard}>
+              <div style={styles.metricNumber}>{num(totals?.this_month_verifications)}</div>
+              <div style={styles.metricLabel}>This Month’s Truck-Driver Verifications</div>
+            </div>
+
+            <div style={styles.metricCard}>
+              <div style={styles.metricNumber}>{num(totals?.this_month_clear_to_load)}</div>
+              <div style={styles.metricLabel}>CLEAR TO LOAD This Month</div>
+            </div>
+
+            <div style={styles.metricCard}>
+              <div style={styles.metricNumber}>{num(totals?.this_month_caution_alerts)}</div>
+              <div style={styles.metricLabel}>CAUTION ALERTS This Month</div>
+            </div>
+
+            <div style={styles.metricCard}>
+              <div style={styles.metricNumber}>{num(totals?.active_links)}</div>
+              <div style={styles.metricLabel}>Active Verification Links</div>
+            </div>
+
+            <div style={styles.metricCard}>
+              <div style={styles.metricNumber}>{num(totals?.revoked_links)}</div>
+              <div style={styles.metricLabel}>Revoked Links</div>
+            </div>
+
+            <div style={styles.metricCard}>
+              <div style={styles.metricNumber}>{num(totals?.failed_attempts)}</div>
+              <div style={styles.metricLabel}>Total Failed / Caution Attempts</div>
+            </div>
+          </div>
+
+          {totalsError ? (
+            <div style={{ marginTop: 12, color: "#ff9c9c", fontWeight: 700 }}>
+              {totalsError}
+            </div>
+          ) : null}
+        </div>
 
         <div style={{ ...styles.card, marginBottom: 16 }}>
           <div style={styles.sectionTitle}>Find Verification</div>
@@ -584,11 +679,7 @@ export default function ControlCenter() {
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                   <button
-                    style={{
-                      ...styles.dangerBtn,
-                      opacity: statusLoading ? 0.7 : 1,
-                      cursor: statusLoading ? "not-allowed" : "pointer"
-                    }}
+                    style={{ ...styles.dangerBtn, opacity: statusLoading ? 0.7 : 1, cursor: statusLoading ? "not-allowed" : "pointer" }}
                     onClick={() => setVerificationStatus("revoked")}
                     disabled={!!statusLoading}
                   >
@@ -596,11 +687,7 @@ export default function ControlCenter() {
                   </button>
 
                   <button
-                    style={{
-                      ...styles.successBtn,
-                      opacity: statusLoading ? 0.7 : 1,
-                      cursor: statusLoading ? "not-allowed" : "pointer"
-                    }}
+                    style={{ ...styles.successBtn, opacity: statusLoading ? 0.7 : 1, cursor: statusLoading ? "not-allowed" : "pointer" }}
                     onClick={() => setVerificationStatus("active")}
                     disabled={!!statusLoading}
                   >
