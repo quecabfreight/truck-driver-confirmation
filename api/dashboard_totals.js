@@ -5,44 +5,111 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+function lower(v) {
+  return String(v || "").toLowerCase();
+}
+
+function isThisMonth(dateValue) {
+  if (!dateValue) return false;
+
+  const d = new Date(dateValue);
+  if (Number.isNaN(d.getTime())) return false;
+
+  const now = new Date();
+
+  return (
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth()
+  );
+}
+
 export default async function handler(req, res) {
   if (req.method !== "GET") {
-    return res.status(405).json({ error: "Method not allowed" });
+    return res.status(405).json({
+      ok: false,
+      error: "Method not allowed"
+    });
   }
 
   try {
     const { data: links, error: linksError } = await supabase
       .from("verify_links")
-      .select("status");
+      .select("status, created_at");
 
     if (linksError) {
-      return res.status(500).json({ error: linksError.message || "Failed to load verify_links" });
+      return res.status(500).json({
+        ok: false,
+        error: linksError.message || "Failed to load verify_links"
+      });
     }
 
     const { data: checks, error: checksError } = await supabase
       .from("verify_checks")
-      .select("result");
+      .select("result, created_at, checked_at");
 
     if (checksError) {
-      return res.status(500).json({ error: checksError.message || "Failed to load verify_checks" });
+      return res.status(500).json({
+        ok: false,
+        error: checksError.message || "Failed to load verify_checks"
+      });
     }
 
-    const verifications = Array.isArray(links) ? links.length : 0;
-    const cleared = Array.isArray(links)
-      ? links.filter((x) => String(x.status || "").toLowerCase() === "cleared").length
-      : 0;
+    const linkRows = Array.isArray(links) ? links : [];
+    const checkRows = Array.isArray(checks) ? checks : [];
 
-    const caution = Array.isArray(checks)
-      ? checks.filter((x) => String(x.result || "").toLowerCase().includes("caution")).length
-      : 0;
+    const thisMonthLinks = linkRows.filter((x) => isThisMonth(x.created_at));
+    const thisMonthChecks = checkRows.filter((x) =>
+      isThisMonth(x.checked_at || x.created_at)
+    );
+
+    const totalVerifications = linkRows.length;
+    const thisMonthVerifications = thisMonthLinks.length;
+
+    const clearToLoad = checkRows.filter((x) =>
+      lower(x.result).includes("clear")
+    ).length;
+
+    const cautionAlerts = checkRows.filter((x) =>
+      lower(x.result).includes("caution")
+    ).length;
+
+    const thisMonthClearToLoad = thisMonthChecks.filter((x) =>
+      lower(x.result).includes("clear")
+    ).length;
+
+    const thisMonthCautionAlerts = thisMonthChecks.filter((x) =>
+      lower(x.result).includes("caution")
+    ).length;
+
+    const revokedLinks = linkRows.filter((x) =>
+      lower(x.status).includes("revoked")
+    ).length;
+
+    const activeLinks = linkRows.filter((x) =>
+      lower(x.status).includes("active")
+    ).length;
+
+    const failedAttempts = cautionAlerts;
 
     return res.status(200).json({
-      verifications,
-      cleared,
-      caution
+      ok: true,
+
+      total_verifications: totalVerifications,
+      this_month_verifications: thisMonthVerifications,
+
+      clear_to_load: clearToLoad,
+      caution_alerts: cautionAlerts,
+
+      this_month_clear_to_load: thisMonthClearToLoad,
+      this_month_caution_alerts: thisMonthCautionAlerts,
+
+      revoked_links: revokedLinks,
+      active_links: activeLinks,
+      failed_attempts: failedAttempts
     });
   } catch (e) {
     return res.status(500).json({
+      ok: false,
       error: e?.message || "Server error"
     });
   }
