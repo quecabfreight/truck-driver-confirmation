@@ -2,28 +2,23 @@ import { sendAdbsEmail } from "./_sendAdbsEmail.js";
 
 export default async function handler(req, res) {
   try {
+    const to = String(req.query?.to || "quecabadbs@gmail.com").trim();
+
     const result = await sendAdbsEmail({
-      to: "quecabadbstest@gmail.com",
+      to,
       subject: "QueCab AdbS Shared Email Helper Test",
       html: `
         <div style="font-family:Arial,sans-serif;background:#0b111b;color:#fff;padding:24px;">
           <h1>AdbS Shared Email Helper Test</h1>
-
-          <p>
-            If you received this email, the shared helper system is working.
-          </p>
-
-          <p>
-            This means Request Access and Approval emails should also be able to work.
-          </p>
+          <p>If you received this, the shared AdbS email helper is working.</p>
         </div>
       `,
-      text:
-        "If you received this email, the shared helper system is working."
+      text: "If you received this, the shared AdbS email helper is working."
     });
 
     return res.status(200).json({
       ok: true,
+      sent_to: to,
       result
     });
   } catch (err) {
