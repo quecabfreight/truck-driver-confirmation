@@ -160,7 +160,17 @@ export default function Admin() {
         return;
       }
 
-      setStatusMsg(`Approved. Access code: ${data.access_code || "(none returned)"}`);
+      setStatusMsg(
+  `Approved. Access code: ${data.access_code || "(none returned)"}${
+    data.email_status
+      ? ` | Approval Email: ${data.email_status}`
+      : ""
+  }${
+    data.email_error
+      ? ` | Email Error: ${data.email_error}`
+      : ""
+  }`
+);
       setBusyId("");
       loadList();
     } catch {
