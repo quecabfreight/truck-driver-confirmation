@@ -132,6 +132,9 @@ export default function Account() {
 
   return (
     <div style={styles.wrapper}>
+      <div style={styles.steelGlow} />
+      <div style={styles.gridOverlay} />
+
       <Header />
 
       <div style={styles.heroLogoWrap}>
@@ -139,70 +142,94 @@ export default function Account() {
       </div>
 
       <div style={styles.container}>
+        <div style={styles.kicker}>BROKER ACCOUNT SETTINGS</div>
+
         <div style={styles.card}>
           <div style={styles.title}>Account</div>
 
           <div style={styles.subtitle}>
-            Update your broker account contact details during beta.
+            Manage your broker account contact information during founding beta
+            access.
           </div>
 
           {loading ? (
             <div style={styles.notice}>Loading account...</div>
           ) : (
             <form onSubmit={saveAccount} style={styles.form}>
-              <label style={styles.label}>
-                Company
-                <input
-                  style={styles.input}
-                  value={companyName}
-                  readOnly
-                  placeholder="Company"
-                />
-              </label>
+              <div style={styles.panel}>
+                <div style={styles.panelTitle}>Broker Profile</div>
 
-              <label style={styles.label}>
-                Contact Name
-                <input
-                  style={styles.input}
-                  value={contactName}
-                  onChange={(e) => setContactName(e.target.value)}
-                  placeholder="Contact Name"
-                />
-              </label>
+                <label style={styles.label}>
+                  Company
+                  <input
+                    style={styles.inputReadOnly}
+                    value={companyName}
+                    readOnly
+                    placeholder="Company"
+                  />
+                </label>
 
-              <label style={styles.label}>
-                Business Email
-                <input
-                  style={styles.input}
-                  type="email"
-                  value={businessEmail}
-                  onChange={(e) => setBusinessEmail(e.target.value)}
-                  placeholder="Business Email"
-                />
-              </label>
+                <label style={styles.label}>
+                  Contact Name
+                  <input
+                    style={styles.input}
+                    value={contactName}
+                    onChange={(e) => setContactName(e.target.value)}
+                    placeholder="Contact Name"
+                  />
+                </label>
 
-              <label style={styles.label}>
-                Business Phone
-                <input
-                  style={styles.input}
-                  value={businessPhone}
-                  onChange={(e) => setBusinessPhone(formatPhone(e.target.value))}
-                  placeholder="123-456-7890"
-                />
-              </label>
+                <label style={styles.label}>
+                  Business Email
+                  <input
+                    style={styles.input}
+                    type="email"
+                    value={businessEmail}
+                    onChange={(e) => setBusinessEmail(e.target.value)}
+                    placeholder="Business Email"
+                  />
+                </label>
 
-              {errorMsg ? <div style={styles.error}>{errorMsg}</div> : null}
-              {statusMsg ? <div style={styles.success}>{statusMsg}</div> : null}
+                <label style={styles.label}>
+                  Business Phone
+                  <input
+                    style={styles.input}
+                    value={businessPhone}
+                    onChange={(e) =>
+                      setBusinessPhone(formatPhone(e.target.value))
+                    }
+                    placeholder="123-456-7890"
+                  />
+                </label>
+              </div>
 
-              <button type="submit" style={styles.button} disabled={saving}>
-                {saving ? "Saving..." : "Save Account Changes"}
+              {errorMsg ? (
+                <div style={styles.error}>{errorMsg}</div>
+              ) : null}
+
+              {statusMsg ? (
+                <div style={styles.success}>{statusMsg}</div>
+              ) : null}
+
+              <button
+                type="submit"
+                style={styles.button}
+                disabled={saving}
+              >
+                {saving
+                  ? "Saving Account Changes..."
+                  : "Save Account Changes"}
               </button>
 
               <div style={styles.noteBox}>
-                <div style={styles.noteTitle}>Access Code Resets</div>
+                <div style={styles.noteTitle}>
+                  Founding Beta Account Protection
+                </div>
+
                 <div style={styles.noteText}>
-                  Access code resets are still handled by QueCab AdbS during beta
-                  to prevent lockouts and protect broker access.
+                  Access code resets are still handled by QueCab AdbS™ during
+                  beta to help prevent broker lockouts and unauthorized account
+                  changes.
                 </div>
               </div>
             </form>
@@ -215,106 +242,188 @@ export default function Account() {
 
 const styles = {
   wrapper: {
+    position: "relative",
     minHeight: "100vh",
-    background: "#0c121c",
-    color: "#e6edf5"
+    background:
+      "linear-gradient(180deg, #070b11 0%, #0d1522 48%, #111d2c 100%)",
+    color: "#e6edf5",
+    overflow: "hidden"
   },
+
+  steelGlow: {
+    position: "absolute",
+    inset: 0,
+    background:
+      "radial-gradient(circle at top, rgba(0,85,190,0.22), transparent 38%), radial-gradient(circle at bottom right, rgba(120,160,210,0.10), transparent 34%)"
+  },
+
+  gridOverlay: {
+    position: "absolute",
+    inset: 0,
+    opacity: 0.075,
+    backgroundImage:
+      "linear-gradient(rgba(255,255,255,0.18) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.18) 1px, transparent 1px)",
+    backgroundSize: "42px 42px"
+  },
+
   heroLogoWrap: {
+    position: "relative",
+    zIndex: 2,
     display: "flex",
     justifyContent: "center",
     marginTop: 90,
-    marginBottom: 10
+    marginBottom: 12
   },
+
   heroLogo: {
     width: 220,
     maxWidth: "90%"
   },
+
   container: {
+    position: "relative",
+    zIndex: 2,
     maxWidth: 760,
     margin: "0 auto",
-    padding: "0 20px 40px"
+    padding: "0 20px 60px"
   },
-  card: {
-    background: "rgba(255,255,255,0.05)",
-    border: "1px solid rgba(255,255,255,0.15)",
-    borderRadius: 18,
-    padding: 24,
-    boxShadow: "0 12px 28px rgba(0,0,0,0.28)"
-  },
-  title: {
-    fontSize: 30,
-    fontWeight: 900,
-    marginBottom: 10,
-    textAlign: "center"
-  },
-  subtitle: {
-    fontSize: 15,
-    opacity: 0.82,
-    lineHeight: 1.5,
+
+  kicker: {
     textAlign: "center",
-    marginBottom: 22
+    color: "#8fc7ff",
+    fontWeight: 900,
+    letterSpacing: 2,
+    fontSize: 13,
+    marginBottom: 14
   },
+
+  card: {
+    background:
+      "linear-gradient(180deg, rgba(255,255,255,0.065), rgba(255,255,255,0.035))",
+    border: "1px solid rgba(255,255,255,0.14)",
+    borderRadius: 20,
+    padding: 30,
+    boxShadow: "0 18px 44px rgba(0,0,0,0.36)"
+  },
+
+  title: {
+    fontSize: 38,
+    fontWeight: 950,
+    marginBottom: 12,
+    textAlign: "center",
+    letterSpacing: "-0.4px"
+  },
+
+  subtitle: {
+    fontSize: 16,
+    color: "#cbd7e8",
+    lineHeight: 1.7,
+    textAlign: "center",
+    marginBottom: 24
+  },
+
   form: {
     display: "grid",
-    gap: 14
+    gap: 18
   },
+
+  panel: {
+    border: "1px solid rgba(255,255,255,0.12)",
+    background:
+      "linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.03))",
+    borderRadius: 18,
+    padding: 20
+  },
+
+  panelTitle: {
+    fontSize: 20,
+    fontWeight: 950,
+    marginBottom: 18
+  },
+
   label: {
     display: "grid",
-    gap: 7,
-    fontSize: 14,
-    fontWeight: 900
+    gap: 8,
+    marginBottom: 16,
+    fontSize: 13,
+    fontWeight: 900,
+    letterSpacing: 1,
+    color: "#8fc7ff"
   },
+
   input: {
     width: "100%",
-    padding: 13,
-    borderRadius: 12,
-    border: "1px solid rgba(255,255,255,0.24)",
-    background: "rgba(255,255,255,0.06)",
+    padding: 15,
+    borderRadius: 14,
+    border: "1px solid rgba(255,255,255,0.20)",
+    background:
+      "linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.045))",
     color: "#ffffff",
+    fontSize: 16,
+    boxSizing: "border-box",
+    outline: "none",
+    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)"
+  },
+
+  inputReadOnly: {
+    width: "100%",
+    padding: 15,
+    borderRadius: 14,
+    border: "1px solid rgba(255,255,255,0.12)",
+    background: "rgba(255,255,255,0.03)",
+    color: "#c7d3e4",
     fontSize: 16,
     boxSizing: "border-box",
     outline: "none"
   },
+
   button: {
-    marginTop: 6,
     width: "100%",
-    padding: 13,
-    borderRadius: 12,
+    padding: 15,
+    borderRadius: 14,
     border: "1px solid rgba(120,180,255,0.55)",
-    background: "rgba(40,110,190,0.35)",
+    background:
+      "linear-gradient(180deg, rgba(52,120,205,0.72), rgba(26,72,130,0.86))",
     color: "#fff",
     fontSize: 16,
-    fontWeight: 900,
-    cursor: "pointer"
+    fontWeight: 950,
+    cursor: "pointer",
+    boxShadow: "0 12px 24px rgba(0,0,0,0.28)"
   },
+
   notice: {
     textAlign: "center",
     opacity: 0.8,
     padding: 20
   },
+
   error: {
     color: "#ff9c9c",
     fontWeight: 800
   },
+
   success: {
     color: "#9cffbd",
     fontWeight: 800
   },
+
   noteBox: {
-    marginTop: 14,
-    padding: 16,
-    borderRadius: 14,
+    marginTop: 2,
+    padding: 18,
+    borderRadius: 16,
     border: "1px solid rgba(255,255,255,0.12)",
-    background: "rgba(255,255,255,0.04)"
+    background: "rgba(3,9,18,0.30)"
   },
+
   noteTitle: {
-    fontSize: 16,
-    fontWeight: 900,
-    marginBottom: 6
+    fontSize: 18,
+    fontWeight: 950,
+    marginBottom: 8
   },
+
   noteText: {
     fontSize: 14,
-    opacity: 0.82,
-    lineHeight: 1.5
+    lineHeight: 1.65,
+    color: "#d3ddec"
   }
 };
