@@ -11,6 +11,7 @@ export default function Feedback() {
 
   function handleSubmit(e) {
     e.preventDefault();
+
     setErrorMsg("");
     setStatusMsg("");
 
@@ -43,7 +44,9 @@ export default function Feedback() {
     ].join("\n");
 
     window.location.href =
-      `mailto:quecabadbs@gmail.com?subject=${encodeURIComponent(`AdbS Feedback — ${subject}`)}` +
+      `mailto:quecabadbs@gmail.com?subject=${encodeURIComponent(
+        `AdbS Feedback — ${subject}`
+      )}` +
       `&body=${encodeURIComponent(body)}`;
 
     setStatusMsg("Your email app should open now.");
@@ -51,6 +54,9 @@ export default function Feedback() {
 
   return (
     <div style={styles.wrapper}>
+      <div style={styles.steelGlow} />
+      <div style={styles.gridOverlay} />
+
       <Header />
 
       <div style={styles.heroLogoWrap}>
@@ -58,55 +64,97 @@ export default function Feedback() {
       </div>
 
       <div style={styles.container}>
+        <div style={styles.kicker}>SUPPORT • FEEDBACK • OPERATIONS</div>
+
         <div style={styles.card}>
-          <div style={styles.title}>Feedback / Support</div>
+          <div style={styles.title}>Feedback & Support</div>
 
           <div style={styles.subtitle}>
-            Found a problem? Need help? Have an idea? Send it here.
+            Report an issue, request a feature, ask an operational question, or
+            provide feedback during the QueCab AdbS™ founding beta phase.
+          </div>
+
+          <div style={styles.noticePanel}>
+            <div style={styles.noticeTitle}>Founding Beta Support</div>
+
+            <div style={styles.noticeText}>
+              During beta, feedback from active brokers directly influences
+              platform refinement, workflow improvements, and operational
+              adjustments.
+            </div>
           </div>
 
           <form onSubmit={handleSubmit} style={styles.form}>
-            <input
-              style={styles.input}
-              placeholder="Your Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
+            <div style={styles.inputGroup}>
+              <div style={styles.inputLabel}>Your Name</div>
 
-            <input
-              style={styles.input}
-              placeholder="Your Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+              <input
+                style={styles.input}
+                placeholder="Your Name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </div>
 
-            <input
-              style={styles.input}
-              placeholder="Subject"
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-            />
+            <div style={styles.inputGroup}>
+              <div style={styles.inputLabel}>Business Email</div>
 
-            <textarea
-              style={styles.textarea}
-              placeholder="Tell us what happened or what you’d like changed."
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-            />
+              <input
+                style={styles.input}
+                placeholder="name@company.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
 
-            {errorMsg ? <div style={styles.error}>{errorMsg}</div> : null}
-            {statusMsg ? <div style={styles.status}>{statusMsg}</div> : null}
+            <div style={styles.inputGroup}>
+              <div style={styles.inputLabel}>Subject</div>
+
+              <input
+                style={styles.input}
+                placeholder="Subject"
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+              />
+            </div>
+
+            <div style={styles.inputGroup}>
+              <div style={styles.inputLabel}>Message</div>
+
+              <textarea
+                style={styles.textarea}
+                placeholder="Tell us what happened, what needs improvement, or what operational issue you encountered."
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+              />
+            </div>
+
+            {errorMsg ? (
+              <div style={styles.error}>{errorMsg}</div>
+            ) : null}
+
+            {statusMsg ? (
+              <div style={styles.status}>{statusMsg}</div>
+            ) : null}
 
             <button type="submit" style={styles.button}>
               Send Feedback
             </button>
           </form>
 
-          <div style={styles.altBox}>
-            <div style={styles.altTitle}>Direct Contact</div>
-            <a href="mailto:quecabadbs@gmail.com" style={styles.link}>
+          <div style={styles.contactPanel}>
+            <div style={styles.contactTitle}>Direct Contact</div>
+
+            <a
+              href="mailto:quecabadbs@gmail.com"
+              style={styles.contactLink}
+            >
               quecabadbs@gmail.com
             </a>
+
+            <div style={styles.contactText}>
+              Operational support and beta coordination.
+            </div>
           </div>
         </div>
       </div>
@@ -116,109 +164,205 @@ export default function Feedback() {
 
 const styles = {
   wrapper: {
+    position: "relative",
     minHeight: "100vh",
-    background: "#0c121c",
-    color: "#e6edf5"
+    background:
+      "linear-gradient(180deg, #070b11 0%, #0d1522 48%, #111d2c 100%)",
+    color: "#e6edf5",
+    overflow: "hidden"
   },
+
+  steelGlow: {
+    position: "absolute",
+    inset: 0,
+    background:
+      "radial-gradient(circle at top, rgba(0,85,190,0.22), transparent 38%), radial-gradient(circle at bottom right, rgba(120,160,210,0.10), transparent 34%)"
+  },
+
+  gridOverlay: {
+    position: "absolute",
+    inset: 0,
+    opacity: 0.075,
+    backgroundImage:
+      "linear-gradient(rgba(255,255,255,0.18) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.18) 1px, transparent 1px)",
+    backgroundSize: "42px 42px"
+  },
+
   heroLogoWrap: {
+    position: "relative",
+    zIndex: 2,
     display: "flex",
     justifyContent: "center",
     marginTop: 90,
-    marginBottom: 10
+    marginBottom: 12
   },
+
   heroLogo: {
     width: 220,
     maxWidth: "90%"
   },
+
   container: {
-    maxWidth: 700,
+    position: "relative",
+    zIndex: 2,
+    maxWidth: 760,
     margin: "0 auto",
-    padding: "0 20px 40px"
+    padding: "0 20px 60px"
   },
-  card: {
-    background: "rgba(255,255,255,0.05)",
-    border: "1px solid rgba(255,255,255,0.15)",
-    borderRadius: 18,
-    padding: 24,
-    boxShadow: "0 12px 28px rgba(0,0,0,0.28)"
-  },
-  title: {
-    fontSize: 30,
+
+  kicker: {
+    textAlign: "center",
+    color: "#8fc7ff",
     fontWeight: 900,
-    marginBottom: 10,
-    textAlign: "center"
+    letterSpacing: 2,
+    fontSize: 13,
+    marginBottom: 14
   },
+
+  card: {
+    background:
+      "linear-gradient(180deg, rgba(255,255,255,0.065), rgba(255,255,255,0.035))",
+    border: "1px solid rgba(255,255,255,0.14)",
+    borderRadius: 20,
+    padding: 30,
+    boxShadow: "0 18px 44px rgba(0,0,0,0.36)"
+  },
+
+  title: {
+    fontSize: 38,
+    fontWeight: 950,
+    marginBottom: 12,
+    textAlign: "center",
+    letterSpacing: "-0.4px"
+  },
+
   subtitle: {
-    fontSize: 15,
-    opacity: 0.82,
-    lineHeight: 1.5,
+    fontSize: 16,
+    color: "#cbd7e8",
+    lineHeight: 1.7,
     textAlign: "center",
     marginBottom: 22
   },
+
+  noticePanel: {
+    border: "1px solid rgba(120,180,255,0.28)",
+    background:
+      "linear-gradient(180deg, rgba(30,80,150,0.22), rgba(8,20,40,0.34))",
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 24
+  },
+
+  noticeTitle: {
+    fontSize: 18,
+    fontWeight: 950,
+    marginBottom: 8
+  },
+
+  noticeText: {
+    fontSize: 14,
+    lineHeight: 1.65,
+    color: "#d5e1f0"
+  },
+
   form: {
     display: "grid",
-    gap: 12
+    gap: 16
   },
+
+  inputGroup: {
+    display: "grid",
+    gap: 8
+  },
+
+  inputLabel: {
+    fontSize: 13,
+    fontWeight: 900,
+    letterSpacing: 1,
+    color: "#8fc7ff"
+  },
+
   input: {
     width: "100%",
-    padding: 13,
-    borderRadius: 12,
-    border: "1px solid rgba(255,255,255,0.24)",
-    background: "rgba(255,255,255,0.06)",
-    color: "#fff",
-    fontSize: 16,
-    boxSizing: "border-box",
-    outline: "none"
-  },
-  textarea: {
-    width: "100%",
-    minHeight: 150,
-    padding: 13,
-    borderRadius: 12,
-    border: "1px solid rgba(255,255,255,0.24)",
-    background: "rgba(255,255,255,0.06)",
-    color: "#fff",
+    padding: 15,
+    borderRadius: 14,
+    border: "1px solid rgba(255,255,255,0.20)",
+    background:
+      "linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.045))",
+    color: "#ffffff",
     fontSize: 16,
     boxSizing: "border-box",
     outline: "none",
-    resize: "vertical"
+    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)"
   },
+
+  textarea: {
+    width: "100%",
+    minHeight: 180,
+    padding: 15,
+    borderRadius: 14,
+    border: "1px solid rgba(255,255,255,0.20)",
+    background:
+      "linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.045))",
+    color: "#ffffff",
+    fontSize: 16,
+    boxSizing: "border-box",
+    outline: "none",
+    resize: "vertical",
+    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)"
+  },
+
   button: {
     width: "100%",
-    padding: 13,
-    borderRadius: 12,
+    padding: 15,
+    borderRadius: 14,
     border: "1px solid rgba(120,180,255,0.55)",
-    background: "rgba(40,110,190,0.35)",
+    background:
+      "linear-gradient(180deg, rgba(52,120,205,0.72), rgba(26,72,130,0.86))",
     color: "#fff",
     fontSize: 16,
-    fontWeight: 900,
-    cursor: "pointer"
+    fontWeight: 950,
+    cursor: "pointer",
+    boxShadow: "0 12px 24px rgba(0,0,0,0.28)"
   },
+
   error: {
     color: "#ff9c9c",
-    fontWeight: 700,
+    fontWeight: 800,
     fontSize: 14
   },
+
   status: {
-    color: "#ffffff",
-    fontWeight: 700,
+    color: "#9cffbd",
+    fontWeight: 800,
     fontSize: 14
   },
-  altBox: {
-    marginTop: 18,
-    paddingTop: 18,
-    borderTop: "1px solid rgba(255,255,255,0.12)",
+
+  contactPanel: {
+    marginTop: 24,
+    padding: 20,
+    borderRadius: 16,
+    border: "1px solid rgba(255,255,255,0.12)",
+    background: "rgba(3,9,18,0.30)",
     textAlign: "center"
   },
-  altTitle: {
-    fontSize: 16,
-    fontWeight: 900,
-    marginBottom: 6
+
+  contactTitle: {
+    fontSize: 18,
+    fontWeight: 950,
+    marginBottom: 10
   },
-  link: {
+
+  contactLink: {
     color: "#8fc7ff",
     textDecoration: "none",
-    fontWeight: 800,
-    fontSize: 15
+    fontWeight: 900,
+    fontSize: 16
+  },
+
+  contactText: {
+    marginTop: 10,
+    color: "#d3ddec",
+    fontSize: 14
   }
 };
