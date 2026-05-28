@@ -53,7 +53,10 @@ export default function Admin() {
   const nav = useNavigate();
 
   const email = useMemo(() => safeStr(getAuthEmail()).toLowerCase(), []);
-  const authorized = useMemo(() => !!email && isBrokerOrShipper(email), [email]);
+  const authorized = useMemo(
+    () => !!email && isBrokerOrShipper(email),
+    [email]
+  );
 
   useEffect(() => {
     if (!authorized) nav("/login", { replace: true });
@@ -83,6 +86,7 @@ export default function Admin() {
 
   function saveAdminKey(next) {
     setAdminKey(next);
+
     try {
       sessionStorage.setItem("qc_admin_key", next);
     } catch {}
@@ -99,22 +103,34 @@ export default function Admin() {
       qs.set("limit", String(pageSize));
       qs.set("offset", String(offset));
 
-      const res = await fetch(`/api/admin_beta_requests?${qs.toString()}`, {
-        headers: { "x-adbs-admin-key": adminKey || "" },
-      });
+      const res = await fetch(
+        `/api/admin_beta_requests?${qs.toString()}`,
+        {
+          headers: {
+            "x-adbs-admin-key": adminKey || ""
+          }
+        }
+      );
 
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
         setRows([]);
         setTotal(null);
-        setErrorMsg(data?.error || data?.message || `Admin list failed (${res.status}).`);
+
+        setErrorMsg(
+          data?.error ||
+            data?.message ||
+            `Admin list failed (${res.status}).`
+        );
+
         setLoading(false);
         return;
       }
 
       setRows(Array.isArray(data?.rows) ? data.rows : []);
       setTotal(Number.isFinite(data?.total) ? data.total : null);
+
       setLoading(false);
     } catch {
       setRows([]);
@@ -127,7 +143,6 @@ export default function Admin() {
   useEffect(() => {
     if (!safeStr(adminKey)) return;
     loadList();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, pageSize, page]);
 
   async function approveRow(rowId) {
@@ -142,35 +157,40 @@ export default function Admin() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-adbs-admin-key": adminKey || "",
+          "x-adbs-admin-key": adminKey || ""
         },
-        body: JSON.stringify({ id: rowId }),
+        body: JSON.stringify({ id: rowId })
       });
 
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
         setBusyId("");
+
         setErrorMsg(
           data?.detail ||
             data?.error ||
             data?.message ||
             `Approve failed (${res.status}).`
         );
+
         return;
       }
 
       setStatusMsg(
-  `Approved. Access code: ${data.access_code || "(none returned)"}${
-    data.email_status
-      ? ` | Approval Email: ${data.email_status}`
-      : ""
-  }${
-    data.email_error
-      ? ` | Email Error: ${data.email_error}`
-      : ""
-  }`
-);
+        `Approved. Access code: ${
+          data.access_code || "(none returned)"
+        }${
+          data.email_status
+            ? ` | Approval Email: ${data.email_status}`
+            : ""
+        }${
+          data.email_error
+            ? ` | Email Error: ${data.email_error}`
+            : ""
+        }`
+      );
+
       setBusyId("");
       loadList();
     } catch {
@@ -181,6 +201,7 @@ export default function Admin() {
 
   async function resetAccessCode() {
     const e = safeStr(resetEmail).toLowerCase();
+
     if (!e) {
       setErrorMsg("Enter an email to reset.");
       return;
@@ -195,21 +216,33 @@ export default function Admin() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-adbs-admin-key": adminKey || "",
+          "x-adbs-admin-key": adminKey || ""
         },
-        body: JSON.stringify({ email: e }),
+        body: JSON.stringify({ email: e })
       });
 
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
         setLoading(false);
-        setErrorMsg(data?.error || data?.message || `Reset failed (${res.status}).`);
+
+        setErrorMsg(
+          data?.error ||
+            data?.message ||
+            `Reset failed (${res.status}).`
+        );
+
         return;
       }
 
       setLoading(false);
-      setStatusMsg(`Reset OK. Access code: ${data.access_code || "(none returned)"}`);
+
+      setStatusMsg(
+        `Reset OK. Access code: ${
+          data.access_code || "(none returned)"
+        }`
+      );
+
       setResetEmail("");
       loadList();
     } catch {
@@ -218,142 +251,234 @@ export default function Admin() {
     }
   }
 
-  const pageStyle = { minHeight: "100vh", background: "transparent" };
-  const wrap = { maxWidth: 1100, margin: "0 auto", padding: "18px 16px 48px" };
+  const styles = {
+    page: {
+      minHeight: "100vh",
+      background:
+        "linear-gradient(180deg, #070b11 0%, #0d1522 48%, #111d2c 100%)",
+      color: "#e6edf5"
+    },
 
-  const card = {
-    border: "1px solid rgba(255,255,255,0.12)",
-    background: "rgba(12, 18, 28, 0.72)",
-    borderRadius: 16,
-    padding: 18,
-    boxShadow: "0 12px 28px rgba(0,0,0,0.35)",
+    wrap: {
+      maxWidth: 1200,
+      margin: "0 auto",
+      padding: "18px 16px 48px"
+    },
+
+    card: {
+      border: "1px solid rgba(255,255,255,0.12)",
+      background:
+        "linear-gradient(180deg, rgba(255,255,255,0.065), rgba(255,255,255,0.035))",
+      borderRadius: 20,
+      padding: 20,
+      boxShadow: "0 18px 44px rgba(0,0,0,0.36)"
+    },
+
+    title: {
+      fontSize: 30,
+      fontWeight: 950,
+      margin: 0
+    },
+
+    sub: {
+      opacity: 0.82,
+      marginTop: 6,
+      fontSize: 14,
+      lineHeight: 1.5
+    },
+
+    input: {
+      width: "100%",
+      padding: 13,
+      borderRadius: 14,
+      border: "1px solid rgba(255,255,255,0.18)",
+      background:
+        "linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.045))",
+      color: "#fff",
+      fontSize: 15,
+      outline: "none",
+      boxSizing: "border-box"
+    },
+
+    button: (primary) => ({
+      padding: "11px 14px",
+      borderRadius: 14,
+      border: primary
+        ? "1px solid rgba(120,180,255,0.55)"
+        : "1px solid rgba(255,255,255,0.14)",
+      background: primary
+        ? "linear-gradient(180deg, rgba(52,120,205,0.72), rgba(26,72,130,0.86))"
+        : "rgba(255,255,255,0.06)",
+      color: "#fff",
+      fontWeight: 900,
+      cursor: "pointer",
+      whiteSpace: "nowrap"
+    }),
+
+    pill: (active) => ({
+      padding: "10px 14px",
+      borderRadius: 999,
+      border: active
+        ? "1px solid rgba(120,180,255,0.55)"
+        : "1px solid rgba(255,255,255,0.14)",
+      background: active
+        ? "rgba(40,110,190,0.25)"
+        : "rgba(255,255,255,0.05)",
+      color: "#fff",
+      fontWeight: 900,
+      cursor: "pointer"
+    }),
+
+    tableWrap: {
+      marginTop: 16,
+      overflowX: "auto",
+      WebkitOverflowScrolling: "touch",
+      borderRadius: 16
+    },
+
+    table: {
+      width: "100%",
+      minWidth: 980,
+      borderCollapse: "separate",
+      borderSpacing: 0,
+      border: "1px solid rgba(255,255,255,0.12)",
+      borderRadius: 16,
+      overflow: "hidden"
+    },
+
+    th: {
+      textAlign: "left",
+      fontSize: 12,
+      letterSpacing: 0.4,
+      textTransform: "uppercase",
+      padding: "13px 12px",
+      background: "rgba(0,0,0,0.24)",
+      borderBottom: "1px solid rgba(255,255,255,0.10)",
+      whiteSpace: "nowrap"
+    },
+
+    td: {
+      padding: "13px 12px",
+      borderBottom: "1px solid rgba(255,255,255,0.08)",
+      verticalAlign: "top",
+      fontSize: 14,
+      lineHeight: 1.45,
+      whiteSpace: "nowrap"
+    },
+
+    muted: {
+      opacity: 0.72,
+      fontSize: 12
+    }
   };
 
-  const h1 = { fontSize: 26, fontWeight: 950, margin: 0 };
-  const sub = { opacity: 0.8, marginTop: 6, fontSize: 14, lineHeight: 1.45 };
-  const label = { fontSize: 13, opacity: 0.9, marginBottom: 6 };
-
-  const input = {
-    width: "100%",
-    padding: "12px 12px",
-    borderRadius: 12,
-    border: "1px solid rgba(255,255,255,0.16)",
-    background: "rgba(255,255,255,0.04)",
-    color: "inherit",
-    fontSize: 15,
-    outline: "none",
-  };
-
-  const btn = (primary) => ({
-    padding: "10px 12px",
-    borderRadius: 12,
-    border: primary
-      ? "1px solid rgba(140,190,255,0.42)"
-      : "1px solid rgba(140,190,255,0.20)",
-    background: primary
-      ? "linear-gradient(180deg, rgba(40,110,200,0.85), rgba(20,70,140,0.75))"
-      : "rgba(0,0,0,0.18)",
-    color: "#e6edf5",
-    fontSize: 14,
-    fontWeight: 900,
-    cursor: "pointer",
-    letterSpacing: 0.2,
-    whiteSpace: "nowrap",
-  });
-
-  const pill = (active) => ({
-    padding: "10px 12px",
-    borderRadius: 999,
-    border: active ? "1px solid rgba(140,190,255,0.55)" : "1px solid rgba(255,255,255,0.14)",
-    background: active ? "rgba(40, 110, 190, 0.25)" : "rgba(255,255,255,0.04)",
-    color: "inherit",
-    fontSize: 13,
-    fontWeight: 900,
-    cursor: "pointer",
-    whiteSpace: "nowrap",
-  });
-
-  const table = {
-    width: "100%",
-    borderCollapse: "separate",
-    borderSpacing: 0,
-    overflow: "hidden",
-    borderRadius: 14,
-    border: "1px solid rgba(255,255,255,0.12)",
-  };
-
-  const th = {
-    textAlign: "left",
-    fontSize: 12,
-    letterSpacing: 0.4,
-    textTransform: "uppercase",
-    padding: "12px 12px",
-    background: "rgba(0,0,0,0.22)",
-    borderBottom: "1px solid rgba(255,255,255,0.12)",
-    opacity: 0.85,
-    whiteSpace: "nowrap",
-  };
-
-  const td = {
-    padding: "12px 12px",
-    borderBottom: "1px solid rgba(255,255,255,0.10)",
-    verticalAlign: "top",
-    fontSize: 14,
-    lineHeight: 1.35,
-  };
-
-  const muted = { opacity: 0.72, fontSize: 12 };
   const canLoad = !!safeStr(adminKey);
 
   return (
-    <div style={pageStyle}>
+    <div style={styles.page}>
       <Header />
-      <div style={wrap}>
-        <div style={card}>
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+
+      <div style={styles.wrap}>
+        <div style={styles.card}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              gap: 12,
+              flexWrap: "wrap"
+            }}
+          >
             <div>
-              <div style={h1}>Admin</div>
-              <div style={sub}>
-                Beta approvals + access codes. <br />
+              <div style={styles.title}>Admin</div>
+
+              <div style={styles.sub}>
+                Beta approvals + access codes.
+                <br />
                 Signed in as <b>{email}</b>.
               </div>
             </div>
-            <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-              <button style={btn(false)} onClick={() => nav("/")}>Control Center</button>
+
+            <div
+              style={{
+                display: "flex",
+                gap: 10,
+                alignItems: "center",
+                flexWrap: "wrap"
+              }}
+            >
+              <button
+                style={styles.button(false)}
+                onClick={() => nav("/dashboard")}
+              >
+                Control Center
+              </button>
             </div>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1.1fr 0.9fr", gap: 14, marginTop: 14 }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit,minmax(320px,1fr))",
+              gap: 16,
+              marginTop: 18
+            }}
+          >
             <div>
-              <div style={label}>Admin Key (required for actions)</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8 }}>
+              <div style={{ marginBottom: 8, fontSize: 13 }}>
+                Admin Key (required for actions)
+              </div>
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr auto",
+                  gap: 8
+                }}
+              >
                 <input
-                  style={input}
+                  style={styles.input}
                   value={adminKey}
                   onChange={(e) => saveAdminKey(e.target.value)}
                   placeholder="Enter ADBS_ADMIN_KEY"
                   type={showAdminKey ? "text" : "password"}
                   autoComplete="off"
                 />
-                <button type="button" style={btn(false)} onClick={() => setShowAdminKey((v) => !v)}>
+
+                <button
+                  type="button"
+                  style={styles.button(false)}
+                  onClick={() => setShowAdminKey((v) => !v)}
+                >
                   {showAdminKey ? "Hide" : "Show"}
                 </button>
               </div>
-              <div style={muted}>Saved in this tab only. Current: {adminKey ? maskKey(adminKey) : "(none)"}.</div>
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 10 }}>
+
+              <div style={styles.muted}>
+                Saved in this tab only. Current:{" "}
+                {adminKey ? maskKey(adminKey) : "(none)"}.
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  gap: 10,
+                  flexWrap: "wrap",
+                  marginTop: 10
+                }}
+              >
                 <button
-                  style={btn(true)}
+                  style={styles.button(true)}
                   onClick={() => {
                     setPage(0);
                     loadList();
                   }}
                   disabled={!canLoad || loading}
-                  title={!canLoad ? "Enter admin key first" : "Load list"}
                 >
                   {loading ? "Loading..." : "Load / Refresh"}
                 </button>
+
                 <button
-                  style={btn(false)}
+                  style={styles.button(false)}
                   onClick={() => {
                     saveAdminKey("");
                     setRows([]);
@@ -368,23 +493,40 @@ export default function Admin() {
             </div>
 
             <div>
-              <div style={label}>Reset Access Code by Email</div>
+              <div style={{ marginBottom: 8, fontSize: 13 }}>
+                Reset Access Code by Email
+              </div>
+
               <input
-                style={input}
+                style={styles.input}
                 value={resetEmail}
                 onChange={(e) => setResetEmail(e.target.value)}
                 placeholder="email@company.com"
                 inputMode="email"
                 autoComplete="off"
               />
-              <div style={{ display: "flex", gap: 10, marginTop: 10, flexWrap: "wrap" }}>
-                <button style={btn(true)} onClick={resetAccessCode} disabled={!canLoad || loading}>
+
+              <div
+                style={{
+                  display: "flex",
+                  gap: 10,
+                  marginTop: 10,
+                  flexWrap: "wrap"
+                }}
+              >
+                <button
+                  style={styles.button(true)}
+                  onClick={resetAccessCode}
+                  disabled={!canLoad || loading}
+                >
                   Reset Code
                 </button>
+
                 <button
-                  style={btn(false)}
+                  style={styles.button(false)}
                   onClick={async () => {
                     const ok = await safeCopy(safeStr(resetEmail));
+
                     setStatusMsg(ok ? "Email copied." : "Copy failed.");
                   }}
                 >
@@ -395,143 +537,298 @@ export default function Admin() {
           </div>
 
           {errorMsg ? (
-            <div style={{
-              marginTop: 12,
-              border: "1px solid rgba(255,80,80,0.35)",
-              background: "rgba(255,80,80,0.08)",
-              padding: 12,
-              borderRadius: 12,
-              fontSize: 14,
-            }}>
+            <div
+              style={{
+                marginTop: 14,
+                border: "1px solid rgba(255,80,80,0.35)",
+                background: "rgba(255,80,80,0.08)",
+                padding: 12,
+                borderRadius: 14,
+                fontSize: 14
+              }}
+            >
               <b>Error:</b> {errorMsg}
             </div>
           ) : null}
 
           {statusMsg ? (
-            <div style={{
-              marginTop: 12,
-              border: "1px solid rgba(120,180,255,0.30)",
-              background: "rgba(120,180,255,0.08)",
-              padding: 12,
-              borderRadius: 12,
-              fontSize: 14,
-            }}>
+            <div
+              style={{
+                marginTop: 14,
+                border: "1px solid rgba(120,180,255,0.30)",
+                background: "rgba(120,180,255,0.08)",
+                padding: 12,
+                borderRadius: 14,
+                fontSize: 14
+              }}
+            >
               {statusMsg}
             </div>
           ) : null}
 
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 14, alignItems: "center" }}>
-            <button style={pill(mode === "pending")} onClick={() => { setMode("pending"); setPage(0); }}>
+          <div
+            style={{
+              display: "flex",
+              gap: 10,
+              flexWrap: "wrap",
+              marginTop: 18,
+              alignItems: "center"
+            }}
+          >
+            <button
+              style={styles.pill(mode === "pending")}
+              onClick={() => {
+                setMode("pending");
+                setPage(0);
+              }}
+            >
               Pending
             </button>
-            <button style={pill(mode === "approved")} onClick={() => { setMode("approved"); setPage(0); }}>
+
+            <button
+              style={styles.pill(mode === "approved")}
+              onClick={() => {
+                setMode("approved");
+                setPage(0);
+              }}
+            >
               Approved
             </button>
-            <button style={pill(mode === "all")} onClick={() => { setMode("all"); setPage(0); }}>
+
+            <button
+              style={styles.pill(mode === "all")}
+              onClick={() => {
+                setMode("all");
+                setPage(0);
+              }}
+            >
               All
             </button>
 
-            <div style={{ marginLeft: "auto", display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
-              <div style={muted}>{total === null ? "Total: —" : `Total: ${total}`}</div>
+            <div
+              style={{
+                marginLeft: "auto",
+                display: "flex",
+                gap: 10,
+                flexWrap: "wrap",
+                alignItems: "center"
+              }}
+            >
+              <div style={styles.muted}>
+                {total === null ? "Total: —" : `Total: ${total}`}
+              </div>
 
               <select
                 value={pageSize}
-                onChange={(e) => { setPageSize(Number(e.target.value) || 25); setPage(0); }}
-                style={{ ...input, width: 120, padding: "10px 10px", fontSize: 13 }}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value) || 25);
+                  setPage(0);
+                }}
+                style={{
+                  ...styles.input,
+                  width: 120,
+                  padding: "10px 10px",
+                  fontSize: 13
+                }}
               >
                 <option value={10}>10 / page</option>
                 <option value={25}>25 / page</option>
                 <option value={50}>50 / page</option>
               </select>
 
-              <button style={btn(false)} onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0}>
+              <button
+                style={styles.button(false)}
+                onClick={() =>
+                  setPage((p) => Math.max(0, p - 1))
+                }
+                disabled={page === 0}
+              >
                 Prev
               </button>
 
               <button
-                style={btn(false)}
+                style={styles.button(false)}
                 onClick={() => setPage((p) => p + 1)}
-                disabled={total !== null ? (offset + pageSize >= total) : false}
+                disabled={
+                  total !== null
+                    ? offset + pageSize >= total
+                    : false
+                }
               >
                 Next
               </button>
             </div>
           </div>
 
-          <div style={{ marginTop: 14 }}>
-            <table style={table}>
+          <div style={styles.tableWrap}>
+            <table style={styles.table}>
               <thead>
                 <tr>
-                  <th style={th}>Created</th>
-                  <th style={th}>Email</th>
-                  <th style={th}>Name / Business</th>
-                  <th style={th}>Role</th>
-                  <th style={th}>MC / DOT</th>
-                  <th style={th}>Phone</th>
-                  <th style={th}>Access Code</th>
-                  <th style={th}>Actions</th>
+                  <th style={styles.th}>Created</th>
+                  <th style={styles.th}>Email</th>
+                  <th style={styles.th}>Name / Business</th>
+                  <th style={styles.th}>Role</th>
+                  <th style={styles.th}>MC# / DOT</th>
+                  <th style={styles.th}>Phone</th>
+                  <th style={styles.th}>Access Code</th>
+                  <th style={styles.th}>Actions</th>
                 </tr>
               </thead>
+
               <tbody>
                 {rows.length === 0 ? (
                   <tr>
-                    <td style={{ ...td, opacity: 0.75 }} colSpan={8}>
-                      {canLoad ? "No rows found for this filter." : "Enter Admin Key and click Load / Refresh."}
+                    <td
+                      style={{
+                        ...styles.td,
+                        opacity: 0.75
+                      }}
+                      colSpan={8}
+                    >
+                      {canLoad
+                        ? "No rows found for this filter."
+                        : "Enter Admin Key and click Load / Refresh."}
                     </td>
                   </tr>
                 ) : (
                   rows.map((r) => {
                     const id = safeStr(r.id);
+
                     const created = fmtDate(r.created_at);
-                    const rEmail = safeStr(r.email || r.business_email || r.contact_email);
-                    const name = safeStr(r.legal_business_name || r.legal_name || r.name || r.business_name);
+
+                    const rEmail = safeStr(
+                      r.email ||
+                        r.business_email ||
+                        r.contact_email
+                    );
+
+                    const name = safeStr(
+                      r.legal_business_name ||
+                        r.legal_name ||
+                        r.name ||
+                        r.business_name
+                    );
+
                     const role = safeStr(r.role);
-                    const mc = safeStr(r.mc_number || r.mc || r.mc_num);
-                    const dot = safeStr(r.usdot || r.usdot_number || r.usdot_on_record);
-                    const phone = safeStr(r.business_phone || r.phone);
+
+                    const mc = safeStr(
+                      r.mc_number || r.mc || r.mc_num
+                    );
+
+                    const dot = safeStr(
+                      r.usdot ||
+                        r.usdot_number ||
+                        r.usdot_on_record
+                    );
+
+                    const phone = safeStr(
+                      r.business_phone || r.phone
+                    );
+
                     const code = safeStr(r.access_code);
-                    const approved = r.approved === true || safeStr(r.status).toLowerCase() === "approved";
+
+                    const approved =
+                      r.approved === true ||
+                      safeStr(r.status).toLowerCase() ===
+                        "approved";
 
                     return (
                       <tr key={id || created}>
-                        <td style={td}>
+                        <td style={styles.td}>
                           <div>{created}</div>
-                          <div style={muted}>id: {id || "(none)"}</div>
+
+                          <div style={styles.muted}>
+                            id: {id || "(none)"}
+                          </div>
                         </td>
-                        <td style={td}>
-                          <div style={{ fontWeight: 900 }}>{rEmail || "(missing)"}</div>
+
+                        <td style={styles.td}>
+                          <div style={{ fontWeight: 900 }}>
+                            {rEmail || "(missing)"}
+                          </div>
                         </td>
-                        <td style={td}>
-                          <div style={{ fontWeight: 900 }}>{name || "(missing)"}</div>
-                          {r.contact_name ? <div style={muted}>Contact: {safeStr(r.contact_name)}</div> : null}
+
+                        <td style={styles.td}>
+                          <div style={{ fontWeight: 900 }}>
+                            {name || "(missing)"}
+                          </div>
+
+                          {r.contact_name ? (
+                            <div style={styles.muted}>
+                              Contact:{" "}
+                              {safeStr(r.contact_name)}
+                            </div>
+                          ) : null}
                         </td>
-                        <td style={td}>{role || "—"}</td>
-                        <td style={td}>
-                          <div>{mc ? `MC: ${mc}` : "MC: —"}</div>
-                          <div>{dot ? `USDOT: ${dot}` : "USDOT: —"}</div>
+
+                        <td style={styles.td}>
+                          {role || "—"}
                         </td>
-                        <td style={td}>{phone || "—"}</td>
-                        <td style={td}>
-                          <div style={{ fontWeight: 900 }}>{code || "—"}</div>
-                          <div style={muted}>{approved ? "approved" : "pending"}</div>
+
+                        <td style={styles.td}>
+                          <div>
+                            {mc ? `MC#: ${mc}` : "MC#: —"}
+                          </div>
+
+                          <div>
+                            {dot
+                              ? `USDOT: ${dot}`
+                              : "USDOT: —"}
+                          </div>
                         </td>
-                        <td style={td}>
-                          <div style={{ display: "grid", gap: 8 }}>
+
+                        <td style={styles.td}>
+                          {phone || "—"}
+                        </td>
+
+                        <td style={styles.td}>
+                          <div style={{ fontWeight: 900 }}>
+                            {code || "—"}
+                          </div>
+
+                          <div style={styles.muted}>
+                            {approved
+                              ? "approved"
+                              : "pending"}
+                          </div>
+                        </td>
+
+                        <td style={styles.td}>
+                          <div
+                            style={{
+                              display: "grid",
+                              gap: 8
+                            }}
+                          >
                             {!approved ? (
                               <button
-                                style={btn(true)}
-                                onClick={() => approveRow(id)}
-                                disabled={!canLoad || busyId === id}
-                                title={!id ? "Missing id" : "Approve + generate access code"}
+                                style={styles.button(true)}
+                                onClick={() =>
+                                  approveRow(id)
+                                }
+                                disabled={
+                                  !canLoad ||
+                                  busyId === id
+                                }
                               >
-                                {busyId === id ? "Approving..." : "Approve"}
+                                {busyId === id
+                                  ? "Approving..."
+                                  : "Approve"}
                               </button>
                             ) : (
                               <button
-                                style={btn(false)}
+                                style={styles.button(false)}
                                 onClick={async () => {
-                                  const ok = await safeCopy(code || "");
-                                  setStatusMsg(ok ? "Access code copied." : "Copy failed.");
+                                  const ok =
+                                    await safeCopy(
+                                      code || ""
+                                    );
+
+                                  setStatusMsg(
+                                    ok
+                                      ? "Access code copied."
+                                      : "Copy failed."
+                                  );
                                 }}
                                 disabled={!code}
                               >
@@ -540,10 +837,18 @@ export default function Admin() {
                             )}
 
                             <button
-                              style={btn(false)}
+                              style={styles.button(false)}
                               onClick={async () => {
-                                const ok = await safeCopy(rEmail || "");
-                                setStatusMsg(ok ? "Email copied." : "Copy failed.");
+                                const ok =
+                                  await safeCopy(
+                                    rEmail || ""
+                                  );
+
+                                setStatusMsg(
+                                  ok
+                                    ? "Email copied."
+                                    : "Copy failed."
+                                );
                               }}
                               disabled={!rEmail}
                             >
@@ -558,8 +863,13 @@ export default function Admin() {
               </tbody>
             </table>
 
-            <div style={{ marginTop: 10, ...muted }}>
-              Tip: This page does not auto-refresh. Use Load / Refresh.
+            <div
+              style={{
+                marginTop: 10,
+                ...styles.muted
+              }}
+            >
+              Tip: Swipe horizontally on smaller screens.
             </div>
           </div>
         </div>
