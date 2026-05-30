@@ -81,7 +81,7 @@ export default function Admin() {
   const [statusMsg, setStatusMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [resetEmail, setResetEmail] = useState("");
-
+const [manageEmail, setManageEmail] = useState("");
   const offset = page * pageSize;
 
   function saveAdminKey(next) {
