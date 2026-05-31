@@ -33,6 +33,10 @@ export default function Header() {
               Live Activity
             </Link>
 
+            <Link to="/pricing" style={styles.link}>
+              Pricing
+            </Link>
+
             <Link to="/how-it-works" style={styles.link}>
               How It Works
             </Link>
@@ -57,6 +61,10 @@ export default function Header() {
           <>
             <Link to="/how-it-works" style={styles.link}>
               How It Works
+            </Link>
+
+            <Link to="/pricing" style={styles.link}>
+              Pricing
             </Link>
 
             <Link to="/join" style={styles.link}>
