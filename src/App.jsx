@@ -15,6 +15,15 @@ import BetaNotice from "./pages/BetaNotice.jsx";
 import Pricing from "./pages/Pricing.jsx";
 
 import Footer from "./components/Footer.jsx";
+import RequireActiveSubscription from "./components/RequireActiveSubscription.jsx";
+
+function Protected({ children }) {
+  return (
+    <RequireActiveSubscription>
+      {children}
+    </RequireActiveSubscription>
+  );
+}
 
 export default function App() {
   return (
@@ -29,17 +38,60 @@ export default function App() {
         <div style={{ flex: 1 }}>
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/dashboard" element={<ControlCenter />} />
-            <Route path="/control-center" element={<ControlCenter />} />
+
+            <Route
+              path="/dashboard"
+              element={
+                <Protected>
+                  <ControlCenter />
+                </Protected>
+              }
+            />
+
+            <Route
+              path="/control-center"
+              element={
+                <Protected>
+                  <ControlCenter />
+                </Protected>
+              }
+            />
+
             <Route path="/login" element={<Login />} />
             <Route path="/join" element={<Join />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/how-it-works" element={<HowItWorks />} />
+
             <Route path="/admin" element={<Admin />} />
             <Route path="/feedback" element={<Feedback />} />
-            <Route path="/activity" element={<LiveActivity />} />
-            <Route path="/live" element={<LiveSessions />} />
-            <Route path="/account" element={<Account />} />
+
+            <Route
+              path="/activity"
+              element={
+                <Protected>
+                  <LiveActivity />
+                </Protected>
+              }
+            />
+
+            <Route
+              path="/live"
+              element={
+                <Protected>
+                  <LiveSessions />
+                </Protected>
+              }
+            />
+
+            <Route
+              path="/account"
+              element={
+                <Protected>
+                  <Account />
+                </Protected>
+              }
+            />
+
             <Route path="/beta-notice" element={<BetaNotice />} />
             <Route path="*" element={<Home />} />
           </Routes>
