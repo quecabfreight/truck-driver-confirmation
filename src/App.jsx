@@ -12,6 +12,7 @@ import LiveActivity from "./pages/LiveActivity.jsx";
 import LiveSessions from "./pages/LiveSessions.jsx";
 import Account from "./pages/Account.jsx";
 import BetaNotice from "./pages/BetaNotice.jsx";
+import Pricing from "./pages/Pricing.jsx";
 
 import Footer from "./components/Footer.jsx";
 
@@ -32,6 +33,7 @@ export default function App() {
             <Route path="/control-center" element={<ControlCenter />} />
             <Route path="/login" element={<Login />} />
             <Route path="/join" element={<Join />} />
+            <Route path="/pricing" element={<Pricing />} />
             <Route path="/how-it-works" element={<HowItWorks />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/feedback" element={<Feedback />} />
