@@ -1,13 +1,6 @@
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
-
 function json(res, code, obj) {
   res.statusCode = code;
   res.setHeader("Content-Type", "application/json; charset=utf-8");
@@ -20,14 +13,29 @@ function normalizeEmail(v) {
 }
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return json(res, 405, {
-      ok: false,
-      error: "Method not allowed"
+  if (req.method === "GET") {
+    return json(res, 200, {
+      ok: true,
+      message: "billing portal function is alive"
     });
   }
 
+  if (req.method !== "POST") {
+    return json(res, 405, { ok: false, error: "Method not allowed" });
+  }
+
   try {
+    const stripeKey = process.env.STRIPE_SECRET_KEY;
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!stripeKey) return json(res, 500, { ok: false, error: "Missing STRIPE_SECRET_KEY" });
+    if (!supabaseUrl) return json(res, 500, { ok: false, error: "Missing SUPABASE_URL" });
+    if (!supabaseKey) return json(res, 500, { ok: false, error: "Missing SUPABASE_SERVICE_ROLE_KEY" });
+
+    const stripe = new Stripe(stripeKey);
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
     const body =
       typeof req.body === "string"
         ? JSON.parse(req.body || "{}")
@@ -36,10 +44,7 @@ export default async function handler(req, res) {
     const email = normalizeEmail(body.email);
 
     if (!email) {
-      return json(res, 400, {
-        ok: false,
-        error: "Missing email."
-      });
+      return json(res, 400, { ok: false, error: "Missing email." });
     }
 
     const { data, error } = await supabase
@@ -56,10 +61,7 @@ export default async function handler(req, res) {
     }
 
     if (!data) {
-      return json(res, 404, {
-        ok: false,
-        error: "Broker account not found."
-      });
+      return json(res, 404, { ok: false, error: "Broker account not found." });
     }
 
     if (!data.stripe_customer_id) {
