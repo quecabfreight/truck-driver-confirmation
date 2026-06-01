@@ -1,6 +1,3 @@
-import Stripe from "stripe";
-import { createClient } from "@supabase/supabase-js";
-
 function json(res, code, obj) {
   res.statusCode = code;
   res.setHeader("Content-Type", "application/json; charset=utf-8");
@@ -21,7 +18,10 @@ export default async function handler(req, res) {
   }
 
   if (req.method !== "POST") {
-    return json(res, 405, { ok: false, error: "Method not allowed" });
+    return json(res, 405, {
+      ok: false,
+      error: "Method not allowed"
+    });
   }
 
   try {
@@ -29,9 +29,23 @@ export default async function handler(req, res) {
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-    if (!stripeKey) return json(res, 500, { ok: false, error: "Missing STRIPE_SECRET_KEY" });
-    if (!supabaseUrl) return json(res, 500, { ok: false, error: "Missing SUPABASE_URL" });
-    if (!supabaseKey) return json(res, 500, { ok: false, error: "Missing SUPABASE_SERVICE_ROLE_KEY" });
+    if (!stripeKey) {
+      return json(res, 500, { ok: false, error: "Missing STRIPE_SECRET_KEY" });
+    }
+
+    if (!supabaseUrl) {
+      return json(res, 500, { ok: false, error: "Missing SUPABASE_URL" });
+    }
+
+    if (!supabaseKey) {
+      return json(res, 500, { ok: false, error: "Missing SUPABASE_SERVICE_ROLE_KEY" });
+    }
+
+    const StripeModule = await import("stripe");
+    const SupabaseModule = await import("@supabase/supabase-js");
+
+    const Stripe = StripeModule.default;
+    const { createClient } = SupabaseModule;
 
     const stripe = new Stripe(stripeKey);
     const supabase = createClient(supabaseUrl, supabaseKey);
@@ -44,7 +58,10 @@ export default async function handler(req, res) {
     const email = normalizeEmail(body.email);
 
     if (!email) {
-      return json(res, 400, { ok: false, error: "Missing email." });
+      return json(res, 400, {
+        ok: false,
+        error: "Missing email."
+      });
     }
 
     const { data, error } = await supabase
@@ -61,7 +78,10 @@ export default async function handler(req, res) {
     }
 
     if (!data) {
-      return json(res, 404, { ok: false, error: "Broker account not found." });
+      return json(res, 404, {
+        ok: false,
+        error: "Broker account not found."
+      });
     }
 
     if (!data.stripe_customer_id) {
