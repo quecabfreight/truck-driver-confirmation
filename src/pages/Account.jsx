@@ -8,6 +8,7 @@ export default function Account() {
   const [phone, setPhone] = useState("");
   const [status, setStatus] = useState("");
   const [saving, setSaving] = useState(false);
+  const [billingLoading, setBillingLoading] = useState(false);
 
   useEffect(() => {
     const current = getAuthEmail() || "";
@@ -21,12 +22,8 @@ export default function Account() {
 
   function formatPhone(v) {
     const d = onlyDigits(v).slice(0, 10);
-
     if (d.length <= 3) return d;
-    if (d.length <= 6) {
-      return `${d.slice(0, 3)}-${d.slice(3)}`;
-    }
-
+    if (d.length <= 6) return `${d.slice(0, 3)}-${d.slice(3)}`;
     return `${d.slice(0, 3)}-${d.slice(3, 6)}-${d.slice(6)}`;
   }
 
@@ -43,9 +40,7 @@ export default function Account() {
     try {
       const res = await fetch("/api/account_update", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           current_email: email,
           new_email: newEmail,
@@ -62,9 +57,7 @@ export default function Account() {
       }
 
       localStorage.setItem("qc_email", newEmail.trim().toLowerCase());
-
       setEmail(newEmail.trim().toLowerCase());
-
       setStatus("Account updated successfully.");
     } catch {
       setStatus("Network error.");
@@ -73,20 +66,40 @@ export default function Account() {
     setSaving(false);
   }
 
+  async function manageBilling() {
+    setStatus("");
+    setBillingLoading(true);
+
+    try {
+      const res = await fetch("/api/create_billing_portal_session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.ok || !data.url) {
+        setStatus(data.error || "Could not open billing portal.");
+        setBillingLoading(false);
+        return;
+      }
+
+      window.location.href = data.url;
+    } catch {
+      setStatus("Billing portal error.");
+      setBillingLoading(false);
+    }
+  }
+
   return (
     <div style={styles.page}>
       <Header />
 
       <div style={styles.hero}>
-        <img
-          src="/qc-logo.png"
-          alt="QueCab AdbS"
-          style={styles.logo}
-        />
+        <img src="/qc-logo.png" alt="QueCab AdbS" style={styles.logo} />
 
-        <div style={styles.heroTitle}>
-          ACCOUNT SETTINGS
-        </div>
+        <div style={styles.heroTitle}>ACCOUNT SETTINGS</div>
 
         <div style={styles.heroSub}>
           Manage your broker account information.
@@ -95,9 +108,7 @@ export default function Account() {
 
       <div style={styles.wrap}>
         <div style={styles.card}>
-          <div style={styles.sectionTitle}>
-            Business Email
-          </div>
+          <div style={styles.sectionTitle}>Business Email</div>
 
           <input
             style={styles.input}
@@ -106,43 +117,44 @@ export default function Account() {
             placeholder="Business Email"
           />
 
-          <div style={styles.sectionTitle}>
-            Business Phone
-          </div>
+          <div style={styles.sectionTitle}>Business Phone</div>
 
           <input
             style={styles.input}
             value={phone}
-            onChange={(e) =>
-              setPhone(formatPhone(e.target.value))
-            }
+            onChange={(e) => setPhone(formatPhone(e.target.value))}
             placeholder="Business Phone"
           />
 
-          <button
-            style={styles.button}
-            onClick={saveAccount}
-            disabled={saving}
-          >
+          <button style={styles.button} onClick={saveAccount} disabled={saving}>
             {saving ? "Saving..." : "Save Changes"}
           </button>
 
-          {status ? (
-            <div style={styles.status}>
-              {status}
-            </div>
-          ) : null}
+          {status ? <div style={styles.status}>{status}</div> : null}
+        </div>
+
+        <div style={styles.card}>
+          <div style={styles.sectionTitle}>Billing</div>
+
+          <div style={styles.noteText}>
+            Manage payment method, invoices, and subscription billing securely through Stripe.
+          </div>
+
+          <button
+            style={styles.button}
+            onClick={manageBilling}
+            disabled={billingLoading}
+          >
+            {billingLoading ? "Opening Billing..." : "Manage Billing"}
+          </button>
         </div>
 
         <div style={styles.noteCard}>
-          <div style={styles.noteTitle}>
-            Beta Notice
-          </div>
+          <div style={styles.noteTitle}>Beta Notice</div>
 
           <div style={styles.noteText}>
-            During beta, certain account changes may still
-            require manual review to protect broker access
-            and prevent unauthorized modifications.
+            During beta, certain account changes may still require manual review
+            to protect broker access and prevent unauthorized modifications.
           </div>
         </div>
       </div>
