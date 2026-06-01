@@ -16,33 +16,42 @@ function normalizeEmail(v) {
   return String(v || "").trim().toLowerCase();
 }
 
+function normalizeStatus(v) {
+  return String(v || "").trim().toLowerCase();
+}
+
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return json(res, 405, {
-      ok: false,
-      error: "Method not allowed"
-    });
-  }
-
   try {
-    const body =
-      typeof req.body === "string"
-        ? JSON.parse(req.body || "{}")
-        : req.body || {};
+    let email = "";
 
-    const email = normalizeEmail(body.email);
+    if (req.method === "GET") {
+      email = normalizeEmail(req.query?.email);
+    } else if (req.method === "POST") {
+      const body =
+        typeof req.body === "string"
+          ? JSON.parse(req.body || "{}")
+          : req.body || {};
+
+      email = normalizeEmail(body.email);
+    } else {
+      return json(res, 405, {
+        ok: false,
+        error: "Method not allowed"
+      });
+    }
 
     if (!email) {
       return json(res, 400, {
         ok: false,
-        error: "Missing email."
+        error: "Missing email.",
+        hint: "Use /api/check_subscription?email=broker@email.com"
       });
     }
 
     const { data, error } = await supabase
       .from("broker_accounts")
       .select(
-        "business_email, account_type, subscription_status, status, plan_name, monthly_verification_limit"
+        "business_email, account_type, subscription_status, status, plan_name, monthly_verification_limit, stripe_subscription_id, billing_started_at"
       )
       .eq("business_email", email)
       .maybeSingle();
@@ -57,19 +66,25 @@ export default async function handler(req, res) {
     if (!data) {
       return json(res, 404, {
         ok: false,
-        error: "Broker account not found."
+        error: "Broker account not found.",
+        searched_email: email
       });
     }
 
-    const accountType = String(data.account_type || "").trim().toLowerCase();
-    const subscriptionStatus = String(data.subscription_status || "")
-      .trim()
-      .toLowerCase();
-    const accountStatus = String(data.status || "").trim().toLowerCase();
+    const accountType = normalizeStatus(data.account_type);
+    const subscriptionStatus = normalizeStatus(data.subscription_status);
+    const accountStatus = normalizeStatus(data.status);
 
-    const allowed =
-      accountStatus === "active" &&
-      (accountType === "internal" || subscriptionStatus === "paid_active");
+    const isActiveAccount = accountStatus === "active";
+    const isInternal =
+      accountType === "internal" || subscriptionStatus === "internal";
+
+    const isPaid =
+      subscriptionStatus === "paid_active" ||
+      subscriptionStatus === "active" ||
+      subscriptionStatus === "trialing";
+
+    const allowed = isActiveAccount && (isInternal || isPaid);
 
     return json(res, 200, {
       ok: true,
@@ -79,7 +94,14 @@ export default async function handler(req, res) {
       subscription_status: subscriptionStatus,
       status: accountStatus,
       plan_name: data.plan_name || "",
-      monthly_verification_limit: data.monthly_verification_limit || null
+      monthly_verification_limit: data.monthly_verification_limit || null,
+      stripe_subscription_id: data.stripe_subscription_id || "",
+      billing_started_at: data.billing_started_at || "",
+      debug: {
+        is_active_account: isActiveAccount,
+        is_internal: isInternal,
+        is_paid: isPaid
+      }
     });
   } catch (err) {
     return json(res, 500, {
