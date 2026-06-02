@@ -50,6 +50,113 @@ function buildVerifyUrl(token) {
   return `https://quecabadbs.com/v.html?t=${encodeURIComponent(token)}&cv=4`;
 }
 
+function monthStartIso() {
+  const d = new Date();
+  d.setDate(1);
+  d.setHours(0, 0, 0, 0);
+  return d.toISOString();
+}
+
+async function enforceMonthlyLimit(brokerEmail) {
+  const business_email = safe(brokerEmail).toLowerCase();
+
+  if (!business_email) {
+    return {
+      ok: false,
+      error: "Missing broker email."
+    };
+  }
+
+  const { data: broker, error: brokerError } = await supabase
+    .from("broker_accounts")
+    .select(`
+      business_email,
+      account_type,
+      subscription_status,
+      monthly_verification_limit
+    `)
+    .eq("business_email", business_email)
+    .maybeSingle();
+
+  if (brokerError) {
+    return {
+      ok: false,
+      error: brokerError.message
+    };
+  }
+
+  if (!broker) {
+    return {
+      ok: false,
+      error: "Broker account not found."
+    };
+  }
+
+  const isInternal =
+    safe(broker.account_type).toLowerCase() === "internal";
+
+  if (isInternal) {
+    return {
+      ok: true,
+      unlimited: true
+    };
+  }
+
+  const status = safe(broker.subscription_status).toLowerCase();
+
+  const paid =
+    status === "paid_active" ||
+    status === "beta_active";
+
+  if (!paid) {
+    return {
+      ok: false,
+      error: "Subscription is inactive."
+    };
+  }
+
+  const limit = Number(broker.monthly_verification_limit || 0);
+
+  if (!limit || limit <= 0) {
+    return {
+      ok: false,
+      error: "No verification limit assigned."
+    };
+  }
+
+  const { count, error: countError } = await supabase
+    .from("verify_links")
+    .select("*", {
+      count: "exact",
+      head: true
+    })
+    .eq("issued_by_email", business_email)
+    .gte("created_at", monthStartIso());
+
+  if (countError) {
+    return {
+      ok: false,
+      error: countError.message
+    };
+  }
+
+  const used = Number(count || 0);
+
+  if (used >= limit) {
+    return {
+      ok: false,
+      error: `Monthly verification limit reached (${limit}).`
+    };
+  }
+
+  return {
+    ok: true,
+    used,
+    limit,
+    remaining: limit - used
+  };
+}
+
 function buildEmailHtml({
   loadId,
   verifyUrl,
@@ -194,6 +301,17 @@ export default async function handler(req, res) {
         ? JSON.parse(req.body)
         : (req.body || {});
 
+    const issued_by_email = safe(body.issued_by_email).toLowerCase();
+
+    const limitCheck = await enforceMonthlyLimit(issued_by_email);
+
+    if (!limitCheck.ok) {
+      return json(res, 403, {
+        ok: false,
+        error: limitCheck.error
+      });
+    }
+
     const token = makeToken();
 
     const load_id = safe(body.load_id);
@@ -242,6 +360,7 @@ export default async function handler(req, res) {
 
     const payload = {
       token,
+      issued_by_email,
       load_id,
       dock_email,
 
@@ -309,6 +428,8 @@ export default async function handler(req, res) {
 
       load_id,
       expires_at,
+
+      usage: limitCheck,
 
       email_status,
       email_error,
