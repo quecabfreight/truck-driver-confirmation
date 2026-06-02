@@ -1,5 +1,7 @@
-import crypto from "crypto";
+import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -13,120 +15,78 @@ function json(res, code, obj) {
   res.end(JSON.stringify(obj));
 }
 
-function safe(v) {
-  return String(v || "").trim();
-}
+export const config = {
+  api: {
+    bodyParser: false
+  }
+};
 
-function normalizeEmail(v) {
-  return safe(v).toLowerCase();
-}
-
-function readRawBody(req) {
+async function getRawBody(readable) {
   return new Promise((resolve, reject) => {
-    let data = "";
+    const chunks = [];
 
-    req.on("data", (chunk) => {
-      data += chunk;
+    readable.on("data", (chunk) => {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
     });
 
-    req.on("end", () => {
-      resolve(data);
+    readable.on("end", () => {
+      resolve(Buffer.concat(chunks));
     });
 
-    req.on("error", reject);
+    readable.on("error", reject);
   });
 }
 
-function parseStripeSignature(sigHeader) {
-  const parts = String(sigHeader || "").split(",");
-  const out = {};
+async function activateBrokerAccount({
+  email,
+  customerId,
+  subscriptionId
+}) {
+  const normalizedEmail = String(email || "").trim().toLowerCase();
 
-  for (const part of parts) {
-    const [key, value] = part.split("=");
-    if (key && value) out[key.trim()] = value.trim();
-  }
+  const payload = {
+    subscription_status: "paid_active",
+    status: "active",
+    stripe_customer_id: customerId || null,
+    stripe_subscription_id: subscriptionId || null,
+    billing_started_at: new Date().toISOString()
+  };
 
-  return out;
+  const result = await supabase
+    .from("broker_accounts")
+    .update(payload)
+    .eq("business_email", normalizedEmail);
+
+  return {
+    ok: !result.error,
+    error: result.error?.message || null
+  };
 }
 
-function verifyStripeSignature(rawBody, sigHeader, webhookSecret) {
-  const sig = parseStripeSignature(sigHeader);
-  const timestamp = sig.t;
-  const signature = sig.v1;
-
-  if (!timestamp || !signature) return false;
-
-  const signedPayload = `${timestamp}.${rawBody}`;
-
-  const expected = crypto
-    .createHmac("sha256", webhookSecret)
-    .update(signedPayload, "utf8")
-    .digest("hex");
-
-  try {
-    return crypto.timingSafeEqual(
-      Buffer.from(expected),
-      Buffer.from(signature)
-    );
-  } catch {
-    return false;
-  }
-}
-
-async function updateBrokerByEmail(email, updates) {
-  const cleanEmail = normalizeEmail(email);
-
-  if (!cleanEmail) {
-    return { ok: false, error: "Missing broker email." };
-  }
-
-  const { data, error } = await supabase
+async function suspendBrokerAccount({
+  customerId,
+  subscriptionId,
+  reason = "subscription_inactive"
+}) {
+  let query = supabase
     .from("broker_accounts")
     .update({
-      ...updates,
-      updated_at: new Date().toISOString()
-    })
-    .eq("business_email", cleanEmail)
-    .select("*")
-    .maybeSingle();
+      subscription_status: reason,
+      status: "suspended"
+    });
 
-  if (error) {
-    return { ok: false, error: error.message };
+  if (subscriptionId) {
+    query = query.eq("stripe_subscription_id", subscriptionId);
+  } else {
+    query = query.eq("stripe_customer_id", customerId);
   }
 
-  if (!data) {
-    return { ok: false, error: "Broker account not found." };
-  }
+  const result = await query;
 
-  return { ok: true, data };
-}
-
-async function updateBrokerBySubscription(subscriptionId, updates) {
-  const subId = safe(subscriptionId);
-
-  if (!subId) {
-    return { ok: false, error: "Missing subscription ID." };
-  }
-
-  const { data, error } = await supabase
-    .from("broker_accounts")
-    .update({
-      ...updates,
-      updated_at: new Date().toISOString()
-    })
-    .eq("stripe_subscription_id", subId)
-    .select("*")
-    .maybeSingle();
-
-  if (error) {
-    return { ok: false, error: error.message };
-  }
-
-  if (!data) {
-    return { ok: false, error: "Broker account not found by subscription ID." };
-  }
-
-  return { ok: true, data };
+  return {
+    ok: !result.error,
+    error: result.error?.message || null
+  };
 }
 
 export default async function handler(req, res) {
@@ -137,114 +97,132 @@ export default async function handler(req, res) {
     });
   }
 
-  const webhookSecret = safe(process.env.STRIPE_WEBHOOK_SECRET);
-
-  if (!webhookSecret) {
-    return json(res, 500, {
-      ok: false,
-      error: "Missing STRIPE_WEBHOOK_SECRET in Vercel."
-    });
-  }
-
   try {
-    const rawBody = await readRawBody(req);
-    const sigHeader = req.headers["stripe-signature"];
+    const rawBody = await getRawBody(req);
 
-    const valid = verifyStripeSignature(rawBody, sigHeader, webhookSecret);
+    const sig = req.headers["stripe-signature"];
 
-    if (!valid) {
-      return json(res, 400, {
-        ok: false,
-        error: "Invalid Stripe webhook signature."
-      });
-    }
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-    const event = JSON.parse(rawBody || "{}");
-    const type = safe(event.type);
-    const obj = event?.data?.object || {};
+    const event = stripe.webhooks.constructEvent(
+      rawBody,
+      sig,
+      webhookSecret
+    );
 
-    if (type === "checkout.session.completed") {
-      const email = normalizeEmail(obj.customer_email);
-      const subscriptionId = safe(obj.subscription);
-      const customerId = safe(obj.customer);
-      const plan = safe(obj?.metadata?.plan || "founding_beta");
+    //
+    // CHECKOUT COMPLETED
+    //
+    if (event.type === "checkout.session.completed") {
+      const session = event.data.object;
 
-      const result = await updateBrokerByEmail(email, {
-        account_type: "broker",
-        subscription_status: "paid_active",
-        plan_name: plan,
-        monthly_verification_limit: 999999,
-        stripe_subscription_id: subscriptionId || null,
-        stripe_customer_id: customerId || null,
-        billing_started_at: new Date().toISOString(),
-        status: "active"
+      const customerEmail =
+        session.customer_details?.email ||
+        session.customer_email ||
+        "";
+
+      const customerId = session.customer || "";
+      const subscriptionId = session.subscription || "";
+
+      const result = await activateBrokerAccount({
+        email: customerEmail,
+        customerId,
+        subscriptionId
       });
 
       return json(res, 200, {
         ok: true,
         received: true,
-        type,
+        type: event.type,
         action: "broker_subscription_activated",
         result
       });
     }
 
-    if (type === "customer.subscription.deleted") {
-      const subscriptionId = safe(obj.id);
+    //
+    // SUBSCRIPTION UPDATED
+    //
+    if (event.type === "customer.subscription.updated") {
+      const subscription = event.data.object;
 
-      const result = await updateBrokerBySubscription(subscriptionId, {
-        subscription_status: "canceled",
-        status: "active"
+      const customerId = subscription.customer || "";
+      const subscriptionId = subscription.id || "";
+      const status = String(subscription.status || "").toLowerCase();
+
+      if (
+        status === "active" ||
+        status === "trialing"
+      ) {
+        const customer = await stripe.customers.retrieve(customerId);
+
+        const result = await activateBrokerAccount({
+          email: customer.email,
+          customerId,
+          subscriptionId
+        });
+
+        return json(res, 200, {
+          ok: true,
+          received: true,
+          type: event.type,
+          action: "subscription_reactivated",
+          result
+        });
+      }
+
+      const result = await suspendBrokerAccount({
+        customerId,
+        subscriptionId,
+        reason: status
       });
 
       return json(res, 200, {
         ok: true,
         received: true,
-        type,
-        action: "broker_subscription_canceled",
+        type: event.type,
+        action: "subscription_suspended",
         result
       });
     }
 
-    if (type === "invoice.payment_failed") {
-      const subscriptionId = safe(obj.subscription);
+    //
+    // SUBSCRIPTION DELETED
+    //
+    if (event.type === "customer.subscription.deleted") {
+      const subscription = event.data.object;
 
-      const result = await updateBrokerBySubscription(subscriptionId, {
-        subscription_status: "past_due",
-        status: "active"
+      const result = await suspendBrokerAccount({
+        customerId: subscription.customer || "",
+        subscriptionId: subscription.id || "",
+        reason: "canceled"
       });
 
       return json(res, 200, {
         ok: true,
         received: true,
-        type,
-        action: "broker_subscription_past_due",
+        type: event.type,
+        action: "subscription_canceled",
         result
       });
     }
 
-    if (type === "customer.subscription.updated") {
-      const subscriptionId = safe(obj.id);
-      const stripeStatus = safe(obj.status).toLowerCase();
+    //
+    // PAYMENT FAILED
+    //
+    if (event.type === "invoice.payment_failed") {
+      const invoice = event.data.object;
 
-      let subscriptionStatus = "paid_active";
-
-      if (stripeStatus === "past_due") subscriptionStatus = "past_due";
-      if (stripeStatus === "canceled") subscriptionStatus = "canceled";
-      if (stripeStatus === "unpaid") subscriptionStatus = "past_due";
-      if (stripeStatus === "incomplete_expired") subscriptionStatus = "canceled";
-
-      const result = await updateBrokerBySubscription(subscriptionId, {
-        subscription_status: subscriptionStatus,
-        status: "active"
+      const result = await suspendBrokerAccount({
+        customerId: invoice.customer || "",
+        subscriptionId: invoice.subscription || "",
+        reason: "payment_failed"
       });
 
       return json(res, 200, {
         ok: true,
         received: true,
-        type,
-        action: "broker_subscription_updated",
-        stripe_status: stripeStatus,
+        type: event.type,
+        action: "payment_failed_account_suspended",
         result
       });
     }
@@ -253,12 +231,13 @@ export default async function handler(req, res) {
       ok: true,
       received: true,
       ignored: true,
-      type
+      type: event.type
     });
+
   } catch (err) {
-    return json(res, 500, {
+    return json(res, 400, {
       ok: false,
-      error: err?.message || "Stripe webhook failed."
+      error: err?.message || "Webhook error"
     });
   }
 }
