@@ -8,6 +8,12 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+export const config = {
+  api: {
+    bodyParser: false
+  }
+};
+
 function json(res, code, obj) {
   res.statusCode = code;
   res.setHeader("Content-Type", "application/json; charset=utf-8");
@@ -15,78 +21,85 @@ function json(res, code, obj) {
   res.end(JSON.stringify(obj));
 }
 
-export const config = {
-  api: {
-    bodyParser: false
+async function getRawBody(req) {
+  const chunks = [];
+  for await (const chunk of req) {
+    chunks.push(typeof chunk === "string" ? Buffer.from(chunk) : chunk);
   }
-};
-
-async function getRawBody(readable) {
-  return new Promise((resolve, reject) => {
-    const chunks = [];
-
-    readable.on("data", (chunk) => {
-      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-    });
-
-    readable.on("end", () => {
-      resolve(Buffer.concat(chunks));
-    });
-
-    readable.on("error", reject);
-  });
+  return Buffer.concat(chunks);
 }
 
-async function activateBrokerAccount({
-  email,
-  customerId,
-  subscriptionId
-}) {
-  const normalizedEmail = String(email || "").trim().toLowerCase();
+function clean(v) {
+  return String(v || "").trim().toLowerCase();
+}
 
-  const payload = {
-    subscription_status: "paid_active",
-    status: "active",
-    stripe_customer_id: customerId || null,
-    stripe_subscription_id: subscriptionId || null,
-    billing_started_at: new Date().toISOString()
-  };
+async function activateAccount({ email, customerId, subscriptionId }) {
+  const businessEmail = clean(email);
 
-  const result = await supabase
+  if (!businessEmail) {
+    return { ok: false, error: "Missing customer email." };
+  }
+
+  const { error } = await supabase
     .from("broker_accounts")
-    .update(payload)
-    .eq("business_email", normalizedEmail);
+    .update({
+      status: "active",
+      subscription_status: "paid_active",
+      plan_name: "founding_beta",
+      monthly_verification_limit: 100,
+      stripe_customer_id: customerId || null,
+      stripe_subscription_id: subscriptionId || null,
+      billing_started_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    })
+    .eq("business_email", businessEmail)
+    .neq("account_type", "internal");
 
-  return {
-    ok: !result.error,
-    error: result.error?.message || null
-  };
+  if (error) {
+    return { ok: false, error: error.message };
+  }
+
+  return { ok: true, business_email: businessEmail };
 }
 
-async function suspendBrokerAccount({
-  customerId,
-  subscriptionId,
-  reason = "subscription_inactive"
-}) {
+async function suspendByStripe({ customerId, subscriptionId, reason }) {
   let query = supabase
     .from("broker_accounts")
     .update({
-      subscription_status: reason,
-      status: "suspended"
-    });
+      status: "suspended",
+      subscription_status: reason || "billing_inactive",
+      updated_at: new Date().toISOString()
+    })
+    .neq("account_type", "internal");
 
   if (subscriptionId) {
     query = query.eq("stripe_subscription_id", subscriptionId);
-  } else {
+  } else if (customerId) {
     query = query.eq("stripe_customer_id", customerId);
+  } else {
+    return { ok: false, error: "Missing Stripe customer/subscription id." };
   }
 
-  const result = await query;
+  const { error } = await query;
 
-  return {
-    ok: !result.error,
-    error: result.error?.message || null
-  };
+  if (error) {
+    return { ok: false, error: error.message };
+  }
+
+  return { ok: true };
+}
+
+async function activateFromSubscription(subscription) {
+  const customerId = subscription.customer || "";
+  const subscriptionId = subscription.id || "";
+
+  const customer = await stripe.customers.retrieve(customerId);
+
+  return activateAccount({
+    email: customer?.email || "",
+    customerId,
+    subscriptionId
+  });
 }
 
 export default async function handler(req, res) {
@@ -99,81 +112,50 @@ export default async function handler(req, res) {
 
   try {
     const rawBody = await getRawBody(req);
-
     const sig = req.headers["stripe-signature"];
+    const secret = process.env.STRIPE_WEBHOOK_SECRET;
 
-    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    const event = stripe.webhooks.constructEvent(rawBody, sig, secret);
 
-    const event = stripe.webhooks.constructEvent(
-      rawBody,
-      sig,
-      webhookSecret
-    );
-
-    //
-    // CHECKOUT COMPLETED
-    //
     if (event.type === "checkout.session.completed") {
       const session = event.data.object;
 
-      const customerEmail =
-        session.customer_details?.email ||
-        session.customer_email ||
-        "";
-
-      const customerId = session.customer || "";
-      const subscriptionId = session.subscription || "";
-
-      const result = await activateBrokerAccount({
-        email: customerEmail,
-        customerId,
-        subscriptionId
+      const result = await activateAccount({
+        email: session.customer_details?.email || session.customer_email || "",
+        customerId: session.customer || "",
+        subscriptionId: session.subscription || ""
       });
 
       return json(res, 200, {
         ok: true,
         received: true,
         type: event.type,
-        action: "broker_subscription_activated",
+        action: "checkout_activated",
         result
       });
     }
 
-    //
-    // SUBSCRIPTION UPDATED
-    //
     if (event.type === "customer.subscription.updated") {
       const subscription = event.data.object;
+      const status = clean(subscription.status);
 
-      const customerId = subscription.customer || "";
-      const subscriptionId = subscription.id || "";
-      const status = String(subscription.status || "").toLowerCase();
-
-      if (
-        status === "active" ||
-        status === "trialing"
-      ) {
-        const customer = await stripe.customers.retrieve(customerId);
-
-        const result = await activateBrokerAccount({
-          email: customer.email,
-          customerId,
-          subscriptionId
-        });
+      if (status === "active" || status === "trialing") {
+        const result = await activateFromSubscription(subscription);
 
         return json(res, 200, {
           ok: true,
           received: true,
           type: event.type,
-          action: "subscription_reactivated",
+          action: "subscription_active",
+          stripe_status: status,
           result
         });
       }
 
-      const result = await suspendBrokerAccount({
-        customerId,
-        subscriptionId,
-        reason: status
+      const result = await suspendByStripe({
+        customerId: subscription.customer || "",
+        subscriptionId: subscription.id || "",
+        reason: status || "subscription_inactive"
       });
 
       return json(res, 200, {
@@ -181,17 +163,15 @@ export default async function handler(req, res) {
         received: true,
         type: event.type,
         action: "subscription_suspended",
+        stripe_status: status,
         result
       });
     }
 
-    //
-    // SUBSCRIPTION DELETED
-    //
     if (event.type === "customer.subscription.deleted") {
       const subscription = event.data.object;
 
-      const result = await suspendBrokerAccount({
+      const result = await suspendByStripe({
         customerId: subscription.customer || "",
         subscriptionId: subscription.id || "",
         reason: "canceled"
@@ -206,13 +186,10 @@ export default async function handler(req, res) {
       });
     }
 
-    //
-    // PAYMENT FAILED
-    //
     if (event.type === "invoice.payment_failed") {
       const invoice = event.data.object;
 
-      const result = await suspendBrokerAccount({
+      const result = await suspendByStripe({
         customerId: invoice.customer || "",
         subscriptionId: invoice.subscription || "",
         reason: "payment_failed"
@@ -222,7 +199,31 @@ export default async function handler(req, res) {
         ok: true,
         received: true,
         type: event.type,
-        action: "payment_failed_account_suspended",
+        action: "payment_failed",
+        result
+      });
+    }
+
+    if (event.type === "invoice.paid") {
+      const invoice = event.data.object;
+
+      if (!invoice.subscription) {
+        return json(res, 200, {
+          ok: true,
+          received: true,
+          type: event.type,
+          ignored: true
+        });
+      }
+
+      const subscription = await stripe.subscriptions.retrieve(invoice.subscription);
+      const result = await activateFromSubscription(subscription);
+
+      return json(res, 200, {
+        ok: true,
+        received: true,
+        type: event.type,
+        action: "invoice_paid_reactivated",
         result
       });
     }
@@ -233,11 +234,10 @@ export default async function handler(req, res) {
       ignored: true,
       type: event.type
     });
-
   } catch (err) {
     return json(res, 400, {
       ok: false,
-      error: err?.message || "Webhook error"
+      error: err?.message || "Stripe webhook error"
     });
   }
 }
