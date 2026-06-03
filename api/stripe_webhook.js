@@ -14,6 +14,38 @@ export const config = {
   }
 };
 
+const PRICE_PLAN_MAP = {
+  price_1TdB7sFRmRC6j774Ac8mUngM: {
+    plan_name: "founding_beta",
+    monthly_verification_limit: 100
+  },
+
+  price_1Tdv4VFRmRC6j774PU5MuqHv: {
+    plan_name: "starter",
+    monthly_verification_limit: 100
+  },
+
+  price_1Tdv71FRmRC6j774yHconv6r: {
+    plan_name: "growth",
+    monthly_verification_limit: 250
+  },
+
+  price_1Tdv97FRmRC6j774Nwvx2DAT: {
+    plan_name: "pro",
+    monthly_verification_limit: 500
+  },
+
+  price_1TdvAMFRmRC6j774Y3sQBpkS: {
+    plan_name: "scale",
+    monthly_verification_limit: 1000
+  },
+
+  price_1TdvClFRmRC6j774Ve8UW5DE: {
+    plan_name: "enterprise",
+    monthly_verification_limit: 999999
+  }
+};
+
 function json(res, code, obj) {
   res.statusCode = code;
   res.setHeader("Content-Type", "application/json; charset=utf-8");
@@ -33,33 +65,94 @@ function clean(v) {
   return String(v || "").trim().toLowerCase();
 }
 
-async function activateAccount({ email, customerId, subscriptionId }) {
+function getPlanFromPriceId(priceId) {
+  const id = String(priceId || "").trim();
+
+  return (
+    PRICE_PLAN_MAP[id] || {
+      plan_name: "unknown",
+      monthly_verification_limit: 0
+    }
+  );
+}
+
+function getPriceIdFromSubscription(subscription) {
+  const item = subscription?.items?.data?.[0];
+  return item?.price?.id || "";
+}
+
+async function retrieveSubscription(subscriptionId) {
+  if (!subscriptionId) return null;
+
+  return await stripe.subscriptions.retrieve(subscriptionId, {
+    expand: ["items.data.price"]
+  });
+}
+
+async function activateAccount({
+  email,
+  customerId,
+  subscriptionId,
+  priceId
+}) {
   const businessEmail = clean(email);
 
   if (!businessEmail) {
     return { ok: false, error: "Missing customer email." };
   }
 
-  const { error } = await supabase
+  let resolvedPriceId = priceId || "";
+
+  if (!resolvedPriceId && subscriptionId) {
+    const subscription = await retrieveSubscription(subscriptionId);
+    resolvedPriceId = getPriceIdFromSubscription(subscription);
+  }
+
+  const plan = getPlanFromPriceId(resolvedPriceId);
+
+  if (plan.monthly_verification_limit <= 0) {
+    return {
+      ok: false,
+      error: `Unknown Stripe price ID: ${resolvedPriceId || "(missing)"}`
+    };
+  }
+
+  const { data, error } = await supabase
     .from("broker_accounts")
     .update({
       status: "active",
       subscription_status: "paid_active",
-      plan_name: "founding_beta",
-      monthly_verification_limit: 100,
+      plan_name: plan.plan_name,
+      monthly_verification_limit: plan.monthly_verification_limit,
       stripe_customer_id: customerId || null,
       stripe_subscription_id: subscriptionId || null,
       billing_started_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     })
     .eq("business_email", businessEmail)
-    .neq("account_type", "internal");
+    .neq("account_type", "internal")
+    .select("*")
+    .maybeSingle();
 
   if (error) {
     return { ok: false, error: error.message };
   }
 
-  return { ok: true, business_email: businessEmail };
+  if (!data) {
+    return {
+      ok: false,
+      error: "Broker account not found or internal account skipped."
+    };
+  }
+
+  return {
+    ok: true,
+    business_email: businessEmail,
+    plan_name: plan.plan_name,
+    monthly_verification_limit: plan.monthly_verification_limit,
+    stripe_price_id: resolvedPriceId,
+    data
+  };
 }
 
 async function suspendByStripe({ customerId, subscriptionId, reason }) {
@@ -80,25 +173,31 @@ async function suspendByStripe({ customerId, subscriptionId, reason }) {
     return { ok: false, error: "Missing Stripe customer/subscription id." };
   }
 
-  const { error } = await query;
+  const { data, error } = await query.select("*");
 
   if (error) {
     return { ok: false, error: error.message };
   }
 
-  return { ok: true };
+  return {
+    ok: true,
+    affected_rows: Array.isArray(data) ? data.length : 0,
+    data
+  };
 }
 
 async function activateFromSubscription(subscription) {
   const customerId = subscription.customer || "";
   const subscriptionId = subscription.id || "";
+  const priceId = getPriceIdFromSubscription(subscription);
 
   const customer = await stripe.customers.retrieve(customerId);
 
   return activateAccount({
     email: customer?.email || "",
     customerId,
-    subscriptionId
+    subscriptionId,
+    priceId
   });
 }
 
@@ -120,10 +219,15 @@ export default async function handler(req, res) {
     if (event.type === "checkout.session.completed") {
       const session = event.data.object;
 
+      const subscriptionId = session.subscription || "";
+      const subscription = await retrieveSubscription(subscriptionId);
+      const priceId = getPriceIdFromSubscription(subscription);
+
       const result = await activateAccount({
         email: session.customer_details?.email || session.customer_email || "",
         customerId: session.customer || "",
-        subscriptionId: session.subscription || ""
+        subscriptionId,
+        priceId
       });
 
       return json(res, 200, {
@@ -216,7 +320,7 @@ export default async function handler(req, res) {
         });
       }
 
-      const subscription = await stripe.subscriptions.retrieve(invoice.subscription);
+      const subscription = await retrieveSubscription(invoice.subscription);
       const result = await activateFromSubscription(subscription);
 
       return json(res, 200, {
