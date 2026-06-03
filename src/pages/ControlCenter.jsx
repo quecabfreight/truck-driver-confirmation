@@ -233,6 +233,7 @@ export default function ControlCenter() {
     setMatches([]);
 
     const payload = {
+      issued_by_email: email,
       load_id: loadId.trim(),
       dock_email: dockEmail.trim().toLowerCase(),
       carrier_company: carrierCompany.trim(),
