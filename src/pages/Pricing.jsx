@@ -1,128 +1,182 @@
-import React, { useState } from "react";
-import Header from "../components/Header.jsx";
-import { getAuthEmail } from "../utils/auth.js";
+import React, { useMemo, useState } from "react";
+import "../styles.css";
 
-function safe(v) {
-  return String(v || "").trim();
-}
+const PLANS = [
+  {
+    key: "founding_beta",
+    name: "Founding Beta",
+    price: "$49",
+    limit: "100 verifications / month",
+    note: "Early broker pricing",
+    featured: true,
+  },
+  {
+    key: "starter",
+    name: "Starter",
+    price: "$149",
+    limit: "100 verifications / month",
+    note: "For small broker operations",
+  },
+  {
+    key: "growth",
+    name: "Growth",
+    price: "$249",
+    limit: "250 verifications / month",
+    note: "For growing monthly volume",
+  },
+  {
+    key: "pro",
+    name: "Pro",
+    price: "$399",
+    limit: "500 verifications / month",
+    note: "For serious load activity",
+  },
+  {
+    key: "scale",
+    name: "Scale",
+    price: "$599",
+    limit: "1,000 verifications / month",
+    note: "For high-volume brokers",
+  },
+  {
+    key: "enterprise",
+    name: "Enterprise",
+    price: "Contact Us",
+    limit: "Custom verification volume",
+    note: "For large broker operations",
+    enterprise: true,
+  },
+];
 
 export default function Pricing() {
-  const [email, setEmail] = useState(() => safe(getAuthEmail()));
-  const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState("");
-  const [err, setErr] = useState("");
+  const [email, setEmail] = useState("");
+  const [busyPlan, setBusyPlan] = useState("");
+  const [error, setError] = useState("");
 
-  async function startCheckout() {
-    setMsg("");
-    setErr("");
+  const cleanEmail = useMemo(() => email.trim().toLowerCase(), [email]);
 
-    const cleanEmail = safe(email).toLowerCase();
+  async function startCheckout(plan) {
+    setError("");
 
-    if (!cleanEmail || !cleanEmail.includes("@")) {
-      setErr("Enter your broker email before continuing.");
+    if (!cleanEmail) {
+      setError("Enter your broker email first.");
       return;
     }
 
-    setLoading(true);
+    if (!cleanEmail.includes("@") || !cleanEmail.includes(".")) {
+      setError("Enter a valid broker email.");
+      return;
+    }
+
+    if (plan === "enterprise") {
+      const subject = encodeURIComponent("QueCab AdbS Enterprise Access Request");
+      const body = encodeURIComponent(
+        `Broker Email: ${cleanEmail}\n\nI would like to request Enterprise access for QueCab AdbS.`
+      );
+      window.location.href = `mailto:verify@quecabadbs.com?subject=${subject}&body=${body}`;
+      return;
+    }
 
     try {
+      setBusyPlan(plan);
+
       const res = await fetch("/api/create_checkout_session", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          business_email: cleanEmail,
           email: cleanEmail,
-          plan: "founding_beta"
-        })
+          plan,
+        }),
       });
 
       const data = await res.json().catch(() => ({}));
 
-      if (!res.ok || !data?.checkout_url) {
-        setLoading(false);
-        setErr(data?.error || "Could not start checkout.");
-        return;
+      if (!res.ok) {
+        throw new Error(data?.error || "Checkout could not be started.");
       }
 
-      window.location.href = data.checkout_url;
-    } catch {
-      setLoading(false);
-      setErr("Network error starting checkout.");
+      if (!data?.url) {
+        throw new Error("Checkout link was not returned.");
+      }
+
+      window.location.href = data.url;
+    } catch (err) {
+      setError(err.message || "Something went wrong starting checkout.");
+    } finally {
+      setBusyPlan("");
     }
   }
 
   return (
     <div style={styles.page}>
-      <Header />
-
-      <div style={styles.heroLogoWrap}>
-        <img src="/qc-logo.png" alt="QueCab AdbS" style={styles.heroLogo} />
-      </div>
-
-      <main style={styles.wrap}>
-        <section style={styles.card}>
-          <div style={styles.badge}>FOUNDING BETA ACCESS</div>
-
-          <h1 style={styles.title}>Start QueCab AdbS</h1>
-
+      <header style={styles.header}>
+        <img src="/qc-logo.png" alt="QueCab AdbS" style={styles.logo} />
+        <div>
+          <h1 style={styles.title}>QueCab AdbS Pricing</h1>
           <p style={styles.subtitle}>
-            Founding beta access gives approved brokers early access to
-            QueCab AdbS during the pre-release period.
+            Broker-facing Truck-Driver verification to help stop double brokering before the truck gets loaded.
           </p>
+        </div>
+      </header>
 
-          <div style={styles.priceBox}>
-            <div style={styles.price}>$49</div>
-            <div style={styles.per}>per month during beta</div>
-          </div>
+      <section style={styles.emailBox}>
+        <label style={styles.label}>Broker Email</label>
+        <input
+          style={styles.input}
+          type="email"
+          value={email}
+          placeholder="broker@company.com"
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <p style={styles.helper}>Enter your email once, then choose your plan.</p>
+        {error ? <div style={styles.error}>{error}</div> : null}
+      </section>
 
-          <div style={styles.futureBox}>
-            Future pricing begins at <b>$149/month</b> after beta.
-          </div>
+      <section style={styles.grid}>
+        {PLANS.map((plan) => (
+          <div
+            key={plan.key}
+            style={{
+              ...styles.card,
+              ...(plan.featured ? styles.featuredCard : {}),
+            }}
+          >
+            {plan.featured ? <div style={styles.badge}>Founding Offer</div> : null}
 
-          <div style={styles.list}>
-            <div>✓ Broker Control Center access</div>
-            <div>✓ AdbS Truck-Driver verification links</div>
-            <div>✓ CLEAR TO LOAD / CAUTION ALERT workflow</div>
-            <div>✓ Live Activity lookup and audit trail</div>
-            <div>✓ Founding beta pricing while beta access remains active</div>
-          </div>
+            <h2 style={styles.planName}>{plan.name}</h2>
 
-          <div style={styles.formBlock}>
-            <label style={styles.label}>Broker Email</label>
+            <div style={styles.price}>
+              {plan.price}
+              {!plan.enterprise && <span style={styles.month}> / month</span>}
+            </div>
 
-            <input
-              style={styles.input}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="broker@company.com"
-              inputMode="email"
-              autoComplete="email"
-            />
+            <p style={styles.limit}>{plan.limit}</p>
+            <p style={styles.note}>{plan.note}</p>
 
             <button
               style={{
-                ...styles.primaryBtn,
-                opacity: loading ? 0.7 : 1,
-                cursor: loading ? "wait" : "pointer"
+                ...styles.button,
+                ...(plan.enterprise ? styles.enterpriseButton : {}),
               }}
-              onClick={startCheckout}
-              disabled={loading}
+              onClick={() => startCheckout(plan.key)}
+              disabled={!!busyPlan}
             >
-              {loading ? "Opening Checkout..." : "Subscribe — $49/month"}
+              {busyPlan === plan.key
+                ? "Opening..."
+                : plan.enterprise
+                ? "Request Enterprise Access"
+                : "Subscribe"}
             </button>
           </div>
+        ))}
+      </section>
 
-          {err ? <div style={styles.error}>{err}</div> : null}
-          {msg ? <div style={styles.message}>{msg}</div> : null}
-
-          <p style={styles.smallPrint}>
-            Subscription billing is handled securely by Stripe. During beta,
-            account approval and operational access may still be reviewed
-            manually before full production use.
-          </p>
-        </section>
-      </main>
+      <footer style={styles.footer}>
+        <p>Secure your load. Verify the Truck-Driver before loading.</p>
+      </footer>
     </div>
   );
 }
@@ -130,155 +184,154 @@ export default function Pricing() {
 const styles = {
   page: {
     minHeight: "100vh",
+    padding: "34px 18px",
+    color: "#f3f7fb",
     background:
-      "linear-gradient(180deg, #070b11 0%, #0d1522 48%, #111d2c 100%)",
-    color: "#e6edf5"
+      "radial-gradient(circle at top, rgba(35,82,120,0.35), transparent 34%), linear-gradient(135deg, #08111b 0%, #101c29 45%, #05080d 100%)",
+    fontFamily:
+      "Inter, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
   },
-  heroLogoWrap: {
+  header: {
+    maxWidth: "1180px",
+    margin: "0 auto 28px",
     display: "flex",
-    justifyContent: "center",
-    marginTop: 86,
-    marginBottom: 10
+    alignItems: "center",
+    gap: "22px",
+    flexWrap: "wrap",
   },
-  heroLogo: {
-    width: 220,
-    maxWidth: "90%"
-  },
-  wrap: {
-    maxWidth: 780,
-    margin: "0 auto",
-    padding: "0 18px 52px"
-  },
-  card: {
-    border: "1px solid rgba(255,255,255,0.12)",
-    background:
-      "linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.032))",
-    borderRadius: 24,
-    padding: 28,
-    boxShadow: "0 24px 60px rgba(0,0,0,0.42)",
-    textAlign: "center"
-  },
-  badge: {
-    display: "inline-block",
-    padding: "9px 14px",
-    borderRadius: 999,
-    border: "1px solid rgba(120,180,255,0.45)",
-    background: "rgba(120,180,255,0.10)",
-    color: "#b8d8ff",
-    fontSize: 12,
-    fontWeight: 950,
-    letterSpacing: 0.9,
-    marginBottom: 14
+  logo: {
+    width: "150px",
+    height: "auto",
+    filter: "drop-shadow(0 8px 22px rgba(0,0,0,0.5))",
   },
   title: {
     margin: 0,
-    fontSize: 36,
-    fontWeight: 950,
-    letterSpacing: 0.2
+    fontSize: "clamp(2rem, 5vw, 3.6rem)",
+    letterSpacing: "-0.04em",
   },
   subtitle: {
-    maxWidth: 620,
-    margin: "14px auto 22px",
-    fontSize: 16,
-    lineHeight: 1.65,
-    opacity: 0.88
+    margin: "10px 0 0",
+    maxWidth: "760px",
+    fontSize: "1.08rem",
+    lineHeight: 1.55,
+    color: "#c9d7e6",
   },
-  priceBox: {
-    margin: "20px auto 12px",
-    padding: 22,
-    borderRadius: 20,
-    border: "1px solid rgba(255,255,255,0.12)",
-    background:
-      "linear-gradient(180deg, rgba(40,110,190,0.18), rgba(255,255,255,0.035))"
-  },
-  price: {
-    fontSize: 54,
-    fontWeight: 950,
-    lineHeight: 1
-  },
-  per: {
-    marginTop: 7,
-    fontSize: 15,
-    opacity: 0.78,
-    fontWeight: 800
-  },
-  futureBox: {
-    margin: "0 auto 20px",
-    padding: "12px 14px",
-    borderRadius: 16,
-    border: "1px solid rgba(255,255,255,0.10)",
-    background: "rgba(0,0,0,0.20)",
-    fontSize: 14,
-    opacity: 0.92
-  },
-  list: {
-    display: "grid",
-    gap: 10,
-    maxWidth: 560,
-    margin: "0 auto 24px",
-    textAlign: "left",
-    fontSize: 15,
-    lineHeight: 1.45
-  },
-  formBlock: {
-    maxWidth: 460,
-    margin: "0 auto",
-    display: "grid",
-    gap: 10
+  emailBox: {
+    maxWidth: "1180px",
+    margin: "0 auto 26px",
+    padding: "20px",
+    border: "1px solid rgba(180,210,240,0.22)",
+    borderRadius: "20px",
+    background: "rgba(255,255,255,0.055)",
+    boxShadow: "0 18px 50px rgba(0,0,0,0.28)",
+    backdropFilter: "blur(10px)",
   },
   label: {
-    textAlign: "left",
-    fontSize: 13,
-    fontWeight: 900,
-    opacity: 0.82
+    display: "block",
+    marginBottom: "8px",
+    color: "#dce9f7",
+    fontWeight: 800,
   },
   input: {
     width: "100%",
-    padding: 14,
-    borderRadius: 14,
-    border: "1px solid rgba(255,255,255,0.18)",
-    background:
-      "linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.045))",
-    color: "#fff",
-    fontSize: 16,
+    boxSizing: "border-box",
+    padding: "15px 16px",
+    borderRadius: "14px",
+    border: "1px solid rgba(200,225,245,0.35)",
+    background: "rgba(5,12,20,0.72)",
+    color: "#ffffff",
+    fontSize: "1.05rem",
     outline: "none",
-    boxSizing: "border-box"
   },
-  primaryBtn: {
-    width: "100%",
-    padding: "15px 18px",
-    borderRadius: 15,
-    border: "1px solid rgba(120,180,255,0.55)",
-    background:
-      "linear-gradient(180deg, rgba(52,120,205,0.78), rgba(26,72,130,0.92))",
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: 950,
-    boxShadow: "0 14px 32px rgba(0,0,0,0.32)"
+  helper: {
+    margin: "10px 0 0",
+    color: "#9fb1c5",
   },
   error: {
-    marginTop: 16,
-    padding: 12,
-    borderRadius: 14,
-    border: "1px solid rgba(255,80,80,0.35)",
-    background: "rgba(255,80,80,0.08)",
-    color: "#ffb0b0",
-    fontWeight: 800
+    marginTop: "12px",
+    padding: "12px 14px",
+    borderRadius: "12px",
+    background: "rgba(180,30,30,0.22)",
+    border: "1px solid rgba(255,120,120,0.35)",
+    color: "#ffd7d7",
+    fontWeight: 800,
   },
-  message: {
-    marginTop: 16,
-    padding: 12,
-    borderRadius: 14,
-    border: "1px solid rgba(120,180,255,0.35)",
-    background: "rgba(120,180,255,0.08)",
-    color: "#cce1ff",
-    fontWeight: 800
+  grid: {
+    maxWidth: "1180px",
+    margin: "0 auto",
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(245px, 1fr))",
+    gap: "18px",
   },
-  smallPrint: {
-    maxWidth: 620,
-    margin: "20px auto 0",
-    fontSize: 12,
-    lineHeight: 1.6,
-    opacity: 0.62
-  }
+  card: {
+    position: "relative",
+    padding: "24px",
+    borderRadius: "22px",
+    border: "1px solid rgba(180,210,240,0.18)",
+    background:
+      "linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.035))",
+    boxShadow: "0 18px 42px rgba(0,0,0,0.28)",
+  },
+  featuredCard: {
+    border: "1px solid rgba(83,174,255,0.55)",
+    boxShadow: "0 22px 55px rgba(25,115,190,0.25)",
+  },
+  badge: {
+    position: "absolute",
+    top: "16px",
+    right: "16px",
+    padding: "6px 10px",
+    borderRadius: "999px",
+    background: "rgba(83,174,255,0.18)",
+    border: "1px solid rgba(83,174,255,0.45)",
+    color: "#bfe4ff",
+    fontSize: "0.78rem",
+    fontWeight: 900,
+  },
+  planName: {
+    margin: "8px 0 16px",
+    fontSize: "1.45rem",
+  },
+  price: {
+    fontSize: "2.2rem",
+    fontWeight: 950,
+    letterSpacing: "-0.04em",
+  },
+  month: {
+    fontSize: "0.95rem",
+    color: "#aebdca",
+    fontWeight: 700,
+  },
+  limit: {
+    margin: "18px 0 6px",
+    color: "#e5eef8",
+    fontWeight: 800,
+  },
+  note: {
+    minHeight: "44px",
+    color: "#aebdca",
+    lineHeight: 1.45,
+  },
+  button: {
+    width: "100%",
+    marginTop: "18px",
+    padding: "14px 16px",
+    border: 0,
+    borderRadius: "14px",
+    background: "linear-gradient(180deg, #2d8fe8, #1464a8)",
+    color: "#ffffff",
+    fontSize: "1rem",
+    fontWeight: 950,
+    cursor: "pointer",
+    boxShadow: "0 12px 26px rgba(20,100,168,0.34)",
+  },
+  enterpriseButton: {
+    background: "linear-gradient(180deg, #7d8792, #4d5965)",
+  },
+  footer: {
+    maxWidth: "1180px",
+    margin: "34px auto 0",
+    color: "#97aabe",
+    textAlign: "center",
+  },
 };
