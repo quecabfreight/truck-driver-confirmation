@@ -13,6 +13,14 @@ function normalizeEmail(v) {
   return safe(v).toLowerCase();
 }
 
+const PLAN_PRICE_IDS = {
+  founding_beta: "price_1TdB7sFRmRC6j774Ac8mUngM",
+  starter: "price_1Tdv4VFRmRC6j774PU5MuqHv",
+  growth: "price_1Tdv71FRmRC6j774yHconv6r",
+  pro: "price_1Tdv97FRmRC6j774Nwvx2DAT",
+  scale: "price_1TdvAMFRmRC6j774Y3sQBpkS"
+};
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return json(res, 405, {
@@ -34,7 +42,6 @@ export default async function handler(req, res) {
 
   try {
     const secretKey = safe(process.env.STRIPE_SECRET_KEY);
-    const priceId = safe(process.env.STRIPE_PRICE_FOUNDING_BETA);
 
     if (!secretKey) {
       return json(res, 500, {
@@ -43,15 +50,9 @@ export default async function handler(req, res) {
       });
     }
 
-    if (!priceId) {
-      return json(res, 500, {
-        ok: false,
-        error: "Missing STRIPE_PRICE_FOUNDING_BETA in Vercel."
-      });
-    }
-
     const email = normalizeEmail(body.email);
-    const plan = safe(body.plan || "founding_beta");
+    const plan = safe(body.plan || "founding_beta").toLowerCase();
+    const priceId = PLAN_PRICE_IDS[plan];
 
     if (!email || !email.includes("@")) {
       return json(res, 400, {
@@ -60,7 +61,7 @@ export default async function handler(req, res) {
       });
     }
 
-    if (plan !== "founding_beta") {
+    if (!priceId) {
       return json(res, 400, {
         ok: false,
         error: "Unsupported plan."
@@ -73,10 +74,14 @@ export default async function handler(req, res) {
     params.append("customer_email", email);
     params.append("line_items[0][price]", priceId);
     params.append("line_items[0][quantity]", "1");
+    params.append("metadata[plan]", plan);
+    params.append("subscription_data[metadata][plan]", plan);
+
     params.append(
       "success_url",
       "https://quecabadbs.com/billing-success.html?session_id={CHECKOUT_SESSION_ID}"
     );
+
     params.append(
       "cancel_url",
       "https://quecabadbs.com/billing-cancel.html"
@@ -116,6 +121,8 @@ export default async function handler(req, res) {
 
     return json(res, 200, {
       ok: true,
+      plan,
+      price_id: priceId,
       checkout_url: stripeData.url,
       session_id: stripeData.id
     });
