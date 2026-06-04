@@ -17,7 +17,7 @@ function normalizeEmail(v) {
 
 const PLAN_PRICE_IDS = {
   founding_beta: "price_1TdB7sFRmRC6j774Ac8mUngM",
-  starter: "price_1Tdv4VFRmRC6j774PU5MuqHv",
+  starter: "price_1Tdv4VFRmRC6j774PU5MugHv",
   growth: "price_1Tdv71FRmRC6j774yHconv6r",
   pro: "price_1Tdv97FRmRC6j774Nwvx2DAT",
   scale: "price_1TdvAMFRmRC6j774Y3sQBpkS",
