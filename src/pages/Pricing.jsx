@@ -55,6 +55,10 @@ export default function Pricing() {
 
   const cleanEmail = useMemo(() => email.trim().toLowerCase(), [email]);
 
+  function goTo(path) {
+    window.location.href = path;
+  }
+
   async function startCheckout(plan) {
     setError("");
 
@@ -64,7 +68,7 @@ export default function Pricing() {
     }
 
     if (!cleanEmail.includes("@") || !cleanEmail.includes(".")) {
-      setError("Enter a valid broker email.");
+      setError("Enter a valid approved broker email.");
       return;
     }
 
@@ -112,6 +116,31 @@ export default function Pricing() {
 
   return (
     <div style={styles.page}>
+      <nav style={styles.nav}>
+        <div style={styles.navBrand} onClick={() => goTo("/#/control-center")}>
+          <img src="/qc-logo.png" alt="QueCab AdbS" style={styles.navLogo} />
+          <span style={styles.navTitle}>QueCab AdbS</span>
+        </div>
+
+        <div style={styles.navLinks}>
+          <button style={styles.navButton} onClick={() => goTo("/#/control-center")}>
+            Control Center
+          </button>
+          <button style={styles.navButton} onClick={() => goTo("/#/live-activity")}>
+            Live Activity
+          </button>
+          <button style={styles.navButtonActive} onClick={() => goTo("/pricing")}>
+            Pricing
+          </button>
+          <button style={styles.navButton} onClick={() => goTo("/#/account")}>
+            Account
+          </button>
+          <button style={styles.navButton} onClick={() => goTo("/#/")}>
+            Home
+          </button>
+        </div>
+      </nav>
+
       <header style={styles.header}>
         <img src="/qc-logo.png" alt="QueCab AdbS" style={styles.logo} />
         <div>
@@ -123,15 +152,27 @@ export default function Pricing() {
       </header>
 
       <section style={styles.emailBox}>
-        <label style={styles.label}>Broker Email</label>
+        <label style={styles.label} htmlFor="brokerEmail">
+          Approved Broker Email
+        </label>
+
         <input
+          id="brokerEmail"
+          name="brokerEmail"
           style={styles.input}
           type="email"
           value={email}
           placeholder="broker@company.com"
+          autoComplete="email"
+          inputMode="email"
           onChange={(e) => setEmail(e.target.value)}
+          onInput={(e) => setEmail(e.currentTarget.value)}
         />
-        <p style={styles.helper}>Enter your email once, then choose your plan.</p>
+
+        <p style={styles.helper}>
+          Enter the approved broker email connected to this QueCab AdbS account.
+        </p>
+
         {error ? <div style={styles.error}>{error}</div> : null}
       </section>
 
@@ -157,9 +198,11 @@ export default function Pricing() {
             <p style={styles.note}>{plan.note}</p>
 
             <button
+              type="button"
               style={{
                 ...styles.button,
                 ...(plan.enterprise ? styles.enterpriseButton : {}),
+                ...(busyPlan ? styles.buttonDisabled : {}),
               }}
               onClick={() => startCheckout(plan.key)}
               disabled={!!busyPlan}
@@ -176,6 +219,7 @@ export default function Pricing() {
 
       <footer style={styles.footer}>
         <p>Secure your load. Verify the Truck-Driver before loading.</p>
+        <p>© 2026 Omnimobile Inc. All Rights Reserved. • QueCab AdbS™ — Patent Pending.</p>
       </footer>
     </div>
   );
@@ -184,12 +228,65 @@ export default function Pricing() {
 const styles = {
   page: {
     minHeight: "100vh",
-    padding: "34px 18px",
+    padding: "20px 18px 34px",
     color: "#f3f7fb",
     background:
       "radial-gradient(circle at top, rgba(35,82,120,0.35), transparent 34%), linear-gradient(135deg, #08111b 0%, #101c29 45%, #05080d 100%)",
     fontFamily:
       "Inter, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
+  },
+  nav: {
+    maxWidth: "1180px",
+    margin: "0 auto 26px",
+    padding: "14px 16px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "16px",
+    flexWrap: "wrap",
+    border: "1px solid rgba(180,210,240,0.2)",
+    borderRadius: "18px",
+    background: "rgba(255,255,255,0.06)",
+    boxShadow: "0 14px 34px rgba(0,0,0,0.28)",
+    backdropFilter: "blur(10px)",
+  },
+  navBrand: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    cursor: "pointer",
+  },
+  navLogo: {
+    width: "46px",
+    height: "auto",
+  },
+  navTitle: {
+    fontWeight: 950,
+    letterSpacing: "-0.02em",
+  },
+  navLinks: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    flexWrap: "wrap",
+  },
+  navButton: {
+    padding: "9px 12px",
+    borderRadius: "999px",
+    border: "1px solid rgba(200,225,245,0.18)",
+    background: "rgba(5,12,20,0.28)",
+    color: "#dbe9f7",
+    fontWeight: 800,
+    cursor: "pointer",
+  },
+  navButtonActive: {
+    padding: "9px 12px",
+    borderRadius: "999px",
+    border: "1px solid rgba(83,174,255,0.55)",
+    background: "rgba(83,174,255,0.16)",
+    color: "#ffffff",
+    fontWeight: 950,
+    cursor: "pointer",
   },
   header: {
     maxWidth: "1180px",
@@ -230,7 +327,7 @@ const styles = {
     display: "block",
     marginBottom: "8px",
     color: "#dce9f7",
-    fontWeight: 800,
+    fontWeight: 900,
   },
   input: {
     width: "100%",
@@ -242,6 +339,11 @@ const styles = {
     color: "#ffffff",
     fontSize: "1.05rem",
     outline: "none",
+    pointerEvents: "auto",
+    userSelect: "text",
+    WebkitUserSelect: "text",
+    position: "relative",
+    zIndex: 5,
   },
   helper: {
     margin: "10px 0 0",
@@ -254,7 +356,7 @@ const styles = {
     background: "rgba(180,30,30,0.22)",
     border: "1px solid rgba(255,120,120,0.35)",
     color: "#ffd7d7",
-    fontWeight: 800,
+    fontWeight: 900,
   },
   grid: {
     maxWidth: "1180px",
@@ -286,7 +388,7 @@ const styles = {
     border: "1px solid rgba(83,174,255,0.45)",
     color: "#bfe4ff",
     fontSize: "0.78rem",
-    fontWeight: 900,
+    fontWeight: 950,
   },
   planName: {
     margin: "8px 0 16px",
@@ -300,12 +402,12 @@ const styles = {
   month: {
     fontSize: "0.95rem",
     color: "#aebdca",
-    fontWeight: 700,
+    fontWeight: 800,
   },
   limit: {
     margin: "18px 0 6px",
     color: "#e5eef8",
-    fontWeight: 800,
+    fontWeight: 850,
   },
   note: {
     minHeight: "44px",
@@ -325,6 +427,10 @@ const styles = {
     cursor: "pointer",
     boxShadow: "0 12px 26px rgba(20,100,168,0.34)",
   },
+  buttonDisabled: {
+    opacity: 0.68,
+    cursor: "not-allowed",
+  },
   enterpriseButton: {
     background: "linear-gradient(180deg, #7d8792, #4d5965)",
   },
@@ -333,5 +439,6 @@ const styles = {
     margin: "34px auto 0",
     color: "#97aabe",
     textAlign: "center",
+    fontSize: "0.95rem",
   },
 };
