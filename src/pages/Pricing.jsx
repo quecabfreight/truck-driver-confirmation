@@ -123,19 +123,19 @@ export default function Pricing() {
         </div>
 
         <div style={styles.navLinks}>
-          <button style={styles.navButton} onClick={() => goTo("/#/control-center")}>
+          <button type="button" style={styles.navButton} onClick={() => goTo("/#/control-center")}>
             Control Center
           </button>
-          <button style={styles.navButton} onClick={() => goTo("/#/live-activity")}>
+          <button type="button" style={styles.navButton} onClick={() => goTo("/#/live-activity")}>
             Live Activity
           </button>
-          <button style={styles.navButtonActive} onClick={() => goTo("/pricing")}>
+          <button type="button" style={styles.navButtonActive} onClick={() => goTo("/pricing")}>
             Pricing
           </button>
-          <button style={styles.navButton} onClick={() => goTo("/#/account")}>
+          <button type="button" style={styles.navButton} onClick={() => goTo("/#/account")}>
             Account
           </button>
-          <button style={styles.navButton} onClick={() => goTo("/#/")}>
+          <button type="button" style={styles.navButton} onClick={() => goTo("/#/")}>
             Home
           </button>
         </div>
@@ -234,6 +234,8 @@ const styles = {
       "radial-gradient(circle at top, rgba(35,82,120,0.35), transparent 34%), linear-gradient(135deg, #08111b 0%, #101c29 45%, #05080d 100%)",
     fontFamily:
       "Inter, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
+    position: "relative",
+    overflowX: "hidden",
   },
   nav: {
     maxWidth: "1180px",
@@ -249,16 +251,23 @@ const styles = {
     background: "rgba(255,255,255,0.06)",
     boxShadow: "0 14px 34px rgba(0,0,0,0.28)",
     backdropFilter: "blur(10px)",
+    position: "relative",
+    zIndex: 1000,
+    pointerEvents: "auto",
   },
   navBrand: {
     display: "flex",
     alignItems: "center",
     gap: "10px",
     cursor: "pointer",
+    position: "relative",
+    zIndex: 1001,
+    pointerEvents: "auto",
   },
   navLogo: {
     width: "46px",
     height: "auto",
+    pointerEvents: "none",
   },
   navTitle: {
     fontWeight: 950,
@@ -269,6 +278,9 @@ const styles = {
     alignItems: "center",
     gap: "8px",
     flexWrap: "wrap",
+    position: "relative",
+    zIndex: 1001,
+    pointerEvents: "auto",
   },
   navButton: {
     padding: "9px 12px",
@@ -278,6 +290,9 @@ const styles = {
     color: "#dbe9f7",
     fontWeight: 800,
     cursor: "pointer",
+    position: "relative",
+    zIndex: 1002,
+    pointerEvents: "auto",
   },
   navButtonActive: {
     padding: "9px 12px",
@@ -287,6 +302,9 @@ const styles = {
     color: "#ffffff",
     fontWeight: 950,
     cursor: "pointer",
+    position: "relative",
+    zIndex: 1002,
+    pointerEvents: "auto",
   },
   header: {
     maxWidth: "1180px",
@@ -295,16 +313,21 @@ const styles = {
     alignItems: "center",
     gap: "22px",
     flexWrap: "wrap",
+    position: "relative",
+    zIndex: 1,
+    pointerEvents: "none",
   },
   logo: {
     width: "150px",
     height: "auto",
     filter: "drop-shadow(0 8px 22px rgba(0,0,0,0.5))",
+    pointerEvents: "none",
   },
   title: {
     margin: 0,
     fontSize: "clamp(2rem, 5vw, 3.6rem)",
     letterSpacing: "-0.04em",
+    pointerEvents: "none",
   },
   subtitle: {
     margin: "10px 0 0",
@@ -312,6 +335,7 @@ const styles = {
     fontSize: "1.08rem",
     lineHeight: 1.55,
     color: "#c9d7e6",
+    pointerEvents: "none",
   },
   emailBox: {
     maxWidth: "1180px",
@@ -322,6 +346,9 @@ const styles = {
     background: "rgba(255,255,255,0.055)",
     boxShadow: "0 18px 50px rgba(0,0,0,0.28)",
     backdropFilter: "blur(10px)",
+    position: "relative",
+    zIndex: 10,
+    pointerEvents: "auto",
   },
   label: {
     display: "block",
@@ -343,7 +370,7 @@ const styles = {
     userSelect: "text",
     WebkitUserSelect: "text",
     position: "relative",
-    zIndex: 5,
+    zIndex: 20,
   },
   helper: {
     margin: "10px 0 0",
@@ -364,9 +391,12 @@ const styles = {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(245px, 1fr))",
     gap: "18px",
+    position: "relative",
+    zIndex: 10,
   },
   card: {
     position: "relative",
+    zIndex: 10,
     padding: "24px",
     borderRadius: "22px",
     border: "1px solid rgba(180,210,240,0.18)",
@@ -389,6 +419,7 @@ const styles = {
     color: "#bfe4ff",
     fontSize: "0.78rem",
     fontWeight: 950,
+    pointerEvents: "none",
   },
   planName: {
     margin: "8px 0 16px",
@@ -426,6 +457,9 @@ const styles = {
     fontWeight: 950,
     cursor: "pointer",
     boxShadow: "0 12px 26px rgba(20,100,168,0.34)",
+    position: "relative",
+    zIndex: 30,
+    pointerEvents: "auto",
   },
   buttonDisabled: {
     opacity: 0.68,
@@ -440,5 +474,7 @@ const styles = {
     color: "#97aabe",
     textAlign: "center",
     fontSize: "0.95rem",
+    position: "relative",
+    zIndex: 10,
   },
 };
