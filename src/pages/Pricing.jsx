@@ -62,6 +62,11 @@ export default function Pricing() {
   async function startCheckout(plan) {
     setError("");
 
+    if (plan === "enterprise") {
+      goTo("/#/join");
+      return;
+    }
+
     if (!cleanEmail) {
       setError("An approved broker email is required before subscription.");
       return;
@@ -69,15 +74,6 @@ export default function Pricing() {
 
     if (!cleanEmail.includes("@") || !cleanEmail.includes(".")) {
       setError("Enter a valid approved broker email.");
-      return;
-    }
-
-    if (plan === "enterprise") {
-      const subject = encodeURIComponent("QueCab AdbS Enterprise Access Request");
-      const body = encodeURIComponent(
-        `Broker Email: ${cleanEmail}\n\nI would like to request Enterprise access for QueCab AdbS.`
-      );
-      window.location.href = `mailto:verify@quecabadbs.com?subject=${subject}&body=${body}`;
       return;
     }
 
@@ -102,11 +98,13 @@ export default function Pricing() {
         throw new Error(data?.error || "Checkout could not be started.");
       }
 
-      if (!data?.url) {
+      const checkoutUrl = data?.url || data?.checkout_url;
+
+      if (!checkoutUrl) {
         throw new Error("Checkout link was not returned.");
       }
 
-      window.location.href = data.url;
+      window.location.href = checkoutUrl;
     } catch (err) {
       setError(err.message || "Something went wrong starting checkout.");
     } finally {
@@ -210,7 +208,7 @@ export default function Pricing() {
               {busyPlan === plan.key
                 ? "Opening..."
                 : plan.enterprise
-                ? "Request Enterprise Access"
+                ? "Request Access"
                 : "Subscribe"}
             </button>
           </div>
