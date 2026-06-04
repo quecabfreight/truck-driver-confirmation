@@ -59,7 +59,7 @@ export default function Pricing() {
     setError("");
 
     if (!cleanEmail) {
-      setError("Enter your broker email first.");
+      setError("An approved broker email is required before subscription.");
       return;
     }
 
