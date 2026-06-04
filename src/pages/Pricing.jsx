@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import Header from "../components/Header.jsx";
 import "../styles.css";
 
 const PLANS = [
@@ -8,35 +9,35 @@ const PLANS = [
     price: "$49",
     limit: "100 verifications / month",
     note: "Early broker pricing",
-    featured: true,
+    featured: true
   },
   {
     key: "starter",
     name: "Starter",
     price: "$149",
     limit: "100 verifications / month",
-    note: "For small broker operations",
+    note: "For small broker operations"
   },
   {
     key: "growth",
     name: "Growth",
     price: "$249",
     limit: "250 verifications / month",
-    note: "For growing monthly volume",
+    note: "For growing monthly volume"
   },
   {
     key: "pro",
     name: "Pro",
     price: "$399",
     limit: "500 verifications / month",
-    note: "For serious load activity",
+    note: "For serious load activity"
   },
   {
     key: "scale",
     name: "Scale",
     price: "$599",
     limit: "1,000 verifications / month",
-    note: "For high-volume brokers",
+    note: "For high-volume brokers"
   },
   {
     key: "enterprise",
@@ -44,8 +45,8 @@ const PLANS = [
     price: "Contact Us",
     limit: "Custom verification volume",
     note: "For large broker operations",
-    enterprise: true,
-  },
+    enterprise: true
+  }
 ];
 
 export default function Pricing() {
@@ -83,13 +84,13 @@ export default function Pricing() {
       const res = await fetch("/api/create_checkout_session", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           business_email: cleanEmail,
           email: cleanEmail,
-          plan,
-        }),
+          plan
+        })
       });
 
       const data = await res.json().catch(() => ({}));
@@ -113,366 +114,281 @@ export default function Pricing() {
   }
 
   return (
-    <div style={styles.page}>
-      <nav style={styles.nav}>
-        <div style={styles.navBrand} onClick={() => goTo("/#/control-center")}>
-          <img src="/qc-logo.png" alt="QueCab AdbS" style={styles.navLogo} />
-          <span style={styles.navTitle}>QueCab AdbS</span>
-        </div>
+    <div style={styles.wrapper}>
+      <Header />
 
-        <div style={styles.navLinks}>
-          <button type="button" style={styles.navButton} onClick={() => goTo("/#/control-center")}>
-            Control Center
-          </button>
-          <button type="button" style={styles.navButton} onClick={() => goTo("/#/live-activity")}>
-            Live Activity
-          </button>
-          <button type="button" style={styles.navButtonActive} onClick={() => goTo("/pricing")}>
-            Pricing
-          </button>
-          <button type="button" style={styles.navButton} onClick={() => goTo("/#/account")}>
-            Account
-          </button>
-          <button type="button" style={styles.navButton} onClick={() => goTo("/#/")}>
-            Home
-          </button>
-        </div>
-      </nav>
+      <div style={styles.heroLogoWrap}>
+        <img src="/qc-logo.png" alt="QueCab AdbS" style={styles.heroLogo} />
+      </div>
 
-      <header style={styles.header}>
-        <img src="/qc-logo.png" alt="QueCab AdbS" style={styles.logo} />
-        <div>
-          <h1 style={styles.title}>QueCab AdbS Pricing</h1>
-          <p style={styles.subtitle}>
-            Broker-facing Truck-Driver verification to help stop double brokering before the truck gets loaded.
-          </p>
-        </div>
-      </header>
+      <div style={styles.container}>
+        <div style={styles.card}>
+          <div style={styles.title}>QueCab AdbS Pricing</div>
 
-      <section style={styles.emailBox}>
-        <label style={styles.label} htmlFor="brokerEmail">
-          Approved Broker Email
-        </label>
+          <div style={styles.subtitle}>
+            Broker-facing Truck-Driver verification to help stop double
+            brokering before the truck gets loaded.
+          </div>
 
-        <input
-          id="brokerEmail"
-          name="brokerEmail"
-          style={styles.input}
-          type="email"
-          value={email}
-          placeholder="broker@company.com"
-          autoComplete="email"
-          inputMode="email"
-          onChange={(e) => setEmail(e.target.value)}
-          onInput={(e) => setEmail(e.currentTarget.value)}
-        />
+          <div style={styles.emailBox}>
+            <label style={styles.label} htmlFor="brokerEmail">
+              Approved Broker Email
+            </label>
 
-        <p style={styles.helper}>
-          Enter the approved broker email connected to this QueCab AdbS account.
-        </p>
+            <input
+              id="brokerEmail"
+              name="brokerEmail"
+              style={styles.input}
+              type="email"
+              value={email}
+              placeholder="broker@company.com"
+              autoComplete="email"
+              inputMode="email"
+              onChange={(e) => setEmail(e.target.value)}
+              onInput={(e) => setEmail(e.currentTarget.value)}
+            />
 
-        {error ? <div style={styles.error}>{error}</div> : null}
-      </section>
-
-      <section style={styles.grid}>
-        {PLANS.map((plan) => (
-          <div
-            key={plan.key}
-            style={{
-              ...styles.card,
-              ...(plan.featured ? styles.featuredCard : {}),
-            }}
-          >
-            {plan.featured ? <div style={styles.badge}>Founding Offer</div> : null}
-
-            <h2 style={styles.planName}>{plan.name}</h2>
-
-            <div style={styles.price}>
-              {plan.price}
-              {!plan.enterprise && <span style={styles.month}> / month</span>}
+            <div style={styles.helper}>
+              Enter the approved broker email connected to this QueCab AdbS account.
             </div>
 
-            <p style={styles.limit}>{plan.limit}</p>
-            <p style={styles.note}>{plan.note}</p>
-
-            <button
-              type="button"
-              style={{
-                ...styles.button,
-                ...(plan.enterprise ? styles.enterpriseButton : {}),
-                ...(busyPlan ? styles.buttonDisabled : {}),
-              }}
-              onClick={() => startCheckout(plan.key)}
-              disabled={!!busyPlan}
-            >
-              {busyPlan === plan.key
-                ? "Opening..."
-                : plan.enterprise
-                ? "Request Access"
-                : "Subscribe"}
-            </button>
+            {error ? <div style={styles.error}>{error}</div> : null}
           </div>
-        ))}
-      </section>
+        </div>
 
-      <footer style={styles.footer}>
-        <p>Secure your load. Verify the Truck-Driver before loading.</p>
-        <p>© 2026 Omnimobile Inc. All Rights Reserved. • QueCab AdbS™ — Patent Pending.</p>
-      </footer>
+        <div style={styles.planGrid}>
+          {PLANS.map((plan) => (
+            <div
+              key={plan.key}
+              style={{
+                ...styles.planCard,
+                ...(plan.featured ? styles.featuredCard : {})
+              }}
+            >
+              {plan.featured ? <div style={styles.badge}>Founding Offer</div> : null}
+
+              <div style={styles.planName}>{plan.name}</div>
+
+              <div style={styles.price}>
+                {plan.price}
+                {!plan.enterprise ? <span style={styles.month}> / month</span> : null}
+              </div>
+
+              <div style={styles.limit}>{plan.limit}</div>
+              <div style={styles.note}>{plan.note}</div>
+
+              <button
+                type="button"
+                style={{
+                  ...styles.button,
+                  ...(plan.enterprise ? styles.enterpriseButton : {}),
+                  ...(busyPlan ? styles.buttonDisabled : {})
+                }}
+                onClick={() => startCheckout(plan.key)}
+                disabled={!!busyPlan}
+              >
+                {busyPlan === plan.key
+                  ? "Opening..."
+                  : plan.enterprise
+                  ? "Request Access"
+                  : "Subscribe"}
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <div style={styles.footer}>
+          <div>Secure your load. Verify the Truck-Driver before loading.</div>
+          <div>
+            © 2026 Omnimobile Inc. All Rights Reserved. • QueCab AdbS™ —
+            Patent Pending.
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
 
 const styles = {
-  page: {
+  wrapper: {
     minHeight: "100vh",
-    padding: "20px 18px 34px",
-    color: "#f3f7fb",
-    background:
-      "radial-gradient(circle at top, rgba(35,82,120,0.35), transparent 34%), linear-gradient(135deg, #08111b 0%, #101c29 45%, #05080d 100%)",
-    fontFamily:
-      "Inter, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
-    position: "relative",
-    overflowX: "hidden",
+    background: "#0c121c",
+    color: "#e6edf5"
   },
-  nav: {
-    maxWidth: "1180px",
-    margin: "0 auto 26px",
-    padding: "14px 16px",
+
+  heroLogoWrap: {
     display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: "16px",
-    flexWrap: "wrap",
-    border: "1px solid rgba(180,210,240,0.2)",
-    borderRadius: "18px",
-    background: "rgba(255,255,255,0.06)",
-    boxShadow: "0 14px 34px rgba(0,0,0,0.28)",
-    backdropFilter: "blur(10px)",
-    position: "relative",
-    zIndex: 1000,
-    pointerEvents: "auto",
+    justifyContent: "center",
+    marginTop: 90,
+    marginBottom: 10
   },
-  navBrand: {
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
-    cursor: "pointer",
-    position: "relative",
-    zIndex: 1001,
-    pointerEvents: "auto",
+
+  heroLogo: {
+    width: 220,
+    maxWidth: "90%"
   },
-  navLogo: {
-    width: "46px",
-    height: "auto",
-    pointerEvents: "none",
+
+  container: {
+    maxWidth: 1180,
+    margin: "0 auto",
+    padding: "0 20px 40px"
   },
-  navTitle: {
-    fontWeight: 950,
-    letterSpacing: "-0.02em",
+
+  card: {
+    background: "rgba(255,255,255,0.05)",
+    border: "1px solid rgba(255,255,255,0.15)",
+    borderRadius: 18,
+    padding: 24,
+    boxShadow: "0 12px 28px rgba(0,0,0,0.28)",
+    marginBottom: 18
   },
-  navLinks: {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    flexWrap: "wrap",
-    position: "relative",
-    zIndex: 1001,
-    pointerEvents: "auto",
-  },
-  navButton: {
-    padding: "9px 12px",
-    borderRadius: "999px",
-    border: "1px solid rgba(200,225,245,0.18)",
-    background: "rgba(5,12,20,0.28)",
-    color: "#dbe9f7",
-    fontWeight: 800,
-    cursor: "pointer",
-    position: "relative",
-    zIndex: 1002,
-    pointerEvents: "auto",
-  },
-  navButtonActive: {
-    padding: "9px 12px",
-    borderRadius: "999px",
-    border: "1px solid rgba(83,174,255,0.55)",
-    background: "rgba(83,174,255,0.16)",
-    color: "#ffffff",
-    fontWeight: 950,
-    cursor: "pointer",
-    position: "relative",
-    zIndex: 1002,
-    pointerEvents: "auto",
-  },
-  header: {
-    maxWidth: "1180px",
-    margin: "0 auto 28px",
-    display: "flex",
-    alignItems: "center",
-    gap: "22px",
-    flexWrap: "wrap",
-    position: "relative",
-    zIndex: 1,
-    pointerEvents: "none",
-  },
-  logo: {
-    width: "150px",
-    height: "auto",
-    filter: "drop-shadow(0 8px 22px rgba(0,0,0,0.5))",
-    pointerEvents: "none",
-  },
+
   title: {
-    margin: 0,
-    fontSize: "clamp(2rem, 5vw, 3.6rem)",
-    letterSpacing: "-0.04em",
-    pointerEvents: "none",
+    fontSize: 34,
+    fontWeight: 900,
+    marginBottom: 10,
+    textAlign: "center"
   },
+
   subtitle: {
-    margin: "10px 0 0",
-    maxWidth: "760px",
-    fontSize: "1.08rem",
-    lineHeight: 1.55,
-    color: "#c9d7e6",
-    pointerEvents: "none",
+    fontSize: 16,
+    opacity: 0.82,
+    lineHeight: 1.5,
+    textAlign: "center",
+    marginBottom: 22
   },
+
   emailBox: {
-    maxWidth: "1180px",
-    margin: "0 auto 26px",
-    padding: "20px",
-    border: "1px solid rgba(180,210,240,0.22)",
-    borderRadius: "20px",
-    background: "rgba(255,255,255,0.055)",
-    boxShadow: "0 18px 50px rgba(0,0,0,0.28)",
-    backdropFilter: "blur(10px)",
-    position: "relative",
-    zIndex: 10,
-    pointerEvents: "auto",
+    maxWidth: 620,
+    margin: "0 auto"
   },
+
   label: {
     display: "block",
-    marginBottom: "8px",
-    color: "#dce9f7",
-    fontWeight: 900,
+    marginBottom: 8,
+    fontWeight: 900
   },
+
   input: {
     width: "100%",
+    padding: 13,
+    borderRadius: 12,
+    border: "1px solid rgba(255,255,255,0.24)",
+    background: "rgba(255,255,255,0.06)",
+    color: "#fff",
+    fontSize: 16,
     boxSizing: "border-box",
-    padding: "15px 16px",
-    borderRadius: "14px",
-    border: "1px solid rgba(200,225,245,0.35)",
-    background: "rgba(5,12,20,0.72)",
-    color: "#ffffff",
-    fontSize: "1.05rem",
-    outline: "none",
-    pointerEvents: "auto",
-    userSelect: "text",
-    WebkitUserSelect: "text",
-    position: "relative",
-    zIndex: 20,
+    outline: "none"
   },
+
   helper: {
-    margin: "10px 0 0",
-    color: "#9fb1c5",
+    marginTop: 9,
+    fontSize: 13,
+    opacity: 0.72,
+    lineHeight: 1.4
   },
+
   error: {
-    marginTop: "12px",
-    padding: "12px 14px",
-    borderRadius: "12px",
-    background: "rgba(180,30,30,0.22)",
-    border: "1px solid rgba(255,120,120,0.35)",
-    color: "#ffd7d7",
-    fontWeight: 900,
+    marginTop: 12,
+    color: "#ff9c9c",
+    fontWeight: 700,
+    fontSize: 14
   },
-  grid: {
-    maxWidth: "1180px",
-    margin: "0 auto",
+
+  planGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(245px, 1fr))",
-    gap: "18px",
-    position: "relative",
-    zIndex: 10,
+    gap: 14
   },
-  card: {
+
+  planCard: {
     position: "relative",
-    zIndex: 10,
-    padding: "24px",
-    borderRadius: "22px",
-    border: "1px solid rgba(180,210,240,0.18)",
-    background:
-      "linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.035))",
-    boxShadow: "0 18px 42px rgba(0,0,0,0.28)",
+    background: "rgba(255,255,255,0.05)",
+    border: "1px solid rgba(255,255,255,0.15)",
+    borderRadius: 18,
+    padding: 22,
+    boxShadow: "0 12px 28px rgba(0,0,0,0.28)"
   },
+
   featuredCard: {
-    border: "1px solid rgba(83,174,255,0.55)",
-    boxShadow: "0 22px 55px rgba(25,115,190,0.25)",
+    border: "1px solid rgba(120,180,255,0.55)"
   },
+
   badge: {
     position: "absolute",
-    top: "16px",
-    right: "16px",
-    padding: "6px 10px",
-    borderRadius: "999px",
-    background: "rgba(83,174,255,0.18)",
-    border: "1px solid rgba(83,174,255,0.45)",
-    color: "#bfe4ff",
-    fontSize: "0.78rem",
-    fontWeight: 950,
-    pointerEvents: "none",
+    top: 14,
+    right: 14,
+    padding: "5px 9px",
+    borderRadius: 999,
+    border: "1px solid rgba(120,180,255,0.45)",
+    background: "rgba(40,110,190,0.22)",
+    color: "#cfe7ff",
+    fontSize: 12,
+    fontWeight: 900
   },
+
   planName: {
-    margin: "8px 0 16px",
-    fontSize: "1.45rem",
+    fontSize: 24,
+    fontWeight: 900,
+    marginBottom: 12,
+    paddingRight: 120
   },
+
   price: {
-    fontSize: "2.2rem",
-    fontWeight: 950,
-    letterSpacing: "-0.04em",
+    fontSize: 34,
+    fontWeight: 900,
+    marginBottom: 10
   },
+
   month: {
-    fontSize: "0.95rem",
-    color: "#aebdca",
-    fontWeight: 800,
+    fontSize: 15,
+    opacity: 0.75,
+    fontWeight: 700
   },
+
   limit: {
-    margin: "18px 0 6px",
-    color: "#e5eef8",
-    fontWeight: 850,
+    fontSize: 15,
+    fontWeight: 800,
+    marginBottom: 8,
+    opacity: 0.92
   },
+
   note: {
-    minHeight: "44px",
-    color: "#aebdca",
-    lineHeight: 1.45,
+    minHeight: 42,
+    fontSize: 14,
+    opacity: 0.72,
+    lineHeight: 1.5
   },
+
   button: {
     width: "100%",
-    marginTop: "18px",
-    padding: "14px 16px",
-    border: 0,
-    borderRadius: "14px",
-    background: "linear-gradient(180deg, #2d8fe8, #1464a8)",
-    color: "#ffffff",
-    fontSize: "1rem",
-    fontWeight: 950,
+    marginTop: 16,
+    padding: 13,
+    borderRadius: 12,
+    border: "1px solid rgba(120,180,255,0.55)",
+    background: "rgba(40,110,190,0.35)",
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: 900,
     cursor: "pointer",
-    boxShadow: "0 12px 26px rgba(20,100,168,0.34)",
-    position: "relative",
-    zIndex: 30,
-    pointerEvents: "auto",
+    opacity: 1
   },
+
+  enterpriseButton: {
+    border: "1px solid rgba(255,255,255,0.22)",
+    background: "rgba(255,255,255,0.08)"
+  },
+
   buttonDisabled: {
     opacity: 0.68,
-    cursor: "not-allowed",
+    cursor: "not-allowed"
   },
-  enterpriseButton: {
-    background: "linear-gradient(180deg, #7d8792, #4d5965)",
-  },
+
   footer: {
-    maxWidth: "1180px",
-    margin: "34px auto 0",
-    color: "#97aabe",
+    marginTop: 26,
     textAlign: "center",
-    fontSize: "0.95rem",
-    position: "relative",
-    zIndex: 10,
-  },
+    fontSize: 13,
+    lineHeight: 1.6,
+    opacity: 0.72
+  }
 };
