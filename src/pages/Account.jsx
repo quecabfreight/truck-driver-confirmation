@@ -23,6 +23,7 @@ function prettyStatus(v) {
 
   if (!raw || raw === "not_started") return "Not Started";
   if (raw === "active") return "Active";
+  if (raw === "paid_active") return "Paid Active";
   if (raw === "trialing") return "Trialing";
   if (raw === "past_due") return "Past Due";
   if (raw === "canceled") return "Canceled";
@@ -45,6 +46,8 @@ export default function Account() {
   const [planName, setPlanName] = useState("none");
   const [subscriptionStatus, setSubscriptionStatus] = useState("not_started");
   const [monthlyLimit, setMonthlyLimit] = useState(0);
+  const [usedThisMonth, setUsedThisMonth] = useState(0);
+  const [remainingThisMonth, setRemainingThisMonth] = useState(0);
 
   const [status, setStatus] = useState("");
   const [saving, setSaving] = useState(false);
@@ -75,6 +78,31 @@ export default function Account() {
     return `${d.slice(0, 3)}-${d.slice(3, 6)}-${d.slice(6)}`;
   }
 
+  async function loadUsage(accountEmail, limitValue) {
+    try {
+      const res = await fetch(
+        `/api/dashboard_totals?email=${encodeURIComponent(accountEmail)}`
+      );
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok || !data?.ok) {
+        setUsedThisMonth(0);
+        setRemainingThisMonth(Number(limitValue || 0));
+        return;
+      }
+
+      const used = Number(data.this_month_verifications || 0);
+      const limit = Number(limitValue || 0);
+
+      setUsedThisMonth(used);
+      setRemainingThisMonth(Math.max(limit - used, 0));
+    } catch {
+      setUsedThisMonth(0);
+      setRemainingThisMonth(Number(limitValue || 0));
+    }
+  }
+
   async function loadAccount(accountEmail) {
     setLoadingAccount(true);
     setStatus("");
@@ -93,14 +121,18 @@ export default function Account() {
       }
 
       const account = data.account || {};
+      const loadedEmail = account.business_email || accountEmail;
+      const loadedLimit = Number(account.monthly_verification_limit || 0);
 
-      setEmail(account.business_email || accountEmail);
-      setNewEmail(account.business_email || accountEmail);
+      setEmail(loadedEmail);
+      setNewEmail(loadedEmail);
       setPhone(account.business_phone || "");
       setContactName(account.contact_name || "");
       setPlanName(account.plan_name || "none");
       setSubscriptionStatus(account.subscription_status || "not_started");
-      setMonthlyLimit(Number(account.monthly_verification_limit || 0));
+      setMonthlyLimit(loadedLimit);
+
+      await loadUsage(loadedEmail, loadedLimit);
 
       setLoadingAccount(false);
     } catch {
@@ -152,6 +184,9 @@ export default function Account() {
 
       const account = data.account || {};
       const updatedEmail = account.business_email || newEmail.trim().toLowerCase();
+      const updatedLimit = Number(
+        account.monthly_verification_limit ?? monthlyLimit ?? 0
+      );
 
       localStorage.setItem("qc_email", updatedEmail);
       setEmail(updatedEmail);
@@ -160,9 +195,9 @@ export default function Account() {
       setContactName(account.contact_name || contactName);
       setPlanName(account.plan_name || planName);
       setSubscriptionStatus(account.subscription_status || subscriptionStatus);
-      setMonthlyLimit(
-        Number(account.monthly_verification_limit ?? monthlyLimit ?? 0)
-      );
+      setMonthlyLimit(updatedLimit);
+
+      await loadUsage(updatedEmail, updatedLimit);
 
       setStatus("Account updated successfully.");
     } catch {
@@ -230,7 +265,8 @@ export default function Account() {
                 <div
                   style={{
                     ...styles.statusValue,
-                    ...(subscriptionStatus === "active"
+                    ...(subscriptionStatus === "active" ||
+                    subscriptionStatus === "paid_active"
                       ? styles.goodStatus
                       : styles.warningStatus)
                   }}
@@ -248,6 +284,20 @@ export default function Account() {
                 <div style={styles.statusLabel}>Monthly Verification Limit</div>
                 <div style={styles.statusValue}>
                   {monthlyLimit > 0 ? monthlyLimit.toLocaleString() : "Not active"}
+                </div>
+              </div>
+
+              <div style={styles.statusItem}>
+                <div style={styles.statusLabel}>Used This Month</div>
+                <div style={styles.statusValue}>
+                  {usedThisMonth.toLocaleString()}
+                </div>
+              </div>
+
+              <div style={styles.statusItem}>
+                <div style={styles.statusLabel}>Remaining Verifications</div>
+                <div style={{ ...styles.statusValue, ...styles.goodStatus }}>
+                  {remainingThisMonth.toLocaleString()}
                 </div>
               </div>
             </div>
