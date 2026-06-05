@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Header from "../components/Header.jsx";
+import { LS_EMAIL } from "../utils/auth.js";
 import "../styles.css";
 
 const PLANS = [
@@ -53,8 +54,24 @@ export default function Pricing() {
   const [email, setEmail] = useState("");
   const [busyPlan, setBusyPlan] = useState("");
   const [error, setError] = useState("");
+  const [isLoggedInBroker, setIsLoggedInBroker] = useState(false);
 
   const cleanEmail = useMemo(() => email.trim().toLowerCase(), [email]);
+
+  useEffect(() => {
+    try {
+      const savedEmail =
+        (localStorage.getItem(LS_EMAIL) || "").trim() ||
+        (sessionStorage.getItem(LS_EMAIL) || "").trim();
+
+      if (savedEmail) {
+        setEmail(savedEmail);
+        setIsLoggedInBroker(true);
+      }
+    } catch {
+      setIsLoggedInBroker(false);
+    }
+  }, []);
 
   function goTo(path) {
     window.location.href = path;
@@ -62,6 +79,11 @@ export default function Pricing() {
 
   async function startCheckout(plan) {
     setError("");
+
+    if (!isLoggedInBroker) {
+      goTo("/#/join");
+      return;
+    }
 
     if (plan === "enterprise") {
       goTo("/#/join");
@@ -130,30 +152,39 @@ export default function Pricing() {
             brokering before the truck gets loaded.
           </div>
 
-          <div style={styles.emailBox}>
-            <label style={styles.label} htmlFor="brokerEmail">
-              Approved Broker Email
-            </label>
-
-            <input
-              id="brokerEmail"
-              name="brokerEmail"
-              style={styles.input}
-              type="email"
-              value={email}
-              placeholder="broker@company.com"
-              autoComplete="email"
-              inputMode="email"
-              onChange={(e) => setEmail(e.target.value)}
-              onInput={(e) => setEmail(e.currentTarget.value)}
-            />
-
-            <div style={styles.helper}>
-              Enter the approved broker email connected to this QueCab AdbS account.
+          {!isLoggedInBroker ? (
+            <div style={styles.approvalBox}>
+              <div style={styles.approvalTitle}>Broker Approval Required</div>
+              <div style={styles.approvalText}>
+                Request access before activating a subscription.
+              </div>
             </div>
+          ) : (
+            <div style={styles.emailBox}>
+              <label style={styles.label} htmlFor="brokerEmail">
+                Approved Broker Email
+              </label>
 
-            {error ? <div style={styles.error}>{error}</div> : null}
-          </div>
+              <input
+                id="brokerEmail"
+                name="brokerEmail"
+                style={styles.input}
+                type="email"
+                value={email}
+                placeholder="broker@company.com"
+                autoComplete="email"
+                inputMode="email"
+                onChange={(e) => setEmail(e.target.value)}
+                onInput={(e) => setEmail(e.currentTarget.value)}
+              />
+
+              <div style={styles.helper}>
+                Enter the approved broker email connected to this QueCab AdbS account.
+              </div>
+
+              {error ? <div style={styles.error}>{error}</div> : null}
+            </div>
+          )}
         </div>
 
         <div style={styles.planGrid}>
@@ -189,6 +220,8 @@ export default function Pricing() {
               >
                 {busyPlan === plan.key
                   ? "Opening..."
+                  : !isLoggedInBroker
+                  ? "Request Access"
                   : plan.enterprise
                   ? "Request Access"
                   : "Subscribe"}
@@ -256,6 +289,28 @@ const styles = {
     lineHeight: 1.5,
     textAlign: "center",
     marginBottom: 22
+  },
+
+  approvalBox: {
+    maxWidth: 620,
+    margin: "0 auto",
+    padding: 16,
+    borderRadius: 14,
+    border: "1px solid rgba(120,180,255,0.30)",
+    background: "rgba(40,110,190,0.12)",
+    textAlign: "center"
+  },
+
+  approvalTitle: {
+    fontSize: 20,
+    fontWeight: 950,
+    marginBottom: 6
+  },
+
+  approvalText: {
+    fontSize: 14,
+    lineHeight: 1.5,
+    opacity: 0.82
   },
 
   emailBox: {
