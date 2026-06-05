@@ -9,6 +9,14 @@ function lower(v) {
   return String(v || "").toLowerCase();
 }
 
+function clean(v) {
+  return String(v || "").trim();
+}
+
+function normalizeEmail(v) {
+  return clean(v).toLowerCase();
+}
+
 function isThisMonth(dateValue) {
   if (!dateValue) return false;
 
@@ -17,10 +25,7 @@ function isThisMonth(dateValue) {
 
   const now = new Date();
 
-  return (
-    d.getFullYear() === now.getFullYear() &&
-    d.getMonth() === now.getMonth()
-  );
+  return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
 }
 
 export default async function handler(req, res) {
@@ -32,9 +37,17 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { data: links, error: linksError } = await supabase
+    const email = normalizeEmail(req.query?.email);
+
+    let linksQuery = supabase
       .from("verify_links")
-      .select("status, created_at");
+      .select("status, created_at, issued_by_email");
+
+    if (email) {
+      linksQuery = linksQuery.eq("issued_by_email", email);
+    }
+
+    const { data: links, error: linksError } = await linksQuery;
 
     if (linksError) {
       return res.status(500).json({
@@ -42,6 +55,21 @@ export default async function handler(req, res) {
         error: linksError.message || "Failed to load verify_links"
       });
     }
+
+    const linkRows = Array.isArray(links) ? links : [];
+
+    const thisMonthLinks = linkRows.filter((x) => isThisMonth(x.created_at));
+
+    const totalVerifications = linkRows.length;
+    const thisMonthVerifications = thisMonthLinks.length;
+
+    const revokedLinks = linkRows.filter((x) =>
+      lower(x.status).includes("revoked")
+    ).length;
+
+    const activeLinks = linkRows.filter((x) =>
+      lower(x.status).includes("active")
+    ).length;
 
     const { data: checks, error: checksError } = await supabase
       .from("verify_checks")
@@ -54,16 +82,11 @@ export default async function handler(req, res) {
       });
     }
 
-    const linkRows = Array.isArray(links) ? links : [];
     const checkRows = Array.isArray(checks) ? checks : [];
 
-    const thisMonthLinks = linkRows.filter((x) => isThisMonth(x.created_at));
     const thisMonthChecks = checkRows.filter((x) =>
       isThisMonth(x.checked_at || x.created_at)
     );
-
-    const totalVerifications = linkRows.length;
-    const thisMonthVerifications = thisMonthLinks.length;
 
     const clearToLoad = checkRows.filter((x) =>
       lower(x.result).includes("clear")
@@ -81,18 +104,11 @@ export default async function handler(req, res) {
       lower(x.result).includes("caution")
     ).length;
 
-    const revokedLinks = linkRows.filter((x) =>
-      lower(x.status).includes("revoked")
-    ).length;
-
-    const activeLinks = linkRows.filter((x) =>
-      lower(x.status).includes("active")
-    ).length;
-
     const failedAttempts = cautionAlerts;
 
     return res.status(200).json({
       ok: true,
+      scoped_to_email: email || "",
 
       total_verifications: totalVerifications,
       this_month_verifications: thisMonthVerifications,
