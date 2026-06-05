@@ -2,18 +2,66 @@ import React, { useEffect, useState } from "react";
 import Header from "../components/Header.jsx";
 import { getAuthEmail } from "../utils/auth.js";
 
+function clean(v) {
+  return String(v || "").trim();
+}
+
+function prettyPlan(v) {
+  const raw = clean(v).toLowerCase();
+
+  if (!raw || raw === "none") return "Not selected";
+  if (raw === "founding_beta") return "Founding Beta";
+
+  return raw
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function prettyStatus(v) {
+  const raw = clean(v).toLowerCase();
+
+  if (!raw || raw === "not_started") return "Not Started";
+  if (raw === "active") return "Active";
+  if (raw === "trialing") return "Trialing";
+  if (raw === "past_due") return "Past Due";
+  if (raw === "canceled") return "Canceled";
+  if (raw === "unpaid") return "Unpaid";
+  if (raw === "incomplete") return "Incomplete";
+  if (raw === "incomplete_expired") return "Incomplete Expired";
+
+  return raw
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
 export default function Account() {
   const [email, setEmail] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [contactName, setContactName] = useState("");
+
+  const [planName, setPlanName] = useState("none");
+  const [subscriptionStatus, setSubscriptionStatus] = useState("not_started");
+  const [monthlyLimit, setMonthlyLimit] = useState(0);
+
   const [status, setStatus] = useState("");
   const [saving, setSaving] = useState(false);
   const [billingLoading, setBillingLoading] = useState(false);
+  const [loadingAccount, setLoadingAccount] = useState(true);
 
   useEffect(() => {
     const current = getAuthEmail() || "";
+
     setEmail(current);
     setNewEmail(current);
+
+    if (current) {
+      loadAccount(current);
+    } else {
+      setLoadingAccount(false);
+    }
   }, []);
 
   function onlyDigits(v) {
@@ -27,11 +75,55 @@ export default function Account() {
     return `${d.slice(0, 3)}-${d.slice(3, 6)}-${d.slice(6)}`;
   }
 
+  async function loadAccount(accountEmail) {
+    setLoadingAccount(true);
+    setStatus("");
+
+    try {
+      const res = await fetch(
+        `/api/account_update?email=${encodeURIComponent(accountEmail)}`
+      );
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok || !data?.ok) {
+        setStatus(data?.error || "Could not load account status.");
+        setLoadingAccount(false);
+        return;
+      }
+
+      const account = data.account || {};
+
+      setEmail(account.business_email || accountEmail);
+      setNewEmail(account.business_email || accountEmail);
+      setPhone(account.business_phone || "");
+      setContactName(account.contact_name || "");
+      setPlanName(account.plan_name || "none");
+      setSubscriptionStatus(account.subscription_status || "not_started");
+      setMonthlyLimit(Number(account.monthly_verification_limit || 0));
+
+      setLoadingAccount(false);
+    } catch {
+      setStatus("Network error loading account.");
+      setLoadingAccount(false);
+    }
+  }
+
   async function saveAccount() {
     setStatus("");
 
     if (!newEmail.trim()) {
       setStatus("Enter your business email.");
+      return;
+    }
+
+    if (!contactName.trim()) {
+      setStatus("Enter your contact name.");
+      return;
+    }
+
+    if (onlyDigits(phone).length !== 10) {
+      setStatus("Enter your business phone.");
       return;
     }
 
@@ -43,12 +135,14 @@ export default function Account() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           current_email: email,
-          new_email: newEmail,
+          business_email: newEmail,
+          email: newEmail,
+          contact_name: contactName,
           business_phone: phone
         })
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
 
       if (!res.ok || !data.ok) {
         setStatus(data.error || "Update failed.");
@@ -56,8 +150,20 @@ export default function Account() {
         return;
       }
 
-      localStorage.setItem("qc_email", newEmail.trim().toLowerCase());
-      setEmail(newEmail.trim().toLowerCase());
+      const account = data.account || {};
+      const updatedEmail = account.business_email || newEmail.trim().toLowerCase();
+
+      localStorage.setItem("qc_email", updatedEmail);
+      setEmail(updatedEmail);
+      setNewEmail(updatedEmail);
+      setPhone(account.business_phone || phone);
+      setContactName(account.contact_name || contactName);
+      setPlanName(account.plan_name || planName);
+      setSubscriptionStatus(account.subscription_status || subscriptionStatus);
+      setMonthlyLimit(
+        Number(account.monthly_verification_limit ?? monthlyLimit ?? 0)
+      );
+
       setStatus("Account updated successfully.");
     } catch {
       setStatus("Network error.");
@@ -77,7 +183,7 @@ export default function Account() {
         body: JSON.stringify({ email })
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
 
       if (!res.ok || !data.ok || !data.url) {
         setStatus(data.error || "Could not open billing portal.");
@@ -99,15 +205,67 @@ export default function Account() {
       <div style={styles.hero}>
         <img src="/qc-logo.png" alt="QueCab AdbS" style={styles.logo} />
 
-        <div style={styles.heroTitle}>ACCOUNT SETTINGS</div>
+        <div style={styles.heroTitle}>ACCOUNT</div>
 
         <div style={styles.heroSub}>
-          Manage your broker account information.
+          View your broker status, subscription details, and account settings.
         </div>
       </div>
 
       <div style={styles.wrap}>
+        <div style={styles.statusCard}>
+          <div style={styles.cardHeader}>Account Status</div>
+
+          {loadingAccount ? (
+            <div style={styles.loadingText}>Loading account status...</div>
+          ) : (
+            <div style={styles.statusGrid}>
+              <div style={styles.statusItem}>
+                <div style={styles.statusLabel}>Business Email</div>
+                <div style={styles.statusValue}>{email || "Not available"}</div>
+              </div>
+
+              <div style={styles.statusItem}>
+                <div style={styles.statusLabel}>Subscription Status</div>
+                <div
+                  style={{
+                    ...styles.statusValue,
+                    ...(subscriptionStatus === "active"
+                      ? styles.goodStatus
+                      : styles.warningStatus)
+                  }}
+                >
+                  {prettyStatus(subscriptionStatus)}
+                </div>
+              </div>
+
+              <div style={styles.statusItem}>
+                <div style={styles.statusLabel}>Current Plan</div>
+                <div style={styles.statusValue}>{prettyPlan(planName)}</div>
+              </div>
+
+              <div style={styles.statusItem}>
+                <div style={styles.statusLabel}>Monthly Verification Limit</div>
+                <div style={styles.statusValue}>
+                  {monthlyLimit > 0 ? monthlyLimit.toLocaleString() : "Not active"}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
         <div style={styles.card}>
+          <div style={styles.cardHeader}>Account Settings</div>
+
+          <div style={styles.sectionTitle}>Contact Name</div>
+
+          <input
+            style={styles.input}
+            value={contactName}
+            onChange={(e) => setContactName(e.target.value)}
+            placeholder="Contact Name"
+          />
+
           <div style={styles.sectionTitle}>Business Email</div>
 
           <input
@@ -134,7 +292,7 @@ export default function Account() {
         </div>
 
         <div style={styles.card}>
-          <div style={styles.sectionTitle}>Billing</div>
+          <div style={styles.cardHeader}>Billing</div>
 
           <div style={styles.noteText}>
             Manage payment method, invoices, and subscription billing securely through Stripe.
@@ -198,11 +356,21 @@ const styles = {
   },
 
   wrap: {
-    maxWidth: 760,
+    maxWidth: 860,
     margin: "0 auto",
     padding: "0 20px 60px",
     display: "grid",
     gap: 18
+  },
+
+  statusCard: {
+    background:
+      "linear-gradient(180deg, rgba(50,125,210,0.13), rgba(255,255,255,0.045))",
+    border: "1px solid rgba(120,180,255,0.24)",
+    borderRadius: 22,
+    padding: 24,
+    backdropFilter: "blur(10px)",
+    boxShadow: "0 18px 50px rgba(0,0,0,0.34)"
   },
 
   card: {
@@ -212,6 +380,53 @@ const styles = {
     padding: 24,
     backdropFilter: "blur(10px)",
     boxShadow: "0 18px 50px rgba(0,0,0,0.34)"
+  },
+
+  cardHeader: {
+    fontSize: 22,
+    fontWeight: 950,
+    marginBottom: 18
+  },
+
+  statusGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+    gap: 14
+  },
+
+  statusItem: {
+    border: "1px solid rgba(255,255,255,0.10)",
+    background: "rgba(3,9,18,0.28)",
+    borderRadius: 16,
+    padding: 16
+  },
+
+  statusLabel: {
+    fontSize: 12,
+    fontWeight: 900,
+    letterSpacing: 1,
+    color: "#8fc7ff",
+    textTransform: "uppercase",
+    marginBottom: 8
+  },
+
+  statusValue: {
+    fontSize: 18,
+    fontWeight: 900,
+    wordBreak: "break-word"
+  },
+
+  goodStatus: {
+    color: "#9fe3b1"
+  },
+
+  warningStatus: {
+    color: "#ffd27d"
+  },
+
+  loadingText: {
+    fontSize: 15,
+    opacity: 0.78
   },
 
   noteCard: {
