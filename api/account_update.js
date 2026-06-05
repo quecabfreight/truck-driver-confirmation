@@ -62,6 +62,70 @@ async function findAccountByEmail(email) {
   return data || null;
 }
 
+function accountPayload(account, fallback = {}) {
+  return {
+    business_email:
+      account?.business_email ||
+      fallback.business_email ||
+      "",
+
+    contact_name:
+      account?.contact_name ||
+      fallback.contact_name ||
+      "",
+
+    business_phone:
+      account?.business_phone ||
+      fallback.business_phone ||
+      "",
+
+    company_name:
+      account?.company_name ||
+      fallback.company_name ||
+      "",
+
+    role:
+      account?.role ||
+      fallback.role ||
+      "broker",
+
+    status:
+      account?.status ||
+      fallback.status ||
+      "active",
+
+    subscription_status:
+      account?.subscription_status ||
+      fallback.subscription_status ||
+      "not_started",
+
+    plan_name:
+      account?.plan_name ||
+      fallback.plan_name ||
+      "none",
+
+    monthly_verification_limit:
+      account?.monthly_verification_limit ??
+      fallback.monthly_verification_limit ??
+      0,
+
+    stripe_customer_id:
+      account?.stripe_customer_id ||
+      fallback.stripe_customer_id ||
+      "",
+
+    stripe_subscription_id:
+      account?.stripe_subscription_id ||
+      fallback.stripe_subscription_id ||
+      "",
+
+    billing_started_at:
+      account?.billing_started_at ||
+      fallback.billing_started_at ||
+      ""
+  };
+}
+
 export default async function handler(req, res) {
   if (req.method !== "GET" && req.method !== "POST") {
     return json(res, 405, {
@@ -99,14 +163,7 @@ export default async function handler(req, res) {
 
       return json(res, 200, {
         ok: true,
-        account: {
-          business_email: account.business_email || "",
-          contact_name: account.contact_name || "",
-          business_phone: account.business_phone || "",
-          company_name: account.company_name || "",
-          role: account.role || "broker",
-          status: account.status || "active"
-        }
+        account: accountPayload(account)
       });
     }
 
@@ -186,14 +243,7 @@ export default async function handler(req, res) {
 
     return json(res, 200, {
       ok: true,
-      account: {
-        business_email: data?.business_email || newEmail,
-        contact_name: data?.contact_name || contactName,
-        business_phone: data?.business_phone || businessPhone,
-        company_name: data?.company_name || existing.company_name || "",
-        role: data?.role || existing.role || "broker",
-        status: data?.status || existing.status || "active"
-      }
+      account: accountPayload(data, existing)
     });
   } catch (err) {
     return json(res, 500, {
