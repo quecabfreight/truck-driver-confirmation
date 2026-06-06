@@ -62,7 +62,7 @@ export default function Join() {
     }
 
     if (!acceptedBeta) {
-      setErrorMsg("You must acknowledge the beta notice.");
+      setErrorMsg("Beta notice acknowledgment is required.");
       return;
     }
 
@@ -76,13 +76,27 @@ export default function Join() {
         legal_name: cleanBusinessName,
         legal_business_name: cleanBusinessName,
         business_name: cleanBusinessName,
+        company_name: cleanBusinessName,
+
         contact_name: String(contactName || "").trim(),
+
         business_email: cleanEmail,
         email: cleanEmail,
+
         business_phone: String(businessPhone || "").trim(),
+        phone: String(businessPhone || "").trim(),
+
         mc_number: onlyDigits(mcNumber),
+        mc: onlyDigits(mcNumber),
+
         role: String(role || "broker").trim().toLowerCase(),
-        beta_acknowledged: acceptedBeta
+
+        beta_acknowledged: true,
+        beta_notice_acknowledged: true,
+        beta_notice_accepted: true,
+        accepted_beta: true,
+        beta_accepted: true,
+        acknowledged_beta: true
       };
 
       const res = await fetch("/api/request_access", {
@@ -110,11 +124,11 @@ export default function Join() {
       setMcNumber("");
       setBusinessPhone("");
       setAcceptedBeta(false);
-      setSubmitting(false);
     } catch (err) {
       setErrorMsg("Network error submitting request.");
-      setSubmitting(false);
     }
+
+    setSubmitting(false);
   }
 
   return (
