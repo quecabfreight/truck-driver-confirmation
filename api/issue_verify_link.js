@@ -32,12 +32,8 @@ function formatPhone(v) {
   const d = digits(v).slice(0, 10);
 
   if (!d) return "";
-
   if (d.length <= 3) return d;
-
-  if (d.length <= 6) {
-    return `${d.slice(0, 3)}-${d.slice(3)}`;
-  }
+  if (d.length <= 6) return `${d.slice(0, 3)}-${d.slice(3)}`;
 
   return `${d.slice(0, 3)}-${d.slice(3, 6)}-${d.slice(6)}`;
 }
@@ -48,6 +44,12 @@ function makeToken() {
 
 function buildVerifyUrl(token) {
   return `https://quecabadbs.com/v.html?t=${encodeURIComponent(token)}&cv=4`;
+}
+
+function buildQrUrl(text) {
+  return `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(
+    text || ""
+  )}`;
 }
 
 function monthStartIso() {
@@ -92,8 +94,7 @@ async function enforceMonthlyLimit(brokerEmail) {
     };
   }
 
-  const isInternal =
-    safe(broker.account_type).toLowerCase() === "internal";
+  const isInternal = safe(broker.account_type).toLowerCase() === "internal";
 
   if (isInternal) {
     return {
@@ -165,6 +166,10 @@ function buildEmailHtml({
   plate,
   expiresAt
 }) {
+  const cleanPhone = formatPhone(driverPhone);
+  const telPhone = digits(driverPhone);
+  const qrUrl = buildQrUrl(verifyUrl);
+
   return `
     <div style="font-family:Arial,sans-serif;background:#0b0f14;color:#fff;padding:20px;">
       <h2 style="margin-top:0;">AdbS TRUCK-DRIVER VERIFICATION</h2>
@@ -179,7 +184,12 @@ function buildEmailHtml({
         </div>
 
         <div style="margin-bottom:8px;">
-          <strong>Driver Phone:</strong> ${safe(driverPhone) || "(not provided)"}
+          <strong>Driver Phone:</strong>
+          ${
+            telPhone
+              ? `<a href="tel:${telPhone}" style="color:#8fc7ff;text-decoration:none;font-weight:700;">${cleanPhone}</a>`
+              : "(not provided)"
+          }
         </div>
 
         <div style="margin-bottom:8px;">
@@ -199,7 +209,23 @@ function buildEmailHtml({
         </div>
       </div>
 
-      <div style="margin:24px 0;">
+      <div style="margin:24px 0;text-align:center;">
+        <div style="font-size:15px;font-weight:700;margin-bottom:10px;color:#cbd7e8;">
+          Scan AdbS QR Code
+        </div>
+
+        <a href="${verifyUrl}" style="display:inline-block;">
+          <img
+            src="${qrUrl}"
+            alt="AdbS QR Code"
+            width="260"
+            height="260"
+            style="display:block;background:#ffffff;padding:10px;border-radius:12px;border:0;"
+          />
+        </a>
+      </div>
+
+      <div style="margin:24px 0;text-align:center;">
         <a
           href="${verifyUrl}"
           style="
@@ -299,7 +325,7 @@ export default async function handler(req, res) {
     const body =
       typeof req.body === "string"
         ? JSON.parse(req.body)
-        : (req.body || {});
+        : body || {};
 
     const issued_by_email = safe(body.issued_by_email).toLowerCase();
 
