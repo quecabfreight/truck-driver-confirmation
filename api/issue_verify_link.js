@@ -202,9 +202,7 @@ function buildEmailHtml({
 
         <div>
           <strong>Expires:</strong> ${
-            expiresAt
-              ? new Date(expiresAt).toLocaleString()
-              : "No Expire"
+            expiresAt ? new Date(expiresAt).toLocaleString() : "No Expire"
           }
         </div>
       </div>
@@ -325,7 +323,7 @@ export default async function handler(req, res) {
     const body =
       typeof req.body === "string"
         ? JSON.parse(req.body)
-        : body || {};
+        : req.body || {};
 
     const issued_by_email = safe(body.issued_by_email).toLowerCase();
 
