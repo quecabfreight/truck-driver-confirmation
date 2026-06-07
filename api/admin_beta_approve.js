@@ -208,8 +208,13 @@ Your QueCab AdbS broker access has been approved${
 Business Email: ${to}
 Access Code: ${accessCode}
 
-Log in:
+Next Step:
+
+Log in using your approved business email and access code:
+
 ${loginUrl}
+
+If a subscription has not yet been activated, you will be guided to select a QueCab AdbS plan before entering the Control Center.
 
 Founding beta access is active during the beta period.
 Future pricing begins at $149/month.
