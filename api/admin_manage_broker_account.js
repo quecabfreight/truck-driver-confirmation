@@ -20,6 +20,12 @@ function normalize(v) {
   return safe(v).toLowerCase();
 }
 
+function intValue(v) {
+  const n = Number(v || 0);
+  if (!Number.isFinite(n)) return 0;
+  return Math.max(0, Math.floor(n));
+}
+
 function isAllowedAction(v) {
   return [
     "set_internal",
@@ -27,7 +33,9 @@ function isAllowedAction(v) {
     "set_trial_active",
     "set_paid_active",
     "set_canceled",
-    "set_suspended"
+    "set_suspended",
+    "grant_bonus_verifications",
+    "clear_bonus_verifications"
   ].includes(normalize(v));
 }
 
@@ -134,6 +142,32 @@ export default async function handler(req, res) {
       };
     }
 
+    if (action === "grant_bonus_verifications") {
+      const bonus = intValue(body.bonus_verifications);
+      const reason = safe(body.bonus_reason);
+
+      if (bonus <= 0) {
+        return json(res, 400, {
+          ok: false,
+          error: "Enter bonus verification amount greater than 0."
+        });
+      }
+
+      updates = {
+        bonus_verifications: bonus,
+        bonus_reason: reason || "Courtesy credit",
+        bonus_granted_at: new Date().toISOString()
+      };
+    }
+
+    if (action === "clear_bonus_verifications") {
+      updates = {
+        bonus_verifications: 0,
+        bonus_reason: null,
+        bonus_granted_at: null
+      };
+    }
+
     const { data, error } = await supabase
       .from("broker_accounts")
       .update({
@@ -166,8 +200,10 @@ export default async function handler(req, res) {
         account_type: data.account_type,
         subscription_status: data.subscription_status,
         plan_name: data.plan_name,
-        monthly_verification_limit:
-          data.monthly_verification_limit,
+        monthly_verification_limit: data.monthly_verification_limit,
+        bonus_verifications: data.bonus_verifications || 0,
+        bonus_reason: data.bonus_reason || "",
+        bonus_granted_at: data.bonus_granted_at || "",
         status: data.status
       }
     });
