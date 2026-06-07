@@ -55,30 +55,98 @@ async function sendRequestReceivedEmail(toEmail, contactName) {
 
   const html = `
     <div style="margin:0;padding:0;background:#0b111b;color:#ffffff;font-family:Arial,Helvetica,sans-serif;">
-      <div style="max-width:640px;margin:0 auto;padding:26px 18px;">
-        <div style="background:#101a28;border:1px solid rgba(255,255,255,0.14);border-radius:18px;padding:26px;">
-          <div style="font-size:26px;font-weight:900;margin-bottom:4px;">QueCab AdbS</div>
-          <div style="color:#9fb2cc;font-size:14px;margin-bottom:24px;">Anti-Double-Broker System</div>
+      <div style="max-width:700px;margin:0 auto;padding:26px 18px;">
+        <div style="text-align:center;margin-bottom:18px;">
+          <img
+            src="https://quecabadbs.com/qc-logo.png"
+            alt="QueCab AdbS"
+            style="max-width:220px;height:auto;"
+          />
+        </div>
 
-          <div style="font-size:22px;font-weight:900;margin-bottom:14px;">
-            Access Request Received
+        <div style="background:#101a28;border:1px solid rgba(255,255,255,0.14);border-radius:18px;padding:30px;">
+          <div style="font-size:28px;font-weight:900;margin-bottom:6px;">
+            Broker Access Request Received
           </div>
 
-          <p style="font-size:15px;line-height:1.65;color:#e7eef8;">
+          <div style="color:#9fb2cc;font-size:14px;margin-bottom:24px;">
+            QueCab AdbS™ — Anti-Double-Broker System
+          </div>
+
+          <p style="font-size:16px;line-height:1.7;color:#e7eef8;">
             Hello ${escapeHtml(name)},
           </p>
 
-          <p style="font-size:15px;line-height:1.65;color:#e7eef8;">
-            Your access request has been received and is currently under review.
+          <p style="font-size:16px;line-height:1.7;color:#e7eef8;">
+            Thank you for your interest in QueCab AdbS™.
           </p>
 
-          <p style="font-size:15px;line-height:1.65;color:#e7eef8;">
-            You will be notified once your access has been approved.
+          <p style="font-size:16px;line-height:1.7;color:#e7eef8;">
+            Your broker access request has been successfully received and is currently under review.
           </p>
 
-          <div style="border-top:1px solid rgba(255,255,255,0.12);margin-top:24px;padding-top:16px;color:#9fb2cc;font-size:13px;line-height:1.6;">
-            QueCab AdbS™ — Verification happens before freight moves.<br/>
-            © 2026 Omnimobile Inc. All Rights Reserved. Patent Pending.
+          <div style="
+            margin:28px 0;
+            padding:20px;
+            background:#172436;
+            border-radius:14px;
+            border-left:4px solid #3d8cff;
+          ">
+            <div style="font-size:20px;font-weight:900;margin-bottom:14px;">
+              What Happens Next?
+            </div>
+
+            <div style="margin-bottom:12px;color:#e7eef8;line-height:1.55;">
+              <strong>1. Broker Review</strong><br/>
+              We review the information submitted with your request.
+            </div>
+
+            <div style="margin-bottom:12px;color:#e7eef8;line-height:1.55;">
+              <strong>2. Approval Decision</strong><br/>
+              If approved, you will receive an approval email containing your QueCab AdbS access credentials.
+            </div>
+
+            <div style="margin-bottom:12px;color:#e7eef8;line-height:1.55;">
+              <strong>3. Select Your Plan</strong><br/>
+              Choose the subscription plan that best fits your operation.
+            </div>
+
+            <div style="color:#e7eef8;line-height:1.55;">
+              <strong>4. Begin Verifying Loads</strong><br/>
+              Issue Truck-Driver verifications, monitor activity, and help stop double brokering before freight gets loaded.
+            </div>
+          </div>
+
+          <div style="
+            margin-top:24px;
+            padding:16px;
+            background:#0f1825;
+            border-radius:12px;
+            color:#d6e4f5;
+            line-height:1.6;
+          ">
+            <strong>Important:</strong><br/>
+            Submitting a request does not activate a subscription and does not create billing charges.
+            Subscriptions are only activated after broker approval and plan selection.
+          </div>
+
+          <div style="border-top:1px solid rgba(255,255,255,0.12);margin-top:28px;padding-top:18px;">
+            <div style="font-size:18px;font-weight:900;">
+              QueCab AdbS™
+            </div>
+
+            <div style="color:#9fb2cc;margin-top:4px;">
+              Secure your load.
+            </div>
+
+            <div style="color:#9fb2cc;margin-top:4px;">
+              Verification happens before freight moves.
+            </div>
+
+            <div style="color:#9fb2cc;font-size:13px;margin-top:16px;">
+              © 2026 Omnimobile Inc. All Rights Reserved.<br/>
+              Patent Pending.
+            </div>
           </div>
         </div>
       </div>
@@ -86,21 +154,47 @@ async function sendRequestReceivedEmail(toEmail, contactName) {
   `;
 
   const text = `
-QueCab AdbS — Access Request Received
+QueCab AdbS™
+
+Broker Access Request Received
 
 Hello ${name},
 
-Your access request has been received and is currently under review.
+Thank you for your interest in QueCab AdbS™.
 
-You will be notified once your access has been approved.
+Your broker access request has been successfully received and is currently under review.
 
-QueCab AdbS — Verification happens before freight moves.
-© 2026 Omnimobile Inc. All Rights Reserved. Patent Pending.
+WHAT HAPPENS NEXT?
+
+1. Broker Review
+We review the information submitted with your request.
+
+2. Approval Decision
+If approved, you will receive an approval email containing your QueCab AdbS access credentials.
+
+3. Select Your Plan
+Choose the subscription plan that best fits your operation.
+
+4. Begin Verifying Loads
+Issue Truck-Driver verifications, monitor activity, and help stop double brokering before freight gets loaded.
+
+IMPORTANT
+
+Submitting a request does not activate a subscription and does not create billing charges.
+
+Subscriptions are only activated after broker approval and plan selection.
+
+QueCab AdbS™
+Secure your load.
+Verification happens before freight moves.
+
+© 2026 Omnimobile Inc. All Rights Reserved.
+Patent Pending.
   `.trim();
 
   return await sendAdbsEmail({
     to: toEmail,
-    subject: "QueCab AdbS — Access Request Received",
+    subject: "QueCab AdbS — Broker Access Request Received",
     html,
     text
   });
