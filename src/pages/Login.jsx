@@ -87,11 +87,11 @@ export default function Login() {
         <div style={styles.kicker}>SECURE BROKER ACCESS</div>
 
         <div style={styles.card}>
-          <div style={styles.title}>Control Center Login</div>
+          <div style={styles.title}>Broker Login</div>
 
           <div style={styles.subtitle}>
             Enter your approved business email and QueCab AdbS™ access code to
-            access the broker Control Center.
+            continue setup or access your broker workspace.
           </div>
 
           <form onSubmit={handleSubmit} style={styles.form}>
@@ -146,18 +146,18 @@ export default function Login() {
             {errorMsg ? <div style={styles.error}>{errorMsg}</div> : null}
 
             <button type="submit" style={styles.button} disabled={loading}>
-              {loading ? "Accessing Control Center..." : "Log In"}
+              {loading ? "Signing In..." : "Log In"}
             </button>
           </form>
 
           <div style={styles.securityBox}>
             <div style={styles.securityTitle}>
-              Truck-Driver Verification Access
+              Approved Broker Access
             </div>
 
             <div style={styles.securityText}>
-              QueCab AdbS™ is designed for brokers performing pre-load
-              Truck-Driver verification before freight is released.
+              Approved brokers may be directed to activate a subscription before
+              entering the QueCab AdbS™ Control Center.
             </div>
           </div>
 
