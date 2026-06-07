@@ -24,9 +24,12 @@ function prettyStatus(v) {
   if (!raw || raw === "not_started") return "Not Started";
   if (raw === "active") return "Active";
   if (raw === "paid_active") return "Paid Active";
+  if (raw === "beta_active") return "Beta Active";
   if (raw === "trialing") return "Trialing";
+  if (raw === "trial_active") return "Trial Active";
   if (raw === "past_due") return "Past Due";
   if (raw === "canceled") return "Canceled";
+  if (raw === "suspended") return "Suspended";
   if (raw === "unpaid") return "Unpaid";
   if (raw === "incomplete") return "Incomplete";
   if (raw === "incomplete_expired") return "Incomplete Expired";
@@ -35,6 +38,18 @@ function prettyStatus(v) {
     .split("_")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
+}
+
+function fmtDate(v) {
+  if (!v) return "";
+
+  try {
+    const d = new Date(v);
+    if (Number.isNaN(d.getTime())) return "";
+    return d.toLocaleString();
+  } catch {
+    return "";
+  }
 }
 
 export default function Account() {
@@ -46,6 +61,10 @@ export default function Account() {
   const [planName, setPlanName] = useState("none");
   const [subscriptionStatus, setSubscriptionStatus] = useState("not_started");
   const [monthlyLimit, setMonthlyLimit] = useState(0);
+  const [bonusCredits, setBonusCredits] = useState(0);
+  const [bonusReason, setBonusReason] = useState("");
+  const [bonusGrantedAt, setBonusGrantedAt] = useState("");
+  const [totalAvailable, setTotalAvailable] = useState(0);
   const [usedThisMonth, setUsedThisMonth] = useState(0);
   const [remainingThisMonth, setRemainingThisMonth] = useState(0);
 
@@ -78,28 +97,35 @@ export default function Account() {
     return `${d.slice(0, 3)}-${d.slice(3, 6)}-${d.slice(6)}`;
   }
 
-  async function loadUsage(accountEmail, limitValue) {
+  async function loadUsage(accountEmail, limitValue, bonusValue) {
     try {
       const res = await fetch(
         `/api/dashboard_totals?email=${encodeURIComponent(accountEmail)}`
       );
 
       const data = await res.json().catch(() => ({}));
+      const limit = Number(limitValue || 0);
+      const bonus = Number(bonusValue || 0);
+      const available = limit + bonus;
 
       if (!res.ok || !data?.ok) {
         setUsedThisMonth(0);
-        setRemainingThisMonth(Number(limitValue || 0));
+        setTotalAvailable(available);
+        setRemainingThisMonth(available);
         return;
       }
 
       const used = Number(data.this_month_verifications || 0);
-      const limit = Number(limitValue || 0);
 
       setUsedThisMonth(used);
-      setRemainingThisMonth(Math.max(limit - used, 0));
+      setTotalAvailable(available);
+      setRemainingThisMonth(Math.max(available - used, 0));
     } catch {
+      const available = Number(limitValue || 0) + Number(bonusValue || 0);
+
       setUsedThisMonth(0);
-      setRemainingThisMonth(Number(limitValue || 0));
+      setTotalAvailable(available);
+      setRemainingThisMonth(available);
     }
   }
 
@@ -123,6 +149,7 @@ export default function Account() {
       const account = data.account || {};
       const loadedEmail = account.business_email || accountEmail;
       const loadedLimit = Number(account.monthly_verification_limit || 0);
+      const loadedBonus = Number(account.bonus_verifications || 0);
 
       setEmail(loadedEmail);
       setNewEmail(loadedEmail);
@@ -131,8 +158,11 @@ export default function Account() {
       setPlanName(account.plan_name || "none");
       setSubscriptionStatus(account.subscription_status || "not_started");
       setMonthlyLimit(loadedLimit);
+      setBonusCredits(loadedBonus);
+      setBonusReason(account.bonus_reason || "");
+      setBonusGrantedAt(account.bonus_granted_at || "");
 
-      await loadUsage(loadedEmail, loadedLimit);
+      await loadUsage(loadedEmail, loadedLimit, loadedBonus);
 
       setLoadingAccount(false);
     } catch {
@@ -187,6 +217,9 @@ export default function Account() {
       const updatedLimit = Number(
         account.monthly_verification_limit ?? monthlyLimit ?? 0
       );
+      const updatedBonus = Number(
+        account.bonus_verifications ?? bonusCredits ?? 0
+      );
 
       localStorage.setItem("qc_email", updatedEmail);
       setEmail(updatedEmail);
@@ -196,8 +229,11 @@ export default function Account() {
       setPlanName(account.plan_name || planName);
       setSubscriptionStatus(account.subscription_status || subscriptionStatus);
       setMonthlyLimit(updatedLimit);
+      setBonusCredits(updatedBonus);
+      setBonusReason(account.bonus_reason || bonusReason);
+      setBonusGrantedAt(account.bonus_granted_at || bonusGrantedAt);
 
-      await loadUsage(updatedEmail, updatedLimit);
+      await loadUsage(updatedEmail, updatedLimit, updatedBonus);
 
       setStatus("Account updated successfully.");
     } catch {
@@ -266,7 +302,9 @@ export default function Account() {
                   style={{
                     ...styles.statusValue,
                     ...(subscriptionStatus === "active" ||
-                    subscriptionStatus === "paid_active"
+                    subscriptionStatus === "paid_active" ||
+                    subscriptionStatus === "beta_active" ||
+                    subscriptionStatus === "internal"
                       ? styles.goodStatus
                       : styles.warningStatus)
                   }}
@@ -288,6 +326,20 @@ export default function Account() {
               </div>
 
               <div style={styles.statusItem}>
+                <div style={styles.statusLabel}>Courtesy Credits</div>
+                <div style={styles.statusValue}>
+                  {bonusCredits.toLocaleString()}
+                </div>
+              </div>
+
+              <div style={styles.statusItem}>
+                <div style={styles.statusLabel}>Total Available</div>
+                <div style={{ ...styles.statusValue, ...styles.goodStatus }}>
+                  {totalAvailable.toLocaleString()}
+                </div>
+              </div>
+
+              <div style={styles.statusItem}>
                 <div style={styles.statusLabel}>Used This Month</div>
                 <div style={styles.statusValue}>
                   {usedThisMonth.toLocaleString()}
@@ -302,6 +354,16 @@ export default function Account() {
               </div>
             </div>
           )}
+
+          {!loadingAccount && bonusCredits > 0 ? (
+            <div style={styles.creditNote}>
+              <div style={styles.noteTitle}>Courtesy Credit Note</div>
+              <div style={styles.noteText}>
+                {bonusReason || "Courtesy credits added to this account."}
+                {bonusGrantedAt ? ` Granted: ${fmtDate(bonusGrantedAt)}.` : ""}
+              </div>
+            </div>
+          ) : null}
         </div>
 
         <div style={styles.card}>
@@ -484,6 +546,14 @@ const styles = {
     border: "1px solid rgba(255,255,255,0.08)",
     borderRadius: 20,
     padding: 20
+  },
+
+  creditNote: {
+    marginTop: 16,
+    padding: 16,
+    borderRadius: 16,
+    border: "1px solid rgba(120,180,255,0.20)",
+    background: "rgba(120,180,255,0.07)"
   },
 
   noteTitle: {
