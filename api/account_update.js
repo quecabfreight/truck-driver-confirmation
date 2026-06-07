@@ -109,6 +109,21 @@ function accountPayload(account, fallback = {}) {
       fallback.monthly_verification_limit ??
       0,
 
+    bonus_verifications:
+      account?.bonus_verifications ??
+      fallback.bonus_verifications ??
+      0,
+
+    bonus_reason:
+      account?.bonus_reason ||
+      fallback.bonus_reason ||
+      "",
+
+    bonus_granted_at:
+      account?.bonus_granted_at ||
+      fallback.bonus_granted_at ||
+      "",
+
     stripe_customer_id:
       account?.stripe_customer_id ||
       fallback.stripe_customer_id ||
