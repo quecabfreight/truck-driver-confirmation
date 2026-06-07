@@ -10,6 +10,7 @@ function safeStr(v) {
 
 function fmtDate(v) {
   if (!v) return "";
+
   try {
     const d = new Date(v);
     if (Number.isNaN(d.getTime())) return String(v);
@@ -24,6 +25,10 @@ function maskKey(k) {
   if (!s) return "";
   if (s.length <= 6) return "••••••";
   return `${s.slice(0, 3)}••••••${s.slice(-3)}`;
+}
+
+function onlyDigits(v) {
+  return String(v || "").replace(/\D+/g, "");
 }
 
 async function safeCopy(text) {
@@ -82,6 +87,8 @@ export default function Admin() {
   const [errorMsg, setErrorMsg] = useState("");
   const [resetEmail, setResetEmail] = useState("");
   const [manageEmail, setManageEmail] = useState("");
+  const [bonusCredits, setBonusCredits] = useState("");
+  const [bonusReason, setBonusReason] = useState("");
 
   const offset = page * pageSize;
 
@@ -242,16 +249,31 @@ export default function Admin() {
     setLoading(true);
 
     try {
+      const body = {
+        email: e,
+        action
+      };
+
+      if (action === "grant_bonus_verifications") {
+        const credits = Number(onlyDigits(bonusCredits));
+
+        if (!credits || credits <= 0) {
+          setLoading(false);
+          setErrorMsg("Enter courtesy credits greater than 0.");
+          return;
+        }
+
+        body.bonus_verifications = credits;
+        body.bonus_reason = safeStr(bonusReason) || "Courtesy credit";
+      }
+
       const res = await fetch("/api/admin_manage_broker_account", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "x-adbs-admin-key": adminKey || ""
         },
-        body: JSON.stringify({
-          email: e,
-          action
-        })
+        body: JSON.stringify(body)
       });
 
       const data = await res.json().catch(() => ({}));
@@ -267,11 +289,30 @@ export default function Admin() {
       }
 
       setLoading(false);
-      setStatusMsg(
-        `Broker account updated: ${
-          data?.account?.subscription_status || action
-        }`
-      );
+
+      if (action === "grant_bonus_verifications") {
+        setStatusMsg(
+          `Courtesy credits granted: ${
+            data?.account?.bonus_verifications ?? bonusCredits
+          } for ${data?.account?.business_email || e}`
+        );
+      } else if (action === "clear_bonus_verifications") {
+        setStatusMsg(`Courtesy credits cleared for ${e}.`);
+      } else {
+        setStatusMsg(
+          `Broker account updated: ${
+            data?.account?.subscription_status || action
+          }`
+        );
+      }
+
+      if (
+        action === "grant_bonus_verifications" ||
+        action === "clear_bonus_verifications"
+      ) {
+        setBonusCredits("");
+        setBonusReason("");
+      }
 
       loadList();
     } catch {
@@ -337,6 +378,16 @@ export default function Admin() {
       cursor: "pointer",
       whiteSpace: "nowrap"
     }),
+    dangerButton: {
+      padding: "11px 14px",
+      borderRadius: 14,
+      border: "1px solid rgba(255,120,120,0.35)",
+      background: "rgba(150,40,40,0.22)",
+      color: "#fff",
+      fontWeight: 900,
+      cursor: "pointer",
+      whiteSpace: "nowrap"
+    },
     pill: (active) => ({
       padding: "10px 14px",
       borderRadius: 999,
@@ -384,6 +435,18 @@ export default function Admin() {
     muted: {
       opacity: 0.72,
       fontSize: 12
+    },
+    miniTitle: {
+      marginBottom: 8,
+      fontSize: 13,
+      fontWeight: 900,
+      color: "#8fc7ff",
+      letterSpacing: 0.4
+    },
+    divider: {
+      height: 1,
+      background: "rgba(255,255,255,0.10)",
+      margin: "16px 0"
     }
   };
 
@@ -428,8 +491,8 @@ export default function Admin() {
             }}
           >
             <div>
-              <div style={{ marginBottom: 8, fontSize: 13 }}>
-                Admin Key (required for actions)
+              <div style={styles.miniTitle}>
+                Admin Key
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8 }}>
@@ -479,8 +542,8 @@ export default function Admin() {
             </div>
 
             <div>
-              <div style={{ marginBottom: 8, fontSize: 13 }}>
-                Reset Access Code by Email
+              <div style={styles.miniTitle}>
+                Reset Access Code
               </div>
 
               <input
@@ -510,7 +573,7 @@ export default function Admin() {
             </div>
 
             <div>
-              <div style={{ marginBottom: 8, fontSize: 13 }}>
+              <div style={styles.miniTitle}>
                 Manage Broker Account
               </div>
 
@@ -539,6 +602,51 @@ export default function Admin() {
                 <button style={styles.button(false)} onClick={() => manageBrokerAccount("set_canceled")} disabled={!canLoad || loading}>
                   Cancel
                 </button>
+              </div>
+
+              <div style={styles.divider} />
+
+              <div style={styles.miniTitle}>
+                Courtesy Credits
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "120px 1fr", gap: 10 }}>
+                <input
+                  style={styles.input}
+                  value={bonusCredits}
+                  onChange={(e) => setBonusCredits(onlyDigits(e.target.value))}
+                  placeholder="25"
+                  inputMode="numeric"
+                />
+
+                <input
+                  style={styles.input}
+                  value={bonusReason}
+                  onChange={(e) => setBonusReason(e.target.value)}
+                  placeholder="Reason, example: Service recovery"
+                />
+              </div>
+
+              <div style={{ display: "flex", gap: 10, marginTop: 10, flexWrap: "wrap" }}>
+                <button
+                  style={styles.button(true)}
+                  onClick={() => manageBrokerAccount("grant_bonus_verifications")}
+                  disabled={!canLoad || loading}
+                >
+                  Grant Credits
+                </button>
+
+                <button
+                  style={styles.dangerButton}
+                  onClick={() => manageBrokerAccount("clear_bonus_verifications")}
+                  disabled={!canLoad || loading}
+                >
+                  Clear Credits
+                </button>
+              </div>
+
+              <div style={{ ...styles.muted, marginTop: 8 }}>
+                Courtesy credits add extra verifications without changing Stripe billing.
               </div>
             </div>
           </div>
