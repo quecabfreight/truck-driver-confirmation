@@ -147,6 +147,7 @@ async function sendApprovalEmail({
               <div style="color:#9fb2cc;font-size:13px;font-weight:700;margin-bottom:6px;">
                 Business Email
               </div>
+
               <div style="font-size:17px;font-weight:900;color:#ffffff;word-break:break-all;">
                 ${escapeHtml(to)}
               </div>
@@ -156,12 +157,13 @@ async function sendApprovalEmail({
               <div style="color:#9fb2cc;font-size:13px;font-weight:700;margin-bottom:6px;">
                 Access Code
               </div>
+
               <div style="font-size:30px;font-weight:900;letter-spacing:1px;color:#8fc7ff;">
                 ${escapeHtml(accessCode)}
               </div>
             </div>
 
-                        <p style="font-size:15px;line-height:1.75;color:#e7eef8;margin:0 0 20px;">
+            <p style="font-size:15px;line-height:1.75;color:#e7eef8;margin:0 0 20px;">
               Your broker account has been approved.
               <br /><br />
               <strong>Next Step:</strong>
@@ -169,7 +171,7 @@ async function sendApprovalEmail({
               Log in using your approved business email and access code.
               <br /><br />
               If a subscription has not yet been activated, you will be guided to choose a QueCab AdbS plan before entering the Control Center.
-            </p>            </p>
+            </p>
 
             <div style="text-align:center;margin:28px 0;">
               <a href="${loginUrl}" style="display:inline-block;background:#245fba;color:#ffffff;text-decoration:none;font-weight:900;padding:14px 24px;border-radius:12px;border:1px solid rgba(120,180,255,0.55);">
@@ -181,6 +183,7 @@ async function sendApprovalEmail({
               <div style="font-size:15px;font-weight:900;margin-bottom:6px;">
                 Founding Beta Access
               </div>
+
               <div style="font-size:14px;line-height:1.6;color:#c9d6e6;">
                 Founding beta access is active during the beta period.
                 Future pricing begins at $149/month.
@@ -188,7 +191,8 @@ async function sendApprovalEmail({
             </div>
 
             <div style="border-top:1px solid rgba(255,255,255,0.12);margin-top:24px;padding-top:16px;color:#9fb2cc;font-size:13px;line-height:1.6;">
-              QueCab AdbS™ — Verification happens before freight moves.<br/>
+              QueCab AdbS™ — Secure your load.<br/>
+              Verification happens before freight moves.<br/>
               © 2026 Omnimobile Inc. All Rights Reserved. Patent Pending.
             </div>
           </div>
@@ -197,7 +201,7 @@ async function sendApprovalEmail({
     `;
 
     const text = `
-QueCab AdbS — Access Approved
+QueCab AdbS — Broker Access Approved
 
 Hello ${contactName || "there"},
 
@@ -219,8 +223,11 @@ If a subscription has not yet been activated, you will be guided to select a Que
 Founding beta access is active during the beta period.
 Future pricing begins at $149/month.
 
-QueCab AdbS — Verification happens before freight moves.
-© 2026 Omnimobile Inc. All Rights Reserved. Patent Pending.
+QueCab AdbS™ — Secure your load.
+Verification happens before freight moves.
+
+© 2026 Omnimobile Inc. All Rights Reserved.
+Patent Pending.
     `.trim();
 
     const r = await fetch("https://api.resend.com/emails", {
@@ -232,7 +239,7 @@ QueCab AdbS — Verification happens before freight moves.
       body: JSON.stringify({
         from,
         to,
-        subject: "QueCab AdbS — Access Approved",
+        subject: "QueCab AdbS — Broker Access Approved",
         html,
         text,
       }),
