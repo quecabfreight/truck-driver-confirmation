@@ -31,6 +31,28 @@ function onlyDigits(v) {
   return String(v || "").replace(/\D+/g, "");
 }
 
+function prettyPlan(v) {
+  const raw = safeStr(v).toLowerCase();
+  if (!raw || raw === "none") return "Not Selected";
+  if (raw === "founding_beta") return "Founding Beta";
+  return raw
+    .split("_")
+    .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+    .join(" ");
+}
+
+function prettyStatus(v) {
+  const raw = safeStr(v).toLowerCase();
+  if (!raw) return "Unknown";
+  if (raw === "paid_active") return "Paid Active";
+  if (raw === "beta_active") return "Beta Active";
+  if (raw === "trial_active") return "Trial Active";
+  return raw
+    .split("_")
+    .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+    .join(" ");
+}
+
 async function safeCopy(text) {
   try {
     await navigator.clipboard.writeText(text);
@@ -89,8 +111,11 @@ export default function Admin() {
   const [manageEmail, setManageEmail] = useState("");
   const [bonusCredits, setBonusCredits] = useState("");
   const [bonusReason, setBonusReason] = useState("");
+  const [snapshot, setSnapshot] = useState(null);
+  const [snapshotLoading, setSnapshotLoading] = useState(false);
 
   const offset = page * pageSize;
+  const canLoad = !!safeStr(adminKey);
 
   function saveAdminKey(next) {
     setAdminKey(next);
@@ -236,6 +261,70 @@ export default function Admin() {
     }
   }
 
+  async function loadAccountSnapshot() {
+    const e = safeStr(manageEmail).toLowerCase();
+
+    if (!e) {
+      setErrorMsg("Enter broker email.");
+      return;
+    }
+
+    setErrorMsg("");
+    setStatusMsg("");
+    setSnapshot(null);
+    setSnapshotLoading(true);
+
+    try {
+      const accountRes = await fetch(
+        `/api/account_update?email=${encodeURIComponent(e)}`
+      );
+
+      const accountData = await accountRes.json().catch(() => ({}));
+
+      if (!accountRes.ok || !accountData?.ok) {
+        setSnapshotLoading(false);
+        setErrorMsg(accountData?.error || "Could not load broker account.");
+        return;
+      }
+
+      const account = accountData.account || {};
+      const limit = Number(account.monthly_verification_limit || 0);
+      const bonus = Number(account.bonus_verifications || 0);
+
+      let used = 0;
+
+      try {
+        const totalsRes = await fetch(
+          `/api/dashboard_totals?email=${encodeURIComponent(e)}`
+        );
+
+        const totalsData = await totalsRes.json().catch(() => ({}));
+
+        if (totalsRes.ok && totalsData?.ok) {
+          used = Number(totalsData.this_month_verifications || 0);
+        }
+      } catch {}
+
+      const totalAvailable = limit + bonus;
+      const remaining = Math.max(totalAvailable - used, 0);
+
+      setSnapshot({
+        ...account,
+        monthly_verification_limit: limit,
+        bonus_verifications: bonus,
+        used_this_month: used,
+        total_available: totalAvailable,
+        remaining_verifications: remaining
+      });
+
+      setSnapshotLoading(false);
+      setStatusMsg(`Account snapshot loaded for ${e}.`);
+    } catch {
+      setSnapshotLoading(false);
+      setErrorMsg("Network error loading account snapshot.");
+    }
+  }
+
   async function manageBrokerAccount(action) {
     const e = safeStr(manageEmail).toLowerCase();
 
@@ -314,6 +403,7 @@ export default function Admin() {
         setBonusReason("");
       }
 
+      await loadAccountSnapshot();
       loadList();
     } catch {
       setLoading(false);
@@ -447,10 +537,39 @@ export default function Admin() {
       height: 1,
       background: "rgba(255,255,255,0.10)",
       margin: "16px 0"
+    },
+    snapshotBox: {
+      marginTop: 14,
+      padding: 14,
+      borderRadius: 16,
+      border: "1px solid rgba(120,180,255,0.24)",
+      background: "rgba(120,180,255,0.07)"
+    },
+    snapshotGrid: {
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fit,minmax(145px,1fr))",
+      gap: 10,
+      marginTop: 10
+    },
+    snapshotItem: {
+      padding: 12,
+      borderRadius: 14,
+      border: "1px solid rgba(255,255,255,0.10)",
+      background: "rgba(3,9,18,0.28)"
+    },
+    snapshotLabel: {
+      fontSize: 11,
+      fontWeight: 900,
+      color: "#8fc7ff",
+      textTransform: "uppercase",
+      marginBottom: 6
+    },
+    snapshotValue: {
+      fontSize: 15,
+      fontWeight: 900,
+      wordBreak: "break-word"
     }
   };
-
-  const canLoad = !!safeStr(adminKey);
 
   return (
     <div style={styles.page}>
@@ -491,9 +610,7 @@ export default function Admin() {
             }}
           >
             <div>
-              <div style={styles.miniTitle}>
-                Admin Key
-              </div>
+              <div style={styles.miniTitle}>Admin Key</div>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8 }}>
                 <input
@@ -542,9 +659,7 @@ export default function Admin() {
             </div>
 
             <div>
-              <div style={styles.miniTitle}>
-                Reset Access Code
-              </div>
+              <div style={styles.miniTitle}>Reset Access Code</div>
 
               <input
                 style={styles.input}
@@ -573,9 +688,7 @@ export default function Admin() {
             </div>
 
             <div>
-              <div style={styles.miniTitle}>
-                Manage Broker Account
-              </div>
+              <div style={styles.miniTitle}>Manage Broker Account</div>
 
               <input
                 style={styles.input}
@@ -587,6 +700,10 @@ export default function Admin() {
               />
 
               <div style={{ display: "flex", gap: 10, marginTop: 10, flexWrap: "wrap" }}>
+                <button style={styles.button(true)} onClick={loadAccountSnapshot} disabled={!canLoad || snapshotLoading}>
+                  {snapshotLoading ? "Loading..." : "View Account"}
+                </button>
+
                 <button style={styles.button(true)} onClick={() => manageBrokerAccount("set_internal")} disabled={!canLoad || loading}>
                   Set Internal
                 </button>
@@ -604,11 +721,74 @@ export default function Admin() {
                 </button>
               </div>
 
+              {snapshot ? (
+                <div style={styles.snapshotBox}>
+                  <div style={styles.miniTitle}>Broker Account Snapshot</div>
+
+                  <div style={styles.snapshotGrid}>
+                    <div style={styles.snapshotItem}>
+                      <div style={styles.snapshotLabel}>Company</div>
+                      <div style={styles.snapshotValue}>{snapshot.company_name || "—"}</div>
+                    </div>
+
+                    <div style={styles.snapshotItem}>
+                      <div style={styles.snapshotLabel}>Status</div>
+                      <div style={styles.snapshotValue}>{prettyStatus(snapshot.subscription_status)}</div>
+                    </div>
+
+                    <div style={styles.snapshotItem}>
+                      <div style={styles.snapshotLabel}>Plan</div>
+                      <div style={styles.snapshotValue}>{prettyPlan(snapshot.plan_name)}</div>
+                    </div>
+
+                    <div style={styles.snapshotItem}>
+                      <div style={styles.snapshotLabel}>Monthly Limit</div>
+                      <div style={styles.snapshotValue}>{Number(snapshot.monthly_verification_limit || 0).toLocaleString()}</div>
+                    </div>
+
+                    <div style={styles.snapshotItem}>
+                      <div style={styles.snapshotLabel}>Courtesy Credits</div>
+                      <div style={styles.snapshotValue}>{Number(snapshot.bonus_verifications || 0).toLocaleString()}</div>
+                    </div>
+
+                    <div style={styles.snapshotItem}>
+                      <div style={styles.snapshotLabel}>Total Available</div>
+                      <div style={styles.snapshotValue}>{Number(snapshot.total_available || 0).toLocaleString()}</div>
+                    </div>
+
+                    <div style={styles.snapshotItem}>
+                      <div style={styles.snapshotLabel}>Used This Month</div>
+                      <div style={styles.snapshotValue}>{Number(snapshot.used_this_month || 0).toLocaleString()}</div>
+                    </div>
+
+                    <div style={styles.snapshotItem}>
+                      <div style={styles.snapshotLabel}>Remaining</div>
+                      <div style={styles.snapshotValue}>{Number(snapshot.remaining_verifications || 0).toLocaleString()}</div>
+                    </div>
+
+                    <div style={styles.snapshotItem}>
+                      <div style={styles.snapshotLabel}>Stripe Customer</div>
+                      <div style={styles.snapshotValue}>{snapshot.stripe_customer_id || "—"}</div>
+                    </div>
+
+                    <div style={styles.snapshotItem}>
+                      <div style={styles.snapshotLabel}>Subscription</div>
+                      <div style={styles.snapshotValue}>{snapshot.stripe_subscription_id || "—"}</div>
+                    </div>
+                  </div>
+
+                  {snapshot.bonus_reason ? (
+                    <div style={{ marginTop: 10, ...styles.muted }}>
+                      Credit note: {snapshot.bonus_reason}
+                      {snapshot.bonus_granted_at ? ` | Granted: ${fmtDate(snapshot.bonus_granted_at)}` : ""}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+
               <div style={styles.divider} />
 
-              <div style={styles.miniTitle}>
-                Courtesy Credits
-              </div>
+              <div style={styles.miniTitle}>Courtesy Credits</div>
 
               <div style={{ display: "grid", gridTemplateColumns: "120px 1fr", gap: 10 }}>
                 <input
