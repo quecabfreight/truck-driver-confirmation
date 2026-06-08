@@ -143,19 +143,44 @@ export default async function handler(req, res) {
     }
 
     if (action === "grant_bonus_verifications") {
-      const bonus = intValue(body.bonus_verifications);
+      const bonusToAdd = intValue(body.bonus_verifications);
       const reason = safe(body.bonus_reason);
 
-      if (bonus <= 0) {
+      if (bonusToAdd <= 0) {
         return json(res, 400, {
           ok: false,
           error: "Enter bonus verification amount greater than 0."
         });
       }
 
+      const { data: existing, error: existingError } = await supabase
+        .from("broker_accounts")
+        .select("bonus_verifications")
+        .eq("business_email", email)
+        .maybeSingle();
+
+      if (existingError) {
+        return json(res, 500, {
+          ok: false,
+          error: existingError.message || "Could not load current credits."
+        });
+      }
+
+      if (!existing) {
+        return json(res, 404, {
+          ok: false,
+          error: "Broker account not found."
+        });
+      }
+
+      const currentBonus = intValue(existing.bonus_verifications);
+      const newBonusTotal = currentBonus + bonusToAdd;
+
       updates = {
-        bonus_verifications: bonus,
-        bonus_reason: reason || "Courtesy credit",
+        bonus_verifications: newBonusTotal,
+        bonus_reason:
+          reason ||
+          `Added ${bonusToAdd} courtesy credits. Previous balance: ${currentBonus}.`,
         bonus_granted_at: new Date().toISOString()
       };
     }
