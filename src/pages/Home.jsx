@@ -7,7 +7,9 @@ export default function Home() {
       <div style={styles.gridOverlay} />
 
       <div style={styles.container}>
-        <img src="/qc-logo.png" alt="QueCab AdbS" style={styles.logo} />
+        <div style={styles.logoWrap}>
+          <img src="/qc-logo.png" alt="QueCab AdbS" style={styles.logo} />
+        </div>
 
         <div style={styles.kicker}>PRE-LOAD TRUCK-DRIVER VERIFICATION</div>
 
@@ -101,7 +103,7 @@ const styles = {
     background:
       "linear-gradient(180deg, #070b11 0%, #0d1522 48%, #111d2c 100%)",
     overflow: "hidden",
-    padding: "40px 18px 80px"
+    padding: "28px 18px 80px"
   },
   steelGlow: {
     position: "absolute",
@@ -124,11 +126,20 @@ const styles = {
     margin: "0 auto",
     color: "#ffffff"
   },
+  logoWrap: {
+    width: "100%",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    margin: "4px auto 22px",
+    overflow: "hidden"
+  },
   logo: {
-    width: 220,
-    maxWidth: "92%",
+    width: "min(760px, 94vw)",
+    maxWidth: "94vw",
+    height: "auto",
     display: "block",
-    margin: "30px auto 20px"
+    objectFit: "contain"
   },
   kicker: {
     textAlign: "center",
