@@ -135,8 +135,8 @@ const styles = {
     overflow: "hidden"
   },
   logo: {
-    width: "min(760px, 94vw)",
-    maxWidth: "94vw",
+    width: "min(950px, 96vw)",
+maxWidth: "96vw",
     height: "auto",
     display: "block",
     objectFit: "contain"
