@@ -131,7 +131,7 @@ const styles = {
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    margin: "4px auto 22px",
+    margin: "70px auto 18px",
     overflow: "hidden"
   },
   logo: {
