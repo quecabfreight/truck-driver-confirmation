@@ -586,7 +586,7 @@ export default function ControlCenter() {
 
             <div style={{ display: "grid", gap: 10 }}>
               <input ref={loadRef} style={styles.input} placeholder="Load ID" value={loadId} onChange={(e) => setLoadId(e.target.value)} onKeyDown={handleIssueEnter} />
-              <input style={styles.input} placeholder="Dock Email" value={dockEmail} onChange={(e) => setDockEmail(e.target.value)} onKeyDown={handleIssueEnter} />
+              <input style={styles.input} placeholder="Shipper Email" value={dockEmail} onChange={(e) => setDockEmail(e.target.value)} onKeyDown={handleIssueEnter} />
               <input style={styles.input} placeholder="Carrier Company" value={carrierCompany} onChange={(e) => setCarrierCompany(e.target.value)} onKeyDown={handleIssueEnter} />
               <input style={styles.input} placeholder="Carrier Contact Name" value={carrierContact} onChange={(e) => setCarrierContact(e.target.value)} onKeyDown={handleIssueEnter} />
               <input style={styles.input} placeholder="Carrier Contact Phone" value={carrierPhone} onChange={(e) => setCarrierPhone(formatPhone(e.target.value))} onKeyDown={handleIssueEnter} />
