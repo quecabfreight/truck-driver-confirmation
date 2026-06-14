@@ -129,33 +129,14 @@ export default function Feedback() {
               />
             </div>
 
-            {errorMsg ? (
-              <div style={styles.error}>{errorMsg}</div>
-            ) : null}
+            {errorMsg ? <div style={styles.error}>{errorMsg}</div> : null}
 
-            {statusMsg ? (
-              <div style={styles.status}>{statusMsg}</div>
-            ) : null}
+            {statusMsg ? <div style={styles.status}>{statusMsg}</div> : null}
 
             <button type="submit" style={styles.button}>
               Send Feedback
             </button>
           </form>
-
-          <div style={styles.contactPanel}>
-            <div style={styles.contactTitle}>Direct Contact</div>
-
-            <a
-              href="mailto:quecabadbs@gmail.com"
-              style={styles.contactLink}
-            >
-              quecabadbs@gmail.com
-            </a>
-
-            <div style={styles.contactText}>
-              Operational support and beta coordination.
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -335,34 +316,6 @@ const styles = {
   status: {
     color: "#9cffbd",
     fontWeight: 800,
-    fontSize: 14
-  },
-
-  contactPanel: {
-    marginTop: 24,
-    padding: 20,
-    borderRadius: 16,
-    border: "1px solid rgba(255,255,255,0.12)",
-    background: "rgba(3,9,18,0.30)",
-    textAlign: "center"
-  },
-
-  contactTitle: {
-    fontSize: 18,
-    fontWeight: 950,
-    marginBottom: 10
-  },
-
-  contactLink: {
-    color: "#8fc7ff",
-    textDecoration: "none",
-    fontWeight: 900,
-    fontSize: 16
-  },
-
-  contactText: {
-    marginTop: 10,
-    color: "#d3ddec",
     fontSize: 14
   }
 };
