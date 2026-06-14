@@ -644,7 +644,7 @@ export default function ControlCenter() {
                 </div>
 
                 <div style={{ border: "1px solid rgba(255,255,255,0.12)", borderRadius: 12, padding: 12, background: "rgba(255,255,255,0.04)" }}>
-                  <div>Dock Email: <b>{selected.dock_email || "(not provided)"}</b></div>
+                  <div>Shipper Email: <b>{selected.dock_email || "(not provided)"}</b></div>
                   <div>Driver Phone: <b>{selected.driver_phone || "(not provided)"}</b></div>
                   <div>USDOT#: <b>{selected.usdot_on_record || "(not provided)"}</b></div>
                   <div>Plate: <b>{selected.plate_on_record || "(not provided)"}</b></div>
