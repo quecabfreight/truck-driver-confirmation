@@ -15,8 +15,25 @@ function fmtDate(v) {
   }
 }
 
+async function copyText(text, setStatusMsg) {
+  const value = String(text || "").trim();
+
+  if (!value) {
+    setStatusMsg("Nothing to copy.");
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(value);
+    setStatusMsg(`Copied: ${value}`);
+  } catch {
+    setStatusMsg("Copy failed.");
+  }
+}
+
 function statusChip(status) {
   const s = String(status || "").toLowerCase();
+
   if (s === "active") {
     return {
       text: "ACTIVE",
@@ -27,6 +44,7 @@ function statusChip(status) {
       }
     };
   }
+
   if (s === "revoked") {
     return {
       text: "REVOKED",
@@ -37,6 +55,7 @@ function statusChip(status) {
       }
     };
   }
+
   return {
     text: String(status || "UNKNOWN").toUpperCase(),
     style: {
@@ -62,7 +81,6 @@ export default function LiveSessions() {
   useEffect(() => {
     if (!authorized) {
       nav("/login", { replace: true });
-      return;
     }
   }, [authorized, nav]);
 
@@ -161,6 +179,17 @@ export default function LiveSessions() {
     cursor: "pointer"
   };
 
+  const copyBtn = {
+    padding: "9px 10px",
+    borderRadius: 10,
+    border: "1px solid rgba(120,180,255,0.45)",
+    background: "rgba(40,110,190,0.22)",
+    color: "#ffffff",
+    fontSize: 13,
+    fontWeight: 900,
+    cursor: "pointer"
+  };
+
   return (
     <div style={pageWrap}>
       <Header />
@@ -175,18 +204,28 @@ export default function LiveSessions() {
         <div style={{ ...card, marginBottom: 16 }}>
           <div style={sectionTitle}>Active Verifications</div>
 
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "center", marginBottom: 12 }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              gap: 12,
+              flexWrap: "wrap",
+              alignItems: "center",
+              marginBottom: 12
+            }}
+          >
             <div style={{ opacity: 0.85 }}>
               These update automatically every few seconds.
               {lastRefresh ? ` Last refresh: ${lastRefresh}` : ""}
             </div>
 
-            <button
-              style={buttonPrimary}
-              onClick={() => window.location.reload()}
-            >
+            <button style={buttonPrimary} onClick={() => window.location.reload()}>
               Refresh Now
             </button>
+          </div>
+
+          <div style={{ opacity: 0.78, fontSize: 14, marginBottom: 12 }}>
+            Click a copy button below, then paste the value into Live Activity or Control Center search.
           </div>
 
           {errorMsg ? (
@@ -213,25 +252,32 @@ export default function LiveSessions() {
             <div style={{ display: "grid", gap: 10 }}>
               {rows.map((row) => {
                 const chip = statusChip(row.status);
+                const verificationId = row.token || row.verification_id || "";
 
                 return (
-                  <button
-                    key={row.token}
-                    type="button"
-                    onClick={() => window.open(row.verify_url, "_blank")}
+                  <div
+                    key={verificationId || row.load_id}
                     style={{
                       textAlign: "left",
                       padding: "14px 16px",
                       borderRadius: 14,
                       border: "1px solid rgba(255,255,255,0.12)",
                       background: "rgba(255,255,255,0.04)",
-                      color: "#fff",
-                      cursor: "pointer"
+                      color: "#fff"
                     }}
                   >
-                    <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        gap: 12,
+                        flexWrap: "wrap",
+                        alignItems: "center"
+                      }}
+                    >
                       <div style={{ fontWeight: 900, fontSize: 16 }}>
-                        {row.load_id || "(no load id)"} {row.carrier_company ? `| ${row.carrier_company}` : ""}
+                        {row.load_id || "(no load id)"}
+                        {row.carrier_company ? ` | ${row.carrier_company}` : ""}
                       </div>
 
                       <div
@@ -247,12 +293,81 @@ export default function LiveSessions() {
                       </div>
                     </div>
 
-                    <div style={{ opacity: 0.88, fontSize: 14, marginTop: 6, lineHeight: 1.55 }}>
-                      DOT {row.usdot_on_record || "—"} | Plate {row.plate_on_record || "—"} | Driver {row.driver_phone || "—"}
+                    <div
+                      style={{
+                        opacity: 0.88,
+                        fontSize: 14,
+                        marginTop: 6,
+                        lineHeight: 1.55
+                      }}
+                    >
+                      Verification ID: {verificationId || "—"}
                       <br />
-                      Dock Email: {row.dock_email || "—"} | Created: {fmtDate(row.created_at)}
+                      DOT {row.usdot_on_record || "—"} | Plate{" "}
+                      {row.plate_on_record || "—"} | Driver{" "}
+                      {row.driver_phone || "—"}
+                      <br />
+                      Shipper Email: {row.dock_email || "—"} | Created:{" "}
+                      {fmtDate(row.created_at)}
                     </div>
-                  </button>
+
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+                        gap: 8,
+                        marginTop: 12
+                      }}
+                    >
+                      <button
+                        type="button"
+                        style={copyBtn}
+                        onClick={() => copyText(verificationId, setStatusMsg)}
+                      >
+                        Copy ID
+                      </button>
+
+                      <button
+                        type="button"
+                        style={copyBtn}
+                        onClick={() => copyText(row.load_id, setStatusMsg)}
+                      >
+                        Copy Load ID
+                      </button>
+
+                      <button
+                        type="button"
+                        style={copyBtn}
+                        onClick={() => copyText(row.usdot_on_record, setStatusMsg)}
+                      >
+                        Copy DOT
+                      </button>
+
+                      <button
+                        type="button"
+                        style={copyBtn}
+                        onClick={() => copyText(row.plate_on_record, setStatusMsg)}
+                      >
+                        Copy Plate
+                      </button>
+
+                      <button
+                        type="button"
+                        style={copyBtn}
+                        onClick={() => copyText(row.driver_phone, setStatusMsg)}
+                      >
+                        Copy Driver Phone
+                      </button>
+
+                      <button
+                        type="button"
+                        style={copyBtn}
+                        onClick={() => copyText(row.verify_url, setStatusMsg)}
+                      >
+                        Copy Verify Link
+                      </button>
+                    </div>
+                  </div>
                 );
               })}
             </div>
