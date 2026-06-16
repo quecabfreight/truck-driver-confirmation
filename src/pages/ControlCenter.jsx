@@ -15,8 +15,8 @@ function upper(s) {
 function formatPhone(v) {
   const d = onlyDigits(v).slice(0, 10);
   if (d.length <= 3) return d;
-  if (d.length <= 6) return `${d.slice(0, 3)}-${d.slice(3)}`;
-  return `${d.slice(0, 3)}-${d.slice(3, 6)}-${d.slice(6)}`;
+  if (d.length <= 6) return ${d.slice(0, 3)}-${d.slice(3)};
+  return ${d.slice(0, 3)}-${d.slice(3, 6)}-${d.slice(6)};
 }
 
 function buildQrUrl(text) {
@@ -57,6 +57,8 @@ export default function ControlCenter() {
   const authorized = !!email && isBrokerOrShipper(email);
 
   const loadRef = useRef(null);
+  const startAtRef = useRef(null);
+  const expireAtRef = useRef(null);
 
   const [loadId, setLoadId] = useState("");
   const [dockEmail, setDockEmail] = useState("");
@@ -100,6 +102,14 @@ export default function ControlCenter() {
 
   if (!authorized) return null;
 
+  function openDatePicker(ref) {
+    try {
+      ref.current?.showPicker?.();
+    } catch {
+      ref.current?.focus();
+    }
+  }
+
   async function safeJson(res) {
     const text = await res.text();
     try {
@@ -137,7 +147,7 @@ export default function ControlCenter() {
     const token = row?.token || row?.verification_id || "";
     const verifyUrl =
       row?.verify_url ||
-      `https://quecabadbs.com/v.html?t=${encodeURIComponent(token)}&cv=4`;
+      https://quecabadbs.com/v.html?t=${encodeURIComponent(token)}&cv=4;
 
     return {
       verification_id: token,
@@ -217,7 +227,7 @@ export default function ControlCenter() {
         setMatches(rows);
         setSelected(null);
         setQrUrl("");
-        setStatusMsg(`${rows.length} matching records found.`);
+        setStatusMsg(${rows.length} matching records found.);
         return;
       }
 
@@ -412,6 +422,18 @@ export default function ControlCenter() {
       boxSizing: "border-box",
       outline: "none"
     },
+    dateInput: {
+      width: "100%",
+      padding: 13,
+      borderRadius: 12,
+      border: "1px solid rgba(120,180,255,0.40)",
+      background: "rgba(255,255,255,0.06)",
+      color: "#fff",
+      fontSize: 16,
+      boxSizing: "border-box",
+      outline: "none",
+      cursor: "pointer"
+    },
     linkBox: {
       display: "block",
       width: "100%",
@@ -603,8 +625,35 @@ export default function ControlCenter() {
 
               {mode === "pick" ? (
                 <>
-                  <input style={styles.input} type="datetime-local" value={startAt} onChange={(e) => setStartAt(e.target.value)} onKeyDown={handleIssueEnter} />
-                  <input style={styles.input} type="datetime-local" value={expireAt} onChange={(e) => setExpireAt(e.target.value)} onKeyDown={handleIssueEnter} />
+                  <div style={{ display: "grid", gap: 6 }}>
+                    <div style={{ fontSize: 13, fontWeight: 900, color: "#8fc7ff" }}>
+                      Start Date / Time
+                    </div>
+                    <input
+                      ref={startAtRef}
+                      style={styles.dateInput}
+                      type="datetime-local"
+                      value={startAt}
+                      onClick={() => openDatePicker(startAtRef)}
+                      onChange={(e) => setStartAt(e.target.value)}
+                      onKeyDown={handleIssueEnter}
+                    />
+                  </div>
+
+                  <div style={{ display: "grid", gap: 6 }}>
+                    <div style={{ fontSize: 13, fontWeight: 900, color: "#8fc7ff" }}>
+                      Expire Date / Time
+                    </div>
+                    <input
+                      ref={expireAtRef}
+                      style={styles.dateInput}
+                      type="datetime-local"
+                      value={expireAt}
+                      onClick={() => openDatePicker(expireAtRef)}
+                      onChange={(e) => setExpireAt(e.target.value)}
+                      onKeyDown={handleIssueEnter}
+                    />
+                  </div>
                 </>
               ) : null}
 
