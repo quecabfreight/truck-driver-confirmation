@@ -15,8 +15,8 @@ function upper(s) {
 function formatPhone(v) {
   const d = onlyDigits(v).slice(0, 10);
   if (d.length <= 3) return d;
-  if (d.length <= 6) return ${d.slice(0, 3)}-${d.slice(3)};
-  return ${d.slice(0, 3)}-${d.slice(3, 6)}-${d.slice(6)};
+  if (d.length <= 6) return `${d.slice(0, 3)}-${d.slice(3)}`;
+  return `${d.slice(0, 3)}-${d.slice(3, 6)}-${d.slice(6)}`;
 }
 
 function buildQrUrl(text) {
@@ -147,7 +147,7 @@ export default function ControlCenter() {
     const token = row?.token || row?.verification_id || "";
     const verifyUrl =
       row?.verify_url ||
-      https://quecabadbs.com/v.html?t=${encodeURIComponent(token)}&cv=4;
+      `https://quecabadbs.com/v.html?t=${encodeURIComponent(token)}&cv=4`;
 
     return {
       verification_id: token,
@@ -227,7 +227,7 @@ export default function ControlCenter() {
         setMatches(rows);
         setSelected(null);
         setQrUrl("");
-        setStatusMsg(${rows.length} matching records found.);
+        setStatusMsg(`${rows.length} matching records found.`);
         return;
       }
 
