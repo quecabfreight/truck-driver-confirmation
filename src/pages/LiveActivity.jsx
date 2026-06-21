@@ -8,6 +8,20 @@ function safeStr(v) {
   return String(v ?? "").trim();
 }
 
+function normalizeLookupQuery(v) {
+  const q = safeStr(v);
+
+  if (!q) return "";
+
+  const lower = q.toLowerCase();
+
+  if (lower.startsWith("http://") || lower.startsWith("https://")) {
+    return q;
+  }
+
+  return q.toUpperCase();
+}
+
 function fmt(v) {
   if (!v) return "(not provided)";
   return String(v);
@@ -109,9 +123,12 @@ export default function LiveActivity() {
   }
 
   async function runSearch() {
-    const q = safeStr(query);
+    const q = normalizeLookupQuery(query);
+
     if (!q) {
-      setErrorMsg("Enter Verification ID, AdbS Verify Link, Load ID, email, phone, DOT, plate, or carrier");
+      setErrorMsg(
+        "Enter Verification ID, AdbS Verify Link, Load ID, email, phone, DOT, plate, or carrier."
+      );
       setStatusMsg("");
       setRecord(null);
       setAttempts([]);
@@ -246,7 +263,7 @@ export default function LiveActivity() {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 180px", gap: 10 }}>
             <input
               style={input}
-              placeholder="Search by Verification ID, AdbS Verify Link, Load ID, email, phone, DOT, plate, or carrier"
+              placeholder="Search by Verification ID, Verify Link, Load ID, email, phone, DOT, plate, or carrier. Capitalization does not matter."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => {
@@ -256,6 +273,7 @@ export default function LiveActivity() {
                 }
               }}
             />
+
             <button style={buttonPrimary} onClick={runSearch} disabled={loading}>
               {loading ? "Searching..." : "Search"}
             </button>
@@ -279,18 +297,36 @@ export default function LiveActivity() {
                   }}
                 >
                   <div style={{ fontWeight: 900 }}>
-                    {m.load_id || "(no load id)"} | {shortResult(m.result_summary)} | {m.status || "active"}
+                    {m.load_id || "(no load id)"} | {shortResult(m.result_summary)} |{" "}
+                    {m.status || "active"}
                   </div>
-                  <div style={{ opacity: 0.86, fontSize: 14, marginTop: 4, lineHeight: 1.5 }}>
-                    {m.carrier_company || "(no carrier)"} | DOT {m.usdot_on_record || "—"} | Plate {m.plate_on_record || "—"} | Phone {m.driver_phone || "—"} | {fmtDate(pickTime(m))}
+
+                  <div
+                    style={{
+                      opacity: 0.86,
+                      fontSize: 14,
+                      marginTop: 4,
+                      lineHeight: 1.5
+                    }}
+                  >
+                    {m.carrier_company || "(no carrier)"} | DOT{" "}
+                    {m.usdot_on_record || "—"} | Plate {m.plate_on_record || "—"} | Phone{" "}
+                    {m.driver_phone || "—"} | {fmtDate(pickTime(m))}
                   </div>
                 </button>
               ))}
             </div>
           ) : null}
 
-          {errorMsg ? <div style={{ marginTop: 12, color: "#ff9c9c", fontWeight: 700 }}>{errorMsg}</div> : null}
-          {statusMsg ? <div style={{ marginTop: 12, color: "#ffffff" }}>{statusMsg}</div> : null}
+          {errorMsg ? (
+            <div style={{ marginTop: 12, color: "#ff9c9c", fontWeight: 700 }}>
+              {errorMsg}
+            </div>
+          ) : null}
+
+          {statusMsg ? (
+            <div style={{ marginTop: 12, color: "#ffffff" }}>{statusMsg}</div>
+          ) : null}
         </div>
 
         {record ? (
@@ -298,20 +334,35 @@ export default function LiveActivity() {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
               <div style={card}>
                 <div style={sectionTitle}>What Was Assigned?</div>
+
                 <div style={{ lineHeight: 1.7, fontSize: 15 }}>
-                  Verification ID: <b>{fmt(record.token)}</b><br />
-                  Load ID: <b>{fmt(record.load_id)}</b><br />
-                  Status: <b>{fmt(record.status)}</b><br />
-                  Created: <b>{fmtDate(pickTime(record))}</b><br />
-                  Expires: <b>{record.expires_at ? fmtDate(record.expires_at) : "No Expire"}</b><br />
-                  Dock Email: <b>{fmt(record.dock_email)}</b><br />
-                  Driver Phone: <b>{fmt(record.driver_phone)}</b><br />
-                  Assigned USDOT#: <b>{fmt(record.usdot_on_record)}</b><br />
-                  Assigned Plate: <b>{fmt(record.plate_on_record)}</b><br />
-                  Carrier Company: <b>{fmt(record.carrier_company)}</b><br />
-                  Carrier Contact: <b>{fmt(record.carrier_contact_name)}</b><br />
-                  Carrier Contact Phone: <b>{fmt(record.carrier_contact_phone)}</b><br />
-                  AdbS Verify Link: <b style={{ wordBreak: "break-all" }}>{fmt(record.verify_url)}</b>
+                  Verification ID: <b>{fmt(record.token)}</b>
+                  <br />
+                  Load ID: <b>{fmt(record.load_id)}</b>
+                  <br />
+                  Status: <b>{fmt(record.status)}</b>
+                  <br />
+                  Created: <b>{fmtDate(pickTime(record))}</b>
+                  <br />
+                  Expires:{" "}
+                  <b>{record.expires_at ? fmtDate(record.expires_at) : "No Expire"}</b>
+                  <br />
+                  Dock Email: <b>{fmt(record.dock_email)}</b>
+                  <br />
+                  Driver Phone: <b>{fmt(record.driver_phone)}</b>
+                  <br />
+                  Assigned USDOT#: <b>{fmt(record.usdot_on_record)}</b>
+                  <br />
+                  Assigned Plate: <b>{fmt(record.plate_on_record)}</b>
+                  <br />
+                  Carrier Company: <b>{fmt(record.carrier_company)}</b>
+                  <br />
+                  Carrier Contact: <b>{fmt(record.carrier_contact_name)}</b>
+                  <br />
+                  Carrier Contact Phone: <b>{fmt(record.carrier_contact_phone)}</b>
+                  <br />
+                  AdbS Verify Link:{" "}
+                  <b style={{ wordBreak: "break-all" }}>{fmt(record.verify_url)}</b>
                 </div>
               </div>
 
@@ -333,14 +384,20 @@ export default function LiveActivity() {
                         }}
                       >
                         <div style={{ fontWeight: 900, marginBottom: 6 }}>
-                          {String(a.result || "").toLowerCase().includes("clear") ? "CLEAR" : "ATTEMPT"}
+                          {String(a.result || "").toLowerCase().includes("clear")
+                            ? "CLEAR"
+                            : "ATTEMPT"}
                         </div>
 
                         <div style={{ fontSize: 14, lineHeight: 1.6 }}>
-                          Verification Timestamp: <b>{fmtDate(pickTime(a))}</b><br />
-                          Entered DOT: <b>{fmt(a.entered_usdot)}</b><br />
-                          Entered Plate: <b>{fmt(a.entered_plate)}</b><br />
-                          Driver Answered: <b>{String(a.driver_answered)}</b><br />
+                          Verification Timestamp: <b>{fmtDate(pickTime(a))}</b>
+                          <br />
+                          Entered DOT: <b>{fmt(a.entered_usdot)}</b>
+                          <br />
+                          Entered Plate: <b>{fmt(a.entered_plate)}</b>
+                          <br />
+                          Driver Answered: <b>{String(a.driver_answered)}</b>
+                          <br />
                           Result: <b>{fmt(a.result)}</b>
                         </div>
                       </div>
@@ -352,6 +409,7 @@ export default function LiveActivity() {
 
             <div style={{ ...card, marginTop: 16 }}>
               <div style={sectionTitle}>Why This Matters</div>
+
               <div style={{ lineHeight: 1.7, fontSize: 15 }}>
                 This page gives a broker a defensible record of:
                 <br />• what was assigned
