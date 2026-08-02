@@ -18,7 +18,7 @@ export default function Home() {
         <div style={styles.kicker}>PRE-LOAD TRUCK-DRIVER VERIFICATION</div>
 
         <div style={styles.heroTitle}>
-          QueCab AdbS™ is the Broker&apos;s Eyes at the Dock™.
+          QueCab AdbS<sup style={{ fontSize: "0.35em", verticalAlign: "super" }}>™</sup> is the Broker&apos;s Eyes at the Dock<sup style={{ fontSize: "0.35em", verticalAlign: "super" }}>™</sup>.
         </div>
 
         <div style={styles.heroSub}>
