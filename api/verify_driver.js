@@ -49,9 +49,11 @@ async function sendAlertEmail(link, token, failedAttempts) {
     const { Resend } = await import("resend");
     const resend = new Resend(process.env.RESEND_API_KEY);
 
-    const toEmail =
-      cleanText(process.env.ADBS_ALERT_EMAIL) ||
-      "quecabadbs@gmail.com";
+    const toEmail = cleanText(link?.issued_by_email);
+
+    if (!toEmail) {
+      return { ok: false, error: "Missing issuing broker email" };
+    }
 
     const fromEmail =
       cleanText(process.env.ADBS_EMAIL_FROM) ||
